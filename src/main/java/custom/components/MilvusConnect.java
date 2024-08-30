@@ -1,0 +1,54 @@
+package custom.components;
+
+import com.alibaba.fastjson.JSON;
+import io.milvus.v2.client.ConnectConfig;
+import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.service.collection.response.ListCollectionsResp;
+import lombok.extern.slf4j.Slf4j;
+import custom.utils.HttpClientUtils;
+
+import static custom.BaseTest.isCloud;
+
+/**
+ * @Author yongpeng.li @Date 2024/6/4 15:17
+ */
+@Slf4j
+public class MilvusConnect {
+    public static String provideToken(String uri) {
+        // 获取root密码
+        String token = "";
+        String urlPWD = null;
+        if (uri.contains("ali") || uri.contains("tc")) {
+            String substring = uri.substring(uri.indexOf("https://") + 8, 28);
+            urlPWD =
+                    "https://cloud-test.cloud-uat.zilliz.cn/cloud/v1/test/getRootPwd?instanceId="
+                            + substring
+                            + "";
+            String pwdString = HttpClientUtils.doGet(urlPWD);
+            token = "root:" + JSON.parseObject(pwdString).getString("Data");
+        } else if (uri.contains("aws") || uri.contains("gcp") || uri.contains("az")) {
+            String substring = uri.substring(uri.indexOf("https://") + 8, 28);
+            urlPWD =
+                    "https://cloud-test.cloud-uat3.zilliz.com/cloud/v1/test/getRootPwd?instanceId="
+                            + substring
+                            + "";
+            String pwdString = HttpClientUtils.doGet(urlPWD);
+            token = "root:" + JSON.parseObject(pwdString).getString("Data");
+        } else {
+            token = "root:Milvus";
+            isCloud=false;
+        }
+        return token;
+    }
+
+    public static MilvusClientV2 createMilvusClientV2(String uri, String token) {
+        MilvusClientV2 milvusClientV2 = new MilvusClientV2(
+                ConnectConfig.builder().uri(uri).token(token).build()
+        );
+        log.info("Connecting to DB: " + uri);
+        ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
+        log.info("List collection: " + listCollectionsResp.getCollectionNames());
+        return milvusClientV2;
+    }
+
+}
