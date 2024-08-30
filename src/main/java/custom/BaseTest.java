@@ -35,7 +35,7 @@ public class BaseTest {
             System.getProperty("initial_params") == null
                     || System.getProperty("initial_params").equals("")
                     ? ""
-                    : System.getProperty("");
+                    : System.getProperty("initial_params");
 
     String customizeParams =
         System.getProperty("customize_params") == null
