@@ -14,7 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 import static custom.BaseTest.*;
@@ -33,7 +35,8 @@ public class SearchComp {
 
         float searchTotalTime = 0;
         long startTimeTotal = System.currentTimeMillis();
-
+        Map<String,Object> searchLevel=new HashMap<>();
+        searchLevel.put("level",1);
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
             Callable callable =
@@ -49,10 +52,11 @@ public class SearchComp {
                             }
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
                                     .topK(searchParams.getTopK())
-                                    .outputFields(searchParams.getOutputs())
+//                                    .outputFields(searchParams.getOutputs())
                                     .consistencyLevel(ConsistencyLevel.STRONG)
                                     .collectionName(collection)
-                                    .filter(searchParams.getFilter())
+                                    .searchParams(searchLevel)
+//                                    .filter(searchParams.getFilter())
                                     .data(randomBaseVectors)
                                     .build());
                             results.add(search.getSearchResults().size());
