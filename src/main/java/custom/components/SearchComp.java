@@ -12,6 +12,7 @@ import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.SearchResp;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,8 +46,9 @@ public class SearchComp {
                         log.info("线程[" + finalC + "]启动...");
                         List<Integer> results = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
+                        LocalDateTime currentTime=LocalDateTime.now();
                         int printLog=0;
-                        while (LocalDateTime.now().isBefore(endTime)) {
+                        while (currentTime.isBefore(endTime)) {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
                             }
@@ -64,6 +66,7 @@ public class SearchComp {
                                 double passRate=(results.stream().filter(integer -> integer.intValue()>0).count())*100/results.size();
                                 log.info("线程[" + finalC + "] 已经 search :" + results.size()+"次,成功率："+passRate);
                                 printLog=0;
+                                currentTime=LocalDateTime.now();
                             }
                             printLog++;
                         }
