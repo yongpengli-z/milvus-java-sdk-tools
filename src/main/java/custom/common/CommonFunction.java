@@ -10,12 +10,16 @@ import custom.utils.JsonObjectUtil;
 import custom.utils.MathUtil;
 import io.milvus.common.utils.Float16Utils;
 import io.milvus.v2.common.DataType;
+import io.milvus.v2.common.IndexBuildState;
 import io.milvus.v2.common.IndexParam;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.index.request.CreateIndexReq;
+import io.milvus.v2.service.index.request.DescribeIndexReq;
+import io.milvus.v2.service.index.response.DescribeIndexResp;
 import io.milvus.v2.service.vector.request.data.*;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -23,7 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
-
+@Slf4j
 public class CommonFunction {
 
     /**
@@ -170,10 +174,36 @@ public class CommonFunction {
                 indexParamList.add(indexParam);
             }
         }
+        log.info("create index :"+ indexParamList);
         milvusClientV2.createIndex(CreateIndexReq.builder()
                 .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(0) : collectionName)
                 .indexParams(indexParamList)
                 .build());
+        // 查询索引是否建完
+        List<Boolean> indexStateList=new ArrayList<>();
+        for (IndexParam indexParam : indexParamList) {
+            indexStateList.add(false);
+        }
+        long startTimeTotal = System.currentTimeMillis();
+        while(!(indexStateList.size()==indexStateList.stream().filter(x-> x).count())){
+            for (int i = 0; i < indexParamList.size(); i++) {
+                DescribeIndexResp describeIndexResp = milvusClientV2.describeIndex(DescribeIndexReq.builder()
+                        .fieldName(indexParamList.get(i).getFieldName())
+                        .collectionName(collectionName)
+                        .build());
+                if(describeIndexResp.getIndexDescByFieldName(indexParamList.get(i).getFieldName()).getIndexState()==IndexBuildState.Finished){
+                    indexStateList.set(i,true);
+                }
+            }
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) {
+                log.error("get index state:"+e.getMessage());
+            }
+        }
+        long endTimeTotal = System.currentTimeMillis();
+        float indexCost = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
+        log.info("create index "+indexParamList+" ,total cost: "+indexCost +" seconds" );
     }
 
     /**
