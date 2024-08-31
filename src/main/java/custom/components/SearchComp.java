@@ -45,10 +45,12 @@ public class SearchComp {
                         List<BaseVector> randomBaseVectors = baseVectors;
                         log.info("线程[" + finalC + "]启动...");
                         List<Integer> results = new ArrayList<>();
-                        LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
-                        LocalDateTime currentTime=LocalDateTime.now();
+//                        LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
+//                        LocalDateTime currentTime=LocalDateTime.now();
+                        long currentTime=System.currentTimeMillis();
+                        long endTime=System.currentTimeMillis()+(60*1000*searchParams.getRunningMinutes());
                         int printLog=1;
-                        while (currentTime.isBefore(endTime)) {
+                        while (currentTime < endTime) {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
                             }
@@ -66,7 +68,7 @@ public class SearchComp {
 //                                double passRate=(results.stream().filter(integer -> integer.intValue()>0).count())*100/results.size();
                                 log.info("线程[" + finalC + "] 已经 search :" + results.size()+"次");
                                 printLog=1;
-                                currentTime=LocalDateTime.now();
+                                currentTime=System.currentTimeMillis();
                             }
                             printLog++;
                         }
