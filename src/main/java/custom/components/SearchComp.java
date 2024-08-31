@@ -48,8 +48,6 @@ public class SearchComp {
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         LocalDateTime currentTime=LocalDateTime.now();
                         int printLog=1;
-                        int count=2000;
-//                        while (count!=0) {
                         while (currentTime.isBefore(endTime)) {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
