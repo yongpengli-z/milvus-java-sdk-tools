@@ -48,7 +48,9 @@ public class SearchComp {
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         LocalDateTime currentTime=LocalDateTime.now();
                         int printLog=0;
-                        while (currentTime.isBefore(endTime)) {
+                        int count=10000;
+                        while (count!=0) {
+//                        while (currentTime.isBefore(endTime)) {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
                             }
@@ -66,9 +68,10 @@ public class SearchComp {
                                 double passRate=(results.stream().filter(integer -> integer.intValue()>0).count())*100/results.size();
                                 log.info("线程[" + finalC + "] 已经 search :" + results.size()+"次,成功率："+passRate);
                                 printLog=0;
-                                currentTime=LocalDateTime.now();
+//                                currentTime=LocalDateTime.now();
                             }
                             printLog++;
+                            count--;
                         }
                         return results;
                     };
