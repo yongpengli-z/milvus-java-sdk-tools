@@ -56,11 +56,11 @@ public class SearchComp {
                             }
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
                                     .topK(searchParams.getTopK())
-//                                    .outputFields(searchParams.getOutputs())
+                                    .outputFields(searchParams.getOutputs())
                                     .consistencyLevel(ConsistencyLevel.BOUNDED)
                                     .collectionName(collection)
                                     .searchParams(searchLevel)
-//                                    .filter(searchParams.getFilter())
+                                    .filter(searchParams.getFilter())
                                     .data(randomBaseVectors)
                                     .build());
                             results.add(search.getSearchResults().size());
