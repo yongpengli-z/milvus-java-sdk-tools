@@ -47,31 +47,31 @@ public class SearchComp {
                         List<Integer> results = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         LocalDateTime currentTime=LocalDateTime.now();
-                        int printLog=0;
+                        int printLog=1;
                         int count=2000;
-                        while (count!=0) {
-//                        while (currentTime.isBefore(endTime)) {
+//                        while (count!=0) {
+                        while (currentTime.isBefore(endTime)) {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
                             }
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
                                     .topK(searchParams.getTopK())
-//                                    .outputFields(searchParams.getOutputs())
-                                    .consistencyLevel(ConsistencyLevel.STRONG)
+                                    .outputFields(searchParams.getOutputs())
+                                    .consistencyLevel(ConsistencyLevel.BOUNDED)
                                     .collectionName(collection)
                                     .searchParams(searchLevel)
-//                                    .filter(searchParams.getFilter())
+                                    .filter(searchParams.getFilter())
                                     .data(randomBaseVectors)
                                     .build());
                             results.add(search.getSearchResults().size());
-                            if (printLog>logInterval) {
-                                double passRate=(results.stream().filter(integer -> integer.intValue()>0).count())*100/results.size();
-                                log.info("线程[" + finalC + "] 已经 search :" + results.size()+"次,成功率："+passRate);
-                                printLog=0;
-//                                currentTime=LocalDateTime.now();
+                            if (printLog>=logInterval) {
+//                                double passRate=(results.stream().filter(integer -> integer.intValue()>0).count())*100/results.size();
+                                log.info("线程[" + finalC + "] 已经 search :" + results.size()+"次");
+                                printLog=1;
+                                currentTime=LocalDateTime.now();
                             }
                             printLog++;
-                            count--;
+//                            count--;
                         }
                         return results;
                     };
