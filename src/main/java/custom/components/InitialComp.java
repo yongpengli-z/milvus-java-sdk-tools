@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
 
@@ -26,9 +27,11 @@ public class InitialComp {
         List<String> collectionNames =
                 listCollectionsResp.getCollectionNames();
         log.info("List collection: " + collectionNames);
+        globalCollectionNames.addAll(collectionNames);
         if (collectionNames.size() > 0 && initialParams.isCleanCollection()) {
             collectionNames.forEach(x -> {
                 milvusClientV2.dropCollection(DropCollectionReq.builder().collectionName(x).build());
+                globalCollectionNames.clear();
             });
             log.info("clean collections successfully!");
         }

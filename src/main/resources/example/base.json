@@ -1,0 +1,47 @@
+{
+  "CreateCollectionParams_0": {
+    "shardNum": 1,
+    "enableDynamic": false,
+    "enableMmap": false,
+    "fieldParamsList": [
+      {
+        "dataType": "Int64",
+        "primaryKey": true
+      },
+      {
+        "dataType": "FloatVector",
+        "dim": 768,
+        "primaryKey": false
+      }
+    ],
+    "numPartitions": 0,
+    "collectionName": ""
+  },
+  "LoadParams_2": {
+    "loadAll": true
+  },
+  "CreateIndexParams_1": {
+    "collectionName": "",
+    "indexParams": [
+
+    ]
+  },
+  "InsertParams_3": {
+    "batchSize": 10000,
+    "collectionName": "",
+    "numConcurrency": 1,
+    "numEntries": 1500000
+  },
+  "SearchParams_4": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 50,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 10,
+    "topK": 10
+  }
+}
