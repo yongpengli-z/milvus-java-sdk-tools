@@ -21,30 +21,31 @@ public class LoadCollectionComp {
             List<String> collectionNames = listCollectionsResp.getCollectionNames();
             for (String collectionName : collectionNames) {
                 try {
-                    log.info("Loading collection ["+collectionName+"]");
+                    log.info("Loading collection [" + collectionName + "]");
                     long startLoadTime = System.currentTimeMillis();
-                    boolean loadState=false;
+                    boolean loadState;
                     milvusClientV2.loadCollection(LoadCollectionReq.builder().collectionName(collectionName)
                             .async(true)
                             .build());
                     do {
                         loadState = milvusClientV2.getLoadState(GetLoadStateReq.builder()
                                 .collectionName(collectionName).build());
+                        log.info("轮询load结果："+loadState);
                         Thread.sleep(1000L);
                     } while (!loadState);
                     long endLoadTime = System.currentTimeMillis();
-                    log.info("Load collection ["+collectionName+"] cost " + (endLoadTime - startLoadTime) / 1000.00 + " seconds");
+                    log.info("Load collection [" + collectionName + "] cost " + (endLoadTime - startLoadTime) / 1000.00 + " seconds");
                 } catch (Exception e) {
-                    log.error("load ["+collectionName+"] failed! reason:"+e.getMessage());
+                    log.error("load [" + collectionName + "] failed! reason:" + e.getMessage());
                 }
             }
-        }else{
-            String collectionName=(loadParams.getCollectionName()==null||loadParams.getCollectionName().equalsIgnoreCase(""))?
-                    globalCollectionNames.get(0):loadParams.getCollectionName();
+        } else {
+            String collectionName = (loadParams.getCollectionName() == null || loadParams.getCollectionName().equalsIgnoreCase("")) ?
+                    globalCollectionNames.get(0) : loadParams.getCollectionName();
             try {
-                log.info("Loading collection ["+collectionName+"]");
+                log.info("Loading collection [" + collectionName + "]");
                 long startLoadTime = System.currentTimeMillis();
-                boolean loadState=false;
+                boolean loadState = false;
                 milvusClientV2.loadCollection(LoadCollectionReq.builder().collectionName(collectionName)
                         .async(true)
                         .build());
@@ -54,9 +55,9 @@ public class LoadCollectionComp {
                     Thread.sleep(1000L);
                 } while (!loadState);
                 long endLoadTime = System.currentTimeMillis();
-                log.info("Load collection ["+collectionName+"] cost " + (endLoadTime - startLoadTime) / 1000.00 + " seconds");
+                log.info("Load collection [" + collectionName + "] cost " + (endLoadTime - startLoadTime) / 1000.00 + " seconds");
             } catch (Exception e) {
-                log.error("load ["+collectionName+"] failed! reason:"+e.getMessage());
+                log.error("load [" + collectionName + "] failed! reason:" + e.getMessage());
             }
         }
     }
