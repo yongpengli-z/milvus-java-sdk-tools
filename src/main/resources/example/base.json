@@ -8,6 +8,9 @@
         "dataType": "Int64",
         "primaryKey": true
       },
+      {"dataType":"Varchar",
+        "primaryKey":false,
+        "maxLength":3072},
       {
         "dataType": "FloatVector",
         "dim": 768,
@@ -30,9 +33,57 @@
     "batchSize": 10000,
     "collectionName": "",
     "numConcurrency": 1,
-    "numEntries": 1500000
+    "numEntries": 1000000
   },
   "SearchParams_4": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 10,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 5,
+    "topK": 1
+  },
+  "SearchParams_5": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 20,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 5,
+    "topK": 1
+  },
+  "SearchParams_6": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 30,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 5,
+    "topK": 1
+  },
+  "SearchParams_7": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 40,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 5,
+    "topK": 1
+  },
+  "SearchParams_8": {
     "collectionName": "",
     "filter": "",
     "nq": 1,
@@ -41,7 +92,31 @@
       "*"
     ],
     "randomVector": true,
-    "runningMinutes": 10,
-    "topK": 10
+    "runningMinutes": 5,
+    "topK": 1
+  },
+  "SearchParams_9": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 60,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 5,
+    "topK": 1
+  },
+  "SearchParams_10": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 70,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 5,
+    "topK": 1
   }
 }

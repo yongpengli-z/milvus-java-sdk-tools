@@ -16,15 +16,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ComponentSchedule {
     public static void runningSchedule(String customizeParams) {
-        log.info("--customizeParams--:"+customizeParams);
+        log.info("--customizeParams--:" + customizeParams);
 
         // 获取params的所有根节点
         JSONObject parseJO = JSONObject.parseObject(customizeParams);
-        Set<String> keyStrings = parseJO.keySet();
-        List<String> keyList = new ArrayList();
-        for (String keyString : keyStrings) {
-            keyList.add(keyString);
-        }
+        List<String> keyList = new ArrayList<>(parseJO.keySet());
         // 按照编号对key进行排序
         keyList = keyList.stream().sorted((s1, s2) -> {
             int num1 = Integer.parseInt(s1.split("_")[1]);
@@ -32,9 +28,9 @@ public class ComponentSchedule {
             return Integer.compare(num1, num2);
         }).collect(Collectors.toList());
 
-        System.out.println(keyList);
+        log.info(keyList.toString());
 
-        List<Object> operators = new ArrayList();
+        List<Object> operators = new ArrayList<>();
         for (String keyString : keyList) {
             String item = parseJO.getString(keyString);
             String paramName = keyString.substring(0, keyString.indexOf("_"));
@@ -68,6 +64,10 @@ public class ComponentSchedule {
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");
                 SearchComp.searchCollection((SearchParams) operators.get(i));
+            }
+            if (operators.get(i) instanceof ReleaseParams) {
+                log.info("*********** < release collection > ***********");
+                ReleaseCollectionComp.releaseCollection((ReleaseParams) operators.get(i));
             }
         }
 
