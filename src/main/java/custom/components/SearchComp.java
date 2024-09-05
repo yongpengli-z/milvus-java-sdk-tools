@@ -37,7 +37,7 @@ public class SearchComp {
         float searchTotalTime = 0;
         long startTimeTotal = System.currentTimeMillis();
         Map<String,Object> searchLevel=new HashMap<>();
-        searchLevel.put("level",1);
+        searchLevel.put("level",searchParams.getSearchLevel());
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
             Callable callable =

@@ -14,5 +14,6 @@ public class SearchParams {
     private String filter;
     private int numConcurrency;
     private long runningMinutes;
+    private int searchLevel;
 
 }
