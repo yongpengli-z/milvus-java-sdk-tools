@@ -258,7 +258,21 @@ public class MathUtil {
     return (short) ((sign << 15) | (exp << 10) | (mantissa >>> 13));
   }
 
+  // 计算平均值
+  public static double calculateAverage(List<Float> data) {
+    double sum = 0.0;
+    for (double num : data) {
+      sum += num;
+    }
+    return sum / data.size();
+  }
 
+  // 计算99百分位数
+  public static double calculateTP99(List<Float> data, float percent) {
+    Collections.sort(data);
+    int index = (int) Math.ceil(percent * data.size()) - 1; // 99%索引
+    return data.get(index);
+  }
 
 
 }
