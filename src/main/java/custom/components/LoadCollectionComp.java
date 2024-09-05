@@ -25,7 +25,7 @@ public class LoadCollectionComp {
                     long startLoadTime = System.currentTimeMillis();
                     boolean loadState;
                     milvusClientV2.loadCollection(LoadCollectionReq.builder().collectionName(collectionName)
-                            .async(true)
+                            .async(false).timeout(60000L)
                             .build());
                     do {
                         loadState = milvusClientV2.getLoadState(GetLoadStateReq.builder()
