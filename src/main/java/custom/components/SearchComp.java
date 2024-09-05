@@ -66,7 +66,7 @@ public class SearchComp {
                             returnNum.add(search.getSearchResults().size());
                             if (printLog>=logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size()+"次");
-                                printLog=1;
+                                printLog=0;
                             }
                             printLog++;
                         }
