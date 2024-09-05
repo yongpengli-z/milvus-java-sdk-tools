@@ -48,10 +48,16 @@ public class InsertComp {
 
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(), r * insertParams.getBatchSize());
                             log.info("线程[" + finalC + "]导入数据 " + insertParams.getBatchSize() + "条，范围: " + r * insertParams.getBatchSize() + "~" + ((r + 1) * insertParams.getBatchSize()));
-                            InsertResp insert = milvusClientV2.insert(InsertReq.builder()
-                                    .data(jsonObjects)
-                                    .collectionName(collectionName)
-                                    .build());
+                            InsertResp insert = null;
+                            try {
+                                insert = milvusClientV2.insert(InsertReq.builder()
+                                        .data(jsonObjects)
+                                        .collectionName(collectionName)
+                                        .build());
+                            } catch (Exception e) {
+                                log.error("insert error,reason:"+e.getMessage());
+                                return results;
+                            }
                             results.add((int) insert.getInsertCnt());
                             long endTime = System.currentTimeMillis();
                             log.info(
