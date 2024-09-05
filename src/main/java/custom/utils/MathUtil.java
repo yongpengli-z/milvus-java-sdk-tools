@@ -264,14 +264,18 @@ public class MathUtil {
     for (double num : data) {
       sum += num;
     }
-    return sum / data.size();
+    double v = sum / data.size();
+    String formattedNumber = String.format("%.4f", v);
+    return Double.parseDouble(formattedNumber);
   }
 
   // 计算99百分位数
   public static double calculateTP99(List<Float> data, float percent) {
     Collections.sort(data);
     int index = (int) Math.ceil(percent * data.size()) - 1; // 99%索引
-    return data.get(index);
+    Float aFloat = data.get(index);
+    String formattedNumber = String.format("%.4f", aFloat);
+    return Double.parseDouble(formattedNumber);
   }
 
 
