@@ -96,6 +96,7 @@ public class SearchComp {
 
         log.info(
                 "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:"+(float)(100.0*successNum/requestNum)+"%");
+        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
         log.info("Avg:"+ MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:"+MathUtil.calculateTP99(costTimeTotal,0.99f));
         log.info("TP98:"+MathUtil.calculateTP99(costTimeTotal,0.98f));

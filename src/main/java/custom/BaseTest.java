@@ -19,7 +19,7 @@ public class BaseTest {
   public static MilvusClientV2 milvusClientV2=null;
   public static List<String> globalCollectionNames=new ArrayList<>();
 
-  public static int logInterval=100;
+  public static int logInterval=500;
   public static boolean isCloud=true;
 
   public static void main(String[] args) {
