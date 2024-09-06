@@ -18,17 +18,17 @@ public class CreateCollectionComp {
         String collection = CommonFunction.genCommonCollection(createCollectionParams.getCollectionName(),
                 createCollectionParams.isEnableDynamic(), createCollectionParams.getShardNum(), createCollectionParams.getNumPartitions(),
                 createCollectionParams.getFieldParamsList());
-        log.info("create collection ["+collection+"] success!");
+        log.info("create collection [" + collection + "] success!");
         globalCollectionNames.add(collection);
-        if (createCollectionParams.isEnableMmap()){
-            Map<String, String> map = new HashMap<String, String>() {{
-                put(Constant.MMAP_ENABLED, "true");
-            }};
-            milvusClientV2.alterCollection(AlterCollectionReq.builder()
-                            .properties(map)
-                            .collectionName(collection)
-                    .build());
-            log.info("alter collection ["+collection+"] scalar mmap opened!");
-        }
+
+        Map<String, String> map = new HashMap<String, String>() {{
+            put(Constant.MMAP_ENABLED, String.valueOf(createCollectionParams.isEnableMmap()));
+        }};
+        milvusClientV2.alterCollection(AlterCollectionReq.builder()
+                .properties(map)
+                .collectionName(collection)
+                .build());
+        log.info("alter collection [" + collection + "] scalar mmap opened!");
     }
+
 }
