@@ -38,12 +38,12 @@ public class SearchCompTest {
         searchLevel.put("level",1);
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
-            Callable<Integer> callable =
+            Callable callable =
                     () -> {
                         List<BaseVector> randomBaseVectors = baseVectors;
                         log.info("线程[" + finalC + "]启动...");
 //                        SearchResult searchResult=new SearchResult();
-//                        List<Integer> returnNum=new ArrayList<>();
+                        List<Integer> returnNum=new ArrayList<>();
 //                        List<Float> costTime=new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         int printLog=1;
@@ -61,20 +61,21 @@ public class SearchCompTest {
                                     .filter(searchParams.getFilter())
                                     .data(randomBaseVectors)
                                     .build());
+                            returnNum.add(search.getSearchResults().size());
 //                            long endItemTime = System.currentTimeMillis();
 //                            costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
 //                            returnNum.add(search.getSearchResults().size());
                             if (printLog>=logInterval) {
-                                log.info("线程[" + finalC + "] 已经 search :"+"次");
+                                log.info("线程[" + finalC + "] 已经 search :"+returnNum.size()+"次");
                                 printLog=0;
                             }
                             printLog++;
                         }
 //                        searchResult.setResultNum(returnNum);
 //                        searchResult.setCostTime(costTime);
-                        return 0;
+                        return returnNum;
                     };
-            Future<Integer> future = executorService.submit(callable);
+            Future<List<Integer>> future = executorService.submit(callable);
 //            list.add(future);
         }
 
