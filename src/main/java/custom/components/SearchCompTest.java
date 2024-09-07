@@ -93,17 +93,18 @@ public class SearchCompTest {
         }
         long endTimeTotal = System.currentTimeMillis();
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
+        log.info("Total 线程数 " + searchParams.getNumConcurrency() );
 
-        log.info(
-                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:"+(float)(100.0*successNum/requestNum)+"%");
-        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
-        log.info("Avg:"+ MathUtil.calculateAverage(costTimeTotal));
-        log.info("TP99:"+MathUtil.calculateTP99(costTimeTotal,0.99f));
-        log.info("TP98:"+MathUtil.calculateTP99(costTimeTotal,0.98f));
-        log.info("TP90:"+MathUtil.calculateTP99(costTimeTotal,0.90f));
-        log.info("TP85:"+MathUtil.calculateTP99(costTimeTotal,0.85f));
-        log.info("TP80:"+MathUtil.calculateTP99(costTimeTotal,0.80f));
-        log.info("TP50:"+MathUtil.calculateTP99(costTimeTotal,0.50f));
+//        log.info(
+//                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:"+(float)(100.0*successNum/requestNum)+"%");
+//        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
+//        log.info("Avg:"+ MathUtil.calculateAverage(costTimeTotal));
+//        log.info("TP99:"+MathUtil.calculateTP99(costTimeTotal,0.99f));
+//        log.info("TP98:"+MathUtil.calculateTP99(costTimeTotal,0.98f));
+//        log.info("TP90:"+MathUtil.calculateTP99(costTimeTotal,0.90f));
+//        log.info("TP85:"+MathUtil.calculateTP99(costTimeTotal,0.85f));
+//        log.info("TP80:"+MathUtil.calculateTP99(costTimeTotal,0.80f));
+//        log.info("TP50:"+MathUtil.calculateTP99(costTimeTotal,0.50f));
         executorService.shutdown();
 
     }
