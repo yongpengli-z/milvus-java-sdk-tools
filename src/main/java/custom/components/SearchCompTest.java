@@ -87,7 +87,7 @@ public class SearchCompTest {
                 requestNum+=searchResult.getResultNum().size();
                 successNum+=searchResult.getResultNum().stream().filter(x->x== searchParams.getTopK()).count();
                 costTimeTotal.addAll(searchResult.getCostTime());
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (Exception e) {
                 log.error("search 统计异常:"+e.getMessage());
             }
         }
