@@ -68,6 +68,10 @@ public class ComponentSchedule {
                 log.info("*********** < release collection > ***********");
                 ReleaseCollectionComp.releaseCollection((ReleaseParams) operators.get(i));
             }
+            if (operators.get(i) instanceof RecallParams) {
+                log.info("*********** < recall > ***********");
+                RecallComp.calcRecall((RecallParams) operators.get(i));
+            }
         }
 
 

@@ -45,7 +45,6 @@ public class SearchCompTest {
                         log.info("线程[" + finalC + "]启动...");
                         SearchResult searchResult = new SearchResult();
                         List<Integer> returnNum = new ArrayList<>();
-                        List<Object> pkList=new ArrayList<>();
                         List<Float> costTime = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         int printLog = 1;
@@ -66,7 +65,6 @@ public class SearchCompTest {
                             long endItemTime = System.currentTimeMillis();
                             costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
                             returnNum.add(search.getSearchResults().size());
-                            pkList.add(search.getSearchResults().get(0).get(0).getId());
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 printLog = 0;
@@ -75,16 +73,13 @@ public class SearchCompTest {
                         }
                         searchResult.setResultNum(returnNum);
                         searchResult.setCostTime(costTime);
-                        searchResult.setPkList(pkList);
                         return searchResult;
                     };
             Future<SearchResult> future = executorService.submit(callable);
             list.add(future);
         }
-
         long requestNum = 0;
         long successNum = 0;
-        List<Object> pkIdTotal=new ArrayList<>();
         List<Float> costTimeTotal = new ArrayList<>();
         for (Future<SearchResult> future : list) {
             try {
@@ -92,7 +87,6 @@ public class SearchCompTest {
                 requestNum += searchResult.getResultNum().size();
                 successNum += searchResult.getResultNum().stream().filter(x -> x == searchParams.getTopK()).count();
                 costTimeTotal.addAll(searchResult.getCostTime());
-                pkIdTotal.addAll(searchResult.getPkList());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
             }
@@ -111,8 +105,6 @@ public class SearchCompTest {
             log.info("TP85:" + MathUtil.calculateTP99(costTimeTotal, 0.85f));
             log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
             log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
-            long count = pkIdTotal.stream().filter(x -> recallBaseIdList.contains(x)).count();
-            log.info("Recall:"+(float)(100.00*count/pkIdTotal.size())+"%");
         } catch (Exception e) {
             log.error("统计异常：" + e.getMessage());
         }
@@ -124,6 +116,5 @@ public class SearchCompTest {
     public static class SearchResult {
         private List<Float> costTime;
         private List<Integer> resultNum;
-        private List<Object> pkList;
     }
 }
