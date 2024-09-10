@@ -653,6 +653,7 @@ public class CommonFunction {
                 baseVectorDataset.add(new FloatVec(floatList));
             }
         }
+        log.info("baseVectorDataset:"+ baseVectorDataset);
         return baseVectorDataset;
     }
 
