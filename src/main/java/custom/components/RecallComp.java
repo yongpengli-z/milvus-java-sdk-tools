@@ -43,7 +43,7 @@ public class RecallComp {
         }
         int matchResult=0;
         for (int i = 0; i < searchResult.size(); i++) {
-               if(recallBaseIdList.get(i)==searchResult.get(i)){
+               if((int)recallBaseIdList.get(i)==(int)searchResult.get(i)){
                    matchResult++;
                }
         }
