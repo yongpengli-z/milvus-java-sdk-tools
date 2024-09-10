@@ -649,25 +649,17 @@ public class CommonFunction {
            log.error("query 异常: "+e.getMessage());
         }
         for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
-            Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
+           Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
             if (vectorDataType == DataType.FloatVector) {
-                List<Float> floatList = new ArrayList<>();
-                if (o instanceof Float[]) {
-                    Float[] floatArray = (Float[]) o;
-                    for (Float f : floatArray) {
-                        floatList.add(f);
-                    }
-                }
-                log.info("floatList:"+floatList);
-                baseVectorDataset.add(new FloatVec(floatList));
+               List<Float> floatList=(List<Float>) o;
+               baseVectorDataset.add(new FloatVec(floatList));
             }
         }
-        log.info("baseVectorDataset:"+ baseVectorDataset);
         return baseVectorDataset;
     }
 
     /**
-     * 更具nq提供search的BaseVector
+     * 跟具nq提供search的BaseVector
      * @param baseVectorDataset baseVector数据集
      * @param nq nq
      * @return List<BaseVector>

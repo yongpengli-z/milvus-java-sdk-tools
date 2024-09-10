@@ -31,7 +31,7 @@ public class SearchCompTest {
         List<BaseVector> baseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
         // 随机向量，从数据库里筛选
         log.info("从collection里捞取向量: " + searchParams.getNumConcurrency() * 10);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 10);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, searchParams.getNumConcurrency() * 10);
         log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
 
 
