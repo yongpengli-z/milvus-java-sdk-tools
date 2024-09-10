@@ -1,6 +1,7 @@
 package custom.components;
 
 import custom.common.CommonFunction;
+import custom.entity.PKFieldInfo;
 import custom.entity.RecallParams;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
@@ -27,8 +28,8 @@ public class RecallComp {
                 recallParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : recallParams.getCollectionName();
 
         // 随机向量，从数据库里筛选
-        log.info("从collection里捞取向量: " + 10000);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 10000);
+        log.info("从collection里捞取向量: " + 100);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 100);
         log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         List<Object> searchResult=new ArrayList<>();
         for (int i = 0; i < recallBaseIdList.size(); i++) {
@@ -42,8 +43,9 @@ public class RecallComp {
             searchResult.add(search.getSearchResults().get(0).get(0).getId());
         }
         int matchResult=0;
+        PKFieldInfo pkFieldInfo = CommonFunction.getPKFieldInfo(collection);
         for (int i = 0; i < searchResult.size(); i++) {
-               if((int)recallBaseIdList.get(i)==(int)searchResult.get(i)){
+               if(recallBaseIdList.get(i)==searchResult.get(i)){
                    matchResult++;
                }
         }
