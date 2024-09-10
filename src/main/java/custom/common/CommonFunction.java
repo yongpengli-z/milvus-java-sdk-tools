@@ -648,24 +648,26 @@ public class CommonFunction {
                 List<Float> floatList = new ArrayList<>();
                 if (o instanceof Float[]) {
                     Float[] floatArray = (Float[]) o;
-                    for (Float f : floatArray) {
-                        floatList.add(f);
-                    }
+                    floatList.addAll(Arrays.asList(floatArray));
                 }
                 baseVectorDataset.add(new FloatVec(floatList));
             }
-
-
         }
         return baseVectorDataset;
     }
 
+    /**
+     * 更具nq提供search的BaseVector
+     * @param baseVectorDataset baseVector数据集
+     * @param nq nq
+     * @return List<BaseVector>
+     */
     public static List<BaseVector> providerSearchVectorByNq(List<BaseVector> baseVectorDataset, int nq) {
         Random random = new Random();
         int randomNum = baseVectorDataset.size();
         List<BaseVector> baseVectors = new ArrayList<>();
         for (int i = 0; i < nq; i++) {
-            BaseVector baseVector = baseVectors.get(random.nextInt(randomNum - 1));
+            BaseVector baseVector = baseVectorDataset.get(random.nextInt(randomNum - 1));
             baseVectors.add(baseVector);
         }
         return baseVectors;
