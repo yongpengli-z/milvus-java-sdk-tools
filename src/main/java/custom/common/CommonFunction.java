@@ -638,17 +638,25 @@ public class CommonFunction {
         // 获取主键信息
         PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
-        QueryResp query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
-                .filter(pkFieldInfo.getFieldName() + " > 0 ")
-                .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
-                .limit(randomNum).build());
+        QueryResp query = null;
+        try {
+            query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
+                    .filter(pkFieldInfo.getFieldName() + " > 0 ")
+                    .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
+                    .limit(randomNum)
+                    .build());
+        } catch (Exception e) {
+           log.error("query 异常: "+e.getMessage());
+        }
         for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
             Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
             if (vectorDataType == DataType.FloatVector) {
                 List<Float> floatList = new ArrayList<>();
                 if (o instanceof Float[]) {
                     Float[] floatArray = (Float[]) o;
-                    floatList.addAll(Arrays.asList(floatArray));
+                    for (Float f : floatArray) {
+                        floatList.add(f);
+                    }
                 }
                 baseVectorDataset.add(new FloatVec(floatList));
             }
