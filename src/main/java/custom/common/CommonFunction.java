@@ -645,6 +645,8 @@ public class CommonFunction {
                     .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
                     .limit(randomNum)
                     .build());
+            // 清空下 recallBaseIdList
+            recallBaseIdList.clear();
         } catch (Exception e) {
            log.error("query 异常: "+e.getMessage());
         }
@@ -654,6 +656,9 @@ public class CommonFunction {
                List<Float> floatList=(List<Float>) o;
                baseVectorDataset.add(new FloatVec(floatList));
             }
+            // 收集recall base id
+            Object pkObj = queryResult.getEntity().get(pkFieldInfo.getFieldName());
+            recallBaseIdList.add(pkObj);
         }
         return baseVectorDataset;
     }

@@ -62,7 +62,7 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");
-                SearchComp.searchCollection((SearchParams) operators.get(i));
+                SearchCompTest.searchCollection((SearchParams) operators.get(i));
             }
             if (operators.get(i) instanceof ReleaseParams) {
                 log.info("*********** < release collection > ***********");

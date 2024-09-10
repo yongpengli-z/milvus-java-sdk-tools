@@ -21,6 +21,7 @@ public class BaseTest {
 
   public static int logInterval=500;
   public static boolean isCloud=true;
+  public static List<Object> recallBaseIdList=new ArrayList<>();
 
   public static void main(String[] args) {
     String uri =
