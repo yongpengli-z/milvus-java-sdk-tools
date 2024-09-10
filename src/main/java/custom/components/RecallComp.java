@@ -29,7 +29,7 @@ public class RecallComp {
 
         // 随机向量，从数据库里筛选
         log.info("从collection里捞取向量: " + 10000);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 10000);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000);
         log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         List<Object> searchResult=new ArrayList<>();
         for (int i = 0; i < recallBaseIdList.size(); i++) {
