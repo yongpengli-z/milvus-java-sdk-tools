@@ -45,7 +45,7 @@ public class RecallComp {
         int matchResult=0;
         PKFieldInfo pkFieldInfo = CommonFunction.getPKFieldInfo(collection);
         for (int i = 0; i < searchResult.size(); i++) {
-               if(recallBaseIdList.get(i)==searchResult.get(i)){
+               if(recallBaseIdList.get(i).toString().equals(searchResult.get(i).toString())){
                    matchResult++;
                }
         }
