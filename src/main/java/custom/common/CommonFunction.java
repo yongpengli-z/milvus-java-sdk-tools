@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.entity.FieldParams;
 import custom.entity.IndexParams;
+import custom.entity.PKFieldInfo;
 import custom.entity.VectorInfo;
 import custom.utils.GenerateUtil;
 import custom.utils.JsonObjectUtil;
@@ -570,6 +571,11 @@ public class CommonFunction {
         return vectors;
     }
 
+    /**
+     * 获取collection的向量信息
+     * @param collectionName collection
+     * @return VectorInfo
+     */
     public static VectorInfo getCollectionVectorInfo(String collectionName) {
         VectorInfo vectorInfo = new VectorInfo();
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
@@ -589,4 +595,27 @@ public class CommonFunction {
         }
         return vectorInfo;
     }
+
+    /**
+     * 获取collection的主键PK信息
+     * @param collectionName collectionName
+     * @return PKFieldInfo
+     */
+    public static PKFieldInfo getPKFieldInfo(String collectionName){
+        PKFieldInfo pkFieldInfo=new PKFieldInfo();
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
+        List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
+        for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
+            String name = fieldSchema.getName();
+            DataType dataType = fieldSchema.getDataType();
+            Boolean isPrimaryKey = fieldSchema.getIsPrimaryKey();
+            if (isPrimaryKey){
+                pkFieldInfo.setFieldName(name);
+                pkFieldInfo.setDataType(dataType);
+            }
+        }
+        return pkFieldInfo;
+    }
+
 }
