@@ -47,6 +47,8 @@ public class RecallComp {
                    matchResult++;
                }
         }
+        log.info("BasePKId:"+recallBaseIdList);
+        log.info("SearchResult:"+searchResult);
         double result = (double) matchResult / searchResult.size();
         String formattedResult = String.format("%.4f", result);
         log.info("recall:"+formattedResult);
