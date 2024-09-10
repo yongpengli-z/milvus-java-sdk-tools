@@ -31,19 +31,10 @@ public class SearchCompTest {
         List<BaseVector> baseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
         // 随机向量，从数据库里筛选
         // 获取主键信息
-        PKFieldInfo pkFieldInfo = CommonFunction.getPKFieldInfo(collection);
-        List<Object> searchBaseVectors=new ArrayList<>();
-        if (searchParams.isRandomVector()) {
-            log.info("检测到使用随机向量，执行query collection，捞取 "+10L * searchParams.getNumConcurrency()+" 向量");
-            QueryResp query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
-                    .filter(pkFieldInfo.getFieldName() + " > 0 ")
-                    .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
-                    .limit(10L * searchParams.getNumConcurrency()).build());
-            for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
-                searchBaseVectors.add( queryResult.getEntity().get(collectionVectorInfo.getFieldName()));
-            }
-            log.info("提供给search使用的随机向量数: "+searchBaseVectors.size());
-        }
+        log.info("从collection里捞取向量: "+searchParams.getNumConcurrency()*10);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, searchParams.getNumConcurrency() * 10);
+        log.info("提供给search使用的随机向量数: "+searchBaseVectors.size());
+
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
@@ -66,7 +57,7 @@ public class SearchCompTest {
                         int printLog=1;
                         while (LocalDateTime.now().isBefore(endTime) ) {
                             if (searchParams.isRandomVector()) {
-                                randomBaseVectors = (List<BaseVector>) searchBaseVectors.get(random.nextInt(10*searchParams.getNumConcurrency()));
+                                randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors,searchParams.getNq());
                             }
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = milvusClientV2.search(SearchReq.builder()

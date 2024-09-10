@@ -2,6 +2,7 @@ package custom.common;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import custom.BaseTest;
 import custom.entity.FieldParams;
 import custom.entity.IndexParams;
 import custom.entity.PKFieldInfo;
@@ -19,8 +20,11 @@ import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
+import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.data.*;
+import io.milvus.v2.service.vector.response.QueryResp;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.util.Lists;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -28,6 +32,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
+
 @Slf4j
 public class CommonFunction {
 
@@ -175,36 +180,36 @@ public class CommonFunction {
                 indexParamList.add(indexParam);
             }
         }
-        log.info("create index :"+ indexParamList);
+        log.info("create index :" + indexParamList);
         milvusClientV2.createIndex(CreateIndexReq.builder()
                 .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(0) : collectionName)
                 .indexParams(indexParamList)
                 .build());
         // 查询索引是否建完
-        List<Boolean> indexStateList=new ArrayList<>();
+        List<Boolean> indexStateList = new ArrayList<>();
         for (IndexParam indexParam : indexParamList) {
             indexStateList.add(false);
         }
         long startTimeTotal = System.currentTimeMillis();
-        while(!(indexStateList.size()==indexStateList.stream().filter(x-> x).count())){
+        while (!(indexStateList.size() == indexStateList.stream().filter(x -> x).count())) {
             for (int i = 0; i < indexParamList.size(); i++) {
                 DescribeIndexResp describeIndexResp = milvusClientV2.describeIndex(DescribeIndexReq.builder()
                         .fieldName(indexParamList.get(i).getFieldName())
                         .collectionName(collectionName)
                         .build());
-                if(describeIndexResp.getIndexDescByFieldName(indexParamList.get(i).getFieldName()).getIndexState()==IndexBuildState.Finished){
-                    indexStateList.set(i,true);
+                if (describeIndexResp.getIndexDescByFieldName(indexParamList.get(i).getFieldName()).getIndexState() == IndexBuildState.Finished) {
+                    indexStateList.set(i, true);
                 }
             }
             try {
                 Thread.sleep(1000L);
             } catch (InterruptedException e) {
-                log.error("get index state:"+e.getMessage());
+                log.error("get index state:" + e.getMessage());
             }
         }
         long endTimeTotal = System.currentTimeMillis();
         float indexCost = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
-        log.info("create index "+indexParamList+" ,total cost: "+indexCost +" seconds" );
+        log.info("create index " + indexParamList + " ,total cost: " + indexCost + " seconds");
     }
 
     /**
@@ -573,6 +578,7 @@ public class CommonFunction {
 
     /**
      * 获取collection的向量信息
+     *
      * @param collectionName collection
      * @return VectorInfo
      */
@@ -598,11 +604,12 @@ public class CommonFunction {
 
     /**
      * 获取collection的主键PK信息
+     *
      * @param collectionName collectionName
      * @return PKFieldInfo
      */
-    public static PKFieldInfo getPKFieldInfo(String collectionName){
-        PKFieldInfo pkFieldInfo=new PKFieldInfo();
+    public static PKFieldInfo getPKFieldInfo(String collectionName) {
+        PKFieldInfo pkFieldInfo = new PKFieldInfo();
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
@@ -610,7 +617,7 @@ public class CommonFunction {
             String name = fieldSchema.getName();
             DataType dataType = fieldSchema.getDataType();
             Boolean isPrimaryKey = fieldSchema.getIsPrimaryKey();
-            if (isPrimaryKey){
+            if (isPrimaryKey) {
                 pkFieldInfo.setFieldName(name);
                 pkFieldInfo.setDataType(dataType);
             }
@@ -618,4 +625,49 @@ public class CommonFunction {
         return pkFieldInfo;
     }
 
+    /**
+     * 为search提供真实的vector
+     *
+     * @param collection collection
+     * @param randomNum  从collection捞取的向量数
+     * @return
+     */
+    public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum) {
+        VectorInfo collectionVectorInfo = getCollectionVectorInfo(collection);
+        DataType vectorDataType = collectionVectorInfo.getDataType();
+        // 获取主键信息
+        PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
+        List<BaseVector> baseVectorDataset = new ArrayList<>();
+        QueryResp query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
+                .filter(pkFieldInfo.getFieldName() + " > 0 ")
+                .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
+                .limit(randomNum).build());
+        for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
+            Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
+            if (vectorDataType == DataType.FloatVector) {
+                List<Float> floatList = new ArrayList<>();
+                if (o instanceof Float[]) {
+                    Float[] floatArray = (Float[]) o;
+                    for (Float f : floatArray) {
+                        floatList.add(f);
+                    }
+                }
+                baseVectorDataset.add(new FloatVec(floatList));
+            }
+
+
+        }
+        return baseVectorDataset;
+    }
+
+    public static List<BaseVector> providerSearchVectorByNq(List<BaseVector> baseVectorDataset, int nq) {
+        Random random = new Random();
+        int randomNum = baseVectorDataset.size();
+        List<BaseVector> baseVectors = new ArrayList<>();
+        for (int i = 0; i < nq; i++) {
+            BaseVector baseVector = baseVectors.get(random.nextInt(randomNum - 1));
+            baseVectors.add(baseVector);
+        }
+        return baseVectors;
+    }
 }
