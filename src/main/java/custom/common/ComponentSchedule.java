@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -63,7 +62,7 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");
-                SearchCompTest.searchCollection((SearchParams) operators.get(i));
+                SearchComp.searchCollection((SearchParams) operators.get(i));
             }
             if (operators.get(i) instanceof ReleaseParams) {
                 log.info("*********** < release collection > ***********");

@@ -1,19 +1,14 @@
 package custom.components;
 
 import custom.common.CommonFunction;
-import custom.entity.PKFieldInfo;
 import custom.entity.SearchParams;
-import custom.entity.VectorInfo;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
-import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
-import io.milvus.v2.service.vector.response.QueryResp;
 import io.milvus.v2.service.vector.response.SearchResp;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hadoop.util.Lists;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -27,18 +22,18 @@ public class SearchCompTest {
         // 先search collection
         String collection = (searchParams.getCollectionName() == null ||
                 searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : searchParams.getCollectionName();
-        VectorInfo collectionVectorInfo = CommonFunction.getCollectionVectorInfo(collection);
-        List<BaseVector> baseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
-        // 随机向量，从数据库里筛选
-        log.info("从collection里捞取向量: " + searchParams.getNumConcurrency() * 10);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, searchParams.getNumConcurrency() * 10);
-        log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
 
+        // 随机向量，从数据库里筛选
+        log.info("从collection里捞取向量: " + 1000);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000);
+        log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+        // 如果不随机，则随机一个
+        List<BaseVector> baseVectors= CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
 
-        float searchTotalTime = 0;
+        float searchTotalTime;
         long startTimeTotal = System.currentTimeMillis();
         Map<String, Object> searchLevel = new HashMap<>();
         searchLevel.put("level", searchParams.getSearchLevel());
