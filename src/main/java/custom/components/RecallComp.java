@@ -32,6 +32,8 @@ public class RecallComp {
         List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 10000);
         log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         List<Object> searchResult=new ArrayList<>();
+        Map<String, Object> searchLevel = new HashMap<>();
+        searchLevel.put("level", recallParams.getSearchLevel());
         for (int i = 0; i < recallBaseIdList.size(); i++) {
             SearchResp search = milvusClientV2.search(SearchReq.builder()
                     .collectionName(collection)
@@ -39,6 +41,7 @@ public class RecallComp {
                     .consistencyLevel(ConsistencyLevel.BOUNDED)
                     .collectionName(collection)
                     .data(Lists.newArrayList(searchBaseVectors.get(i)))
+                    .searchParams(searchLevel)
                     .build());
             searchResult.add(search.getSearchResults().get(0).get(0).getId());
         }
