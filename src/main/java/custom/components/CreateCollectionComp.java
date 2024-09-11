@@ -28,7 +28,7 @@ public class CreateCollectionComp {
                 .properties(map)
                 .collectionName(collection)
                 .build());
-        log.info("alter collection [" + collection + "] scalar mmap opened!");
+        log.info("alter collection [" + collection + "] scalar mmap: "+createCollectionParams.isEnableMmap());
     }
 
 }
