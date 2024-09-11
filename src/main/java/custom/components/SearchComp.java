@@ -37,7 +37,7 @@ public class SearchComp {
         Map<String,Object> searchLevel=new HashMap<>();
         searchLevel.put("level",searchParams.getSearchLevel());
         if (searchParams.getIndexAlgo()!=null&&!searchParams.getIndexAlgo().equalsIgnoreCase("")){
-            searchLevel.put("index_algo",searchParams.getSearchLevel());
+            searchLevel.put("index_algo",searchParams.getIndexAlgo());
         }
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
