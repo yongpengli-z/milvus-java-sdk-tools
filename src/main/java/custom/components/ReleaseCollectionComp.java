@@ -30,5 +30,11 @@ public class ReleaseCollectionComp {
                     .collectionName(collectionName).build());
             log.info("Release collection ["+ collectionName+"]");
         }
+        try {
+            log.info("sleep 30s...");
+            Thread.sleep(1000*30);
+        } catch (InterruptedException e) {
+            log.error("release collection:"+e.getMessage());
+        }
     }
 }
