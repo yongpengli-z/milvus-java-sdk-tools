@@ -15,5 +15,6 @@ public class SearchParams {
     private int numConcurrency;
     private long runningMinutes;
     private int searchLevel;
+    private String indexAlgo;
 
 }
