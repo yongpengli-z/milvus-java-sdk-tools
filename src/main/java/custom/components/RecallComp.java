@@ -46,7 +46,6 @@ public class RecallComp {
             searchResult.add(search.getSearchResults().get(0).get(0).getId());
         }
         int matchResult=0;
-        PKFieldInfo pkFieldInfo = CommonFunction.getPKFieldInfo(collection);
         for (int i = 0; i < searchResult.size(); i++) {
                if(recallBaseIdList.get(i).toString().equals(searchResult.get(i).toString())){
                    matchResult++;
@@ -56,6 +55,6 @@ public class RecallComp {
         log.info("SearchResult:"+searchResult);
         double result = (double) matchResult / searchResult.size();
         String formattedResult = String.format("%.4f", result);
-        log.info("recall:"+formattedResult);
+        log.info("search level ["+recallParams.getSearchLevel()+"], recall:"+formattedResult);
     }
 }
