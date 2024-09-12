@@ -2,7 +2,6 @@ package custom.common;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import custom.BaseTest;
 import custom.entity.FieldParams;
 import custom.entity.IndexParams;
 import custom.entity.PKFieldInfo;
@@ -29,7 +28,6 @@ import org.apache.hadoop.util.Lists;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -299,17 +297,18 @@ public class CommonFunction {
                 Integer dimension = fieldSchema.getDimension();
                 Integer maxCapacity = fieldSchema.getMaxCapacity();
                 Integer maxLength = fieldSchema.getMaxLength();
+                DataType elementType = fieldSchema.getElementType();
                 JsonObject jsonObject;
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null);
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i,null);
                 } else if (dataType == DataType.Array) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i,elementType);
                 } else {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i,null);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
@@ -327,7 +326,7 @@ public class CommonFunction {
      * @param countIndex  索引i，避免多次创建时数据内容一样
      * @return JsonObject
      */
-    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex) {
+    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType) {
         JsonObject row = new JsonObject();
         Gson gson = new Gson();
         Random random = new Random();
@@ -347,12 +346,8 @@ public class CommonFunction {
             row.addProperty(fieldName, (double) countIndex * 0.1f);
         }
         if (dataType == DataType.Array) {
-            int i = random.nextInt(dimOrLength);
-            List<Long> arrays = new ArrayList<>();
-            for (int j = 0; j < i; j++) {
-                arrays.add(countIndex + j);
-            }
-            row.add(fieldName, gson.toJsonTree(arrays));
+            List<Object> list = MathUtil.providerArrayData(elementType, dimOrLength, 20);
+            row.add(fieldName, gson.toJsonTree(list));
         }
         if (dataType == DataType.Bool) {
             row.addProperty(fieldName, countIndex % 2 == 0);
@@ -529,33 +524,23 @@ public class CommonFunction {
 
         if (vectorType.equals(DataType.FloatVector)) {
             List<List<Float>> lists = GenerateUtil.generateFloatVector(nq, 3, dim);
-            lists.forEach((v) -> {
-                data.add(new FloatVec(v));
-            });
+            lists.forEach((v) -> data.add(new FloatVec(v)));
         }
         if (vectorType.equals(DataType.BinaryVector)) {
             List<ByteBuffer> byteBuffers = generateBinaryVectors(dim, nq);
-            byteBuffers.forEach(x -> {
-                data.add(new BinaryVec(x));
-            });
+            byteBuffers.forEach(x -> data.add(new BinaryVec(x)));
         }
         if (vectorType.equals(DataType.Float16Vector)) {
             List<ByteBuffer> byteBuffers = generateFloat16Vectors(dim, nq);
-            byteBuffers.forEach(x -> {
-                data.add(new Float16Vec(x));
-            });
+            byteBuffers.forEach(x -> data.add(new Float16Vec(x)));
         }
         if (vectorType.equals(DataType.BFloat16Vector)) {
             List<ByteBuffer> byteBuffers = generateBF16Vectors(dim, nq);
-            byteBuffers.forEach(x -> {
-                data.add(new BFloat16Vec(x));
-            });
+            byteBuffers.forEach(x -> data.add(new BFloat16Vec(x)));
         }
         if (vectorType.equals(DataType.SparseFloatVector)) {
             List<SortedMap<Long, Float>> list = generateSparseVectors(dim, nq);
-            list.forEach(x -> {
-                data.add(new SparseFloatVec(x));
-            });
+            list.forEach(x -> data.add(new SparseFloatVec(x)));
         }
         return data;
 
@@ -630,7 +615,7 @@ public class CommonFunction {
      *
      * @param collection collection
      * @param randomNum  从collection捞取的向量数
-     * @return
+     * @return List<BaseVector>
      */
     public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum) {
         VectorInfo collectionVectorInfo = getCollectionVectorInfo(collection);
