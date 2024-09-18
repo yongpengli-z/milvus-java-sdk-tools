@@ -24,26 +24,14 @@ public class BaseTest {
   public static List<Object> recallBaseIdList=new ArrayList<>();
 
   public static void main(String[] args) {
-    String uri =
-        System.getProperty("uri") == null
-            ? ""
-            : System.getProperty("uri");
-    String token =
-        System.getProperty("token") == null || System.getProperty("token").equals("")
-            ? ""
-            : System.getProperty("token");
-    String initialParams =
-            System.getProperty("initial_params") == null
-                    || System.getProperty("initial_params").equals("")
-                    ? ""
-                    : System.getProperty("initial_params");
-
-    String customizeParams =
-        System.getProperty("customize_params") == null
-                || System.getProperty("customize_params").equals("")
-            ? ""
-            : System.getProperty("customize_params");
-
+    String uri = "https://in01-d1b7fd43805d33d.aws-us-west-2.vectordb-uat3.zillizcloud.com:19531";
+    String token = "6aff239bed5702130e09ad03a3379a71034a3e7b4160de384dce58c501e5bf98e49816c670b4b6335f51276c294976ce6ba25fa4";
+    String initialParams = "{\"cleanCollection\":true}";
+    String customizeParams =  "{\"CreateCollectionParams_0\":{\"shardNum\":1,\"enableDynamic\":false,\"enableMmap\":false,\"fieldParamsList\":[{\"dataType\":\"Int64\",\"primaryKey\":true},{\"dataType\":\"FloatVector\",\"dim\":768,\"primaryKey\":false}],\"numPartitions\":0,\"collectionName\":\"\"},\"LoadParams_3\":{\"loadAll\":true},\"CreateIndexParams_2\":{\"collectionName\":\"\",\"indexParams\":[]},\"InsertParams_4\":{\"batchSize\":1000,\"collectionName\":\"\",\"numConcurrency\":1,\"numEntries\":1000000},\"SearchParams_5\":{\"collectionName\":\"\",\"filter\":\"\",\"nq\":5,\"numConcurrency\":50,\"outputs\":[],\"randomVector\":true,\"runningMinutes\":10,\"topK\":10,\"searchLevel\":1}}";
+    System.out.println(uri);
+    System.out.println(token);
+    System.out.println(initialParams);
+    System.out.println(customizeParams);
 
     if (token.equals("")) {
       token = MilvusConnect.provideToken(uri);

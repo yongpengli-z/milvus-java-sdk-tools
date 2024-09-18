@@ -4,38 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3e78e400-1f91-4ac0-9bca-1b37d2e2daf6" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/BaseTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/common/CommonData.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/common/CommonFunction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/common/ComponentSchedule.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/components/CreateCollectionComp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/components/CreateIndexComp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/components/InitialComp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/components/InsertComp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/components/LoadCollectionComp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/components/MilvusConnect.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/components/SearchComp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateCollectionParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateIndexParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/FieldParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/IndexParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/InitialParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/InsertParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/LoadParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/SearchParams.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/entity/VectorInfo.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/utils/GenerateUtil.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/utils/HttpClientUtils.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/utils/JsonObjectUtil.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/custom/utils/MathUtil.java" afterDir="false" />
+    <list default="true" id="3e78e400-1f91-4ac0-9bca-1b37d2e2daf6" name="Changes" comment="add array data">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/BaseTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/BaseTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,17 +33,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "last_opened_file_path": "/Users/yongpengli/Documents/GitHub/milvus-java-sdk-toos/src/main/java",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/yongpengli/Documents/GitHub/milvus-java-sdk-toos/src/main/java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/main/java" />
