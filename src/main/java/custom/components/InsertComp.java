@@ -78,6 +78,8 @@ public class InsertComp {
             list.add(future);
 
         }
+        long endTimeTotal = System.currentTimeMillis();
+        insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         long requestNum = 0;
         for (Future<List<Integer>> future : list) {
             try {
@@ -87,15 +89,11 @@ public class InsertComp {
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
-            long endTimeTotal = System.currentTimeMillis();
-            insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
-
-
-            log.info(
-                    "Total cost of inserting " + insertParams.getNumEntries() + " entities: " + insertTotalTime + " seconds!");
-            log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / insertTotalTime);
-            executorService.shutdown();
         }
+        executorService.shutdown();
+        log.info(
+                "Total cost of inserting " + insertParams.getNumEntries() + " entities: " + insertTotalTime + " seconds!");
+        log.info("Total insert " + requestNum + " 次数,RPS avg :" + insertTotalTime/requestNum+" s/次");
     }
 
 }
