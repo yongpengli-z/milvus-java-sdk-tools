@@ -25,25 +25,25 @@ public class CreateCollectionComp {
                     createCollectionParams.isEnableDynamic(), createCollectionParams.getShardNum(), createCollectionParams.getNumPartitions(),
                     createCollectionParams.getFieldParamsList());
             log.info("create collection [" + collection + "] success!");
-            commonResult= CommonResult.builder()
+            commonResult = CommonResult.builder()
                     .result(ResultEnum.SUCCESS.result)
                     .build();
+            // collection级别mmap开关处理
+            Map<String, String> map = new HashMap<String, String>() {{
+                put(Constant.MMAP_ENABLED, String.valueOf(createCollectionParams.isEnableMmap()));
+            }};
+            milvusClientV2.alterCollection(AlterCollectionReq.builder()
+                    .properties(map)
+                    .collectionName(collection)
+                    .build());
+            log.info("alter collection [" + collection + "] scalar mmap: " + createCollectionParams.isEnableMmap());
         } catch (Exception e) {
-            commonResult= CommonResult.builder()
+            commonResult = CommonResult.builder()
                     .result(ResultEnum.EXCEPTION.result)
                     .message(e.getMessage())
                     .build();
         }
         globalCollectionNames.add(collection);
-
-        Map<String, String> map = new HashMap<String,String>() {{
-            put(Constant.MMAP_ENABLED, String.valueOf(createCollectionParams.isEnableMmap()));
-        }};
-        milvusClientV2.alterCollection(AlterCollectionReq.builder()
-                .properties(map)
-                .collectionName(collection)
-                .build());
-        log.info("alter collection [" + collection + "] scalar mmap: " + createCollectionParams.isEnableMmap());
         return CreateCollectionResult.builder()
                 .commonResult(commonResult)
                 .collectionName(collection).build();
