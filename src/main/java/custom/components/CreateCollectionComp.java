@@ -36,7 +36,7 @@ public class CreateCollectionComp {
         }
         globalCollectionNames.add(collection);
 
-        Map<String, String> map = new HashMap<>() {{
+        Map<String, String> map = new HashMap<String,String>() {{
             put(Constant.MMAP_ENABLED, String.valueOf(createCollectionParams.isEnableMmap()));
         }};
         milvusClientV2.alterCollection(AlterCollectionReq.builder()
