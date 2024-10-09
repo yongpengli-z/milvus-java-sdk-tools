@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import custom.components.*;
 import custom.entity.*;
 import custom.entity.result.CreateCollectionResult;
+import custom.entity.result.CreateIndexResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -53,7 +54,8 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof CreateIndexParams) {
                 log.info("*********** < create index > ***********");
-                CreateIndexComp.CreateIndex((CreateIndexParams) operators.get(i));
+                CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) operators.get(i));
+                jsonObject.put("CreateIndex_" + i, createIndexResult);
             }
             if (operators.get(i) instanceof LoadParams) {
                 log.info("*********** < load collection > ***********");
