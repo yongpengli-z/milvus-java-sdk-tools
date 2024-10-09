@@ -42,7 +42,7 @@ public class CommonFunction {
      * @param fieldParamsList 其他字段
      * @return collection name
      */
-    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList) {
+    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList) throws Exception{
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
