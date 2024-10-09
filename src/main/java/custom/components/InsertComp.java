@@ -78,22 +78,23 @@ public class InsertComp {
             list.add(future);
 
         }
-        long endTimeTotal = System.currentTimeMillis();
-        insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
+
         long requestNum = 0;
         for (Future<List<Integer>> future : list) {
             try {
                 long count = future.get().stream().filter(x -> x != 0).count();
                 log.info("线程返回结果：" + future.get());
                 requestNum += count;
+                long endTimeTotal = System.currentTimeMillis();
+                insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
+            log.info(
+                    "Total cost of inserting " + insertParams.getNumEntries() + " entities: " + insertTotalTime + " seconds!");
+            log.info("Total insert " + requestNum + " 次数,RPS avg :" + insertTotalTime/requestNum+" seconds!");
         }
         executorService.shutdown();
-        log.info(
-                "Total cost of inserting " + insertParams.getNumEntries() + " entities: " + insertTotalTime + " seconds!");
-        log.info("Total insert " + requestNum + " 次数,RPS avg :" + insertTotalTime/requestNum+" s/次");
     }
 
 }
