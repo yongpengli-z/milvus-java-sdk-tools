@@ -3,6 +3,7 @@ package custom.common;
 import com.alibaba.fastjson.JSONObject;
 import custom.components.*;
 import custom.entity.*;
+import custom.entity.result.CreateCollectionResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -40,13 +41,15 @@ public class ComponentSchedule {
                 throw new RuntimeException(e);
             }
         }
-
+        // 收集结果
+        JSONObject jsonObject = new JSONObject();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
 
             if (operators.get(i) instanceof CreateCollectionParams) {
                 log.info("*********** < create collection > ***********");
-                CreateCollectionComp.createCollection((CreateCollectionParams) operators.get(i));
+                CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) operators.get(i));
+                jsonObject.put("CreateCollection_" + i, createCollectionResult);
             }
             if (operators.get(i) instanceof CreateIndexParams) {
                 log.info("*********** < create index > ***********");
@@ -73,7 +76,8 @@ public class ComponentSchedule {
                 RecallComp.calcRecall((RecallParams) operators.get(i));
             }
         }
-
+        log.info("[结果汇总]： " +
+                "\n" + jsonObject.toJSONString());
 
     }
 }
