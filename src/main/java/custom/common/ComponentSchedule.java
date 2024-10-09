@@ -5,6 +5,7 @@ import custom.components.*;
 import custom.entity.*;
 import custom.entity.result.CreateCollectionResult;
 import custom.entity.result.CreateIndexResult;
+import custom.entity.result.LoadResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -59,7 +60,8 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof LoadParams) {
                 log.info("*********** < load collection > ***********");
-                LoadCollectionComp.loadCollection((LoadParams) operators.get(i));
+                LoadResult loadResult=LoadCollectionComp.loadCollection((LoadParams) operators.get(i));
+                jsonObject.put("LoadCollection_" + i, loadResult);
             }
             if (operators.get(i) instanceof InsertParams) {
                 log.info("*********** < insert data > ***********");
