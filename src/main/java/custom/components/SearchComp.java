@@ -97,8 +97,10 @@ public class SearchComp {
                 costTimeTotal.addAll(searchResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
-                commonResult = CommonResult.builder().message("search 统计异常:" + e.getMessage())
-                        .result(ResultEnum.SUCCESS.result).build();
+                commonResult = CommonResult.builder()
+                        .message("search 统计异常:" + e.getMessage())
+                        .result(ResultEnum.EXCEPTION.result)
+                        .build();
                 searchResultA = SearchResultA.builder().commonResult(commonResult).build();
                 return searchResultA;
             }

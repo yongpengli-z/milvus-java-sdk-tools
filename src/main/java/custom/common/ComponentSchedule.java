@@ -3,10 +3,7 @@ package custom.common;
 import com.alibaba.fastjson.JSONObject;
 import custom.components.*;
 import custom.entity.*;
-import custom.entity.result.CreateCollectionResult;
-import custom.entity.result.CreateIndexResult;
-import custom.entity.result.LoadResult;
-import custom.entity.result.SearchResultA;
+import custom.entity.result.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -72,7 +69,10 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof InsertParams) {
                 log.info("*********** < insert data > ***********");
-                InsertComp.insertCollection((InsertParams) operators.get(i));
+                InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(i));
+                JSONObject jsonObject=new JSONObject();
+                jsonObject.put("Insert" + i, insertResult);
+                results.add(jsonObject);
             }
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");

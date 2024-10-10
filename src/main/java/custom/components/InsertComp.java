@@ -3,6 +3,9 @@ package custom.components;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
 import custom.entity.InsertParams;
+import custom.entity.result.CommonResult;
+import custom.entity.result.InsertResult;
+import custom.entity.result.ResultEnum;
 import io.milvus.grpc.GetPersistentSegmentInfoResponse;
 import io.milvus.grpc.MutationResult;
 import io.milvus.grpc.SegmentState;
@@ -22,7 +25,7 @@ import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class InsertComp {
-    public static void insertCollection(InsertParams insertParams) {
+    public static InsertResult insertCollection(InsertParams insertParams) {
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
         float insertTotalTime = 0;
@@ -55,7 +58,7 @@ public class InsertComp {
                                         .collectionName(collectionName)
                                         .build());
                             } catch (Exception e) {
-                                log.error("insert error,reason:"+e.getMessage());
+                                log.error("insert error,reason:" + e.getMessage());
                                 return results;
                             }
                             results.add((int) insert.getInsertCnt());
@@ -66,7 +69,7 @@ public class InsertComp {
                                             + "]插入第"
                                             + r
                                             + "批次数据, 成功导入 "
-                                            +  insert.getInsertCnt()
+                                            + insert.getInsertCnt()
                                             + " 条， cost:"
                                             + (endTime - startTime) / 1000.00
                                             + " seconds ");
@@ -80,6 +83,8 @@ public class InsertComp {
         }
 
         long requestNum = 0;
+        CommonResult commonResult;
+        InsertResult insertResult = null;
         for (Future<List<Integer>> future : list) {
             try {
                 long count = future.get().stream().filter(x -> x != 0).count();
@@ -88,13 +93,27 @@ public class InsertComp {
                 long endTimeTotal = System.currentTimeMillis();
                 insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
             } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
+                insertResult = InsertResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message(e.getMessage()).build())
+                        .build();
+                return insertResult;
             }
             log.info(
                     "Total cost of inserting " + insertParams.getNumEntries() + " entities: " + insertTotalTime + " seconds!");
-            log.info("Total insert " + requestNum + " 次数,RPS avg :" + insertTotalTime/requestNum+" seconds!");
+            log.info("Total insert " + requestNum + " 次数,RPS avg :" + insertTotalTime / requestNum + " ");
+            commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+            insertResult = InsertResult.builder()
+                    .commonResult(commonResult)
+                    .rps(insertTotalTime / requestNum)
+                    .numEntries(insertParams.getNumEntries())
+                    .requestNum(requestNum)
+                    .costTime(insertTotalTime)
+                    .build();
         }
         executorService.shutdown();
+        return insertResult;
     }
 
 }
