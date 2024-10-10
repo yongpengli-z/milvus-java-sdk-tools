@@ -23,24 +23,44 @@ public class ReleaseCollectionComp {
             List<String> collectionNames = listCollectionsResp.getCollectionNames();
             log.info("Release all collections: " + collectionNames);
             for (String collectionName : collectionNames) {
-                milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()
-                        .collectionName(collectionName).build());
                 log.info("Release collection [" + collectionName + "]");
-                releaseResultList.add(ReleaseResult.ReleaseResultItem.builder()
-                        .collectionName(collectionName)
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.SUCCESS.result).build()).build());
+                try {
+                    milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()
+                            .collectionName(collectionName).build());
+                    releaseResultList.add(ReleaseResult.ReleaseResultItem.builder()
+                            .collectionName(collectionName)
+                            .commonResult(CommonResult.builder()
+                                    .result(ResultEnum.SUCCESS.result).build()).build());
+                } catch (Exception e) {
+                    releaseResultList.add(ReleaseResult.ReleaseResultItem.builder()
+                            .collectionName(collectionName)
+                            .commonResult(CommonResult.builder()
+                                    .result(ResultEnum.EXCEPTION.result)
+                                    .message(e.getMessage()).build())
+                            .build());
+                }
+
+
             }
         } else {
             String collectionName = (releaseParams.getCollectionName() == null || releaseParams.getCollectionName().equalsIgnoreCase("")) ?
                     globalCollectionNames.get(0) : releaseParams.getCollectionName();
-            milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()
-                    .collectionName(collectionName).build());
             log.info("Release collection [" + collectionName + "]");
-            releaseResultList.add(ReleaseResult.ReleaseResultItem.builder()
-                    .collectionName(collectionName)
-                    .commonResult(CommonResult.builder()
-                            .result(ResultEnum.SUCCESS.result).build()).build());
+            try {
+                milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()
+                        .collectionName(collectionName).build());
+                releaseResultList.add(ReleaseResult.ReleaseResultItem.builder()
+                        .collectionName(collectionName)
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.SUCCESS.result).build()).build());
+            } catch (Exception e) {
+                releaseResultList.add(ReleaseResult.ReleaseResultItem.builder()
+                        .collectionName(collectionName)
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message(e.getMessage()).build())
+                        .build());
+            }
         }
         try {
             log.info("sleep 30s...");

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 
+import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
@@ -42,19 +43,21 @@ public class DropCollectionComp {
                 }
             }
         } else {
+            String collectionName = (dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase("")) ?
+                    globalCollectionNames.get(0) : dropCollectionParams.getCollectionName();
             try {
                 log.info("Drop collection: " + dropCollectionParams.getCollectionName());
                 milvusClientV2.dropCollection(DropCollectionReq.builder()
-                        .collectionName(dropCollectionParams.getCollectionName()).build());
+                        .collectionName(collectionName).build());
                 dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
-                        .collectionName(dropCollectionParams.getCollectionName())
+                        .collectionName(collectionName)
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.SUCCESS.result)
                                 .build())
                         .build());
             } catch (Exception e) {
                 dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
-                        .collectionName(dropCollectionParams.getCollectionName())
+                        .collectionName(collectionName)
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.EXCEPTION.result)
                                 .message(e.getMessage())
