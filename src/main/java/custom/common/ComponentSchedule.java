@@ -6,6 +6,7 @@ import custom.entity.*;
 import custom.entity.result.CreateCollectionResult;
 import custom.entity.result.CreateIndexResult;
 import custom.entity.result.LoadResult;
+import custom.entity.result.SearchResultA;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -44,24 +45,30 @@ public class ComponentSchedule {
             }
         }
         // 收集结果
-        JSONObject jsonObject = new JSONObject();
+        List<JSONObject> results=new ArrayList<>();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
 
             if (operators.get(i) instanceof CreateCollectionParams) {
                 log.info("*********** < create collection > ***********");
                 CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) operators.get(i));
+                JSONObject jsonObject=new JSONObject();
                 jsonObject.put("CreateCollection_" + i, createCollectionResult);
+                results.add(jsonObject);
             }
             if (operators.get(i) instanceof CreateIndexParams) {
                 log.info("*********** < create index > ***********");
                 CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) operators.get(i));
+                JSONObject jsonObject=new JSONObject();
                 jsonObject.put("CreateIndex_" + i, createIndexResult);
+                results.add(jsonObject);
             }
             if (operators.get(i) instanceof LoadParams) {
                 log.info("*********** < load collection > ***********");
                 LoadResult loadResult=LoadCollectionComp.loadCollection((LoadParams) operators.get(i));
+                JSONObject jsonObject=new JSONObject();
                 jsonObject.put("LoadCollection_" + i, loadResult);
+                results.add(jsonObject);
             }
             if (operators.get(i) instanceof InsertParams) {
                 log.info("*********** < insert data > ***********");
@@ -69,7 +76,11 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");
-                SearchComp.searchCollection((SearchParams) operators.get(i));
+                SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) operators.get(i));
+                JSONObject jsonObject=new JSONObject();
+                jsonObject.put("Search" + i, searchResultA);
+                results.add(jsonObject);
+
             }
             if (operators.get(i) instanceof ReleaseParams) {
                 log.info("*********** < release collection > ***********");
@@ -81,7 +92,7 @@ public class ComponentSchedule {
             }
         }
         log.info("[结果汇总]： " +
-                "\n" + jsonObject.toJSONString());
+                "\n" + results);
 
     }
 }

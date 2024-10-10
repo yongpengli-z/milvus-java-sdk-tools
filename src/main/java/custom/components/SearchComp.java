@@ -2,6 +2,9 @@ package custom.components;
 
 import custom.common.CommonFunction;
 import custom.entity.SearchParams;
+import custom.entity.result.CommonResult;
+import custom.entity.result.ResultEnum;
+import custom.entity.result.SearchResultA;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.vector.request.SearchReq;
@@ -18,7 +21,7 @@ import static custom.BaseTest.*;
 
 @Slf4j
 public class SearchComp {
-    public static void searchCollection(SearchParams searchParams) {
+    public static SearchResultA searchCollection(SearchParams searchParams) {
         // 先search collection
         String collection = (searchParams.getCollectionName() == null ||
                 searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : searchParams.getCollectionName();
@@ -28,7 +31,7 @@ public class SearchComp {
         List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000);
         log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         // 如果不随机，则随机一个
-        List<BaseVector> baseVectors= CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
+        List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
@@ -37,8 +40,8 @@ public class SearchComp {
         long startTimeTotal = System.currentTimeMillis();
         Map<String, Object> searchLevel = new HashMap<>();
         searchLevel.put("level", searchParams.getSearchLevel());
-        if (searchParams.getIndexAlgo()!=null&&!searchParams.getIndexAlgo().equalsIgnoreCase("")){
-            searchLevel.put("index_algo",searchParams.getIndexAlgo());
+        if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
+            searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
@@ -83,6 +86,8 @@ public class SearchComp {
         }
         long requestNum = 0;
         long successNum = 0;
+        CommonResult commonResult;
+        SearchResultA searchResultA;
         List<Float> costTimeTotal = new ArrayList<>();
         for (Future<SearchResult> future : list) {
             try {
@@ -92,27 +97,40 @@ public class SearchComp {
                 costTimeTotal.addAll(searchResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
+                commonResult = CommonResult.builder().message("search 统计异常:" + e.getMessage())
+                        .result(ResultEnum.SUCCESS.result).build();
+                searchResultA = SearchResultA.builder().commonResult(commonResult).build();
+                return searchResultA;
             }
         }
         long endTimeTotal = System.currentTimeMillis();
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
-
-        try {
-            log.info(
-                    "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "%");
-            log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
-            log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
-            log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
-            log.info("TP98:" + MathUtil.calculateTP99(costTimeTotal, 0.98f));
-            log.info("TP90:" + MathUtil.calculateTP99(costTimeTotal, 0.90f));
-            log.info("TP85:" + MathUtil.calculateTP99(costTimeTotal, 0.85f));
-            log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
-            log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
-        } catch (Exception e) {
-            log.error("统计异常：" + e.getMessage());
-        }
+        log.info(
+                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "%");
+        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
+        log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
+        log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
+        log.info("TP98:" + MathUtil.calculateTP99(costTimeTotal, 0.98f));
+        log.info("TP90:" + MathUtil.calculateTP99(costTimeTotal, 0.90f));
+        log.info("TP85:" + MathUtil.calculateTP99(costTimeTotal, 0.85f));
+        log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
+        log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
+        commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        searchResultA = SearchResultA.builder()
+                .rps(requestNum / searchTotalTime)
+                .concurrencyNum(searchParams.getNumConcurrency())
+                .requestNum(requestNum)
+                .avg(MathUtil.calculateAverage(costTimeTotal))
+                .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
+                .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
+                .tp90(MathUtil.calculateTP99(costTimeTotal, 0.90f))
+                .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
+                .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
+                .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
+                .commonResult(commonResult)
+                .build();
         executorService.shutdown();
-
+        return searchResultA;
     }
 
     @Data
