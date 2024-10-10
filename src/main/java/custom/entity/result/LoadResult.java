@@ -8,7 +8,14 @@ import java.util.List;
 @Builder
 @Data
 public class LoadResult {
-    List<CommonResult> commonResults;
-    List<String> collectionNames;
-    List<Double> costTimes;
+    List<LoadResultItem> loadResultList;
+
+    @Builder
+    @Data
+    public static class LoadResultItem {
+        CommonResult commonResult;
+        String collectionName;
+        Double costTimes;
+    }
+
 }

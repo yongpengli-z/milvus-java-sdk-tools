@@ -71,20 +71,23 @@ public class ComponentSchedule {
                 log.info("*********** < insert data > ***********");
                 InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(i));
                 JSONObject jsonObject=new JSONObject();
-                jsonObject.put("Insert" + i, insertResult);
+                jsonObject.put("Insert_" + i, insertResult);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");
                 SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) operators.get(i));
                 JSONObject jsonObject=new JSONObject();
-                jsonObject.put("Search" + i, searchResultA);
+                jsonObject.put("Search_" + i, searchResultA);
                 results.add(jsonObject);
 
             }
             if (operators.get(i) instanceof ReleaseParams) {
                 log.info("*********** < release collection > ***********");
-                ReleaseCollectionComp.releaseCollection((ReleaseParams) operators.get(i));
+                ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) operators.get(i));
+                JSONObject jsonObject=new JSONObject();
+                jsonObject.put("ReleaseCollection_" + i, releaseResult);
+                results.add(jsonObject);
             }
             if (operators.get(i) instanceof RecallParams) {
                 log.info("*********** < recall > ***********");

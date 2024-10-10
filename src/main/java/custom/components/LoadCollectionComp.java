@@ -19,15 +19,13 @@ import static custom.BaseTest.milvusClientV2;
 @Slf4j
 public class LoadCollectionComp {
     public static LoadResult loadCollection(LoadParams loadParams) {
-        List<CommonResult> commonResultList = new ArrayList<>();
-        List<String> collectionNameList = new ArrayList<>();
-        List<Double> costTimes = new ArrayList<>();
+        List<LoadResult.LoadResultItem> loadResultList = new ArrayList<>();
+
         if (loadParams.isLoadAll()) {
             log.info("load all collection !");
             ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
             List<String> collectionNames = listCollectionsResp.getCollectionNames();
             for (String collectionName : collectionNames) {
-                collectionNameList.add(collectionName);
                 try {
                     log.info("Loading collection [" + collectionName + "]");
                     long startLoadTime = System.currentTimeMillis();
@@ -43,20 +41,26 @@ public class LoadCollectionComp {
                     } while (!loadState);
                     long endLoadTime = System.currentTimeMillis();
                     log.info("Load collection [" + collectionName + "] cost " + (endLoadTime - startLoadTime) / 1000.00 + " seconds");
-                    costTimes.add((endLoadTime - startLoadTime) / 1000.00);
-                    commonResultList.add(CommonResult.builder().result(ResultEnum.SUCCESS.result).build());
+                    loadResultList.add(LoadResult.LoadResultItem.builder()
+                            .collectionName(collectionName)
+                            .commonResult(CommonResult.builder()
+                                    .result(ResultEnum.SUCCESS.result).build())
+                            .costTimes((endLoadTime - startLoadTime) / 1000.00)
+                            .build());
                 } catch (Exception e) {
                     log.error("load [" + collectionName + "] failed! reason:" + e.getMessage());
-                    commonResultList.add(CommonResult.builder()
-                            .result(ResultEnum.EXCEPTION.result)
-                            .message(e.getMessage())
+                    loadResultList.add(LoadResult.LoadResultItem.builder()
+                            .collectionName(collectionName)
+                            .commonResult(CommonResult.builder()
+                                    .result(ResultEnum.EXCEPTION.result)
+                                    .message(e.getMessage()).build())
                             .build());
                 }
             }
         } else {
             String collectionName = (loadParams.getCollectionName() == null || loadParams.getCollectionName().equalsIgnoreCase("")) ?
                     globalCollectionNames.get(0) : loadParams.getCollectionName();
-            collectionNameList.add(collectionName);
+
             try {
                 log.info("Loading collection [" + collectionName + "]");
                 long startLoadTime = System.currentTimeMillis();
@@ -71,18 +75,22 @@ public class LoadCollectionComp {
                 } while (!loadState);
                 long endLoadTime = System.currentTimeMillis();
                 log.info("Load collection [" + collectionName + "] cost " + (endLoadTime - startLoadTime) / 1000.00 + " seconds");
-                costTimes.add((endLoadTime - startLoadTime) / 1000.00);
-                commonResultList.add(CommonResult.builder().result(ResultEnum.SUCCESS.result).build());
+                loadResultList.add(LoadResult.LoadResultItem.builder()
+                        .collectionName(collectionName)
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.SUCCESS.result).build())
+                        .costTimes((endLoadTime - startLoadTime) / 1000.00)
+                        .build());
             } catch (Exception e) {
                 log.error("load [" + collectionName + "] failed! reason:" + e.getMessage());
-                commonResultList.add(CommonResult.builder()
-                        .result(ResultEnum.EXCEPTION.result)
-                        .message(e.getMessage())
+                loadResultList.add(LoadResult.LoadResultItem.builder()
+                        .collectionName(collectionName)
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message(e.getMessage()).build())
                         .build());
             }
         }
-        return LoadResult.builder().commonResults(commonResultList)
-                .collectionNames(collectionNameList)
-                .costTimes(costTimes).build();
+        return LoadResult.builder().loadResultList(loadResultList).build();
     }
 }

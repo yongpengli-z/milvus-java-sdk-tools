@@ -47,11 +47,10 @@ public class InsertComp {
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
                              r++) {
-                            long startTime = System.currentTimeMillis();
-
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(), r * insertParams.getBatchSize());
                             log.info("线程[" + finalC + "]导入数据 " + insertParams.getBatchSize() + "条，范围: " + r * insertParams.getBatchSize() + "~" + ((r + 1) * insertParams.getBatchSize()));
                             InsertResp insert = null;
+                            long startTime = System.currentTimeMillis();
                             try {
                                 insert = milvusClientV2.insert(InsertReq.builder()
                                         .data(jsonObjects)
@@ -61,8 +60,8 @@ public class InsertComp {
                                 log.error("insert error,reason:" + e.getMessage());
                                 return results;
                             }
-                            results.add((int) insert.getInsertCnt());
                             long endTime = System.currentTimeMillis();
+                            results.add((int) insert.getInsertCnt());
                             log.info(
                                     "线程 ["
                                             + finalC
