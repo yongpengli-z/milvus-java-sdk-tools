@@ -1,5 +1,9 @@
 package custom.entity;
 
-public class DropCollectionParams {
+import lombok.Data;
 
+@Data
+public class DropCollectionParams {
+    private boolean dropAll;
+    private String collectionName;
 }

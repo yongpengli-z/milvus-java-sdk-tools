@@ -21,7 +21,7 @@ public class ReleaseCollectionComp {
         if (releaseParams.isReleaseAll()) {
             ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
             List<String> collectionNames = listCollectionsResp.getCollectionNames();
-            log.info("Release all collection: " + collectionNames);
+            log.info("Release all collections: " + collectionNames);
             for (String collectionName : collectionNames) {
                 milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()
                         .collectionName(collectionName).build());

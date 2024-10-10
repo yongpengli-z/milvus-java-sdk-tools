@@ -42,51 +42,57 @@ public class ComponentSchedule {
             }
         }
         // 收集结果
-        List<JSONObject> results=new ArrayList<>();
+        List<JSONObject> results = new ArrayList<>();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
 
             if (operators.get(i) instanceof CreateCollectionParams) {
                 log.info("*********** < create collection > ***********");
                 CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) operators.get(i));
-                JSONObject jsonObject=new JSONObject();
+                JSONObject jsonObject = new JSONObject();
                 jsonObject.put("CreateCollection_" + i, createCollectionResult);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof CreateIndexParams) {
                 log.info("*********** < create index > ***********");
                 CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) operators.get(i));
-                JSONObject jsonObject=new JSONObject();
+                JSONObject jsonObject = new JSONObject();
                 jsonObject.put("CreateIndex_" + i, createIndexResult);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof LoadParams) {
                 log.info("*********** < load collection > ***********");
-                LoadResult loadResult=LoadCollectionComp.loadCollection((LoadParams) operators.get(i));
-                JSONObject jsonObject=new JSONObject();
+                LoadResult loadResult = LoadCollectionComp.loadCollection((LoadParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
                 jsonObject.put("LoadCollection_" + i, loadResult);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof InsertParams) {
                 log.info("*********** < insert data > ***********");
                 InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(i));
-                JSONObject jsonObject=new JSONObject();
+                JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Insert_" + i, insertResult);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");
                 SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) operators.get(i));
-                JSONObject jsonObject=new JSONObject();
+                JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Search_" + i, searchResultA);
                 results.add(jsonObject);
-
             }
             if (operators.get(i) instanceof ReleaseParams) {
                 log.info("*********** < release collection > ***********");
                 ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) operators.get(i));
-                JSONObject jsonObject=new JSONObject();
+                JSONObject jsonObject = new JSONObject();
                 jsonObject.put("ReleaseCollection_" + i, releaseResult);
+                results.add(jsonObject);
+            }
+            if (operators.get(i) instanceof DropCollectionParams) {
+                log.info("*********** < drop collection > ***********");
+                DropCollectionResult dropCollectionResult = DropCollectionComp.dropCollection((DropCollectionParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("DropCollection_" + i, dropCollectionResult);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof RecallParams) {
