@@ -9,9 +9,9 @@ public class SearchResultA{
     CommonResult commonResult;
     int concurrencyNum;
     long requestNum;
-    double passRate;
-    double costTime;
-    double rps;
+    float passRate;
+    float costTime;
+    float rps;
     double avg;
     double tp99;
     double tp98;
