@@ -38,9 +38,9 @@ public class InsertComp {
             Callable callable =
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
-                        InsertResultItem insertResultItem=new InsertResultItem();
-                        List<Double> costTime=new ArrayList<>();
-                        List<Integer> insertCnt=new ArrayList<>();
+                        InsertResultItem insertResultItem = new InsertResultItem();
+                        List<Double> costTime = new ArrayList<>();
+                        List<Integer> insertCnt = new ArrayList<>();
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
                              r++) {
@@ -83,18 +83,18 @@ public class InsertComp {
         }
 
         long requestNum = 0;
-        double costTotal=0.0;
+        double costTotal = 0.0;
         CommonResult commonResult;
         InsertResult insertResult = null;
         for (Future<InsertResultItem> future : list) {
             try {
-                InsertResultItem insertResultItem=future.get();
+                InsertResultItem insertResultItem = future.get();
                 long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
                 double sum = insertResultItem.getCostTime().stream().mapToDouble(Double::doubleValue).sum();
                 log.info("线程返回结果[InsertCnt]: " + insertResultItem.getInsertCnt());
                 log.info("线程返回结果[CostTime]: " + insertResultItem.getCostTime());
                 requestNum += count;
-                costTotal+=sum;
+                costTotal += sum;
 
             } catch (InterruptedException | ExecutionException e) {
                 insertResult = InsertResult.builder()
