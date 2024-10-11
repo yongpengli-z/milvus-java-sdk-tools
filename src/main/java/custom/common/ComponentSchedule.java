@@ -76,7 +76,7 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof SearchParams) {
                 log.info("*********** < search collection > ***********");
-                SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) operators.get(i));
+                SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Search_" + i, searchResultA);
                 results.add(jsonObject);
