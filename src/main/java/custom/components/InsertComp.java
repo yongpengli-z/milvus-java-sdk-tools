@@ -27,7 +27,7 @@ public class InsertComp {
         log.info("Insert collection [" + insertParams.getCollectionName() + "] total " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
-        ArrayList<Future<List<Integer>>> list = new ArrayList<>();
+        ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
         // insert data with multiple threads
         String collectionName = (insertParams.getCollectionName() == null ||
                 insertParams.getCollectionName().equalsIgnoreCase(""))
@@ -38,7 +38,9 @@ public class InsertComp {
             Callable callable =
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
-                        List<Integer> results = new ArrayList<>();
+                        InsertResultItem insertResultItem=new InsertResultItem();
+                        List<Double> costTime=new ArrayList<>();
+                        List<Integer> insertCnt=new ArrayList<>();
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
                              r++) {
@@ -53,10 +55,13 @@ public class InsertComp {
                                         .build());
                             } catch (Exception e) {
                                 log.error("insert error,reason:" + e.getMessage());
-                                return results;
+                                insertResultItem.setInsertCnt(insertCnt);
+                                insertResultItem.setCostTime(costTime);
+                                return insertResultItem;
                             }
                             long endTime = System.currentTimeMillis();
-                            results.add((int) insert.getInsertCnt());
+                            costTime.add((endTime - startTime) / 1000.00);
+                            insertCnt.add((int) insert.getInsertCnt());
                             log.info(
                                     "线程 ["
                                             + finalC
@@ -68,24 +73,29 @@ public class InsertComp {
                                             + (endTime - startTime) / 1000.00
                                             + " seconds ");
                         }
-
-                        return results;
+                        insertResultItem.setInsertCnt(insertCnt);
+                        insertResultItem.setCostTime(costTime);
+                        return insertResultItem;
                     };
-            Future<List<Integer>> future = executorService.submit(callable);
+            Future<InsertResultItem> future = executorService.submit(callable);
             list.add(future);
 
         }
 
         long requestNum = 0;
+        double costTotal=0.0;
         CommonResult commonResult;
         InsertResult insertResult = null;
-        for (Future<List<Integer>> future : list) {
+        for (Future<InsertResultItem> future : list) {
             try {
-                long count = future.get().stream().filter(x -> x != 0).count();
-                log.info("线程返回结果：" + future.get());
+                InsertResultItem insertResultItem=future.get();
+                long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
+                double sum = insertResultItem.getCostTime().stream().mapToDouble(Double::doubleValue).sum();
+                log.info("线程返回结果[InsertCnt]: " + insertResultItem.getInsertCnt());
+                log.info("线程返回结果[CostTime]: " + insertResultItem.getCostTime());
                 requestNum += count;
-                long endTimeTotal = System.currentTimeMillis();
-                insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
+                costTotal+=sum;
+
             } catch (InterruptedException | ExecutionException e) {
                 insertResult = InsertResult.builder()
                         .commonResult(CommonResult.builder()
@@ -95,26 +105,28 @@ public class InsertComp {
                 return insertResult;
             }
         }
-            // 查询实际导入数据量
-            log.info(
-                    "Total cost of inserting " + requestNum*insertParams.getBatchSize()+ " entities: " + insertTotalTime + " seconds!");
-            log.info("Total insert " + requestNum + " 次数,RPS avg :" + insertTotalTime / requestNum + " ");
-            commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
-            insertResult = InsertResult.builder()
-                    .commonResult(commonResult)
-                    .rps(insertTotalTime / requestNum)
-                    .numEntries(requestNum*insertParams.getBatchSize())
-                    .requestNum(requestNum)
-                    .costTime(insertTotalTime)
-                    .build();
+        long endTimeTotal = System.currentTimeMillis();
+        insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
+        // 查询实际导入数据量
+        log.info(
+                "Total cost of inserting " + requestNum * insertParams.getBatchSize() + " entities: " + insertTotalTime + " seconds!");
+        log.info("Total insert " + requestNum + " 次数,RPS avg :" + costTotal / requestNum + " ");
+        commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        insertResult = InsertResult.builder()
+                .commonResult(commonResult)
+                .rps(costTotal / requestNum)
+                .numEntries(requestNum * insertParams.getBatchSize())
+                .requestNum(requestNum)
+                .costTime(insertTotalTime)
+                .build();
 
         executorService.shutdown();
         return insertResult;
     }
 
     @Data
-    public static class InsertResultItem{
-        private List<Float> costTime;
-        private List<Integer> resultNum;
+    public static class InsertResultItem {
+        private List<Double> costTime;
+        private List<Integer> insertCnt;
     }
 }
