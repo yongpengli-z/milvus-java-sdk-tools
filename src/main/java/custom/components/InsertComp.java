@@ -6,14 +6,9 @@ import custom.entity.InsertParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.InsertResult;
 import custom.entity.result.ResultEnum;
-import io.milvus.grpc.GetPersistentSegmentInfoResponse;
-import io.milvus.grpc.MutationResult;
-import io.milvus.grpc.SegmentState;
-import io.milvus.param.R;
-import io.milvus.param.control.GetPersistentSegmentInfoParam;
-import io.milvus.param.dml.InsertParam;
 import io.milvus.v2.service.vector.request.InsertReq;
 import io.milvus.v2.service.vector.response.InsertResp;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -99,20 +94,27 @@ public class InsertComp {
                         .build();
                 return insertResult;
             }
+        }
+            // 查询实际导入数据量
             log.info(
-                    "Total cost of inserting " + insertParams.getNumEntries() + " entities: " + insertTotalTime + " seconds!");
+                    "Total cost of inserting " + requestNum*insertParams.getBatchSize()+ " entities: " + insertTotalTime + " seconds!");
             log.info("Total insert " + requestNum + " 次数,RPS avg :" + insertTotalTime / requestNum + " ");
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
             insertResult = InsertResult.builder()
                     .commonResult(commonResult)
                     .rps(insertTotalTime / requestNum)
-                    .numEntries(insertParams.getNumEntries())
+                    .numEntries(requestNum*insertParams.getBatchSize())
                     .requestNum(requestNum)
                     .costTime(insertTotalTime)
                     .build();
-        }
+
         executorService.shutdown();
         return insertResult;
     }
 
+    @Data
+    public static class InsertResultItem{
+        private List<Float> costTime;
+        private List<Integer> resultNum;
+    }
 }
