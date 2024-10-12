@@ -74,7 +74,10 @@ public class SearchCompTest {
                                 costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
                                 returnNum.add(search.getSearchResults().size());
                             } catch (Exception e) {
-                                log.warn("线程[ "+ finalC + "] Search 异常"+e.getMessage());
+                                if(printLog >= logInterval){
+                                    log.warn("线程[ " + finalC + "] Search 异常" + e.getMessage());
+                                    printLog = 0;
+                                }
                             }
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
