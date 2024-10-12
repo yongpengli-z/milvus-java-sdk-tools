@@ -49,5 +49,6 @@ public class CommonData {
     public static String roleName="role02";
 
 
+    public static String rowDataPath="/mainctrfs/test/milvus/raw_data/";
 
 }

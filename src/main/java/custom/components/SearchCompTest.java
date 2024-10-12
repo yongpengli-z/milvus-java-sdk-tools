@@ -2,7 +2,6 @@ package custom.components;
 
 import custom.common.CommonFunction;
 import custom.entity.SearchParams;
-import custom.entity.VectorInfo;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.SearchResultA;
@@ -26,13 +25,13 @@ public class SearchCompTest {
         // 先search collection
         String collection = (searchParams.getCollectionName() == null ||
                 searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : searchParams.getCollectionName();
-        VectorInfo collectionVectorInfo = CommonFunction.getCollectionVectorInfo(collection);
+
         // 随机向量，从数据库里筛选--暂定1000条
-//        log.info("从collection里捞取向量: " + 1000);
-//        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000);
-//        log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+        log.info("从collection里捞取向量: " + 1000);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000);
+        log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         // 如果不随机，则随机一个
-//        List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
+        List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
@@ -48,7 +47,7 @@ public class SearchCompTest {
             int finalC = c;
             Callable<SearchResult> callable =
                     () -> {
-                        List<BaseVector> randomBaseVectors = null;
+                        List<BaseVector> randomBaseVectors = baseVectors;
                         log.info("线程[" + finalC + "]启动...");
                         SearchResult searchResult = new SearchResult();
                         List<Integer> returnNum = new ArrayList<>();
@@ -57,7 +56,7 @@ public class SearchCompTest {
                         int printLog = 1;
                         while (LocalDateTime.now().isBefore(endTime)) {
                             if (searchParams.isRandomVector()) {
-                                randomBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), collectionVectorInfo.getDim(), collectionVectorInfo.getDataType());
+                                randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
                             }
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
@@ -103,7 +102,7 @@ public class SearchCompTest {
                         .result(ResultEnum.EXCEPTION.result)
                         .build();
                 searchResultA = SearchResultA.builder().commonResult(commonResult).build();
-                return searchResultA;
+//                continue;
             }
         }
         long endTimeTotal = System.currentTimeMillis();
