@@ -54,6 +54,7 @@ public class SearchCompTest {
                         List<Float> costTime = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         int printLog = 1;
+                        long itemRequestNum=0;
                         while (LocalDateTime.now().isBefore(endTime)) {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
@@ -80,9 +81,11 @@ public class SearchCompTest {
                                 printLog = 0;
                             }
                             printLog++;
+                            itemRequestNum++;
                         }
                         searchResult.setResultNum(returnNum);
                         searchResult.setCostTime(costTime);
+                        searchResult.setItemRequestNum(itemRequestNum);
                         return searchResult;
                     };
             Future<SearchResult> future = executorService.submit(callable);
@@ -96,8 +99,8 @@ public class SearchCompTest {
         for (Future<SearchResult> future : list) {
             try {
                 SearchResult searchResult = future.get();
-                requestNum += searchResult.getResultNum().size();
-                successNum += searchResult.getResultNum().stream().filter(x -> x == searchParams.getTopK()).count();
+                successNum += searchResult.getResultNum().size();
+                requestNum+= searchResult.getItemRequestNum();
                 costTimeTotal.addAll(searchResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
@@ -112,8 +115,8 @@ public class SearchCompTest {
         long endTimeTotal = System.currentTimeMillis();
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         log.info(
-                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "%");
-        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
+                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.00 * successNum / requestNum) + "%");
+        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + successNum / searchTotalTime);
         log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
         log.info("TP98:" + MathUtil.calculateTP99(costTimeTotal, 0.98f));
@@ -123,7 +126,7 @@ public class SearchCompTest {
         log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         searchResultA = SearchResultA.builder()
-                .rps(requestNum / searchTotalTime)
+                .rps(successNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)
@@ -145,5 +148,6 @@ public class SearchCompTest {
     public static class SearchResult {
         private List<Float> costTime;
         private List<Integer> resultNum;
+        private long itemRequestNum;
     }
 }
