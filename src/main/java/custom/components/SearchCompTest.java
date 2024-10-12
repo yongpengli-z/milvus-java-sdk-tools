@@ -58,19 +58,23 @@ public class SearchCompTest {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
                             }
-                            long startItemTime = System.currentTimeMillis();
-                            SearchResp search = milvusClientV2.search(SearchReq.builder()
-                                    .topK(searchParams.getTopK())
-                                    .outputFields(searchParams.getOutputs())
-                                    .consistencyLevel(ConsistencyLevel.BOUNDED)
-                                    .collectionName(collection)
-                                    .searchParams(searchLevel)
-                                    .filter(searchParams.getFilter())
-                                    .data(randomBaseVectors)
-                                    .build());
-                            long endItemTime = System.currentTimeMillis();
-                            costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
-                            returnNum.add(search.getSearchResults().size());
+                            try {
+                                long startItemTime = System.currentTimeMillis();
+                                SearchResp search = milvusClientV2.search(SearchReq.builder()
+                                        .topK(searchParams.getTopK())
+                                        .outputFields(searchParams.getOutputs())
+                                        .consistencyLevel(ConsistencyLevel.BOUNDED)
+                                        .collectionName(collection)
+                                        .searchParams(searchLevel)
+                                        .filter(searchParams.getFilter())
+                                        .data(randomBaseVectors)
+                                        .build());
+                                long endItemTime = System.currentTimeMillis();
+                                costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
+                                returnNum.add(search.getSearchResults().size());
+                            } catch (Exception e) {
+                                log.warn("线程[ "+ finalC + "] Search 异常"+e.getMessage());
+                            }
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 printLog = 0;
@@ -102,7 +106,7 @@ public class SearchCompTest {
                         .result(ResultEnum.EXCEPTION.result)
                         .build();
                 searchResultA = SearchResultA.builder().commonResult(commonResult).build();
-//                continue;
+                return searchResultA;
             }
         }
         long endTimeTotal = System.currentTimeMillis();
