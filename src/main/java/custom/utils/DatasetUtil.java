@@ -38,6 +38,7 @@ public class DatasetUtil {
     }
 
     public static List<String> providerFileNamesByDataset(DatasetEnum datasetEnum){
+
         return providerFileNames(datasetEnum.prefixName, datasetEnum.path);
     }
 
@@ -48,6 +49,7 @@ public class DatasetUtil {
     }
 
     public static void main(String[] args) {
+
         List<String> strings = providerFileNamesByDataset(DatasetEnum.GIST);
         System.out.println(strings);
 
