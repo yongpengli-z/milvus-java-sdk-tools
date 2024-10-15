@@ -8,7 +8,7 @@ public class WaitComp {
     public static void wait(WaitParams waitParams){
         try {
             log.info("Waiting "+ waitParams.getWaitMinutes()+" minutes...");
-            Thread.sleep(waitParams.getWaitMinutes()*1000);
+            Thread.sleep(waitParams.getWaitMinutes()*60*1000);
         } catch (InterruptedException e) {
             log.warn("Wait exception:" + e.getMessage());
         }
