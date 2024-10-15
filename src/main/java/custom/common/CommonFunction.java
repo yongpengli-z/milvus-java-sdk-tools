@@ -284,7 +284,7 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId,String dataset) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();

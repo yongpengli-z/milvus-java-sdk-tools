@@ -8,4 +8,5 @@ public class InsertParams {
     private long numEntries;
     private long batchSize;
     private int numConcurrency;
+    private String dataset;
 }

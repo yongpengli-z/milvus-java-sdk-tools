@@ -99,6 +99,10 @@ public class ComponentSchedule {
                 log.info("*********** < recall > ***********");
                 RecallComp.calcRecall((RecallParams) operators.get(i));
             }
+            if (operators.get(i) instanceof WaitParams) {
+                log.info("*********** < Wait > ***********");
+                WaitComp.wait((WaitParams) operators.get(i));
+            }
         }
         log.info("[结果汇总]： " +
                 "\n" + results);
