@@ -20,6 +20,10 @@ public enum DatasetEnum {
         this.dim=dim;
     }
 
+    public String getDatasetName(DatasetEnum datasetEnum){
+        return datasetEnum.name();
+    }
+
 
 
 

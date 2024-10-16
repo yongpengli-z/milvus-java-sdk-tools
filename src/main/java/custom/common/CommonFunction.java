@@ -6,6 +6,7 @@ import custom.entity.FieldParams;
 import custom.entity.IndexParams;
 import custom.entity.PKFieldInfo;
 import custom.entity.VectorInfo;
+import custom.utils.DatasetUtil;
 import custom.utils.GenerateUtil;
 import custom.utils.JsonObjectUtil;
 import custom.utils.MathUtil;
@@ -284,7 +285,7 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId,String dataset) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId,String dataset,List<String> fileNames) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
@@ -300,15 +301,15 @@ public class CommonFunction {
                 DataType elementType = fieldSchema.getElementType();
                 JsonObject jsonObject;
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null,dataset,fileNames);
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null,dataset,fileNames);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i,null);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i,null,dataset,fileNames);
                 } else if (dataType == DataType.Array) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i,elementType);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i,elementType,dataset,fileNames);
                 } else {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i,null);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i,null,dataset,fileNames);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
@@ -326,7 +327,7 @@ public class CommonFunction {
      * @param countIndex  索引i，避免多次创建时数据内容一样
      * @return JsonObject
      */
-    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType) {
+    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType,String dataset,List<String> fileNames) {
         JsonObject row = new JsonObject();
         Gson gson = new Gson();
         Random random = new Random();
@@ -367,8 +368,13 @@ public class CommonFunction {
         }
         if (dataType == DataType.FloatVector) {
             List<Float> vector = new ArrayList<>();
-            for (int k = 0; k < dimOrLength; ++k) {
-                vector.add(random.nextFloat());
+            if(dataset.equalsIgnoreCase("random")) {
+                for (int k = 0; k < dimOrLength; ++k) {
+                    vector.add(random.nextFloat());
+                }
+            }
+            if(dataset.equalsIgnoreCase("gist")){
+                vector = DatasetUtil.providerFloatVectorByDataset(countIndex, fileNames, DatasetEnum.GIST);
             }
             row.add(fieldName, gson.toJsonTree(vector));
         }

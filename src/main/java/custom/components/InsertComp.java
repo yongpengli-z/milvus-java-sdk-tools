@@ -2,10 +2,12 @@ package custom.components;
 
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
+import custom.common.DatasetEnum;
 import custom.entity.InsertParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.InsertResult;
 import custom.entity.result.ResultEnum;
+import custom.utils.DatasetUtil;
 import io.milvus.v2.service.vector.request.InsertReq;
 import io.milvus.v2.service.vector.response.InsertResp;
 import lombok.Data;
@@ -21,6 +23,32 @@ import static custom.BaseTest.milvusClientV2;
 @Slf4j
 public class InsertComp {
     public static InsertResult insertCollection(InsertParams insertParams) {
+        DatasetEnum datasetEnum;
+        List<String> fileNames=new ArrayList<>();
+        // 先检查dataset
+        switch (insertParams.getDataset().toLowerCase()) {
+            case "gist":
+                datasetEnum = DatasetEnum.GIST;
+                fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                break;
+            case "deep":
+                datasetEnum = DatasetEnum.DEEP;
+                fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                break;
+            case "sift":
+                datasetEnum = DatasetEnum.SIFT;
+                fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                break;
+            case "laion":
+                datasetEnum = DatasetEnum.LAION;
+                fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                break;
+            case "random":
+                break;
+            default:
+                log.error("传入的数据集名称错误,请检查！");
+                return null;
+        }
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
         float insertTotalTime = 0;
@@ -35,6 +63,7 @@ public class InsertComp {
 
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             int finalC = c;
+            List<String> finalFileNames = fileNames;
             Callable callable =
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
@@ -44,7 +73,7 @@ public class InsertComp {
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
                              r++) {
-                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(), r * insertParams.getBatchSize(),insertParams.getDataset());
+                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(), r * insertParams.getBatchSize(), insertParams.getDataset(), finalFileNames);
                             log.info("线程[" + finalC + "]导入数据 " + insertParams.getBatchSize() + "条，范围: " + r * insertParams.getBatchSize() + "~" + ((r + 1) * insertParams.getBatchSize()));
                             InsertResp insert = null;
                             long startTime = System.currentTimeMillis();
