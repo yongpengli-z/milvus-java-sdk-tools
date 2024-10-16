@@ -13,7 +13,7 @@ public class WaitComp {
         String currentDir = System.getProperty("user.dir");
         // 输出当前目录
         System.out.println("当前工作目录: " + currentDir);
-        File rootDirectory = new File("/"); // 在 Windows 上可以使用 "C:\\"
+        File rootDirectory = new File("/");
 
         // 检查目录是否存在且是一个目录
         if (rootDirectory.exists() && rootDirectory.isDirectory()) {
