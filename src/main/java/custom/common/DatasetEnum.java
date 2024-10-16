@@ -3,8 +3,8 @@ package custom.common;
 import io.milvus.v2.common.DataType;
 
 public enum DatasetEnum {
-    GIST("gist","test/milvus/raw_data/gist1m/","binary_768d_",768),
-    LAION("laion","test/milvus/raw_data/laion1b/","binary_768d_",768),
+    GIST("gist","/test/milvus/raw_data/gist1m/","binary_768d_",768),
+    LAION("laion","/test/milvus/raw_data/laion1b/","binary_768d_",768),
     DEEP("deep","test/milvus/raw_data/deep1b/","binary_96d__",96),
     SIFT("sift","test/milvus/raw_data/sift1b/","binary_128d_",128);
 

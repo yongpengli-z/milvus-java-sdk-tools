@@ -31,6 +31,19 @@ public class WaitComp {
         } else {
             System.out.println("指定的路径不是一个有效的目录.");
         }
+        log.info("检查test目录");
+        File testfile=new File("test/");
+        File[] testfiles = rootDirectory.listFiles();
+
+        // 遍历并打印子目录名
+        if (testfiles != null) {
+            for (File file : testfiles) {
+                if (file.isDirectory()) {
+                    System.out.println(file.getName());
+                }
+            }
+        }
+
         try {
             log.info("Gist数据集"+DatasetUtil.providerFileNamesByDataset(DatasetEnum.GIST));
             log.info("Sift数据集"+DatasetUtil.providerFileNamesByDataset(DatasetEnum.SIFT));
