@@ -33,6 +33,7 @@ public class InsertComp {
                 fileNames = DatasetUtil.providerFileNames(datasetEnum);
                 fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.GIST);
                 log.info("文件名称:" + fileNames);
+                log.info("文件长度:" + fileSizeList);
                 break;
             case "deep":
                 datasetEnum = DatasetEnum.DEEP;
