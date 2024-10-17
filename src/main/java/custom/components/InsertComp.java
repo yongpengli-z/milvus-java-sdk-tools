@@ -24,25 +24,27 @@ import static custom.BaseTest.milvusClientV2;
 public class InsertComp {
     public static InsertResult insertCollection(InsertParams insertParams) {
         DatasetEnum datasetEnum;
-        List<String> fileNames=new ArrayList<>();
+        List<String> fileNames = new ArrayList<>();
+        List<Long> fileSizeList = new ArrayList<>();
         // 先检查dataset
         switch (insertParams.getDataset().toLowerCase()) {
             case "gist":
                 datasetEnum = DatasetEnum.GIST;
-                fileNames= DatasetUtil.providerFileNames(datasetEnum);
-                log.info("文件名称:"+fileNames);
+                fileNames = DatasetUtil.providerFileNames(datasetEnum);
+                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.GIST);
+                log.info("文件名称:" + fileNames);
                 break;
             case "deep":
                 datasetEnum = DatasetEnum.DEEP;
-                fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                fileNames = DatasetUtil.providerFileNames(datasetEnum);
                 break;
             case "sift":
                 datasetEnum = DatasetEnum.SIFT;
-                fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                fileNames = DatasetUtil.providerFileNames(datasetEnum);
                 break;
             case "laion":
                 datasetEnum = DatasetEnum.LAION;
-                fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                fileNames = DatasetUtil.providerFileNames(datasetEnum);
                 break;
             case "random":
                 break;
@@ -65,6 +67,7 @@ public class InsertComp {
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             int finalC = c;
             List<String> finalFileNames = fileNames;
+            List<Long> finalFileSizeList = fileSizeList;
             Callable callable =
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
@@ -74,7 +77,8 @@ public class InsertComp {
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
                              r++) {
-                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(), r * insertParams.getBatchSize(), insertParams.getDataset(), finalFileNames);
+                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(),
+                                    r * insertParams.getBatchSize(), insertParams.getDataset(), finalFileNames, finalFileSizeList);
                             log.info("线程[" + finalC + "]导入数据 " + insertParams.getBatchSize() + "条，范围: " + r * insertParams.getBatchSize() + "~" + ((r + 1) * insertParams.getBatchSize()));
                             InsertResp insert = null;
                             long startTime = System.currentTimeMillis();

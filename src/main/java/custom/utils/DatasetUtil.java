@@ -36,11 +36,23 @@ public class DatasetUtil {
         return fileNameList;
     }
 
+    public static List<Long> providerFileSize(List<String> filesNames, DatasetEnum datasetEnum) {
+        List<Long> fileSizeList = new ArrayList<>();
+        int i = 0;
+        while (i < filesNames.size()) {
+            String npyDataPath = datasetEnum.path + filesNames.get(i);
+            File file = new File(npyDataPath);
+            NpyArray<?> npyArray = Npy.read(file);
+            fileSizeList.add((long) npyArray.shape()[0]);
+            i++;
+        }
+        return fileSizeList;
+    }
 
-    public static List<List<Float>> providerFloatVectorByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum) {
-        long countIndex = 0;
-        long countIndexTemp = countIndex;
+    public static List<List<Float>> providerFloatVectorByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum, List<Long> fileSizeList) {
         List<List<Float>> floatList = new ArrayList<>();
+       /* long countIndex = 0;
+        long countIndexTemp = countIndex;
         int i = 0;
         while (i < fileNames.size()) {
             String npyDataPath = datasetEnum.path + fileNames.get(i);
@@ -56,8 +68,36 @@ public class DatasetUtil {
             }
             countIndexTemp = countIndex;
             i++;
+        }*/
+        int fileIndex = findIndex(index, fileSizeList);
+        System.out.println(fileIndex);
+        String npyDataPath = datasetEnum.path + fileNames.get(fileIndex);
+        File file = new File(npyDataPath);
+        NpyArray<?> npyArray = Npy.read(file);
+        float[] floatData = (float[]) npyArray.data();
+        List<List<Float>> floats = splitArray(floatData, npyArray.shape()[1]);
+        long tempIndex = 0;
+        if (fileIndex > 0) {
+            tempIndex = fileSizeList.stream().limit(fileIndex)
+                    .mapToLong(Long::longValue)
+                    .sum();
         }
+        System.out.println(tempIndex);
+        floatList = floats.subList((int) (index - tempIndex), (int) (index - tempIndex + count));
         return floatList;
+    }
+
+    public static int findIndex(long startId, List<Long> fileSizeList) {
+        int fileIndex = 0;
+        long countTemp = 0;
+        while (fileIndex < fileSizeList.size()) {
+            countTemp = countTemp + fileSizeList.get(fileIndex);
+            if (countTemp > startId) {
+                return fileIndex;
+            }
+            fileIndex++;
+        }
+        return fileIndex;
     }
 
     public static List<List<Float>> splitArray(float[] array, int chunkSize) {
@@ -77,7 +117,9 @@ public class DatasetUtil {
 
     public static void main(String[] args) {
         List<String> strings = providerFileNames(DatasetEnum.GIST);
-        List<List<Float>> lists = providerFloatVectorByDataset(101000, 1000, strings, DatasetEnum.GIST);
+        List<Long> longs = providerFileSize(strings, DatasetEnum.GIST);
+        System.out.println(longs);
+        List<List<Float>> lists = providerFloatVectorByDataset(9999, 1, strings, DatasetEnum.GIST, longs);
         System.out.println(lists.size());
         System.out.println(lists.get(0));
 

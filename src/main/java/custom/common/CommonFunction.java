@@ -285,7 +285,7 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames,List<Long> fileSizeList  ) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
@@ -293,7 +293,7 @@ public class CommonFunction {
         List<List<Float>> floatVectorList=new ArrayList<>();
         // 先获取Dataset数据集
         if(dataset.equalsIgnoreCase("gist")){
-            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.GIST);
+            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.GIST,fileSizeList);
         }
         for (long i = startId; i < (startId + count); i++) {
             JsonObject row = new JsonObject();
