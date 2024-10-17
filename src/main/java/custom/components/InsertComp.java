@@ -120,9 +120,9 @@ public class InsertComp {
         long requestNum = 0;
         double costTotal = 0.0;
         CommonResult commonResult;
-        /*InsertResult insertResult = null;
+        InsertResult insertResult = null;
         for (Future<InsertResultItem> future : list) {
-            try {
+           /* try {
                 InsertResultItem insertResultItem = future.get();
                 long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
                 double sum = insertResultItem.getCostTime().stream().mapToDouble(Double::doubleValue).sum();
@@ -138,7 +138,7 @@ public class InsertComp {
                                 .message(e.getMessage()).build())
                         .build();
                 return insertResult;
-            }
+            }*/
         }
         long endTimeTotal = System.currentTimeMillis();
         insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
@@ -154,9 +154,8 @@ public class InsertComp {
                 .requestNum(requestNum)
                 .costTime(insertTotalTime)
                 .build();
-*/
         executorService.shutdown();
-        return null;
+        return insertResult;
     }
 
     @Data
