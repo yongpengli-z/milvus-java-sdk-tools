@@ -74,14 +74,17 @@ public class DatasetUtil {
         File file = new File(npyDataPath);
         NpyArray<?> npyArray = Npy.read(file);
         float[] floatData = (float[]) npyArray.data();
-        List<List<Float>> floats = splitArray(floatData, npyArray.shape()[1]);
+//        List<List<Float>> floats = splitArray(floatData, npyArray.shape()[1]);
         long tempIndex = 0;
         if (fileIndex > 0) {
             tempIndex = fileSizeList.stream().limit(fileIndex)
                     .mapToLong(Long::longValue)
                     .sum();
         }
-        floatList = floats.subList((int) (index - tempIndex), (int) (index - tempIndex + count));
+        // 截取需要的一段
+        float[] subArray= Arrays.copyOfRange(floatData, (int) ((index - tempIndex ) * npyArray.shape()[1]), (int) ((index - tempIndex + count) * npyArray.shape()[1]));
+        floatList=splitArray(subArray,npyArray.shape()[1]);
+//        floatList = floats.subList((int) (index - tempIndex), (int) (index - tempIndex + count));
         return floatList;
     }
 
