@@ -70,7 +70,6 @@ public class DatasetUtil {
             i++;
         }*/
         int fileIndex = findIndex(index, fileSizeList);
-        System.out.println(fileIndex);
         String npyDataPath = datasetEnum.path + fileNames.get(fileIndex);
         File file = new File(npyDataPath);
         NpyArray<?> npyArray = Npy.read(file);
@@ -82,7 +81,6 @@ public class DatasetUtil {
                     .mapToLong(Long::longValue)
                     .sum();
         }
-        System.out.println(tempIndex);
         floatList = floats.subList((int) (index - tempIndex), (int) (index - tempIndex + count));
         return floatList;
     }
