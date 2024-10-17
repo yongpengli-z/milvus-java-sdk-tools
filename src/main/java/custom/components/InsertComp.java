@@ -30,6 +30,7 @@ public class InsertComp {
             case "gist":
                 datasetEnum = DatasetEnum.GIST;
                 fileNames= DatasetUtil.providerFileNames(datasetEnum);
+                log.info("文件名称:"+fileNames);
                 break;
             case "deep":
                 datasetEnum = DatasetEnum.DEEP;

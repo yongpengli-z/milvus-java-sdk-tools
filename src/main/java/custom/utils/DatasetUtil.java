@@ -37,27 +37,25 @@ public class DatasetUtil {
     }
 
 
-    public static List<List<Float>> providerFloatVectorByDataset(long index,long count, List<String> fileNames, DatasetEnum datasetEnum) {
-        long countIndex=0;
-        long countIndexTemp=countIndex;
-        List<List<Float>> floatList=new ArrayList<>();
-        Iterator<String> iterator = fileNames.iterator();
-        while(iterator.hasNext()){
-            String npyDataPath = datasetEnum.path+iterator.next();
+    public static List<List<Float>> providerFloatVectorByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum) {
+        long countIndex = 0;
+        long countIndexTemp = countIndex;
+        List<List<Float>> floatList = new ArrayList<>();
+        int i = 0;
+        while (i < fileNames.size()) {
+            String npyDataPath = datasetEnum.path + fileNames.get(i);
             File file = new File(npyDataPath);
             NpyArray<?> npyArray = Npy.read(file);
-            countIndex+=npyArray.shape()[0];
-            System.out.println(countIndex);
-            if(countIndex > index) {
-//                System.out.println("查到数据");
+            countIndex += npyArray.shape()[0];
+            if (countIndex > index) {
+                System.out.println("查到数据，from " + fileNames.get(i));
                 float[] floatData = (float[]) npyArray.data();
                 List<List<Float>> floats = splitArray(floatData, npyArray.shape()[1]);
-                floatList=floats.subList((int) (index-countIndexTemp), (int) (index-countIndexTemp+count));
+                floatList = floats.subList((int) (index - countIndexTemp), (int) (index - countIndexTemp + count));
                 break;
             }
-            countIndexTemp=countIndex;
-            iterator.remove();
-//            System.out.println(iterator.next());
+            countIndexTemp = countIndex;
+            i++;
         }
         return floatList;
     }
@@ -79,8 +77,9 @@ public class DatasetUtil {
 
     public static void main(String[] args) {
         List<String> strings = providerFileNames(DatasetEnum.GIST);
-        List<List<Float>> lists = providerFloatVectorByDataset(0, 1000, strings, DatasetEnum.GIST);
+        List<List<Float>> lists = providerFloatVectorByDataset(101000, 1000, strings, DatasetEnum.GIST);
         System.out.println(lists.size());
+        System.out.println(lists.get(0));
 
     }
 }
