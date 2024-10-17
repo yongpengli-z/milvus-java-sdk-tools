@@ -24,7 +24,7 @@ public class BaseTest {
   public static boolean isCloud=true;
   public static List<Object> recallBaseIdList=new ArrayList<>();
 
-  public static void main(String[] args) throws ExecutionException, InterruptedException {
+  public static void main(String[] args) {
     String uri =
         System.getProperty("uri") == null
             ? ""

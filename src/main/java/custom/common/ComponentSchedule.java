@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ComponentSchedule {
-    public static void runningSchedule(String customizeParams) throws ExecutionException, InterruptedException {
+    public static void runningSchedule(String customizeParams){
         log.info("--customizeParams--:" + customizeParams);
 
         // 获取params的所有根节点
