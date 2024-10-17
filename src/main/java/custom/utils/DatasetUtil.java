@@ -37,10 +37,10 @@ public class DatasetUtil {
     }
 
 
-    public static List<Float> providerFloatVectorByDataset(long index, List<String> fileNames, DatasetEnum datasetEnum) {
+    public static List<List<Float>> providerFloatVectorByDataset(long index,long count, List<String> fileNames, DatasetEnum datasetEnum) {
         long countIndex=0;
         long countIndexTemp=countIndex;
-        List<Float> floatList=new ArrayList<>();
+        List<List<Float>> floatList=new ArrayList<>();
         Iterator<String> iterator = fileNames.iterator();
         while(iterator.hasNext()){
             String npyDataPath = datasetEnum.path+iterator.next();
@@ -49,10 +49,10 @@ public class DatasetUtil {
             countIndex+=npyArray.shape()[0];
             System.out.println(countIndex);
             if(countIndex > index) {
-                System.out.println("查到数据");
+//                System.out.println("查到数据");
                 float[] floatData = (float[]) npyArray.data();
                 List<List<Float>> floats = splitArray(floatData, npyArray.shape()[1]);
-                floatList=floats.get((int) (index-countIndexTemp));
+                floatList=floats.subList((int) (index-countIndexTemp), (int) (index-countIndexTemp+count));
                 break;
             }
             countIndexTemp=countIndex;
@@ -79,9 +79,8 @@ public class DatasetUtil {
 
     public static void main(String[] args) {
         List<String> strings = providerFileNames(DatasetEnum.GIST);
-        List<Float> floats = providerFloatVectorByDataset(199999, strings, DatasetEnum.GIST);
-        System.out.println(floats);
-        System.out.println(floats.size());
+        List<List<Float>> lists = providerFloatVectorByDataset(0, 1000, strings, DatasetEnum.GIST);
+        System.out.println(lists.size());
 
     }
 }

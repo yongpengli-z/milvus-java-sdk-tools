@@ -43,7 +43,7 @@ public class CommonFunction {
      * @param fieldParamsList 其他字段
      * @return collection name
      */
-    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList) throws Exception{
+    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList) throws Exception {
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
@@ -285,11 +285,16 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId,String dataset,List<String> fileNames) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         List<JsonObject> jsonList = new ArrayList<>();
+        List<List<Float>> floatVectorList=new ArrayList<>();
+        // 先获取Dataset数据集
+        if(dataset.equalsIgnoreCase("gist")){
+            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.GIST);
+        }
         for (long i = startId; i < (startId + count); i++) {
             JsonObject row = new JsonObject();
             for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
@@ -299,17 +304,24 @@ public class CommonFunction {
                 Integer maxCapacity = fieldSchema.getMaxCapacity();
                 Integer maxLength = fieldSchema.getMaxLength();
                 DataType elementType = fieldSchema.getElementType();
-                JsonObject jsonObject;
+                JsonObject jsonObject = new JsonObject();
+                Gson gson = new Gson();
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null,dataset,fileNames);
+                    if(dataset.equalsIgnoreCase("random")){
+                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null);
+                    }
+                    if (dataset.equalsIgnoreCase("gist")){
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) startId)));
+
+                    }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i,null,dataset,fileNames);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i,null,dataset,fileNames);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i, null);
                 } else if (dataType == DataType.Array) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i,elementType,dataset,fileNames);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType);
                 } else {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i,null,dataset,fileNames);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i, null);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
@@ -327,7 +339,7 @@ public class CommonFunction {
      * @param countIndex  索引i，避免多次创建时数据内容一样
      * @return JsonObject
      */
-    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType,String dataset,List<String> fileNames) {
+    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType) {
         JsonObject row = new JsonObject();
         Gson gson = new Gson();
         Random random = new Random();
@@ -368,13 +380,8 @@ public class CommonFunction {
         }
         if (dataType == DataType.FloatVector) {
             List<Float> vector = new ArrayList<>();
-            if(dataset.equalsIgnoreCase("random")) {
-                for (int k = 0; k < dimOrLength; ++k) {
-                    vector.add(random.nextFloat());
-                }
-            }
-            if(dataset.equalsIgnoreCase("gist")){
-                vector = DatasetUtil.providerFloatVectorByDataset(countIndex, fileNames, DatasetEnum.GIST);
+            for (int k = 0; k < dimOrLength; ++k) {
+                vector.add(random.nextFloat());
             }
             row.add(fieldName, gson.toJsonTree(vector));
         }
@@ -639,13 +646,13 @@ public class CommonFunction {
             // 清空下 recallBaseIdList
             recallBaseIdList.clear();
         } catch (Exception e) {
-           log.error("query 异常: "+e.getMessage());
+            log.error("query 异常: " + e.getMessage());
         }
         for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
-           Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
+            Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
             if (vectorDataType == DataType.FloatVector) {
-               List<Float> floatList=(List<Float>) o;
-               baseVectorDataset.add(new FloatVec(floatList));
+                List<Float> floatList = (List<Float>) o;
+                baseVectorDataset.add(new FloatVec(floatList));
             }
             // 收集recall base id
             Object pkObj = queryResult.getEntity().get(pkFieldInfo.getFieldName());
@@ -656,8 +663,9 @@ public class CommonFunction {
 
     /**
      * 跟具nq提供search的BaseVector
+     *
      * @param baseVectorDataset baseVector数据集
-     * @param nq nq
+     * @param nq                nq
      * @return List<BaseVector>
      */
     public static List<BaseVector> providerSearchVectorByNq(List<BaseVector> baseVectorDataset, int nq) {
