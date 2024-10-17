@@ -311,7 +311,7 @@ public class CommonFunction {
                         jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null);
                     }
                     if (dataset.equalsIgnoreCase("gist")){
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) startId)));
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
 
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
