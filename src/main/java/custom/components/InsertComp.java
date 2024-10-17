@@ -120,7 +120,7 @@ public class InsertComp {
         long requestNum = 0;
         double costTotal = 0.0;
         CommonResult commonResult;
-        InsertResult insertResult = null;
+        /*InsertResult insertResult = null;
         for (Future<InsertResultItem> future : list) {
             try {
                 InsertResultItem insertResultItem = future.get();
@@ -154,9 +154,9 @@ public class InsertComp {
                 .requestNum(requestNum)
                 .costTime(insertTotalTime)
                 .build();
-
+*/
         executorService.shutdown();
-        return insertResult;
+        return null;
     }
 
     @Data
