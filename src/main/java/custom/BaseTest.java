@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @Author yongpeng.li @Date 2024/6/3 17:40
@@ -23,7 +24,7 @@ public class BaseTest {
   public static boolean isCloud=true;
   public static List<Object> recallBaseIdList=new ArrayList<>();
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws ExecutionException, InterruptedException {
     String uri =
         System.getProperty("uri") == null
             ? ""

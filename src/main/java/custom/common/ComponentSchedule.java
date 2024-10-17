@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ComponentSchedule {
-    public static void runningSchedule(String customizeParams) {
+    public static void runningSchedule(String customizeParams) throws ExecutionException, InterruptedException {
         log.info("--customizeParams--:" + customizeParams);
 
         // 获取params的所有根节点

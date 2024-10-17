@@ -22,7 +22,7 @@ import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class InsertComp {
-    public static InsertResult insertCollection(InsertParams insertParams) {
+    public static InsertResult insertCollection(InsertParams insertParams) throws ExecutionException, InterruptedException {
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();
         List<Long> fileSizeList = new ArrayList<>();
@@ -122,7 +122,7 @@ public class InsertComp {
         CommonResult commonResult;
         InsertResult insertResult = null;
         for (Future<InsertResultItem> future : list) {
-           /* try {
+//            try {
                 InsertResultItem insertResultItem = future.get();
                 long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
                 double sum = insertResultItem.getCostTime().stream().mapToDouble(Double::doubleValue).sum();
@@ -131,14 +131,14 @@ public class InsertComp {
                 requestNum += count;
                 costTotal += sum;
 
-            } catch (InterruptedException | ExecutionException e) {
-                insertResult = InsertResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.EXCEPTION.result)
-                                .message(e.getMessage()).build())
-                        .build();
-                return insertResult;
-            }*/
+//            } catch (InterruptedException | ExecutionException e) {
+//                insertResult = InsertResult.builder()
+//                        .commonResult(CommonResult.builder()
+//                                .result(ResultEnum.EXCEPTION.result)
+//                                .message(e.getMessage()).build())
+//                        .build();
+//                return insertResult;
+//            }
         }
         long endTimeTotal = System.currentTimeMillis();
         insertTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
