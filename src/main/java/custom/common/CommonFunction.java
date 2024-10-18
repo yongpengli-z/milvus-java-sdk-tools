@@ -290,6 +290,7 @@ public class CommonFunction {
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         List<JsonObject> jsonList = new ArrayList<>();
+        //提供给floatVector用
         List<List<Float>> floatVectorList=new ArrayList<>();
         // 先获取Dataset数据集
         if(dataset.equalsIgnoreCase("gist")){
@@ -297,6 +298,12 @@ public class CommonFunction {
         }
         if(dataset.equalsIgnoreCase("deep")){
             floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.DEEP,fileSizeList);
+        }
+        if(dataset.equalsIgnoreCase("laion")){
+            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.LAION,fileSizeList);
+        }
+        if(dataset.equalsIgnoreCase("sift")){
+            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.SIFT,fileSizeList);
         }
         for (long i = startId; i < (startId + count); i++) {
             JsonObject row = new JsonObject();
@@ -315,11 +322,15 @@ public class CommonFunction {
                     }
                     if (dataset.equalsIgnoreCase("gist")){
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
-
                     }
                     if (dataset.equalsIgnoreCase("deep")){
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
-
+                    }
+                    if (dataset.equalsIgnoreCase("sift")){
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
+                    }
+                    if (dataset.equalsIgnoreCase("laion")){
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
                     jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null);

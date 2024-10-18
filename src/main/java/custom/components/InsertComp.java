@@ -41,10 +41,12 @@ public class InsertComp {
             case "sift":
                 datasetEnum = DatasetEnum.SIFT;
                 fileNames = DatasetUtil.providerFileNames(datasetEnum);
+                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.SIFT);
                 break;
             case "laion":
                 datasetEnum = DatasetEnum.LAION;
                 fileNames = DatasetUtil.providerFileNames(datasetEnum);
+                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.LAION);
                 break;
             case "random":
                 break;
