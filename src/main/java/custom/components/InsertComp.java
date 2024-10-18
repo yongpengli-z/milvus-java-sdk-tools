@@ -32,12 +32,11 @@ public class InsertComp {
                 datasetEnum = DatasetEnum.GIST;
                 fileNames = DatasetUtil.providerFileNames(datasetEnum);
                 fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.GIST);
-                log.info("文件名称:" + fileNames);
-                log.info("文件长度:" + fileSizeList);
                 break;
             case "deep":
                 datasetEnum = DatasetEnum.DEEP;
                 fileNames = DatasetUtil.providerFileNames(datasetEnum);
+                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.DEEP);
                 break;
             case "sift":
                 datasetEnum = DatasetEnum.SIFT;
@@ -53,6 +52,8 @@ public class InsertComp {
                 log.error("传入的数据集名称错误,请检查！");
                 return null;
         }
+        log.info("文件名称:" + fileNames);
+        log.info("文件长度:" + fileSizeList);
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
         float insertTotalTime = 0;

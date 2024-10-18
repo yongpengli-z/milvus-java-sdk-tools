@@ -295,6 +295,9 @@ public class CommonFunction {
         if(dataset.equalsIgnoreCase("gist")){
             floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.GIST,fileSizeList);
         }
+        if(dataset.equalsIgnoreCase("deep")){
+            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.DEEP,fileSizeList);
+        }
         for (long i = startId; i < (startId + count); i++) {
             JsonObject row = new JsonObject();
             for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
@@ -311,6 +314,10 @@ public class CommonFunction {
                         jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null);
                     }
                     if (dataset.equalsIgnoreCase("gist")){
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
+
+                    }
+                    if (dataset.equalsIgnoreCase("deep")){
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
 
                     }
