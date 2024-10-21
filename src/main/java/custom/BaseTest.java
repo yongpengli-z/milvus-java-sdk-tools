@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
 public class BaseTest {
   public static MilvusClientV2 milvusClientV2=null;
   public static List<String> globalCollectionNames=new ArrayList<>();
-
+  public static String importUrl=null;
   public static int logInterval=500;
   public static boolean isCloud=true;
   public static List<Object> recallBaseIdList=new ArrayList<>();
@@ -51,7 +51,7 @@ public class BaseTest {
     }
 
     milvusClientV2 = MilvusConnect.createMilvusClientV2(uri, token);
-
+    importUrl=uri;
     // 初始化环境
     InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
     InitialComp.initialRunning(initialParamsObj);

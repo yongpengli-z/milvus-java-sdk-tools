@@ -104,6 +104,13 @@ public class ComponentSchedule {
                 log.info("*********** < Wait > ***********");
                 WaitComp.wait((WaitParams) operators.get(i));
             }
+            if (operators.get(i) instanceof UpsertParams) {
+                log.info("*********** < upsert data > ***********");
+                UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("Upsert_" + i, upsertResult);
+                results.add(jsonObject);
+            }
         }
         log.info("[结果汇总]： " +
                 "\n" + results);
