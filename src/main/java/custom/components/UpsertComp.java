@@ -79,11 +79,11 @@ public class UpsertComp {
                         UpsertResultItem upsertResultItem = new UpsertComp.UpsertResultItem();
                         List<Double> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
-                        for (long r = ((upsertRounds / upsertParams.getNumConcurrency()) * finalC)+upsertParams.getStartId();
-                             r < ((upsertRounds / upsertParams.getNumConcurrency()) * (finalC + 1))+upsertParams.getStartId();
+                        for (long r = ((upsertRounds / upsertParams.getNumConcurrency()) * finalC);
+                             r < ((upsertRounds / upsertParams.getNumConcurrency()) * (finalC + 1));
                              r++) {
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, upsertParams.getBatchSize(),
-                                    r * upsertParams.getBatchSize()+upsertParams.getStartId(), upsertParams.getDataset(), finalFileNames, finalFileSizeList);
+                                    (r * upsertParams.getBatchSize()+upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList);
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize()+upsertParams.getStartId() )+ "~" + ((r + 1) * upsertParams.getBatchSize()+upsertParams.getStartId()));
                             UpsertResp upsertResp = null;
                             long startTime = System.currentTimeMillis();
