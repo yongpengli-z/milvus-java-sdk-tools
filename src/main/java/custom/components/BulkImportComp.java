@@ -21,7 +21,7 @@ import static custom.BaseTest.importUrl;
 public class BulkImportComp {
     // temp 需要添加根据schema生成新的.npy文件
     public static void bulkImport(BulkImportParams bulkImportParams) throws InterruptedException {
-       /* String collectionName = (bulkImportParams.getCollectionName() == null || bulkImportParams.getCollectionName().equals("")) ? globalCollectionNames.get(0) : bulkImportParams.getCollectionName();
+        String collectionName = (bulkImportParams.getCollectionName() == null || bulkImportParams.getCollectionName().equals("")) ? globalCollectionNames.get(0) : bulkImportParams.getCollectionName();
 
         MilvusImportRequest milvusImportRequest = MilvusImportRequest.builder()
                 .collectionName(collectionName)
@@ -63,6 +63,6 @@ public class BulkImportComp {
             } else {
                 log.info(String.format("The job %s is running, state:%s progress:%s%n", jobId, state, progress));
             }
-        }*/
+        }
     }
 }
