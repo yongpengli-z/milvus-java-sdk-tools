@@ -2,6 +2,7 @@ package custom.utils;
 
 
 import com.nimbusds.jose.shaded.gson.Gson;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.*;
@@ -47,8 +48,8 @@ import java.util.*;
  *
  * @see :本工具所采用的是最新的HttpComponents-Client-4.2.1
  */
+@Slf4j
 public class HttpClientUtils {
-    private static Log logger = LogFactory.getLog(HttpClientUtils.class);
 
     /**
      * 设置请求头和参数 post提交
@@ -62,7 +63,7 @@ public class HttpClientUtils {
      * @return
      */
     public static String connectPost(String urlStr, Map<String, String> headMap, Map<String, String> paramMap) {
-        logger.info("========设置请求头和参数并以 post提交=======");
+        log.info("========设置请求头和参数并以 post提交=======");
         URL url;
         String sCurrentLine = "";
         String sTotalString = "";
@@ -71,7 +72,7 @@ public class HttpClientUtils {
 
         try {
             url = new URL(urlStr);
-            logger.info("请求地址:" + urlStr);
+            log.info("请求地址:" + urlStr);
             URLConnection URLconnection = url.openConnection();
             HttpURLConnection httpConnection = (HttpURLConnection) URLconnection;
             // httpConnection.setRequestProperty("Content-type", "application/json");
@@ -80,7 +81,7 @@ public class HttpClientUtils {
 
             if (headMap != null && !headMap.isEmpty()) {
                 for (String key : headMap.keySet()) {
-                    logger.info("头部信息key:" + key + "===值: " + headMap.get(key));
+                    log.info("头部信息key:" + key + "===值: " + headMap.get(key));
                     httpConnection.setRequestProperty(key, headMap.get(key));
                 }
             }
@@ -100,7 +101,7 @@ public class HttpClientUtils {
                     params.append(key).append("=").append(paramMap.get(key).trim());
 
                 }
-                logger.info("请求参数: " + params.toString());
+                log.info("请求参数: " + params.toString());
             }
             //System.out.println("params = " + params.toString());
             out = new DataOutputStream(httpConnection.getOutputStream());
@@ -125,12 +126,12 @@ public class HttpClientUtils {
             // System.err.println("FIAL");
             // }
         } catch (Exception e) {
-            logger.info("请求错误: " + e.getMessage());
-            logger.error("系统错误:",e);
+            log.info("请求错误: " + e.getMessage());
+            log.error("系统错误:",e);
         } finally {
 
         }
-        logger.info("响应信息: " + sTotalString);
+        log.info("响应信息: " + sTotalString);
         return sTotalString;
     }
 
@@ -161,14 +162,14 @@ public class HttpClientUtils {
 
             // 执行请求
             response = httpclient.execute(httpGet);
-            logger.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
-            logger.info("getResponse:"+ response);
+            log.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
+            log.info("getResponse:"+ response);
             // 判断返回状态是否为200
             if (response.getStatusLine().getStatusCode() == 200) {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
             }
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response != null) {
@@ -176,7 +177,7 @@ public class HttpClientUtils {
                 }
                 httpclient.close();
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
@@ -210,7 +211,7 @@ public class HttpClientUtils {
 
             if (headMap != null && !headMap.isEmpty()) {
                 for (String key : headMap.keySet()) {
-//                    logger.info("头部信息key:" + key + "===值: " + headMap.get(key));
+//                    log.info("头部信息key:" + key + "===值: " + headMap.get(key));
                     httpGet.addHeader(key, headMap.get(key));
                 }
             }
@@ -222,7 +223,7 @@ public class HttpClientUtils {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
             }
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response != null) {
@@ -230,7 +231,7 @@ public class HttpClientUtils {
                 }
                 httpclient.close();
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
@@ -277,14 +278,14 @@ public class HttpClientUtils {
             response = httpClient.execute(httpPost);
             resultString = EntityUtils.toString(response.getEntity(), "utf-8");
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response!=null) {
                     response.close();
                 }
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
@@ -303,7 +304,7 @@ public class HttpClientUtils {
      */
     public static String doPostJson(String url, String json) {
 
-//        logger.info("=====请求地址:"+url);
+//        log.info("=====请求地址:"+url);
         // 创建Httpclient对象
         CloseableHttpClient httpClient = HttpClients.createDefault();
         CloseableHttpResponse response = null;
@@ -312,29 +313,29 @@ public class HttpClientUtils {
             // 创建Http Post请求
             HttpPost httpPost = new HttpPost(url);
             // 创建请求内容
-//            logger.info("=====请求参数:"+json);
+//            log.info("=====请求参数:"+json);
             StringEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
             httpPost.setEntity(entity);
             // 执行http请求
             response = httpClient.execute(httpPost);
-//            logger.info("=====响应参数:"+response);
+//            log.info("=====响应参数:"+response);
             resultString = EntityUtils.toString(response.getEntity(), "utf-8");
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response!=null) {
                     response.close();
                 }
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
     }
 
     public static String doPostJson(String url,Map<String, String> headers,String json){
-        logger.info("=====请求地址:"+url);
+        log.info("=====请求地址:"+url);
         // 创建Httpclient对象
         CloseableHttpClient httpClient = HttpClients.createDefault();
         CloseableHttpResponse response = null;
@@ -348,22 +349,22 @@ public class HttpClientUtils {
                 }
             }
             // 创建请求内容
-            logger.info("=====请求参数:"+json);
+            log.info("=====请求参数:"+json);
             StringEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
             httpPost.setEntity(entity);
             // 执行http请求
             response = httpClient.execute(httpPost);
-            logger.info("=====响应参数:"+response);
+            log.info("=====响应参数:"+response);
             resultString = EntityUtils.toString(response.getEntity(), "utf-8");
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response!=null) {
                     response.close();
                 }
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
@@ -397,11 +398,11 @@ public class HttpClientUtils {
             //System.out.println("响应长度: " + responseLength);
             //System.out.println("响应内容: " + responseContent);
         } catch (ClientProtocolException e) {
-            logger.debug("该异常通常是协议错误导致,比如构造HttpGet对象时传入的协议不对(将'http'写成'htp')或者服务器端返回的内容不符合HTTP协议要求等,堆栈信息如下", e);
+            log.debug("该异常通常是协议错误导致,比如构造HttpGet对象时传入的协议不对(将'http'写成'htp')或者服务器端返回的内容不符合HTTP协议要求等,堆栈信息如下", e);
         } catch (ParseException e) {
-            logger.debug(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
         } catch (IOException e) {
-            logger.debug("该异常通常是网络原因引起的,如HTTP服务器未启动等,堆栈信息如下", e);
+            log.debug("该异常通常是网络原因引起的,如HTTP服务器未启动等,堆栈信息如下", e);
         } finally {
             httpClient.getConnectionManager().shutdown(); // 关闭连接,释放资源
         }
@@ -469,7 +470,7 @@ public class HttpClientUtils {
                 EntityUtils.consume(entity);
             }
         } catch (Exception e) {
-            logger.debug("与[" + reqURL + "]通信过程中发生异常,堆栈信息如下", e);
+            log.debug("与[" + reqURL + "]通信过程中发生异常,堆栈信息如下", e);
         } finally {
             httpClient.getConnectionManager().shutdown();
         }
@@ -512,7 +513,7 @@ public class HttpClientUtils {
                 EntityUtils.consume(entity);
             }
         } catch (Exception e) {
-            logger.debug("与[" + reqURL + "]通信过程中发生异常,堆栈信息如下", e);
+            log.debug("与[" + reqURL + "]通信过程中发生异常,堆栈信息如下", e);
         } finally {
             httpClient.getConnectionManager().shutdown();
         }
@@ -582,7 +583,7 @@ public class HttpClientUtils {
                 EntityUtils.consume(entity);
             }
         } catch (Exception e) {
-            logger.debug("与[" + reqURL + "]通信过程中发生异常,堆栈信息为", e);
+            log.debug("与[" + reqURL + "]通信过程中发生异常,堆栈信息为", e);
         } finally {
             httpClient.getConnectionManager().shutdown();
         }
@@ -652,21 +653,21 @@ public class HttpClientUtils {
             in.read(byteDatas);
             return new String(byteDatas) + "`" + httpStatusCode;
         } catch (Exception e) {
-            logger.debug(e.getMessage());
+            log.debug(e.getMessage());
             return "Failed`" + httpStatusCode;
         } finally {
             if (out != null) {
                 try {
                     out.close();
                 } catch (Exception e) {
-                    logger.debug("关闭输出流时发生异常,堆栈信息如下", e);
+                    log.debug("关闭输出流时发生异常,堆栈信息如下", e);
                 }
             }
             if (in != null) {
                 try {
                     in.close();
                 } catch (Exception e) {
-                    logger.debug("关闭输入流时发生异常,堆栈信息如下", e);
+                    log.debug("关闭输入流时发生异常,堆栈信息如下", e);
                 }
             }
             if (httpURLConnection != null) {
@@ -735,17 +736,17 @@ public class HttpClientUtils {
                 responseContent = EntityUtils.toString(entity, "UTF-8");
             }
         } catch (KeyManagementException e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } catch (NoSuchAlgorithmException e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } catch (UnsupportedEncodingException e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } catch (ClientProtocolException e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } catch (ParseException e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } catch (IOException e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             // 关闭连接,释放资源
             httpClient.getConnectionManager().shutdown();
@@ -801,9 +802,9 @@ public class HttpClientUtils {
 
         HttpClient client = new DefaultHttpClient();
         HttpPost post = new HttpPost(url);
-        logger.info("请求地址:" + url);
+        log.info("请求地址:" + url);
         // post.setHeader("Content-Type", "application/x-www-form-urlencoded");
-        logger.info("请求头信息:" + headers);
+        log.info("请求头信息:" + headers);
         if (headers != null) {
             Set<String> keys = headers.keySet();
             for (Map.Entry<String, String> entrdy : headers.entrySet()) {
@@ -816,13 +817,13 @@ public class HttpClientUtils {
         try {
 
             StringEntity s = new StringEntity(jsonMap.toString(), "utf-8");
-            logger.info("请求json参数:" + jsonMap);
+            log.info("请求json参数:" + jsonMap);
             // s.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
             // s.setContentType("application/json");
             // s.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
             post.setEntity(s);
 
-            logger.info("请求实体数据:" + post);
+            log.info("请求实体数据:" + post);
             // HttpResponse res = client.execute(post);
             HttpResponse httpResponse = client.execute(post);
             InputStream inStream = httpResponse.getEntity().getContent();
@@ -833,17 +834,17 @@ public class HttpClientUtils {
             while ((line = reader.readLine()) != null)
                 strber.append(line + "\n");
             inStream.close();
-            logger.info("MobilpriseActivity:" + strber);
+            log.info("MobilpriseActivity:" + strber);
 
             if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 HttpEntity entity = httpResponse.getEntity();
                 charset = EntityUtils.getContentCharSet(entity);
             }
         } catch (Exception e) {
-            logger.info("报错咯:" + e.getMessage());
+            log.info("报错咯:" + e.getMessage());
             throw new RuntimeException(e);
         }
-        logger.info("响应参数:" + charset);
+        log.info("响应参数:" + charset);
         return charset;
     }
 
@@ -867,14 +868,14 @@ public class HttpClientUtils {
 
             // 执行请求
             response = httpclient.execute(httpPut);
-            logger.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
-            logger.info("getResponse:"+ response);
+            log.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
+            log.info("getResponse:"+ response);
             // 判断返回状态是否为200
             if (response.getStatusLine().getStatusCode() == 200) {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
             }
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response != null) {
@@ -882,7 +883,7 @@ public class HttpClientUtils {
                 }
                 httpclient.close();
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
@@ -915,14 +916,14 @@ public class HttpClientUtils {
             }
             // 执行请求
             response = httpclient.execute(httpPut);
-            logger.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
-            logger.info("getResponse:"+ response);
+            log.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
+            log.info("getResponse:"+ response);
             // 判断返回状态是否为200
             if (response.getStatusLine().getStatusCode() == 200) {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
             }
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response != null) {
@@ -930,7 +931,7 @@ public class HttpClientUtils {
                 }
                 httpclient.close();
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
@@ -956,19 +957,19 @@ public class HttpClientUtils {
                 }
             }
             // 创建请求内容
-            logger.info("=====请求参数:"+json);
+            log.info("=====请求参数:"+json);
             StringEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
             httpPut.setEntity(entity);
             // 执行请求
             response = httpclient.execute(httpPut);
-            logger.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
-            logger.info("getResponse:"+ response);
+            log.info("getResponse_head:"+ Arrays.toString(response.getAllHeaders()));
+            log.info("getResponse:"+ response);
             // 判断返回状态是否为200
             if (response.getStatusLine().getStatusCode() == 200) {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
             }
         } catch (Exception e) {
-            logger.error("系统错误:",e);
+            log.error("系统错误:",e);
         } finally {
             try {
                 if (response != null) {
@@ -976,7 +977,7 @@ public class HttpClientUtils {
                 }
                 httpclient.close();
             } catch (IOException e) {
-                logger.error("系统错误:",e);
+                log.error("系统错误:",e);
             }
         }
         return resultString;
