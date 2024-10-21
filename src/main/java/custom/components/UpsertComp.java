@@ -23,7 +23,8 @@ import static custom.BaseTest.milvusClientV2;
 @Slf4j
 public class UpsertComp {
     public static UpsertResult upsertCollection(UpsertParams upsertParams){
-        // 先search collection
+        return null;
+       /* // 先search collection
         String collectionName = (upsertParams.getCollectionName() == null ||
                 upsertParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : upsertParams.getCollectionName();
 
@@ -158,7 +159,7 @@ public class UpsertComp {
                 .costTime(upsertTotalTime)
                 .build();
         executorService.shutdown();
-        return upsertResult;
+        return upsertResult;*/
     }
 
     @Data

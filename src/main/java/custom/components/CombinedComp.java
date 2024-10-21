@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 public class CombinedComp {
 
     public static void combinedComp(CombinedParams combinedParams){
-        String paramComb = combinedParams.getParamComb();
+        /*String paramComb = combinedParams.getParamComb();
         JSONObject paramCombJO=JSON.parseObject(paramComb);
         Set<String> keyList = paramCombJO.keySet();
         List<Object> operators = new ArrayList<>();
@@ -62,7 +62,7 @@ public class CombinedComp {
            executorService.submit(callable);
 
 
-        }
+        }*/
 
     }
 
