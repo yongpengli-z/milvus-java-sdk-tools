@@ -11,12 +11,10 @@ import custom.entity.result.SearchResultA;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 @Slf4j
 public class CombinedComp {
@@ -39,22 +37,37 @@ public class CombinedComp {
         ExecutorService executorService = Executors.newFixedThreadPool(operators.size());
         List<JSONObject> results = new ArrayList<>();
 
-        Future<?> futureSearch = executorService.submit(()->{
-            callCombined(operators.get(0));
-        });
-        Future<?> futureInsert = executorService.submit(()->{
-            callCombined(operators.get(1));
-        });
-
-            // 等待任务完成
+        Iterator<Object> iterator = operators.iterator();
+        while(iterator.hasNext()){
+            Future<?> future = executorService.submit(()-> {
+                callCombined(iterator.next());
+            });
+            iterator.remove();
             try {
-                results.add(JSON.parseObject(futureSearch.get().toString()));
-                results.add(JSON.parseObject(futureInsert.get().toString()));
+                results.add(JSON.parseObject(future.get().toString()));
             } catch (Exception e) {
                 log.error(e.getMessage());
             } finally {
                 executorService.shutdown();
             }
+        }
+
+//        Future<?> futureSearch = executorService.submit(()->{
+//            callCombined(operators.get(0));
+//        });
+//        Future<?> futureInsert = executorService.submit(()->{
+//            callCombined(operators.get(1));
+//        });
+
+            // 等待任务完成
+//            try {
+//                results.add(JSON.parseObject(futureSearch.get().toString()));
+//                results.add(JSON.parseObject(futureInsert.get().toString()));
+//            } catch (Exception e) {
+//                log.error(e.getMessage());
+//            } finally {
+//                executorService.shutdown();
+//            }
         return results;
     }
 
