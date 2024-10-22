@@ -15,11 +15,12 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Slf4j
 public class CombinedComp {
 
-    public static void combinedComp(CombinedParams combinedParams){
+    public static List<JSONObject> combinedComp(CombinedParams combinedParams){
         String paramComb = combinedParams.getParamComb();
         JSONObject paramCombJO=JSON.parseObject(paramComb);
         Set<String> keyList = paramCombJO.keySet();
@@ -63,6 +64,7 @@ public class CombinedComp {
 
 
         }
+        return results;
 
     }
 

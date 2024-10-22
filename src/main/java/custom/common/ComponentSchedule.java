@@ -111,6 +111,13 @@ public class ComponentSchedule {
                 jsonObject.put("Upsert_" + i, upsertResult);
                 results.add(jsonObject);
             }
+            if (operators.get(i) instanceof CombinedParams) {
+                log.info("*********** < Combined Operator > ***********");
+                List<JSONObject> jsonObjects= CombinedComp.combinedComp((CombinedParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("Combine_" + i, jsonObjects);
+                results.add(jsonObject);
+            }
         }
         log.info("[结果汇总]： " +
                 "\n" + results);
