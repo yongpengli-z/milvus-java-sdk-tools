@@ -2,6 +2,7 @@ package custom.components;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
 import custom.entity.CombinedParams;
 import custom.entity.InsertParams;
 import custom.entity.SearchParams;
@@ -41,28 +42,24 @@ public class CombinedComp {
         for (int i = 0; i < operators.size(); i++){
 
             int finalI = i;
-            Callable callable=
+            Callable<JsonObject> callable=
                     ()->{
-
+                        JSONObject jsonObject = new JSONObject();
                         if (operators.get(finalI) instanceof SearchParams) {
                             log.info("*********** < [Combination] search collection > ***********");
                             SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) operators.get(finalI));
-                            JSONObject jsonObject = new JSONObject();
                             jsonObject.put("Search_" + finalI, searchResultA);
                             results.add(jsonObject);
                         }
                         if (operators.get(finalI) instanceof InsertParams) {
                             log.info("*********** < [Combination] insert data > ***********");
                             InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(finalI));
-                            JSONObject jsonObject = new JSONObject();
                             jsonObject.put("Insert_" + finalI, insertResult);
                             results.add(jsonObject);
                         }
                         return null;
                     };
-           executorService.submit(callable);
-
-
+            Future<JsonObject> future = executorService.submit(callable);
         }
         return results;
 
