@@ -36,7 +36,7 @@ public class CombinedComp {
             }
         }
         // 先起线程
-        ExecutorService executorService = Executors.newFixedThreadPool(operators.size());
+        ExecutorService executorService = Executors.newFixedThreadPool(operators.size()+10);
         List<JSONObject> results = new ArrayList<>();
 
         for (int i = 0; i < operators.size(); i++) {
