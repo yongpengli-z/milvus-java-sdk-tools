@@ -6,8 +6,10 @@ import com.google.gson.JsonObject;
 import custom.entity.CombinedParams;
 import custom.entity.InsertParams;
 import custom.entity.SearchParams;
+import custom.entity.UpsertParams;
 import custom.entity.result.InsertResult;
 import custom.entity.result.SearchResultA;
+import custom.entity.result.UpsertResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -70,6 +72,11 @@ public class CombinedComp {
             log.info("*********** < [Combination] insert data > ***********");
             InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
             jsonObject.put("Insert", insertResult);
+        }
+        if (object instanceof UpsertParams) {
+            log.info("*********** < [Combination] upsert data > ***********");
+            UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
+            jsonObject.put("Upsert", upsertResult);
         }
         return jsonObject;
     }
