@@ -40,14 +40,11 @@ public class CombinedComp {
         List<JSONObject> results = new ArrayList<>();
 
         for (int i = 0; i < operators.size(); i++) {
-
             int finalI = i;
-//            Callable<JsonObject> callable=
-//                    ()->{
-//
+            Future<?> futureSearch = null;
             if (operators.get(finalI) instanceof SearchParams) {
                 log.info("*********** < [Combination] search collection > ***********");
-                executorService.submit(() -> {
+                futureSearch= executorService.submit(() -> {
                     SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) operators.get(finalI));
                     JSONObject jsonObject = new JSONObject();
                     jsonObject.put("Search_" + finalI, searchResultA);
@@ -55,21 +52,26 @@ public class CombinedComp {
                 });
 
             }
+            Future<?> futureInsert = null;
             if (operators.get(finalI) instanceof InsertParams) {
                 log.info("*********** < [Combination] insert data > ***********");
-                executorService.submit(() -> {
+                futureInsert=executorService.submit(() -> {
                     InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(finalI));
                     JSONObject jsonObject = new JSONObject();
                     jsonObject.put("Insert_" + finalI, insertResult);
                     results.add(jsonObject);
                 });
 
-//                        }
-//                        return null;
-//                    };
-//            Future<JsonObject> future = executorService.submit(callable);
             }
-
+            // 等待任务完成
+            try {
+                futureSearch.get();
+                futureInsert.get();
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            } finally {
+                executorService.shutdown();
+            }
 
         }
         return results;
