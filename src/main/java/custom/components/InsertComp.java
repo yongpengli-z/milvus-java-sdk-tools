@@ -13,6 +13,7 @@ import io.milvus.v2.service.vector.response.InsertResp;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -78,9 +79,17 @@ public class InsertComp {
                         InsertResultItem insertResultItem = new InsertResultItem();
                         List<Double> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
+                        LocalDateTime endRunningTime=LocalDateTime.now().plusMinutes(insertParams.getRunningMinutes());
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
                              r++) {
+                            // 时间和数据量谁先到都结束
+                            if(insertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)){
+                                log.info("Insert已到设定时长，停止插入...");
+                                insertResultItem.setInsertCnt(insertCnt);
+                                insertResultItem.setCostTime(costTime);
+                                return insertResultItem;
+                            }
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(),
                                     r * insertParams.getBatchSize(), insertParams.getDataset(), finalFileNames, finalFileSizeList);
                             log.info("线程[" + finalC + "]导入数据 " + insertParams.getBatchSize() + "条，范围: " + r * insertParams.getBatchSize() + "~" + ((r + 1) * insertParams.getBatchSize()));

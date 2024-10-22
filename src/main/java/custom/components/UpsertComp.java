@@ -13,6 +13,7 @@ import io.milvus.v2.service.vector.response.UpsertResp;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -79,9 +80,18 @@ public class UpsertComp {
                         UpsertResultItem upsertResultItem = new UpsertComp.UpsertResultItem();
                         List<Double> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
+                        LocalDateTime endRunningTime=LocalDateTime.now().plusMinutes(upsertParams.getRunningMinutes());
                         for (long r = ((upsertRounds / upsertParams.getNumConcurrency()) * finalC);
                              r < ((upsertRounds / upsertParams.getNumConcurrency()) * (finalC + 1));
                              r++) {
+                            // 时间和数据量谁先到都结束
+                            if(upsertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)){
+                                log.info("Upsert已到设定时长，停止插入...");
+                                upsertResultItem.setUpsertCnt(insertCnt);
+                                upsertResultItem.setCostTime(costTime);
+                                return upsertResultItem;
+                            }
+
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, upsertParams.getBatchSize(),
                                     (r * upsertParams.getBatchSize()+upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList);
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize()+upsertParams.getStartId() )+ "~" + ((r + 1) * upsertParams.getBatchSize()+upsertParams.getStartId()));

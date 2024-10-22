@@ -11,4 +11,5 @@ public class UpsertParams {
     private long batchSize;
     private int numConcurrency;
     private String dataset;
+    private long runningMinutes;
 }

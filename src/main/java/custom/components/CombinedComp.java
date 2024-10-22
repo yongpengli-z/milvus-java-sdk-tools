@@ -42,8 +42,8 @@ public class CombinedComp {
             int finalI = i;
             Callable callable=
                     ()->{
-                        if (operators.get(finalI) instanceof SearchParams) {
 
+                        if (operators.get(finalI) instanceof SearchParams) {
                             log.info("*********** < [Combination] search collection > ***********");
                             SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) operators.get(finalI));
                             JSONObject jsonObject = new JSONObject();
