@@ -36,44 +36,40 @@ public class CombinedComp {
             }
         }
         // 先起线程
-        ExecutorService executorService = Executors.newFixedThreadPool(operators.size()+10);
+        ExecutorService executorService = Executors.newFixedThreadPool(operators.size());
         List<JSONObject> results = new ArrayList<>();
 
-        for (int i = 0; i < operators.size(); i++) {
-            int finalI = i;
-            Future<?> futureSearch = null;
-            if (operators.get(finalI) instanceof SearchParams) {
-                log.info("*********** < [Combination] search collection > ***********");
-                futureSearch= executorService.submit(() -> {
-                    SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) operators.get(finalI));
-                    JSONObject jsonObject = new JSONObject();
-                    jsonObject.put("Search_" + finalI, searchResultA);
-                    results.add(jsonObject);
-                });
+        Future<?> futureSearch = executorService.submit(()->{
+            callCombined(operators.get(0));
+        });
+        Future<?> futureInsert = executorService.submit(()->{
+            callCombined(operators.get(1));
+        });
 
-            }
-            Future<?> futureInsert = null;
-            if (operators.get(finalI) instanceof InsertParams) {
-                log.info("*********** < [Combination] insert data > ***********");
-                futureInsert=executorService.submit(() -> {
-                    InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(finalI));
-                    JSONObject jsonObject = new JSONObject();
-                    jsonObject.put("Insert_" + finalI, insertResult);
-                    results.add(jsonObject);
-                });
-
-            }
             // 等待任务完成
             try {
-                futureSearch.get();
-                futureInsert.get();
+                results.add(JSON.parseObject(futureSearch.get().toString()));
+                results.add(JSON.parseObject(futureInsert.get().toString()));
             } catch (Exception e) {
                 log.error(e.getMessage());
             } finally {
                 executorService.shutdown();
             }
-
-        }
         return results;
+    }
+
+    public static JSONObject callCombined(Object object) {
+        JSONObject jsonObject = new JSONObject();
+        if (object instanceof SearchParams) {
+            log.info("*********** < [Combination] search collection > ***********");
+            SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) object);
+            jsonObject.put("Search", searchResultA);
+        }
+        if (object instanceof InsertParams) {
+            log.info("*********** < [Combination] insert data > ***********");
+            InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
+            jsonObject.put("Insert", insertResult);
+        }
+        return jsonObject;
     }
 }
