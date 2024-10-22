@@ -21,9 +21,9 @@ import java.util.concurrent.Future;
 @Slf4j
 public class CombinedComp {
 
-    public static List<JSONObject> combinedComp(CombinedParams combinedParams){
+    public static List<JSONObject> combinedComp(CombinedParams combinedParams) {
         String paramComb = combinedParams.getParamComb();
-        JSONObject paramCombJO=JSON.parseObject(paramComb);
+        JSONObject paramCombJO = JSON.parseObject(paramComb);
         Set<String> keyList = paramCombJO.keySet();
         List<Object> operators = new ArrayList<>();
         for (String keyString : keyList) {
@@ -39,30 +39,39 @@ public class CombinedComp {
         ExecutorService executorService = Executors.newFixedThreadPool(operators.size());
         List<JSONObject> results = new ArrayList<>();
 
-        for (int i = 0; i < operators.size(); i++){
+        for (int i = 0; i < operators.size(); i++) {
 
             int finalI = i;
-            Callable<JsonObject> callable=
-                    ()->{
-                        JSONObject jsonObject = new JSONObject();
-                        if (operators.get(finalI) instanceof SearchParams) {
-                            log.info("*********** < [Combination] search collection > ***********");
-                            SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) operators.get(finalI));
-                            jsonObject.put("Search_" + finalI, searchResultA);
-                            results.add(jsonObject);
-                        }
-                        if (operators.get(finalI) instanceof InsertParams) {
-                            log.info("*********** < [Combination] insert data > ***********");
-                            InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(finalI));
-                            jsonObject.put("Insert_" + finalI, insertResult);
-                            results.add(jsonObject);
-                        }
-                        return null;
-                    };
-            Future<JsonObject> future = executorService.submit(callable);
+//            Callable<JsonObject> callable=
+//                    ()->{
+//
+            if (operators.get(finalI) instanceof SearchParams) {
+                log.info("*********** < [Combination] search collection > ***********");
+                executorService.submit(() -> {
+                    SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) operators.get(finalI));
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("Search_" + finalI, searchResultA);
+                    results.add(jsonObject);
+                });
+
+            }
+            if (operators.get(finalI) instanceof InsertParams) {
+                log.info("*********** < [Combination] insert data > ***********");
+                executorService.submit(() -> {
+                    InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(finalI));
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("Insert_" + finalI, insertResult);
+                    results.add(jsonObject);
+                });
+
+//                        }
+//                        return null;
+//                    };
+//            Future<JsonObject> future = executorService.submit(callable);
+            }
+
+
         }
         return results;
-
     }
-
 }
