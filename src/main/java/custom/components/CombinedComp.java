@@ -36,38 +36,26 @@ public class CombinedComp {
         // 先起线程
         ExecutorService executorService = Executors.newFixedThreadPool(operators.size());
         List<JSONObject> results = new ArrayList<>();
+        List<Future<String>> futures = new ArrayList<>();
 
-        Iterator<Object> iterator = operators.iterator();
-        while(iterator.hasNext()){
-            Future<?> future = executorService.submit(()-> {
-                callCombined(iterator.next());
-            });
-            iterator.remove();
+        for (int i = 0; i < operators.size(); i++) {
+            final int threadNumber = i;
+            Callable<String> task = () -> {
+                JSONObject jsonObject = callCombined(operators.get(threadNumber));
+                return jsonObject.toJSONString();
+            };
+            futures.add(executorService.submit(task));
+        }
+        // 获取每个线程的返回值
+        for (Future<String> future : futures) {
             try {
-                results.add(JSON.parseObject(future.get().toString()));
+                String result = future.get(); // 阻塞直到任务完成并获取结果
+                results.add(JSON.parseObject(result));
             } catch (Exception e) {
-                log.error(e.getMessage());
-            } finally {
-                executorService.shutdown();
+                log.error("Combine Result Exception:"+e.getMessage());
             }
         }
-
-//        Future<?> futureSearch = executorService.submit(()->{
-//            callCombined(operators.get(0));
-//        });
-//        Future<?> futureInsert = executorService.submit(()->{
-//            callCombined(operators.get(1));
-//        });
-
-            // 等待任务完成
-//            try {
-//                results.add(JSON.parseObject(futureSearch.get().toString()));
-//                results.add(JSON.parseObject(futureInsert.get().toString()));
-//            } catch (Exception e) {
-//                log.error(e.getMessage());
-//            } finally {
-//                executorService.shutdown();
-//            }
+        executorService.shutdown(); // 关闭线程池
         return results;
     }
 
