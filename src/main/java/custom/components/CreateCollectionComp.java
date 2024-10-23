@@ -29,14 +29,16 @@ public class CreateCollectionComp {
                     .result(ResultEnum.SUCCESS.result)
                     .build();
             // collection级别mmap开关处理
-            Map<String, String> map = new HashMap<String, String>() {{
-                put(Constant.MMAP_ENABLED, String.valueOf(createCollectionParams.isEnableMmap()));
-            }};
-            milvusClientV2.alterCollection(AlterCollectionReq.builder()
-                    .properties(map)
-                    .collectionName(collection)
-                    .build());
-            log.info("alter collection [" + collection + "] scalar mmap: " + createCollectionParams.isEnableMmap());
+            if (createCollectionParams.getEnableMmap() != null && !createCollectionParams.getEnableMmap().equalsIgnoreCase("")) {
+                Map<String, String> map = new HashMap<String, String>() {{
+                    put(Constant.MMAP_ENABLED, createCollectionParams.getEnableMmap());
+                }};
+                milvusClientV2.alterCollection(AlterCollectionReq.builder()
+                        .properties(map)
+                        .collectionName(collection)
+                        .build());
+                log.info("alter collection [" + collection + "] scalar mmap: " + createCollectionParams.getEnableMmap());
+            }
         } catch (Exception e) {
             commonResult = CommonResult.builder()
                     .result(ResultEnum.EXCEPTION.result)
