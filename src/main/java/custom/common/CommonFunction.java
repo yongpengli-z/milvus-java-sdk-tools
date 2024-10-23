@@ -161,6 +161,7 @@ public class CommonFunction {
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
                     IndexParam indexParam = IndexParam.builder()
                             .fieldName(name)
+                            .indexName("idx_"+name)
                             .indexType(IndexParam.IndexType.AUTOINDEX)
                             .extraParams(CommonFunction.provideExtraParam(providerIndexType(dataType)))
                             .metricType(provideMetricTypeByVectorType(dataType))
@@ -172,6 +173,7 @@ public class CommonFunction {
             for (IndexParams indexParamItem : indexParams) {
                 IndexParam indexParam = IndexParam.builder()
                         .fieldName(indexParamItem.getFiledName())
+                        .indexName("idx_"+indexParamItem.getFiledName())
                         .indexType(indexParamItem.getIndextype())
                         .extraParams(CommonFunction.provideExtraParam(indexParamItem.getIndextype()))
                         .metricType(indexParamItem.getMetricType())
