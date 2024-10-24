@@ -39,7 +39,7 @@ public class SearchComp {
         float searchTotalTime;
         long startTimeTotal = System.currentTimeMillis();
         Map<String, Object> searchLevel = new HashMap<>();
-        searchLevel.put("level", searchParams.getSearchLevel());
+        searchLevel.put("level", searchParams.getSearchLevel()==0?1:searchParams.getSearchLevel());
         if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
             searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }
