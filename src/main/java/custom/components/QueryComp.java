@@ -27,7 +27,7 @@ public class QueryComp {
         ExecutorService executorService = Executors.newFixedThreadPool(queryParams.getNumConcurrency());
         float queryTotalTime;
         long startTimeTotal = System.currentTimeMillis();
-
+        log.info("query参数："+queryParams);
         for (int i = 0; i < queryParams.getNumConcurrency(); i++) {
             int finalI = i;
             Callable<QueryItemResult> callable = ()->{
