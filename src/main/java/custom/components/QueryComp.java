@@ -44,7 +44,7 @@ public class QueryComp {
                         QueryReq queryReq = QueryReq.builder()
                                 .collectionName(collectionName)
                                 .outputFields(queryParams.getOutputs())
-                                .ids(queryParams.getIds())
+                                .ids(queryParams.getIds().size()==0?null:queryParams.getIds())
                                 .filter(queryParams.getFilter())
                                 .consistencyLevel(ConsistencyLevel.STRONG)
                                 .partitionNames(queryParams.getPartitionNames()==null||queryParams.getPartitionNames().size()==0?new ArrayList<>():queryParams.getPartitionNames())
