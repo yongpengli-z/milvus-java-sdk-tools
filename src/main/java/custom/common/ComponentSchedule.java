@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -116,6 +115,13 @@ public class ComponentSchedule {
                 List<JSONObject> jsonObjects= CombinedComp.combinedComp((CombinedParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Combine_" + i, jsonObjects);
+                results.add(jsonObject);
+            }
+            if (operators.get(i) instanceof QueryParams) {
+                log.info("*********** < Query Operator > ***********");
+                QueryResult queryResult = QueryComp.queryCollection((QueryParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("Query_" + i, queryResult);
                 results.add(jsonObject);
             }
         }

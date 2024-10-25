@@ -2,18 +2,14 @@ package custom.components;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.google.gson.JsonObject;
-import custom.entity.CombinedParams;
-import custom.entity.InsertParams;
-import custom.entity.SearchParams;
-import custom.entity.UpsertParams;
+import custom.entity.*;
 import custom.entity.result.InsertResult;
+import custom.entity.result.QueryResult;
 import custom.entity.result.SearchResultA;
 import custom.entity.result.UpsertResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -78,6 +74,12 @@ public class CombinedComp {
             UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
             jsonObject.put("Upsert", upsertResult);
         }
+        if (object instanceof QueryParams) {
+            log.info("*********** < [Combination] query collection > ***********");
+            QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
+            jsonObject.put("Query", queryResult);
+        }
+
         return jsonObject;
     }
 }
