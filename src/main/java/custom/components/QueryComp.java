@@ -41,16 +41,17 @@ public class QueryComp {
                     long startItemTime = System.currentTimeMillis();
                     QueryResp query = null;
                     try {
-                        query = milvusClientV2.query(QueryReq.builder()
+                        QueryReq queryReq = QueryReq.builder()
                                 .collectionName(collectionName)
                                 .outputFields(queryParams.getOutputs())
                                 .ids(queryParams.getIds())
                                 .filter(queryParams.getFilter())
                                 .consistencyLevel(ConsistencyLevel.STRONG)
-//                                .partitionNames(queryParams.getPartitionNames())
+                                .partitionNames(queryParams.getPartitionNames()==null||queryParams.getPartitionNames().size()==0?new ArrayList<>():queryParams.getPartitionNames())
                                 .limit(queryParams.getLimit())
                                 .offset(queryParams.getOffset())
-                                .build());
+                                .build();
+                        query = milvusClientV2.query(queryReq);
                     } catch (Exception e) {
                         log.error("query exception:"+e.getMessage());
                     }
