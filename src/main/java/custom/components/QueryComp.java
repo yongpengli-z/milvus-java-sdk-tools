@@ -39,16 +39,21 @@ public class QueryComp {
                 int  printLog = 1;
                 while (LocalDateTime.now().isBefore(endTime)) {
                     long startItemTime = System.currentTimeMillis();
-                    QueryResp query = milvusClientV2.query(QueryReq.builder()
-                            .collectionName(collectionName)
-                            .outputFields(queryParams.getOutputs())
-                            .ids(queryParams.getIds())
-                            .filter(queryParams.getFilter())
-                            .consistencyLevel(ConsistencyLevel.STRONG)
-                            .partitionNames(queryParams.getPartitionNames())
-                            .limit(queryParams.getLimit())
-                            .offset(queryParams.getOffset())
-                            .build());
+                    QueryResp query = null;
+                    try {
+                        query = milvusClientV2.query(QueryReq.builder()
+                                .collectionName(collectionName)
+                                .outputFields(queryParams.getOutputs())
+                                .ids(queryParams.getIds())
+                                .filter(queryParams.getFilter())
+                                .consistencyLevel(ConsistencyLevel.STRONG)
+                                .partitionNames(queryParams.getPartitionNames())
+                                .limit(queryParams.getLimit())
+                                .offset(queryParams.getOffset())
+                                .build());
+                    } catch (Exception e) {
+                        log.error("query exception:"+e.getMessage());
+                    }
                     long endItemTime = System.currentTimeMillis();
                     costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
                     returnNum.add(query.getQueryResults().size());
