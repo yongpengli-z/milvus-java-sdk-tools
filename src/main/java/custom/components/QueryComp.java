@@ -47,7 +47,7 @@ public class QueryComp {
                                 .ids(queryParams.getIds())
                                 .filter(queryParams.getFilter())
                                 .consistencyLevel(ConsistencyLevel.STRONG)
-                                .partitionNames(queryParams.getPartitionNames())
+//                                .partitionNames(queryParams.getPartitionNames())
                                 .limit(queryParams.getLimit())
                                 .offset(queryParams.getOffset())
                                 .build());
