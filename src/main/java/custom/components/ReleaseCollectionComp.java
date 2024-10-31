@@ -63,8 +63,8 @@ public class ReleaseCollectionComp {
             }
         }
         try {
-            log.info("sleep 30s...");
-            Thread.sleep(1000 * 30);
+            log.info("sleep 180s...");
+            Thread.sleep(1000 * 180);
         } catch (InterruptedException e) {
             log.error("release collection:" + e.getMessage());
         }
