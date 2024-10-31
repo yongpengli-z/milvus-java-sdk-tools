@@ -60,15 +60,14 @@ public class InsertComp {
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
         float insertTotalTime = 0;
-        log.info("Insert collection [" + insertParams.getCollectionName() + "] total " + insertParams.getNumEntries() + " entities... ");
+        String collectionName = (insertParams.getCollectionName() == null ||
+                insertParams.getCollectionName().equalsIgnoreCase(""))
+                ? globalCollectionNames.get(0) : insertParams.getCollectionName();
+        log.info("Insert collection [" + collectionName + "] total " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
         ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
         // insert data with multiple threads
-        String collectionName = (insertParams.getCollectionName() == null ||
-                insertParams.getCollectionName().equalsIgnoreCase(""))
-                ? globalCollectionNames.get(0) : insertParams.getCollectionName();
-
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             int finalC = c;
             List<String> finalFileNames = fileNames;

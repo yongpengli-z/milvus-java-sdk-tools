@@ -70,7 +70,7 @@ public class SearchComp {
                                     .build());
                             long endItemTime = System.currentTimeMillis();
                             costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
-                            returnNum.add(search.getSearchResults().size());
+                            returnNum.add(search.getSearchResults().get(0).size());
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 printLog = 0;

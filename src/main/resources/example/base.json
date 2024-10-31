@@ -2,18 +2,22 @@
   "CreateCollectionParams_0": {
     "shardNum": 1,
     "enableDynamic": false,
-    "enableMmap": false,
     "fieldParamsList": [
       {
         "dataType": "Int64",
-        "primaryKey": true
+        "primaryKey": true,
+        "fieldName": "id_pk"
       },
-      {"dataType":"Varchar",
-        "primaryKey":false,
-        "maxLength":3072},
+      {
+        "dataType": "Varchar",
+        "fieldName": "varchar_1",
+        "primaryKey": false,
+        "maxLength": 3072
+      },
       {
         "dataType": "FloatVector",
         "dim": 768,
+        "fieldName": "floatVector_name",
         "primaryKey": false
       }
     ],
@@ -26,14 +30,23 @@
   "CreateIndexParams_1": {
     "collectionName": "",
     "indexParams": [
-
+      {
+        "filedName": "varchar_1",
+        "indextype": "AUTOINDEX"
+      },
+      {
+        "filedName": "floatVector_name",
+        "indextype": "AUTOINDEX",
+        "metricType": "L2"
+      }
     ]
   },
   "InsertParams_3": {
-    "batchSize": 10000,
+    "batchSize": 1000,
     "collectionName": "",
-    "numConcurrency": 1,
-    "numEntries": 1000000
+    "numConcurrency": 5,
+    "numEntries": 100000,
+    "dataset": "random"
   },
   "SearchParams_4": {
     "collectionName": "",
@@ -45,78 +58,69 @@
     ],
     "randomVector": true,
     "runningMinutes": 5,
-    "topK": 1
+    "topK": 1,
+    "searchLevel": 1
   },
-  "SearchParams_5": {
+  "QueryParams_5": {
     "collectionName": "",
-    "filter": "",
-    "nq": 1,
+    "ids": [
+    ],
+    "filter": "id_pk > 10",
     "numConcurrency": 20,
     "outputs": [
-      "*"
+        "*"
     ],
-    "randomVector": true,
     "runningMinutes": 5,
-    "topK": 1
+    "limit": 1,
+    "offset": 0
   },
-  "SearchParams_6": {
-    "collectionName": "",
-    "filter": "",
-    "nq": 1,
-    "numConcurrency": 30,
-    "outputs": [
-      "*"
-    ],
-    "randomVector": true,
-    "runningMinutes": 5,
-    "topK": 1
+  "CombinedParams_6": {
+    "paramComb": {
+      "InsertParams": {
+        "batchSize": 10,
+        "collectionName": "",
+        "numConcurrency": 5,
+        "numEntries": 10000,
+        "dataset": "random",
+        "runningMinutes": 2
+      },
+      "UpsertParams": {
+        "batchSize": 100,
+        "collectionName": "",
+        "numConcurrency": 5,
+        "numEntries": 1000000,
+        "dataset": "random",
+        "runningMinutes": 2,
+        "startId": 20000
+      },
+      "SearchParams": {
+        "collectionName": "",
+        "filter": "",
+        "nq": 1,
+        "numConcurrency": 1,
+        "outputs": [
+          "*"
+        ],
+        "randomVector": true,
+        "runningMinutes": 2,
+        "topK": 1,
+        "searchLevel": 1
+      },
+      "QueryParams": {
+        "collectionName": "",
+        "ids": [],
+        "filter": "id_pk > 10",
+        "numConcurrency": 20,
+        "outputs": [
+          "*"
+        ],
+        "runningMinutes": 2,
+        "limit": 1,
+        "offset": 0
+      }
+    }
   },
-  "SearchParams_7": {
-    "collectionName": "",
-    "filter": "",
-    "nq": 1,
-    "numConcurrency": 40,
-    "outputs": [
-      "*"
-    ],
-    "randomVector": true,
-    "runningMinutes": 5,
-    "topK": 1
-  },
-  "SearchParams_8": {
-    "collectionName": "",
-    "filter": "",
-    "nq": 1,
-    "numConcurrency": 50,
-    "outputs": [
-      "*"
-    ],
-    "randomVector": true,
-    "runningMinutes": 5,
-    "topK": 1
-  },
-  "SearchParams_9": {
-    "collectionName": "",
-    "filter": "",
-    "nq": 1,
-    "numConcurrency": 60,
-    "outputs": [
-      "*"
-    ],
-    "randomVector": true,
-    "runningMinutes": 5,
-    "topK": 1
-  },
-  "SearchParams_10": {
-    "collectionName": "",
-    "filter": "",
-    "nq": 1,
-    "numConcurrency": 70,
-    "outputs": [
-      "*"
-    ],
-    "randomVector": true,
-    "runningMinutes": 5,
-    "topK": 1
+  "ReleaseParams_7": {
+    "releaseAll": true
   }
 }
