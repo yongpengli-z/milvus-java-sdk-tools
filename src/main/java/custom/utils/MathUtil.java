@@ -304,7 +304,7 @@ public class MathUtil {
                 list.add(random.nextBoolean());
             }
             if (dataType == DataType.String || dataType == DataType.VarChar) {
-                list.add(getRandomString(10));
+                list.add(getRandomString(length));
             }
         }
         return list;

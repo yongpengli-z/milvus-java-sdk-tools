@@ -89,7 +89,7 @@ public class CommonFunction {
             if (dataType == DataType.Array) {
                 fieldSchema.setMaxCapacity(fieldParams.getMaxCapacity());
                 fieldSchema.setElementType(fieldParams.getElementType());
-                if(fieldParams.getElementType() == DataType.VarChar){
+                if (fieldParams.getElementType() == DataType.VarChar) {
                     fieldSchema.setMaxLength(fieldParams.getMaxLength());
                 }
             }
@@ -118,7 +118,7 @@ public class CommonFunction {
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
                     IndexParam indexParam = IndexParam.builder()
                             .fieldName(name)
-                            .indexName("idx_"+name)
+                            .indexName("idx_" + name)
                             .indexType(IndexParam.IndexType.AUTOINDEX)
                             .extraParams(CommonFunction.provideExtraParam(providerIndexType(dataType)))
                             .metricType(provideMetricTypeByVectorType(dataType))
@@ -130,7 +130,7 @@ public class CommonFunction {
             for (IndexParams indexParamItem : indexParams) {
                 IndexParam indexParam = IndexParam.builder()
                         .fieldName(indexParamItem.getFiledName())
-                        .indexName("idx_"+indexParamItem.getFiledName())
+                        .indexName("idx_" + indexParamItem.getFiledName())
                         .indexType(indexParamItem.getIndextype())
                         .extraParams(CommonFunction.provideExtraParam(indexParamItem.getIndextype()))
                         .metricType(indexParamItem.getMetricType())
@@ -244,25 +244,25 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames,List<Long> fileSizeList  ) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         List<JsonObject> jsonList = new ArrayList<>();
         //提供给floatVector用
-        List<List<Float>> floatVectorList=new ArrayList<>();
+        List<List<Float>> floatVectorList = new ArrayList<>();
         // 先获取Dataset数据集
-        if(dataset.equalsIgnoreCase("gist")){
-            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.GIST,fileSizeList);
+        if (dataset.equalsIgnoreCase("gist")) {
+            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.GIST, fileSizeList);
         }
-        if(dataset.equalsIgnoreCase("deep")){
-            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.DEEP,fileSizeList);
+        if (dataset.equalsIgnoreCase("deep")) {
+            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.DEEP, fileSizeList);
         }
-        if(dataset.equalsIgnoreCase("laion")){
-            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.LAION,fileSizeList);
+        if (dataset.equalsIgnoreCase("laion")) {
+            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.LAION, fileSizeList);
         }
-        if(dataset.equalsIgnoreCase("sift")){
-            floatVectorList=DatasetUtil.providerFloatVectorByDataset(startId,count,fileNames,DatasetEnum.SIFT,fileSizeList);
+        if (dataset.equalsIgnoreCase("sift")) {
+            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.SIFT, fileSizeList);
         }
         for (long i = startId; i < (startId + count); i++) {
             JsonObject row = new JsonObject();
@@ -276,29 +276,29 @@ public class CommonFunction {
                 JsonObject jsonObject = new JsonObject();
                 Gson gson = new Gson();
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
-                    if(dataset.equalsIgnoreCase("random")){
-                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null);
+                    if (dataset.equalsIgnoreCase("random")) {
+                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0);
                     }
-                    if (dataset.equalsIgnoreCase("gist")){
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
+                    if (dataset.equalsIgnoreCase("gist")) {
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
-                    if (dataset.equalsIgnoreCase("deep")){
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
+                    if (dataset.equalsIgnoreCase("deep")) {
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
-                    if (dataset.equalsIgnoreCase("sift")){
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
+                    if (dataset.equalsIgnoreCase("sift")) {
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
-                    if (dataset.equalsIgnoreCase("laion")){
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i-startId))));
+                    if (dataset.equalsIgnoreCase("laion")) {
+                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i, null);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0);
                 } else if (dataType == DataType.Array) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength);
                 } else {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i, null);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i, null, 0);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
@@ -316,7 +316,7 @@ public class CommonFunction {
      * @param countIndex  索引i，避免多次创建时数据内容一样
      * @return JsonObject
      */
-    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType) {
+    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType, int lengthForCapacity) {
         JsonObject row = new JsonObject();
         Gson gson = new Gson();
         Random random = new Random();
@@ -336,7 +336,7 @@ public class CommonFunction {
             row.addProperty(fieldName, (double) countIndex * 0.1f);
         }
         if (dataType == DataType.Array) {
-            List<Object> list = MathUtil.providerArrayData(elementType, dimOrLength, 20);
+            List<Object> list = MathUtil.providerArrayData(elementType, dimOrLength, lengthForCapacity);
             row.add(fieldName, gson.toJsonTree(list));
         }
         if (dataType == DataType.Bool) {
