@@ -89,6 +89,9 @@ public class CommonFunction {
             if (dataType == DataType.Array) {
                 fieldSchema.setMaxCapacity(fieldParams.getMaxCapacity());
                 fieldSchema.setElementType(fieldParams.getElementType());
+                if(fieldParams.getElementType() == DataType.VarChar){
+                    fieldSchema.setMaxLength(fieldParams.getMaxLength());
+                }
             }
             fieldSchemaList.add(fieldSchema);
         }
@@ -103,52 +106,6 @@ public class CommonFunction {
      * @param indexParams    index field集合
      */
     public static void createCommonIndex(String collectionName, List<IndexParams> indexParams) {
-        /*DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
-        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
-        List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
-        List<IndexParam> indexParamList = new ArrayList<>();
-        // 判断是否是云上,自动为建autoIndex 索引
-        if (isCloud){
-            for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
-                String name = fieldSchema.getName();
-                DataType dataType = fieldSchema.getDataType();
-                // 给向量自动建索引
-                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
-                    IndexParam indexParam = IndexParam.builder()
-                            .fieldName(name)
-                            .indexType(IndexParam.IndexType.AUTOINDEX)
-                            .extraParams(CommonFunction.provideExtraParam(providerIndexType(dataType)))
-                            .metricType(provideMetricTypeByVectorType(dataType))
-                            .build();
-                    indexParamList.add(indexParam);
-                }
-                // 给标量列建索引
-               if (indexParams.stream().map(IndexParams::getFiledName).collect(Collectors.toList()).contains(name)){
-                    IndexParam indexParam = IndexParam.builder()
-                            .fieldName(name)
-                            .indexType(providerIndexType(dataType))
-                            .extraParams(CommonFunction.provideExtraParam(providerIndexType(dataType)))
-                            .metricType(provideMetricTypeByVectorType(dataType))
-                            .build();
-                    indexParamList.add(indexParam);
-                }
-            }
-        }
-        if (!isCloud){
-            for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
-                String name = fieldSchema.getName();
-                DataType dataType = fieldSchema.getDataType();
-                if (indexParams.stream().map(IndexParams::getFiledName).collect(Collectors.toList()).contains(name)) {
-                    IndexParam indexParam = IndexParam.builder()
-                            .fieldName(name)
-                            .indexType(providerIndexType(dataType))
-                            .extraParams(CommonFunction.provideExtraParam(providerIndexType(dataType)))
-                            .metricType(provideMetricTypeByVectorType(dataType))
-                            .build();
-                    indexParamList.add(indexParam);
-                }
-            }
-        }*/
         List<IndexParam> indexParamList = new ArrayList<>();
         if (indexParams.size() == 0) {
             DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(0) : collectionName).build());
