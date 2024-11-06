@@ -20,7 +20,7 @@ public class CreateIndexComp {
             CommonFunction.createCommonIndex(collectionName, createIndexParams.getIndexParams());
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         } catch (Exception e) {
-            commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result)
+            commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
                     .message(e.getMessage()).build();
         }
         return CreateIndexResult.builder()

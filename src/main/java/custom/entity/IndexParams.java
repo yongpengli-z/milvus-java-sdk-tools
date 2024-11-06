@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class IndexParams {
-    private String filedName;
+    private String fieldName;
     private  IndexParam.IndexType indextype;
     private IndexParam.MetricType metricType;
 }
