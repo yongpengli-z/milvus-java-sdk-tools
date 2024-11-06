@@ -129,8 +129,8 @@ public class CommonFunction {
         } else {
             for (IndexParams indexParamItem : indexParams) {
                 IndexParam indexParam = IndexParam.builder()
-                        .fieldName(indexParamItem.getFiledName())
-                        .indexName("idx_" + indexParamItem.getFiledName())
+                        .fieldName(indexParamItem.getFieldName())
+                        .indexName("idx_" + indexParamItem.getFieldName())
                         .indexType(indexParamItem.getIndextype())
                         .extraParams(CommonFunction.provideExtraParam(indexParamItem.getIndextype()))
                         .metricType(indexParamItem.getMetricType())
