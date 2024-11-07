@@ -101,7 +101,10 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof WaitParams) {
                 log.info("*********** < Wait > ***********");
-                WaitComp.wait((WaitParams) operators.get(i));
+                WaitResult waitResult=WaitComp.wait((WaitParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("Wait" + i, waitResult);
+                results.add(jsonObject);
             }
             if (operators.get(i) instanceof UpsertParams) {
                 log.info("*********** < upsert data > ***********");
@@ -122,6 +125,13 @@ public class ComponentSchedule {
                 QueryResult queryResult = QueryComp.queryCollection((QueryParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Query_" + i, queryResult);
+                results.add(jsonObject);
+            }
+            if (operators.get(i) instanceof DropIndexParams) {
+                log.info("*********** < DropIndex Operator > ***********");
+                DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("DropIndex_" + i, dropIndexResult);
                 results.add(jsonObject);
             }
         }
