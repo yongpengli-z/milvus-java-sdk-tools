@@ -29,7 +29,7 @@ public class BaseTest {
             ? ""
             : System.getProperty("uri");
     String token =
-        System.getProperty("token") == null || System.getProperty("token").equals("")
+        System.getProperty("token") == null || System.getProperty("token").trim().equals("")
             ? ""
             : System.getProperty("token");
     String initialParams =
