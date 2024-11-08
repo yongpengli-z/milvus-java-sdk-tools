@@ -62,12 +62,6 @@ public class ReleaseCollectionComp {
                         .build());
             }
         }
-        try {
-            log.info("sleep 180s...");
-            Thread.sleep(1000 * 180);
-        } catch (InterruptedException e) {
-            log.error("release collection:" + e.getMessage());
-        }
         return ReleaseResult.builder().releaseResultList(releaseResultList).build();
     }
 }
