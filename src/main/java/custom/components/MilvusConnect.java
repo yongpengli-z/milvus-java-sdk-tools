@@ -33,6 +33,7 @@ public class MilvusConnect {
                             + substring
                             + "";
             String pwdString = HttpClientUtils.doGet(urlPWD);
+            log.info("pwdString:"+pwdString);
             token = "root:" + JSON.parseObject(pwdString).getString("Data");
         } else {
             token = "root:Milvus";
