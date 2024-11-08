@@ -39,7 +39,7 @@ public class ConcurrentComp {
         for (int i = 0; i < operators.size(); i++) {
             final int threadNumber = i;
             Callable<String> task = () -> {
-                JSONObject jsonObject = callCombined(operators.get(threadNumber));
+                JSONObject jsonObject = callConcurrent(operators.get(threadNumber));
                 return jsonObject.toJSONString();
             };
             futures.add(executorService.submit(task));
@@ -57,7 +57,7 @@ public class ConcurrentComp {
         return results;
     }
 
-    public static JSONObject callCombined(Object object) {
+    public static JSONObject callConcurrent(Object object) {
         JSONObject jsonObject = new JSONObject();
         if (object instanceof SearchParams) {
             log.info("--------------- < [Concurrent] search collection > ---------------");

@@ -117,7 +117,7 @@ public class ComponentSchedule {
                 log.info("*********** < Concurrent Operator > ***********");
                 List<JSONObject> jsonObjects= ConcurrentComp.concurrentComp((ConcurrentParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Combine_" + i, jsonObjects);
+                jsonObject.put("Concurrent_" + i, jsonObjects);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof QueryParams) {
