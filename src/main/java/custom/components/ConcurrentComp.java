@@ -22,7 +22,7 @@ public class ConcurrentComp {
         for (String keyString : keyList) {
             String itemParam = paramCombJO.getString(keyString);
             try {
-                Object o = JSONObject.parseObject(itemParam, Class.forName("custom.entity." + keyString));
+                Object o = JSONObject.parseObject(itemParam, Class.forName("custom.entity." + keyString.split("_")[0]));
                 operators.add(o);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
@@ -35,8 +35,9 @@ public class ConcurrentComp {
 
         for (int i = 0; i < operators.size(); i++) {
             final int threadNumber = i;
+            int finalI = i;
             Callable<String> task = () -> {
-                JSONObject jsonObject = callConcurrent(operators.get(threadNumber));
+                JSONObject jsonObject = callConcurrent(operators.get(threadNumber), finalI);
                 return jsonObject.toJSONString();
             };
             futures.add(executorService.submit(task));
@@ -54,62 +55,62 @@ public class ConcurrentComp {
         return results;
     }
 
-    public static JSONObject callConcurrent(Object object) {
+    public static JSONObject callConcurrent(Object object,int index) {
         JSONObject jsonObject = new JSONObject();
         if (object instanceof SearchParams) {
             log.info("--------------- < [Concurrent] search collection > ---------------");
             SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) object);
-            jsonObject.put("Search", searchResultA);
+            jsonObject.put("Search_"+index, searchResultA);
         }
         if (object instanceof InsertParams) {
             log.info("--------------- < [Concurrent] insert data > ---------------");
             InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
-            jsonObject.put("Insert", insertResult);
+            jsonObject.put("Insert_"+index, insertResult);
         }
         if (object instanceof UpsertParams) {
             log.info("--------------- < [Concurrent] upsert data > ---------------");
             UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
-            jsonObject.put("Upsert", upsertResult);
+            jsonObject.put("Upsert_"+index, upsertResult);
         }
         if (object instanceof QueryParams) {
             log.info("--------------- < [Concurrent] query collection > ---------------");
             QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
-            jsonObject.put("Query", queryResult);
+            jsonObject.put("Query_"+index, queryResult);
         }
         if (object instanceof CreateCollectionParams) {
             log.info("--------------- < [Concurrent] create collection > ---------------");
             CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
-            jsonObject.put("CreateCollection", createCollectionResult);
+            jsonObject.put("CreateCollection_"+index, createCollectionResult);
         }
         if (object instanceof CreateIndexParams) {
             log.info("--------------- < [Concurrent] create index > ---------------");
             CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) object);
-            jsonObject.put("CreateIndex", createIndexResult);
+            jsonObject.put("CreateIndex_"+index, createIndexResult);
         }
         if (object instanceof LoadParams) {
             log.info("--------------- < [Concurrent] load collection > ---------------");
             LoadResult loadResult = LoadCollectionComp.loadCollection((LoadParams) object);
-            jsonObject.put("LoadCollection", loadResult);
+            jsonObject.put("LoadCollection_"+index, loadResult);
         }
         if (object instanceof ReleaseParams) {
             log.info("--------------- < [Concurrent] release collection > ---------------");
             ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) object);
-            jsonObject.put("ReleaseCollection", releaseResult);
+            jsonObject.put("ReleaseCollection_"+index, releaseResult);
         }
         if (object instanceof DropCollectionParams) {
             log.info("--------------- < [Concurrent] drop collection > ---------------");
             DropCollectionResult dropCollectionResult = DropCollectionComp.dropCollection((DropCollectionParams) object);
-            jsonObject.put("DropCollection", dropCollectionResult);
+            jsonObject.put("DropCollection_"+index, dropCollectionResult);
         }
         if (object instanceof WaitParams) {
             log.info("--------------- < [Concurrent] wait > ---------------");
             WaitResult waitResult = WaitComp.wait((WaitParams) object);
-            jsonObject.put("Wait", waitResult);
+            jsonObject.put("Wait_"+index, waitResult);
         }
         if (object instanceof DropIndexParams) {
             log.info("--------------- < [Concurrent] drop index > ---------------");
             DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);
-            jsonObject.put("DropIndex", dropIndexResult);
+            jsonObject.put("DropIndex_"+index, dropIndexResult);
         }
         return jsonObject;
     }
