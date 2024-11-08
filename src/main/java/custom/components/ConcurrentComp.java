@@ -120,6 +120,11 @@ public class ConcurrentComp {
             DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);
             jsonObject.put("DropIndex_" + index, dropIndexResult);
         }
+        if (object instanceof LoopParams) {
+            log.info("*********** < [Concurrent] Loop Operator> ***********");
+            JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
+            jsonObject.put("Loop_" + index, loopJO);
+        }
         return jsonObject;
     }
 }

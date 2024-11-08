@@ -135,7 +135,7 @@ public class ComponentSchedule {
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof LoopParams) {
-                log.info("*********** < drop index > ***********");
+                log.info("*********** < Loop Operator> ***********");
                 JSONObject loopJO = LoopComp.loopComp((LoopParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Loop_" + i, loopJO);
