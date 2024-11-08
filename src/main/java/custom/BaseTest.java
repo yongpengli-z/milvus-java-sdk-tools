@@ -47,6 +47,7 @@ public class BaseTest {
 
     if (token.equals("")) {
       token = MilvusConnect.provideToken(uri);
+      log.info("查询到token:"+token);
     }
 
     milvusClientV2 = MilvusConnect.createMilvusClientV2(uri, token);
