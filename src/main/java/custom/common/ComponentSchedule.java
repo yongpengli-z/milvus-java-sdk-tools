@@ -113,9 +113,9 @@ public class ComponentSchedule {
                 jsonObject.put("Upsert_" + i, upsertResult);
                 results.add(jsonObject);
             }
-            if (operators.get(i) instanceof CombinedParams) {
-                log.info("*********** < Combined Operator > ***********");
-                List<JSONObject> jsonObjects= CombinedComp.combinedComp((CombinedParams) operators.get(i));
+            if (operators.get(i) instanceof ConcurrentParams) {
+                log.info("*********** < Concurrent Operator > ***********");
+                List<JSONObject> jsonObjects= ConcurrentComp.concurrentComp((ConcurrentParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Combine_" + i, jsonObjects);
                 results.add(jsonObject);

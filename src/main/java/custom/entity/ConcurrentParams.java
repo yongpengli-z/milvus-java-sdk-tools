@@ -6,7 +6,6 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CombinedParams {
+public class ConcurrentParams {
     String paramComb;
-    int runningTime;
 }

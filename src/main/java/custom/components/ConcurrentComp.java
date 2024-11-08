@@ -15,10 +15,10 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 @Slf4j
-public class CombinedComp {
+public class ConcurrentComp {
 
-    public static List<JSONObject> combinedComp(CombinedParams combinedParams) {
-        String paramComb = combinedParams.getParamComb();
+    public static List<JSONObject> concurrentComp(ConcurrentParams concurrentParams) {
+        String paramComb = concurrentParams.getParamComb();
         JSONObject paramCombJO = JSON.parseObject(paramComb);
         Set<String> keyList = paramCombJO.keySet();
         List<Object> operators = new ArrayList<>();
@@ -60,22 +60,22 @@ public class CombinedComp {
     public static JSONObject callCombined(Object object) {
         JSONObject jsonObject = new JSONObject();
         if (object instanceof SearchParams) {
-            log.info("*********** < [Combination] search collection > ***********");
+            log.info("*********** < [Concurrent] search collection > ***********");
             SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) object);
             jsonObject.put("Search", searchResultA);
         }
         if (object instanceof InsertParams) {
-            log.info("*********** < [Combination] insert data > ***********");
+            log.info("*********** < [Concurrent] insert data > ***********");
             InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
             jsonObject.put("Insert", insertResult);
         }
         if (object instanceof UpsertParams) {
-            log.info("*********** < [Combination] upsert data > ***********");
+            log.info("*********** < [Concurrent] upsert data > ***********");
             UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
             jsonObject.put("Upsert", upsertResult);
         }
         if (object instanceof QueryParams) {
-            log.info("*********** < [Combination] query collection > ***********");
+            log.info("*********** < [Concurrent] query collection > ***********");
             QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
             jsonObject.put("Query", queryResult);
         }
