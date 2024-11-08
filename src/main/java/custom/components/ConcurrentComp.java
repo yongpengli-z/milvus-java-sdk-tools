@@ -60,22 +60,22 @@ public class ConcurrentComp {
     public static JSONObject callCombined(Object object) {
         JSONObject jsonObject = new JSONObject();
         if (object instanceof SearchParams) {
-            log.info("*********** < [Concurrent] search collection > ***********");
+            log.info("--------------- < [Concurrent] search collection > ---------------");
             SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) object);
             jsonObject.put("Search", searchResultA);
         }
         if (object instanceof InsertParams) {
-            log.info("*********** < [Concurrent] insert data > ***********");
+            log.info("--------------- < [Concurrent] insert data > ---------------");
             InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
             jsonObject.put("Insert", insertResult);
         }
         if (object instanceof UpsertParams) {
-            log.info("*********** < [Concurrent] upsert data > ***********");
+            log.info("--------------- < [Concurrent] upsert data > ---------------");
             UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
             jsonObject.put("Upsert", upsertResult);
         }
         if (object instanceof QueryParams) {
-            log.info("*********** < [Concurrent] query collection > ***********");
+            log.info("--------------- < [Concurrent] query collection > ---------------");
             QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
             jsonObject.put("Query", queryResult);
         }
