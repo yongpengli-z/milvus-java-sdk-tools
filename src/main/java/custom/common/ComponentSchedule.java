@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ComponentSchedule {
-    public static void runningSchedule(String customizeParams){
+    public static void runningSchedule(String customizeParams) {
         log.info("--customizeParams--:" + customizeParams);
 
         // 获取params的所有根节点
@@ -101,7 +101,7 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof WaitParams) {
                 log.info("*********** < Wait > ***********");
-                WaitResult waitResult=WaitComp.wait((WaitParams) operators.get(i));
+                WaitResult waitResult = WaitComp.wait((WaitParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Wait" + i, waitResult);
                 results.add(jsonObject);
@@ -115,20 +115,20 @@ public class ComponentSchedule {
             }
             if (operators.get(i) instanceof ConcurrentParams) {
                 log.info("*********** < Concurrent Operator > ***********");
-                List<JSONObject> jsonObjects= ConcurrentComp.concurrentComp((ConcurrentParams) operators.get(i));
+                List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Concurrent_" + i, jsonObjects);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof QueryParams) {
-                log.info("*********** < Query Operator > ***********");
+                log.info("*********** < query collection > ***********");
                 QueryResult queryResult = QueryComp.queryCollection((QueryParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("Query_" + i, queryResult);
                 results.add(jsonObject);
             }
             if (operators.get(i) instanceof DropIndexParams) {
-                log.info("*********** < DropIndex Operator > ***********");
+                log.info("*********** < drop index > ***********");
                 DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) operators.get(i));
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("DropIndex_" + i, dropIndexResult);

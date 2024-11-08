@@ -3,10 +3,7 @@ package custom.components;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import custom.entity.*;
-import custom.entity.result.InsertResult;
-import custom.entity.result.QueryResult;
-import custom.entity.result.SearchResultA;
-import custom.entity.result.UpsertResult;
+import custom.entity.result.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -50,7 +47,7 @@ public class ConcurrentComp {
                 String result = future.get(); // 阻塞直到任务完成并获取结果
                 results.add(JSON.parseObject(result));
             } catch (Exception e) {
-                log.error("Combine Result Exception:"+e.getMessage());
+                log.error("Combine Result Exception:" + e.getMessage());
             }
         }
         executorService.shutdown(); // 关闭线程池
@@ -79,7 +76,41 @@ public class ConcurrentComp {
             QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
             jsonObject.put("Query", queryResult);
         }
-
+        if (object instanceof CreateCollectionParams) {
+            log.info("--------------- < [Concurrent] create collection > ---------------");
+            CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
+            jsonObject.put("CreateCollection", createCollectionResult);
+        }
+        if (object instanceof CreateIndexParams) {
+            log.info("--------------- < [Concurrent] create index > ---------------");
+            CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) object);
+            jsonObject.put("CreateIndex", createIndexResult);
+        }
+        if (object instanceof LoadParams) {
+            log.info("--------------- < [Concurrent] load collection > ---------------");
+            LoadResult loadResult = LoadCollectionComp.loadCollection((LoadParams) object);
+            jsonObject.put("LoadCollection", loadResult);
+        }
+        if (object instanceof ReleaseParams) {
+            log.info("--------------- < [Concurrent] release collection > ---------------");
+            ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) object);
+            jsonObject.put("ReleaseCollection", releaseResult);
+        }
+        if (object instanceof DropCollectionParams) {
+            log.info("--------------- < [Concurrent] drop collection > ---------------");
+            DropCollectionResult dropCollectionResult = DropCollectionComp.dropCollection((DropCollectionParams) object);
+            jsonObject.put("DropCollection", dropCollectionResult);
+        }
+        if (object instanceof WaitParams) {
+            log.info("--------------- < [Concurrent] wait > ---------------");
+            WaitResult waitResult = WaitComp.wait((WaitParams) object);
+            jsonObject.put("Wait", waitResult);
+        }
+        if (object instanceof DropIndexParams) {
+            log.info("--------------- < [Concurrent] drop index > ---------------");
+            DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);
+            jsonObject.put("DropIndex", dropIndexResult);
+        }
         return jsonObject;
     }
 }
