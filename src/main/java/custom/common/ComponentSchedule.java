@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ComponentSchedule {
-    public static void runningSchedule(String customizeParams) {
+    public static List<JSONObject>  runningSchedule(String customizeParams) {
         log.info("--customizeParams--:" + customizeParams);
 
         // 获取params的所有根节点
@@ -134,9 +134,16 @@ public class ComponentSchedule {
                 jsonObject.put("DropIndex_" + i, dropIndexResult);
                 results.add(jsonObject);
             }
+            if (operators.get(i) instanceof LoopParams) {
+                log.info("*********** < drop index > ***********");
+                JSONObject loopJO = LoopComp.loopComp((LoopParams) operators.get(i));
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("Loop_" + i, loopJO);
+                results.add(jsonObject);
+            }
         }
         log.info("[结果汇总]： " +
                 "\n" + results);
-
+        return results;
     }
 }
