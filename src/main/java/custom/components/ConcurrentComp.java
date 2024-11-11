@@ -2,6 +2,7 @@ package custom.components;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import custom.common.ComponentSchedule;
 import custom.entity.*;
 import custom.entity.result.*;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class ConcurrentComp {
             final int threadNumber = i;
             int finalI = i;
             Callable<String> task = () -> {
-                JSONObject jsonObject = callConcurrent(operators.get(threadNumber), finalI);
+                JSONObject jsonObject = ComponentSchedule.callComponentSchedule(operators.get(threadNumber), finalI);
                 return jsonObject.toJSONString();
             };
             futures.add(executorService.submit(task));

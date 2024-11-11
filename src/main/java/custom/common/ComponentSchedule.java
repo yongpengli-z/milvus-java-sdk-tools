@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ComponentSchedule {
-    public static List<JSONObject>  runningSchedule(String customizeParams) {
+    public static List<JSONObject> runningSchedule(String customizeParams) {
         log.info("--customizeParams--:" + customizeParams);
 
         // 获取params的所有根节点
@@ -45,105 +45,85 @@ public class ComponentSchedule {
         List<JSONObject> results = new ArrayList<>();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
-
-            if (operators.get(i) instanceof CreateCollectionParams) {
-                log.info("*********** < create collection > ***********");
-                CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("CreateCollection_" + i, createCollectionResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof CreateIndexParams) {
-                log.info("*********** < create index > ***********");
-                CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("CreateIndex_" + i, createIndexResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof LoadParams) {
-                log.info("*********** < load collection > ***********");
-                LoadResult loadResult = LoadCollectionComp.loadCollection((LoadParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("LoadCollection_" + i, loadResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof InsertParams) {
-                log.info("*********** < insert data > ***********");
-                InsertResult insertResult = InsertComp.insertCollection((InsertParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Insert_" + i, insertResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof SearchParams) {
-                log.info("*********** < search collection > ***********");
-                SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Search_" + i, searchResultA);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof ReleaseParams) {
-                log.info("*********** < release collection > ***********");
-                ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("ReleaseCollection_" + i, releaseResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof DropCollectionParams) {
-                log.info("*********** < drop collection > ***********");
-                DropCollectionResult dropCollectionResult = DropCollectionComp.dropCollection((DropCollectionParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("DropCollection_" + i, dropCollectionResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof RecallParams) {
-                log.info("*********** < recall > ***********");
-                RecallComp.calcRecall((RecallParams) operators.get(i));
-            }
-            if (operators.get(i) instanceof WaitParams) {
-                log.info("*********** < Wait > ***********");
-                WaitResult waitResult = WaitComp.wait((WaitParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Wait" + i, waitResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof UpsertParams) {
-                log.info("*********** < upsert data > ***********");
-                UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Upsert_" + i, upsertResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof ConcurrentParams) {
-                log.info("*********** < Concurrent Operator > ***********");
-                List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Concurrent_" + i, jsonObjects);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof QueryParams) {
-                log.info("*********** < query collection > ***********");
-                QueryResult queryResult = QueryComp.queryCollection((QueryParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Query_" + i, queryResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof DropIndexParams) {
-                log.info("*********** < drop index > ***********");
-                DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("DropIndex_" + i, dropIndexResult);
-                results.add(jsonObject);
-            }
-            if (operators.get(i) instanceof LoopParams) {
-                log.info("*********** < Loop Operator> ***********");
-                JSONObject loopJO = LoopComp.loopComp((LoopParams) operators.get(i));
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("Loop_" + i, loopJO);
-                results.add(jsonObject);
-            }
+            JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
+            results.add(jsonObject);
         }
         log.info("[结果汇总]： " +
                 "\n" + results);
         return results;
+    }
+
+    public static JSONObject callComponentSchedule(Object object, int index) {
+        JSONObject jsonObject = new JSONObject();
+        if (object instanceof CreateCollectionParams) {
+            log.info("*********** < create collection > ***********");
+            CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
+            jsonObject.put("CreateCollection_" + index, createCollectionResult);
+        }
+        if (object instanceof CreateIndexParams) {
+            log.info("*********** < create index > ***********");
+            CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) object);
+            jsonObject.put("CreateIndex_" + index, createIndexResult);
+        }
+        if (object instanceof LoadParams) {
+            log.info("*********** < load collection > ***********");
+            LoadResult loadResult = LoadCollectionComp.loadCollection((LoadParams) object);
+            jsonObject.put("LoadCollection_" + index, loadResult);
+        }
+        if (object instanceof InsertParams) {
+            log.info("*********** < insert data > ***********");
+            InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
+            jsonObject.put("Insert_" + index, insertResult);
+        }
+        if (object instanceof SearchParams) {
+            log.info("*********** < search collection > ***********");
+            SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) object);
+            jsonObject.put("Search_" + index, searchResultA);
+        }
+        if (object instanceof ReleaseParams) {
+            log.info("*********** < release collection > ***********");
+            ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) object);
+            jsonObject.put("ReleaseCollection_" + index, releaseResult);
+        }
+        if (object instanceof DropCollectionParams) {
+            log.info("*********** < drop collection > ***********");
+            DropCollectionResult dropCollectionResult = DropCollectionComp.dropCollection((DropCollectionParams) object);
+            jsonObject.put("DropCollection_" + index, dropCollectionResult);
+        }
+        if (object instanceof RecallParams) {
+            log.info("*********** < recall > ***********");
+            RecallComp.calcRecall((RecallParams) object);
+        }
+        if (object instanceof WaitParams) {
+            log.info("*********** < Wait > ***********");
+            WaitResult waitResult = WaitComp.wait((WaitParams) object);
+            jsonObject.put("Wait" + index, waitResult);
+        }
+        if (object instanceof UpsertParams) {
+            log.info("*********** < upsert data > ***********");
+            UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
+            jsonObject.put("Upsert_" + index, upsertResult);
+        }
+        if (object instanceof ConcurrentParams) {
+            log.info("*********** < Concurrent Operator > ***********");
+            List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) object);
+            jsonObject.put("Concurrent_" + index, jsonObjects);
+        }
+        if (object instanceof QueryParams) {
+            log.info("*********** < query collection > ***********");
+            QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
+            jsonObject.put("Query_" + index, queryResult);
+        }
+        if (object instanceof DropIndexParams) {
+            log.info("*********** < drop index > ***********");
+            DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);
+            jsonObject.put("DropIndex_" + index, dropIndexResult);
+        }
+        if (object instanceof LoopParams) {
+            log.info("*********** < Loop Operator> ***********");
+            JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
+            jsonObject.put("Loop_" + index, loopJO);
+        }
+        return jsonObject;
     }
 }
