@@ -45,6 +45,7 @@ public class ConcurrentComp {
         for (int i = 0; i < operators.size(); i++) {
             final int threadNumber = i;
             int finalI = i;
+            log.info("🟰并行操作["+i+"]🟰");
             Callable<String> task = () -> {
                 JSONObject jsonObject = ComponentSchedule.callComponentSchedule(operators.get(threadNumber), finalI);
                 return jsonObject.toJSONString();
