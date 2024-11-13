@@ -19,11 +19,11 @@ public class LoopComp {
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(
                 loopParams.getRunningMinutes() == 0 ? 9999 : loopParams.getRunningMinutes());
         int runningCount = 0;
-        while (runningCount <= runningNum && LocalDateTime.now().isBefore(endTime)) {
-            log.info("♻️第"+runningCount+1+"次循环♻️：");
+        while (runningCount < runningNum && LocalDateTime.now().isBefore(endTime)) {
+            log.info("♻️ 第"+runningCount+"次循环 ♻️：");
             List<JSONObject> jsonObjects = ComponentSchedule.runningSchedule(paramComb);
             result.put("Loop_" + runningCount, jsonObjects);
-            log.info("♻️第"+runningCount+1+"次运行结果♻️："+jsonObjects);
+            log.info("♻️ 第"+runningCount+"次运行结果 ♻️："+jsonObjects);
             runningCount++;
         }
         return result;
