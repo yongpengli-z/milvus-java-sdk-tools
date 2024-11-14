@@ -39,7 +39,7 @@ public class BaseTest {
                 ? "awswest"
                 : System.getProperty("uri");
         String uri =
-                System.getProperty("uri") == null
+                System.getProperty("uri") == null  || System.getProperty("uri").trim().equals("")
                         ? ""
                         : System.getProperty("uri");
         String token =
@@ -72,8 +72,7 @@ public class BaseTest {
         EnvEnum envByName = EnvEnum.getEnvByName(env);
         envConfig = ConfigUtils.providerEnvConfig(envByName);
         log.info("当前环境信息:" + envConfig);
-        log.info("newInstanceInfo.getUri():"+newInstanceInfo.toString());
-        if (newInstanceInfo.getUri() != null) {
+        if (!newInstanceInfo.getUri().equalsIgnoreCase("")) {
             milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), token);
             importUrl = uri;
             // 初始化环境
