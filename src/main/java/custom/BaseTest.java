@@ -4,7 +4,10 @@ import com.alibaba.fastjson.JSONObject;
 import custom.common.ComponentSchedule;
 import custom.components.InitialComp;
 import custom.components.MilvusConnect;
+import custom.config.EnvConfig;
+import custom.config.EnvEnum;
 import custom.entity.InitialParams;
+import custom.utils.ConfigUtils;
 import io.milvus.v2.client.MilvusClientV2;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +26,12 @@ public class BaseTest {
   public static boolean isCloud=true;
   public static List<Object> recallBaseIdList=new ArrayList<>();
 
+  public static EnvConfig envConfig;
+
   public static void main(String[] args) {
+    String env= System.getProperty("env") == null
+            ? "awswest"
+            : System.getProperty("uri");
     String uri =
         System.getProperty("uri") == null
             ? ""
@@ -49,6 +57,10 @@ public class BaseTest {
       token = MilvusConnect.provideToken(uri);
       log.info("查询到token:"+token);
     }
+
+    EnvEnum envByName = EnvEnum.getEnvByName(env);
+    envConfig = ConfigUtils.providerEnvConfig(envByName);
+    log.info("当前环境信息:"+envConfig.toString());
 
     milvusClientV2 = MilvusConnect.createMilvusClientV2(uri, token);
     importUrl=uri;

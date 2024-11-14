@@ -5,7 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.openlca.npy.Npy;
 import org.openlca.npy.arrays.NpyArray;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 @Slf4j
@@ -116,13 +119,17 @@ public class DatasetUtil {
         return chunks;
     }
 
-    public static void main(String[] args) {
-        List<String> strings = providerFileNames(DatasetEnum.GIST);
-        List<Long> longs = providerFileSize(strings, DatasetEnum.GIST);
-        System.out.println(longs);
-        List<List<Float>> lists = providerFloatVectorByDataset(9999, 1, strings, DatasetEnum.GIST, longs);
-        System.out.println(lists.size());
-        System.out.println(lists.get(0));
-
+    public static String providerConfigFile(String vdcConfigPath){
+        StringBuilder contentBuilder = new StringBuilder();
+        File file = new File(vdcConfigPath);
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                contentBuilder.append(line).append(System.lineSeparator()); // 添加每一行
+            }
+        } catch (IOException e) {
+            e.printStackTrace(); // 处理异常
+        }
+        return contentBuilder.toString();
     }
 }
