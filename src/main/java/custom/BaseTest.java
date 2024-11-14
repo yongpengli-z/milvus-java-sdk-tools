@@ -72,8 +72,8 @@ public class BaseTest {
         EnvEnum envByName = EnvEnum.getEnvByName(env);
         envConfig = ConfigUtils.providerEnvConfig(envByName);
         log.info("当前环境信息:" + envConfig);
-        log.info("newInstanceInfo"+newInstanceInfo.toString());
-        if (!newInstanceInfo.getUri().equalsIgnoreCase("")) {
+        log.info("newInstanceInfo" + newInstanceInfo.toString());
+        if (newInstanceInfo.getUri() != null) {
             milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), token);
             importUrl = uri;
             // 初始化环境
