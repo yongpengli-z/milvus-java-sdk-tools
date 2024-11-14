@@ -58,23 +58,27 @@ public class BaseTest {
                         ? ""
                         : System.getProperty("customize_params");
 
-        newInstanceInfo.setUri(uri);
+        if (!uri.equalsIgnoreCase("")) {
+            newInstanceInfo.setUri(uri);
+        }
         if (!uri.equalsIgnoreCase("") & token.equals("")) {
             token = MilvusConnect.provideToken(uri);
             log.info("查询到token:" + token);
         }
-        newInstanceInfo.setToken(token);
+        if (!token.equalsIgnoreCase("")) {
+            newInstanceInfo.setToken(token);
+        }
 
         EnvEnum envByName = EnvEnum.getEnvByName(env);
         envConfig = ConfigUtils.providerEnvConfig(envByName);
         log.info("当前环境信息:" + envConfig);
 
         if (!newInstanceInfo.getUri().equalsIgnoreCase("")) {
-            milvusClientV2 = MilvusConnect.createMilvusClientV2(uri, token);
+            milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), token);
             importUrl = uri;
-          // 初始化环境
-          InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
-          InitialComp.initialRunning(initialParamsObj);
+            // 初始化环境
+            InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
+            InitialComp.initialRunning(initialParamsObj);
         }
 //    // 自动调度
         ComponentSchedule.runningSchedule(customizeParams);
