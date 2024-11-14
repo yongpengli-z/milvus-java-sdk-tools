@@ -124,6 +124,11 @@ public class ComponentSchedule {
             JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
             jsonObject.put("Loop_" + index, loopJO);
         }
+        if (object instanceof CreateInstanceParams) {
+            log.info("*********** < create instance> ***********");
+            CreateInstanceResult createInstanceResult = CreateInstanceComp.createInstance((CreateInstanceParams) object);
+            jsonObject.put("CreateInstance_" + index, createInstanceResult);
+        }
         return jsonObject;
     }
 }
