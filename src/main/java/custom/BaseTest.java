@@ -28,18 +28,18 @@ public class BaseTest {
     public static boolean isCloud = true;
     public static List<Object> recallBaseIdList = new ArrayList<>();
 
-    public static EnvConfig envConfig;
+    public static EnvConfig envConfig = new EnvConfig();
 
-    public static CloudServiceUserInfo cloudServiceUserInfo;
+    public static CloudServiceUserInfo cloudServiceUserInfo = new CloudServiceUserInfo();
 
-    public static InstanceInfo newInstanceInfo;
+    public static InstanceInfo newInstanceInfo = new InstanceInfo();
 
     public static void main(String[] args) {
         String env = System.getProperty("env") == null
                 ? "awswest"
                 : System.getProperty("uri");
         String uri =
-                System.getProperty("uri") == null  || System.getProperty("uri").trim().equals("")
+                System.getProperty("uri") == null || System.getProperty("uri").trim().equals("")
                         ? ""
                         : System.getProperty("uri");
         String token =
@@ -72,6 +72,7 @@ public class BaseTest {
         EnvEnum envByName = EnvEnum.getEnvByName(env);
         envConfig = ConfigUtils.providerEnvConfig(envByName);
         log.info("当前环境信息:" + envConfig);
+        log.info("newInstanceInfo"+newInstanceInfo.toString());
         if (!newInstanceInfo.getUri().equalsIgnoreCase("")) {
             milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), token);
             importUrl = uri;
