@@ -70,6 +70,7 @@ public class CloudServiceUtils {
         header.put("authorization","Bearer "+token);
         header.put("orgid",orgId);
         String s = HttpClientUtils.doGet(url, header);
+        log.info("[cloudService][listProject]:"+s);
         JSONArray jsonArray = JSONObject.parseObject(s).getJSONObject("Data").getJSONArray("Projects");
         String dfProject="";
         for (int i = 0; i < jsonArray.size(); i++) {
@@ -88,6 +89,7 @@ public class CloudServiceUtils {
         Map<String,String> header=new HashMap<>();
         header.put("authorization","Bearer "+token);
         String s = HttpClientUtils.doGet(url, header);
+        log.info("[cloudService][listOrg]:"+s);
         List<String> orgIdList=new ArrayList<>();
         JSONArray jsonArray = JSONObject.parseObject(s).getJSONObject("Data").getJSONArray("orgs");
         for (int i = 0; i < jsonArray.size(); i++) {
