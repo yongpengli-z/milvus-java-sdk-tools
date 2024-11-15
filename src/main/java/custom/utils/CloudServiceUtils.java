@@ -52,7 +52,7 @@ public class CloudServiceUtils {
         header.put("authorization","Bearer "+cloudServiceUserInfo.getToken());
         header.put("orgid",cloudServiceUserInfo.getOrgIdList().get(0));
         String s = HttpClientUtils.doGet(url, header,null);
-        log.info("[cloudService][listInstance]:"+s);
+//        log.info("[cloudService][listInstance]:"+s);
         List<InstanceInfo> instanceInfoList=new ArrayList<>();
         JSONArray jsonArray = JSON.parseObject(s).getJSONObject("Data").getJSONArray("List");
         for (int i = 0; i < jsonArray.size(); i++) {
