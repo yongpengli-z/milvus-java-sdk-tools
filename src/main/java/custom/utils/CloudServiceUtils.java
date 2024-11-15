@@ -51,7 +51,7 @@ public class CloudServiceUtils {
         Map<String,String> header=new HashMap<>();
         header.put("authorization","Bearer "+cloudServiceUserInfo.getToken());
         header.put("orgid",cloudServiceUserInfo.getOrgIdList().get(0));
-        String s = HttpClientUtils.doGet(url, header);
+        String s = HttpClientUtils.doGet(url, header,null);
         List<InstanceInfo> instanceInfoList=new ArrayList<>();
         JSONArray jsonArray = JSON.parseObject(s).getJSONObject("Data").getJSONArray("List");
         for (int i = 0; i < jsonArray.size(); i++) {
@@ -69,7 +69,7 @@ public class CloudServiceUtils {
         Map<String,String> header=new HashMap<>();
         header.put("authorization","Bearer "+token);
         header.put("orgid",orgId);
-        String s = HttpClientUtils.doGet(url, header);
+        String s = HttpClientUtils.doGet(url, header,null);
         log.info("[cloudService][listProject]:"+s);
         JSONArray jsonArray = JSONObject.parseObject(s).getJSONObject("Data").getJSONArray("Projects");
         String dfProject="";
@@ -88,7 +88,7 @@ public class CloudServiceUtils {
         String url=envConfig.getCloudServiceHost()+"/cloud/v1/org/list";
         Map<String,String> header=new HashMap<>();
         header.put("authorization","Bearer "+token);
-        String s = HttpClientUtils.doGet(url, header);
+        String s = HttpClientUtils.doGet(url, header,null);
         log.info("[cloudService][listOrg]:"+s);
         List<String> orgIdList=new ArrayList<>();
         JSONArray jsonArray = JSONObject.parseObject(s).getJSONObject("Data").getJSONArray("orgs");
