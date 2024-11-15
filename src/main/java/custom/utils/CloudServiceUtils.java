@@ -47,7 +47,7 @@ public class CloudServiceUtils {
 
 
     public static List<InstanceInfo> listInstance(){
-        String url=envConfig.getCloudServiceHost()+"/cloud/v1/instance/list?CurrentPage=100&PageSize=1&ProjectId="+cloudServiceUserInfo.getDefaultProjectId();
+        String url=envConfig.getCloudServiceHost()+"/cloud/v1/instance/list?CurrentPage=1&PageSize=100&ProjectId="+cloudServiceUserInfo.getDefaultProjectId();
         Map<String,String> header=new HashMap<>();
         header.put("authorization","Bearer "+cloudServiceUserInfo.getToken());
         header.put("orgid",cloudServiceUserInfo.getOrgIdList().get(0));
