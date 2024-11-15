@@ -24,7 +24,7 @@ public class ResourceManagerServiceUtils {
                 "  \"mockTag\": false,\n" +
                 "  \"orgType\": \"SAAS\",\n" +
                 "  \"processorArchitecture\": \""+createInstanceParams.getArchitecture()+"\",\n" +
-                "  \"projectId\": "+cloudServiceUserInfo.getDefaultProjectId()+",\n" +
+                "  \"projectId\": \""+cloudServiceUserInfo.getDefaultProjectId()+"\",\n" +
                 "  \"realUserId\": \""+cloudServiceUserInfo.getUserId()+"\",\n" +
                 "  \"regionId\": \""+envConfig.getRegionId()+"\",\n" +
                 "  \"replica\": "+createInstanceParams.getReplica()+",\n" +
