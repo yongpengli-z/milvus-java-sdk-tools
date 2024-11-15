@@ -55,9 +55,9 @@ public class CreateInstanceComp {
             List<InstanceInfo> instanceInfos = CloudServiceUtils.listInstance();
             if (instanceInfos.size()>0) {
                 for (InstanceInfo instanceInfo : instanceInfos) {
-                    log.info("instanceInfo.getInstanceName():"+instanceInfo.getInstanceName());
-                    log.info("createInstanceParams.getInstanceName():"+createInstanceParams.getInstanceName());
-                    if (instanceInfo.getInstanceName().equalsIgnoreCase(createInstanceParams.getInstanceName())) {
+                    log.info("instanceInfo.getInstanceName():["+instanceInfo.getInstanceName()+"]");
+                    log.info("createInstanceParams.getInstanceName():["+createInstanceParams.getInstanceName()+"]");
+                    if (instanceInfo.getInstanceName().trim().equalsIgnoreCase(createInstanceParams.getInstanceName().trim())) {
                         createSuccess = true;
                         newInstanceInfo.setInstanceId(instanceInfo.getInstanceId());
                         newInstanceInfo.setUri(instanceInfo.getUri());
