@@ -53,11 +53,9 @@ public class CreateInstanceComp {
         boolean createSuccess = false;
         while (LocalDateTime.now().isBefore(endTime)) {
             List<InstanceInfo> instanceInfos = CloudServiceUtils.listInstance();
-            if (instanceInfos.size()>0) {
+            if (instanceInfos.size() > 0) {
                 for (InstanceInfo instanceInfo : instanceInfos) {
-                    log.info("instanceInfo.getInstanceName():["+instanceInfo.getInstanceName()+"]");
-                    log.info("createInstanceParams.getInstanceName():["+createInstanceParams.getInstanceName()+"]");
-                    if (instanceInfo.getInstanceName().trim().equalsIgnoreCase(createInstanceParams.getInstanceName().trim())) {
+                    if (instanceInfo.getInstanceName().equalsIgnoreCase(createInstanceParams.getInstanceName())) {
                         createSuccess = true;
                         newInstanceInfo.setInstanceId(instanceInfo.getInstanceId());
                         newInstanceInfo.setUri(instanceInfo.getUri());
@@ -66,7 +64,10 @@ public class CreateInstanceComp {
                     }
                 }
             }
-            log.info("轮询实例是否创建成功：false");
+            if (createSuccess) {
+                break;
+            }
+            log.info("waiting for create instance...");
             try {
                 Thread.sleep(30 * 1000);
             } catch (InterruptedException e) {
