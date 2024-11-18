@@ -14,10 +14,12 @@ public class ConfigUtils {
         JSONObject envJO = configJO.getJSONObject("ENV");
         String rmHost = envJO.getJSONObject(envEnum.envNodeName).getString("rm_host");
         String cloudServiceHost = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_service_host");
+        String cloudServiceTestHost = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_service_test_host");
         String regionId = envJO.getJSONObject(envEnum.envNodeName).getString("region_id");
         envConfig.setRegionId(regionId);
         envConfig.setCloudServiceHost(cloudServiceHost);
         envConfig.setRmHost(rmHost);
+        envConfig.setCloudServiceTestHost(cloudServiceTestHost);
         return envConfig;
     }
 }

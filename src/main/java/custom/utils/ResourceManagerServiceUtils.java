@@ -13,80 +13,81 @@ import static custom.BaseTest.*;
 
 @Slf4j
 public class ResourceManagerServiceUtils {
-    public static String createInstance(CreateInstanceParams createInstanceParams){
+    public static String createInstance(CreateInstanceParams createInstanceParams) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/create";
-        String body="{\n" +
-                "  \"classId\": \""+createInstanceParams.getCuType()+"\",\n" +
-                "  \"dbVersion\": \""+createInstanceParams.getDbVersion()+"\",\n" +
+        String body = "{\n" +
+                "  \"classId\": \"" + createInstanceParams.getCuType() + "\",\n" +
+                "  \"dbVersion\": \"" + createInstanceParams.getDbVersion() + "\",\n" +
                 "  \"defaultCharacterset\": \"UTF-8\",\n" +
                 "  \"defaultTimeZone\": \"UTC\",\n" +
                 "  \"instanceDescription\": \"create by java tools\",\n" +
-                "  \"instanceName\": \""+createInstanceParams.getInstanceName()+"\",\n" +
-                "  \"instanceType\": "+createInstanceParams.getInstanceType()+",\n" +
+                "  \"instanceName\": \"" + createInstanceParams.getInstanceName() + "\",\n" +
+                "  \"instanceType\": " + createInstanceParams.getInstanceType() + ",\n" +
                 "  \"mockTag\": false,\n" +
                 "  \"orgType\": \"SAAS\",\n" +
-                "  \"processorArchitecture\": \""+createInstanceParams.getArchitecture()+"\",\n" +
-                "  \"projectId\": \""+cloudServiceUserInfo.getDefaultProjectId()+"\",\n" +
-                "  \"realUserId\": \""+cloudServiceUserInfo.getUserId()+"\",\n" +
-                "  \"regionId\": \""+envConfig.getRegionId()+"\",\n" +
-                "  \"replica\": "+createInstanceParams.getReplica()+",\n" +
-                "  \"rootPwd\": \""+createInstanceParams.getRootPassword()+"\",\n" +
+                "  \"processorArchitecture\": \"" + createInstanceParams.getArchitecture() + "\",\n" +
+                "  \"projectId\": \"" + cloudServiceUserInfo.getDefaultProjectId() + "\",\n" +
+                "  \"realUserId\": \"" + cloudServiceUserInfo.getUserId() + "\",\n" +
+                "  \"regionId\": \"" + envConfig.getRegionId() + "\",\n" +
+                "  \"replica\": " + createInstanceParams.getReplica() + ",\n" +
+                "  \"rootPwd\": \"" + createInstanceParams.getRootPassword() + "\",\n" +
                 "  \"trialExpireTimeMilli\": 1655184578000,\n" +
                 "  \"vpcId\": \"\",\n" +
                 "  \"whitelistAddress\": \"0.0.0.0/0\"\n" +
                 "}";
-        Map<String,String> header=new HashMap<>();
-        header.put("RequestId","qtp-java-tools");
-        header.put("UserId",cloudServiceUserInfo.getUserId());
-        header.put("SourceApp","Cloud-Meta");
-        String resp = HttpClientUtils.doPostJson(url,header,body);
-        log.info("[rm-service][create instance]: "+ resp);
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools");
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String resp = HttpClientUtils.doPostJson(url, header, body);
+        log.info("[rm-service][create instance]: " + resp);
         return resp;
     }
 
-    public static String describeInstance(){
-        String url= envConfig.getRmHost()+"/resource/v1/instance/milvus/describe?InstanceId="+newInstanceInfo.getInstanceId();
-        Map<String,String> header=new HashMap<>();
-        header.put("RequestId","qtp-java-tools");
-        header.put("UserId",cloudServiceUserInfo.getUserId());
-        header.put("SourceApp","Cloud-Meta");
+    public static String describeInstance() {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?InstanceId=" + newInstanceInfo.getInstanceId();
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools");
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doGet(url, header, null);
     }
 
-    public static String rollingUpgrade(RollingUpgradeParams rollingUpgradeParams){
-        String url = envConfig.getRmHost()+"/resource/v1/instance/rolling/upgrade/add/task";
-        String body= "{\n" +
-                "  \"actionTimestamp\": "+System.currentTimeMillis()+",\n" +
+    public static String rollingUpgrade(RollingUpgradeParams rollingUpgradeParams) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/rolling/upgrade/add/task";
+        String body = "{\n" +
+                "  \"actionTimestamp\": " + System.currentTimeMillis() + ",\n" +
                 "  \"force\": true,\n" +
-                "  \"forceRestart\": "+rollingUpgradeParams.isForceRestart()+",\n" +
-                "  \"instanceId\": \""+newInstanceInfo.getInstanceId()+"\",\n" +
+                "  \"forceRestart\": " + rollingUpgradeParams.isForceRestart() + ",\n" +
+                "  \"instanceId\": \"" + newInstanceInfo.getInstanceId() + "\",\n" +
                 "  \"needBackup\": false,\n" +
                 "  \"notChangeStatus\": false,\n" +
                 "  \"notCheckStatus\": false,\n" +
                 "  \"syncDeploymentConfig\": true,\n" +
                 "  \"syncHookConfig\": true,\n" +
                 "  \"syncMilvusConfig\": true,\n" +
-                "  \"targetDbVersion\": \""+rollingUpgradeParams.getTargetDbVersion()+"\"\n" +
+                "  \"targetDbVersion\": \"" + rollingUpgradeParams.getTargetDbVersion() + "\"\n" +
                 "}";
-        Map<String,String> header=new HashMap<>();
-        header.put("RequestId","qtp-java-tools");
-        header.put("UserId",cloudServiceUserInfo.getUserId());
-        header.put("SourceApp","Cloud-Meta");
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools");
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
     }
 
-    public static String deleteInstance(DeleteInstanceParams deleteInstanceParams){
-        String url = envConfig.getRmHost()+"/resource/v1/instance/milvus/delete";
-        String body="{\n" +
+    public static String deleteInstance(DeleteInstanceParams deleteInstanceParams) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/delete";
+        String instanceId = deleteInstanceParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : deleteInstanceParams.getInstanceId();
+        String body = "{\n" +
                 "  \"backupId\": \"\",\n" +
                 "  \"force\": true,\n" +
-                "  \"instanceId\": \""+newInstanceInfo.getInstanceId()+"\",\n" +
+                "  \"instanceId\": \"" + instanceId + "\",\n" +
                 "  \"storageDelay\": 0\n" +
                 "}";
-        Map<String,String> header=new HashMap<>();
-        header.put("RequestId","qtp-java-tools");
-        header.put("UserId",cloudServiceUserInfo.getUserId());
-        header.put("SourceApp","Cloud-Meta");
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools");
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
     }
 

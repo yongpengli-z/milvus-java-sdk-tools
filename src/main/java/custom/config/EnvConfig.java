@@ -7,4 +7,5 @@ public class EnvConfig {
     String regionId;
     String rmHost;
     String cloudServiceHost;
+    String cloudServiceTestHost;
 }
