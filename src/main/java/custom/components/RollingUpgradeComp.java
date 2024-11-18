@@ -46,11 +46,17 @@ public class RollingUpgradeComp {
         // 轮询结果
         int ruStatus=0;
         long startLoadTime = System.currentTimeMillis();
+        try {
+            Thread.sleep(1000*10);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage());
+        }
         LocalDateTime endTime=LocalDateTime.now().plusMinutes(30);
         while(ruStatus!=InstanceStatusEnum.RUNNING.code && LocalDateTime.now().isBefore(endTime)){
             String describeInstance = ResourceManagerServiceUtils.describeInstance();
             JSONObject descJO = JSONObject.parseObject(describeInstance);
             ruStatus = descJO.getJSONObject("Data").getInteger("Status");
+            log.info("[RollingUpgrade] current status:"+ InstanceStatusEnum.getInstanceStatusByCode(ruStatus).toString());
             try {
                 Thread.sleep(1000*10);
             } catch (InterruptedException e) {
