@@ -47,7 +47,7 @@ public class RollingUpgradeComp {
         int ruStatus=0;
         long startLoadTime = System.currentTimeMillis();
         try {
-            Thread.sleep(1000*10);
+            Thread.sleep(1000*20);
         } catch (InterruptedException e) {
             log.error(e.getMessage());
         }
@@ -58,7 +58,9 @@ public class RollingUpgradeComp {
             ruStatus = descJO.getJSONObject("Data").getInteger("Status");
             log.info("[RollingUpgrade] current status:"+ InstanceStatusEnum.getInstanceStatusByCode(ruStatus).toString());
             try {
-                Thread.sleep(1000*10);
+                if(ruStatus!=InstanceStatusEnum.RUNNING.code) {
+                    Thread.sleep(1000 * 10);
+                }
             } catch (InterruptedException e) {
                 log.error(e.getMessage());
             }
