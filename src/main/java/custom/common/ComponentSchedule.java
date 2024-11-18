@@ -130,9 +130,14 @@ public class ComponentSchedule {
             jsonObject.put("CreateInstance_" + index, createInstanceResult);
         }
         if (object instanceof RollingUpgradeParams) {
-            log.info("*********** < RollingUpgrade > ***********");
+            log.info("*********** < rolling upgrade > ***********");
             RollingUpgradeResult rollingUpgradeResult = RollingUpgradeComp.rollingUpgradeInstance((RollingUpgradeParams) object);
             jsonObject.put("RollingUpgrade_" + index, rollingUpgradeResult);
+        }
+        if (object instanceof DeleteInstanceParams) {
+            log.info("*********** < delete instance > ***********");
+            DeleteInstanceResult deleteInstanceResult = DeleteInstanceComp.deleteInstance((DeleteInstanceParams) object);
+            jsonObject.put("DeleteInstance_" + index, deleteInstanceResult);
         }
         return jsonObject;
     }

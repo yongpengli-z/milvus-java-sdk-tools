@@ -2,6 +2,7 @@ package custom.utils;
 
 import com.alibaba.fastjson.JSONObject;
 import custom.entity.CreateInstanceParams;
+import custom.entity.DeleteInstanceParams;
 import custom.entity.RollingUpgradeParams;
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,6 +67,21 @@ public class ResourceManagerServiceUtils {
                 "  \"syncHookConfig\": true,\n" +
                 "  \"syncMilvusConfig\": true,\n" +
                 "  \"targetDbVersion\": \""+rollingUpgradeParams.getTargetDbVersion()+"\"\n" +
+                "}";
+        Map<String,String> header=new HashMap<>();
+        header.put("RequestId","qtp-java-tools");
+        header.put("UserId",cloudServiceUserInfo.getUserId());
+        header.put("SourceApp","Cloud-Meta");
+        return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+    }
+
+    public static String deleteInstance(DeleteInstanceParams deleteInstanceParams){
+        String url = envConfig.getRmHost()+"/resource/v1/instance/milvus/delete";
+        String body="{\n" +
+                "  \"backupId\": \"\",\n" +
+                "  \"force\": true,\n" +
+                "  \"instanceId\": \""+newInstanceInfo.getInstanceId()+"\",\n" +
+                "  \"storageDelay\": 0\n" +
                 "}";
         Map<String,String> header=new HashMap<>();
         header.put("RequestId","qtp-java-tools");
