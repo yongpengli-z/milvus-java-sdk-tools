@@ -129,6 +129,11 @@ public class ComponentSchedule {
             CreateInstanceResult createInstanceResult = CreateInstanceComp.createInstance((CreateInstanceParams) object);
             jsonObject.put("CreateInstance_" + index, createInstanceResult);
         }
+        if (object instanceof RollingUpgradeParams) {
+            log.info("*********** < RollingUpgrade > ***********");
+            RollingUpgradeResult rollingUpgradeResult = RollingUpgradeComp.rollingUpgradeInstance((RollingUpgradeParams) object);
+            jsonObject.put("RollingUpgrade_" + index, rollingUpgradeResult);
+        }
         return jsonObject;
     }
 }

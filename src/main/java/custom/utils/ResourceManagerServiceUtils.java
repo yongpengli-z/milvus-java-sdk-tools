@@ -1,13 +1,14 @@
 package custom.utils;
 
+import com.alibaba.fastjson.JSONObject;
 import custom.entity.CreateInstanceParams;
+import custom.entity.RollingUpgradeParams;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static custom.BaseTest.cloudServiceUserInfo;
-import static custom.BaseTest.envConfig;
+import static custom.BaseTest.*;
 
 @Slf4j
 public class ResourceManagerServiceUtils {
@@ -41,4 +42,37 @@ public class ResourceManagerServiceUtils {
         log.info("[rm-service][create instance]: "+ resp);
         return resp;
     }
+
+    public static String describeInstance(){
+        String url= envConfig.getRmHost()+"/resource/v1/instance/milvus/describe?InstanceId="+newInstanceInfo.getInstanceId();
+        Map<String,String> header=new HashMap<>();
+        header.put("RequestId","qtp-java-tools");
+        header.put("UserId",cloudServiceUserInfo.getUserId());
+        header.put("SourceApp","Cloud-Meta");
+        return HttpClientUtils.doGet(url, header, null);
+    }
+
+    public static String rollingUpgrade(RollingUpgradeParams rollingUpgradeParams){
+        String url = envConfig.getRmHost()+"/resource/v1/instance/rolling/upgrade/add/task";
+        String body= "{\n" +
+                "  \"actionTimestamp\": "+System.currentTimeMillis()+",\n" +
+                "  \"force\": true,\n" +
+                "  \"forceRestart\": "+rollingUpgradeParams.isForceRestart()+",\n" +
+                "  \"instanceId\": \""+newInstanceInfo.getInstanceId()+"\",\n" +
+                "  \"needBackup\": false,\n" +
+                "  \"notChangeStatus\": false,\n" +
+                "  \"notCheckStatus\": false,\n" +
+                "  \"syncDeploymentConfig\": true,\n" +
+                "  \"syncHookConfig\": true,\n" +
+                "  \"syncMilvusConfig\": true,\n" +
+                "  \"targetDbVersion\": \""+rollingUpgradeParams.getTargetDbVersion()+"\"\n" +
+                "}";
+        Map<String,String> header=new HashMap<>();
+        header.put("RequestId","qtp-java-tools");
+        header.put("UserId",cloudServiceUserInfo.getUserId());
+        header.put("SourceApp","Cloud-Meta");
+        return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+    }
+
 }
+

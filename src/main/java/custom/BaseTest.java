@@ -60,6 +60,10 @@ public class BaseTest {
 
         if (!uri.equalsIgnoreCase("")) {
             newInstanceInfo.setUri(uri);
+            if (uri.contains("ali") || uri.contains("tc")|| uri.contains("aws") || uri.contains("gcp") || uri.contains("az")) {
+                String substring = uri.substring(uri.indexOf("https://") + 8, 28);
+                newInstanceInfo.setInstanceId(substring);
+            }
         }
         if (!uri.equalsIgnoreCase("") & token.equals("")) {
             token = MilvusConnect.provideToken(uri);
