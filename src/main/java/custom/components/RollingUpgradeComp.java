@@ -36,11 +36,11 @@ public class RollingUpgradeComp {
         // 滚动升级
         String rollingUpgradeResult = ResourceManagerServiceUtils.rollingUpgrade(rollingUpgradeParams);
         JSONObject jsonObjectResult=JSONObject.parseObject(rollingUpgradeResult);
-        if (jsonObjectResult.getInteger("code")!=0){
+        if (jsonObjectResult.getInteger("Code")!=0){
             return RollingUpgradeResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.EXCEPTION.result)
-                            .message(jsonObjectResult.getString("message")).build()).build();
+                            .message(jsonObjectResult.getString("Message")).build()).build();
         }
         String  taskId=jsonObjectResult.getJSONObject("Data").getString("taskId");
         // 轮询结果
