@@ -23,7 +23,11 @@ public class DeleteInstanceComp {
     public static DeleteInstanceResult deleteInstance(DeleteInstanceParams deleteInstanceParams) {
         // 检查账号
         if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
-            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
+            if(deleteInstanceParams.getAccountEmail()==null||deleteInstanceParams.getAccountEmail().equalsIgnoreCase("")){
+                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
+            }else{
+                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(deleteInstanceParams.getAccountEmail(),deleteInstanceParams.getAccountPassword());
+            }
         }
 
         if (deleteInstanceParams.isUseOPSTestApi()) {
