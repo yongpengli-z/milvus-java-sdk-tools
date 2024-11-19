@@ -62,6 +62,7 @@ public class CloudServiceUtils {
             instanceInfo.setUri(jsonArray.getJSONObject(i).getString("ConnectAddress"));
             instanceInfoList.add(instanceInfo);
         }
+        log.info("[Cloud-service]List instance:"+JSONObject.parseObject(instanceInfoList.toString()).toJSONString());
         return instanceInfoList;
     }
 

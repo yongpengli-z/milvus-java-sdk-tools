@@ -34,12 +34,12 @@ public class DeleteInstanceComp {
             String s = CloudServiceTestUtils.deleteInstance(deleteInstanceParams);
             JSONObject jsonObject = JSON.parseObject(s);
             if (jsonObject.getInteger("Code") == 0) {
-                List<InstanceInfo> instanceInfoList =
-                        CloudServiceUtils.listInstance();
                 boolean isExist = true;
                 long startLoadTime = System.currentTimeMillis();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(30);
                 while (isExist && LocalDateTime.now().isBefore(endTime)) {
+                    List<InstanceInfo> instanceInfoList =
+                            CloudServiceUtils.listInstance();
                     for (InstanceInfo instanceInfo : instanceInfoList) {
                         if (!instanceInfo.getInstanceId().equalsIgnoreCase(newInstanceInfo.getInstanceId())) {
                             isExist = false;
@@ -74,12 +74,12 @@ public class DeleteInstanceComp {
             String s = ResourceManagerServiceUtils.deleteInstance(deleteInstanceParams);
             JSONObject jsonObject = JSON.parseObject(s);
             if (jsonObject.getInteger("Code") == 0) {
-                List<InstanceInfo> instanceInfoList =
-                        CloudServiceUtils.listInstance();
                 boolean isExist = true;
                 long startLoadTime = System.currentTimeMillis();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(30);
                 while (isExist && LocalDateTime.now().isBefore(endTime)) {
+                    List<InstanceInfo> instanceInfoList =
+                            CloudServiceUtils.listInstance();
                     for (InstanceInfo instanceInfo : instanceInfoList) {
                         if (!instanceInfo.getInstanceId().equalsIgnoreCase(newInstanceInfo.getInstanceId())) {
                             isExist = false;
