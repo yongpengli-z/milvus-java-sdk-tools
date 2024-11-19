@@ -139,6 +139,16 @@ public class ComponentSchedule {
             DeleteInstanceResult deleteInstanceResult = DeleteInstanceComp.deleteInstance((DeleteInstanceParams) object);
             jsonObject.put("DeleteInstance_" + index, deleteInstanceResult);
         }
+        if (object instanceof StopInstanceParams) {
+            log.info("*********** < stop instance > ***********");
+            StopInstanceResult stopInstanceResult = StopInstanceComp.stopInstance((StopInstanceParams) object);
+            jsonObject.put("StopInstance_" + index, stopInstanceResult);
+        }
+        if (object instanceof ResumeInstanceParams) {
+            log.info("*********** < resume instance > ***********");
+            ResumeInstanceResult resumeInstanceResult = ResumeInstanceComp.resumeInstance((ResumeInstanceParams) object);
+            jsonObject.put("ResumeInstance_" + index, resumeInstanceResult);
+        }
         return jsonObject;
     }
 }

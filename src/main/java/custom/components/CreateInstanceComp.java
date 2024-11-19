@@ -18,9 +18,14 @@ import static custom.BaseTest.*;
 @Slf4j
 public class CreateInstanceComp {
     public static CreateInstanceResult createInstance(CreateInstanceParams createInstanceParams) {
-        // 登录cloudService获取账户信息
-        cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(createInstanceParams.getAccountEmail(), createInstanceParams.getAccountPassword());
-        // check是否存在同名的实例
+        // 登录cloudService获取账户信息 // 检查账号
+        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
+            if (createInstanceParams.getAccountEmail() == null || createInstanceParams.getAccountEmail().equalsIgnoreCase("")) {
+                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
+            } else {
+                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(createInstanceParams.getAccountEmail(), createInstanceParams.getAccountPassword());
+            }
+        }        // check是否存在同名的实例
         List<InstanceInfo> instanceInfoList =
                 CloudServiceUtils.listInstance();
         boolean isExist = false;

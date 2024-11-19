@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.config.CloudServiceUserInfo;
+import custom.entity.ResumeInstanceParams;
+import custom.entity.StopInstanceParams;
 import custom.pojo.InstanceInfo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,8 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static custom.BaseTest.cloudServiceUserInfo;
-import static custom.BaseTest.envConfig;
+import static custom.BaseTest.*;
 
 @Slf4j
 public class CloudServiceUtils {
@@ -99,6 +100,30 @@ public class CloudServiceUtils {
             orgIdList.add(orgId);
         }
         return orgIdList;
+    }
+
+    public static String stopInstance(StopInstanceParams stopInstanceParams){
+        String instanceId = stopInstanceParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : stopInstanceParams.getInstanceId();
+        String url=envConfig.getCloudServiceHost()+"/cloud/v1/instance/stop";
+        String body="{\"instanceId\":\""+instanceId+"\"}";
+        Map<String,String> header=new HashMap<>();
+        header.put("authorization","Bearer "+cloudServiceUserInfo.getToken());
+        header.put("orgid",cloudServiceUserInfo.getOrgIdList().get(0));
+        String s = HttpClientUtils.doPostJson(url, header, body);
+        log.info("[Cloud-Service]stop-instance:"+s);
+        return s;
+    }
+
+    public static String resumeInstance(ResumeInstanceParams resumeInstanceParams){
+        String instanceId = resumeInstanceParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : resumeInstanceParams.getInstanceId();
+        String url=envConfig.getCloudServiceHost()+"/cloud/v1/instance/resume";
+        String body="{\"instanceId\":\""+instanceId+"\"}";
+        Map<String,String> header=new HashMap<>();
+        header.put("authorization","Bearer "+cloudServiceUserInfo.getToken());
+        header.put("orgid",cloudServiceUserInfo.getOrgIdList().get(0));
+        String s = HttpClientUtils.doPostJson(url, header, body);
+        log.info("[Cloud-Service]resume-instance:"+s);
+        return s;
     }
 
 
