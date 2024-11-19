@@ -22,7 +22,7 @@ public class RollingUpgradeComp {
             cloudServiceUserInfo= CloudServiceUtils.queryUserIdOfCloudService(null,null);
         }
         // 先查询当前实例状态
-        String s = ResourceManagerServiceUtils.describeInstance();
+        String s = ResourceManagerServiceUtils.describeInstance(null);
         JSONObject jsonObject = JSONObject.parseObject(s);
         Integer status = jsonObject.getJSONObject("Data").getInteger("Status");
         InstanceStatusEnum instanceStatusByCode = InstanceStatusEnum.getInstanceStatusByCode(status);
@@ -53,7 +53,7 @@ public class RollingUpgradeComp {
         }
         LocalDateTime endTime=LocalDateTime.now().plusMinutes(30);
         while(ruStatus!=InstanceStatusEnum.RUNNING.code && LocalDateTime.now().isBefore(endTime)){
-            String describeInstance = ResourceManagerServiceUtils.describeInstance();
+            String describeInstance = ResourceManagerServiceUtils.describeInstance(null);
             JSONObject descJO = JSONObject.parseObject(describeInstance);
             ruStatus = descJO.getJSONObject("Data").getInteger("Status");
             log.info("[RollingUpgrade] current status:"+ InstanceStatusEnum.getInstanceStatusByCode(ruStatus).toString());

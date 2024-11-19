@@ -27,7 +27,7 @@ public class ResumeInstanceComp {
         }
 
         // 检查实例状态
-        String describeInstance = ResourceManagerServiceUtils.describeInstance();
+        String describeInstance = ResourceManagerServiceUtils.describeInstance(resumeInstanceParams.getInstanceId());
         JSONObject jsonObject = JSONObject.parseObject(describeInstance);
         Integer status = jsonObject.getJSONObject("Data").getInteger("Status");
         InstanceStatusEnum instanceStatusByCode = InstanceStatusEnum.getInstanceStatusByCode(status);
@@ -58,7 +58,7 @@ public class ResumeInstanceComp {
         }
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(30);
         do {
-            String descResult = ResourceManagerServiceUtils.describeInstance();
+            String descResult = ResourceManagerServiceUtils.describeInstance(resumeInstanceParams.getInstanceId());
             JSONObject descJO = JSONObject.parseObject(descResult);
             ruStatus = descJO.getJSONObject("Data").getInteger("Status");
             InstanceStatusEnum instanceStatusE = InstanceStatusEnum.getInstanceStatusByCode(ruStatus);

@@ -44,8 +44,11 @@ public class ResourceManagerServiceUtils {
         return resp;
     }
 
-    public static String describeInstance() {
-        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?InstanceId=" + newInstanceInfo.getInstanceId();
+    public static String describeInstance(String instanceId) {
+        if (instanceId==null || instanceId.equals("")) {
+            instanceId = newInstanceInfo.getInstanceId();
+        }
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?InstanceId=" + instanceId;
         Map<String, String> header = new HashMap<>();
         header.put("RequestId", "qtp-java-tools");
         header.put("UserId", cloudServiceUserInfo.getUserId());
