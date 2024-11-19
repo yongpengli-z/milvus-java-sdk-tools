@@ -36,7 +36,7 @@ public class ResumeInstanceComp {
             return ResumeInstanceResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.WARNING.result)
-                            .message("instance status can't resume !").build()).build();
+                            .message("instance status can't resume !"+"Current status:" + instanceStatusByCode).build()).build();
         }
 
         // stop

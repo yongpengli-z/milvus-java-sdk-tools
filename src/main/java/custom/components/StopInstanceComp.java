@@ -36,7 +36,7 @@ public class StopInstanceComp {
             return StopInstanceResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.WARNING.result)
-                            .message("instance status can't stop!").build()).build();
+                            .message("instance status can't stop!"+"Current status:" + instanceStatusByCode).build()).build();
         }
 
         // stop
