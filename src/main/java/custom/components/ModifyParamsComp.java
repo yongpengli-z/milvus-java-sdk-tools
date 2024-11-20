@@ -55,7 +55,7 @@ public class ModifyParamsComp {
 
         if (modifyParams.isNeedRestart()) {
             String s = ResourceManagerServiceUtils.restartInstance(modifyParams.getInstanceId());
-            JSONObject sJO = new JSONObject();
+            JSONObject sJO = JSONObject.parseObject(s);
             if (sJO.getInteger("Code") != 0) {
                 return ModifyParamsResult.builder()
                         .commonResult(CommonResult.builder()
