@@ -73,6 +73,7 @@ public class ModifyParamsComp {
             LocalDateTime endTime = LocalDateTime.now().plusMinutes(30);
             do {
                 String descResult = ResourceManagerServiceUtils.describeInstance(modifyParams.getInstanceId());
+                log.info("describe instance:"+descResult);
                 JSONObject descJO = JSONObject.parseObject(descResult);
                 ruStatus = descJO.getJSONObject("Data").getInteger("Status");
                 InstanceStatusEnum instanceStatusE = InstanceStatusEnum.getInstanceStatusByCode(ruStatus);
