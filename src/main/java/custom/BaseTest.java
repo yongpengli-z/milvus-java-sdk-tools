@@ -76,9 +76,10 @@ public class BaseTest {
         EnvEnum envByName = EnvEnum.getEnvByName(env);
         envConfig = ConfigUtils.providerEnvConfig(envByName);
         log.info("当前环境信息:" + envConfig);
-        log.info("newInstanceInfo" + newInstanceInfo.toString());
+        log.info("newInstanceInfo:" + newInstanceInfo.toString());
         if (newInstanceInfo.getUri() != null) {
-            milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), token);
+            log.info("创建milvusClientV2，uri:"+newInstanceInfo.getUri());
+            milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
             importUrl = uri;
             // 初始化环境
             InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
