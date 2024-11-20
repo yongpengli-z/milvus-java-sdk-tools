@@ -1,13 +1,19 @@
 package custom.utils;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.entity.CreateInstanceParams;
 import custom.entity.DeleteInstanceParams;
 import custom.entity.ModifyParams;
 import custom.entity.RollingUpgradeParams;
+import custom.entity.result.ModifyParamsResult;
+import custom.pojo.ParamInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static custom.BaseTest.*;
@@ -46,7 +52,7 @@ public class ResourceManagerServiceUtils {
     }
 
     public static String describeInstance(String instanceId) {
-        if (instanceId==null || instanceId.equals("")) {
+        if (instanceId == null || instanceId.equals("")) {
             instanceId = newInstanceInfo.getInstanceId();
         }
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?InstanceId=" + instanceId;
@@ -95,12 +101,91 @@ public class ResourceManagerServiceUtils {
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
     }
 
-    public static String modifyParams(ModifyParams modifyParams){
-        String url = envConfig.getRmHost() +"/resource/v1/param/milvus/modify";
-        String instanceId = modifyParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : modifyParams.getInstanceId();
-        String body = "";
-        return null;
+    public static void modifyParams(String instanceId, List<ModifyParams.Params> paramsList) {
+        String url = envConfig.getRmHost() + "/resource/v1/param/milvus/modify";
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        for (ModifyParams.Params params : paramsList) {
+            String body = "{\n" +
+                    "\n" +
+                    "  \"force\": true,\n" +
+                    "  \"instanceId\": \"" + instanceIdTemp + "\",\n" +
+                    "  \"paramName\": \"" + params.getParamName() + "\",\n" +
+                    "  \"paramValue\": \"" + params.getParamValue() + "\",\n" +
+                    "  \"switchType\": 0\n" +
+                    "}";
+            Map<String, String> header = new HashMap<>();
+            header.put("RequestId", "qtp-java-tools");
+            header.put("UserId", cloudServiceUserInfo.getUserId());
+            header.put("SourceApp", "Cloud-Meta");
+            String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+            log.info("Modify [" + params + "] response:" + s);
+        }
+    }
 
+    public static List<ParamInfo> listParams(String instanceId) {
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        String url = envConfig.getRmHost() + "/resource/v1/param/milvus/list?all=true&InstanceId=" + instanceIdTemp;
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools");
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String resp = HttpClientUtils.doGet(url, header, null);
+        List<ParamInfo> paramInfoList = new ArrayList<>();
+        JSONObject respJO = JSON.parseObject(resp);
+        Integer code = respJO.getInteger("Code");
+        if (code == 0) {
+            JSONArray jsonArray = respJO.getJSONObject("Data").getJSONArray("list");
+            for (int i = 0; i < jsonArray.size(); i++) {
+                ParamInfo paramInfo = new ParamInfo();
+                JSONObject item = jsonArray.getJSONObject(i);
+                paramInfo.setParamName(item.getString("paramName"));
+                paramInfo.setCurrentValue(item.getString("currentValue"));
+                paramInfo.setFinalValue(item.getString("finalValue"));
+                paramInfoList.add(paramInfo);
+            }
+        }
+        return paramInfoList;
+    }
+
+    public static void addParams(String instanceId, List<ModifyParams.Params> paramsList) {
+        String url = envConfig.getRmHost() + "/resource/v1/param/milvus/add";
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        for (ModifyParams.Params params : paramsList) {
+            String body = "{\n" +
+                    "  \"backendModify\": true,\n" +
+                    "  \"force\": true,\n" +
+                    "  \"instanceId\": \"" + instanceIdTemp + "\",\n" +
+                    "  \"paramName\": \"" + params.getParamName() + "\",\n" +
+                    "  \"paramPropertyAlter\": true,\n" +
+                    "  \"paramPropertyDisplay\": false,\n" +
+                    "  \"paramPropertyRestart\": false,\n" +
+                    "  \"paramValue\": \"" + params.getParamValue() + "\"\n" +
+                    "}";
+            Map<String, String> header = new HashMap<>();
+            header.put("RequestId", "qtp-java-tools");
+            header.put("UserId", cloudServiceUserInfo.getUserId());
+            header.put("SourceApp", "Cloud-Meta");
+            String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+            log.info("Add [" + params + "] response:" + s);
+        }
+    }
+
+    public static String restartInstance(String instanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/restart";
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        String body = "{\n" +
+                "  \"force\": true,\n" +
+                "  \"instanceId\": \"" + instanceIdTemp + "\",\n" +
+                "  \"notChangeStatus\": false,\n" +
+                "  \"switchType\": 0\n" +
+                "}";
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools");
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+        log.info("Restart instance:" + s);
+        return s;
     }
 }
 

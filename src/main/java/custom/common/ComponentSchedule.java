@@ -149,6 +149,11 @@ public class ComponentSchedule {
             ResumeInstanceResult resumeInstanceResult = ResumeInstanceComp.resumeInstance((ResumeInstanceParams) object);
             jsonObject.put("ResumeInstance_" + index, resumeInstanceResult);
         }
+        if (object instanceof ModifyParams) {
+            log.info("*********** < modify params > ***********");
+            ModifyParamsResult modifyParamsResult = ModifyParamsComp.modifyParams((ModifyParams) object);
+            jsonObject.put("ModifyParams_" + index, modifyParamsResult);
+        }
         return jsonObject;
     }
 }

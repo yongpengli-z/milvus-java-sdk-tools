@@ -6,12 +6,14 @@ import java.util.List;
 
 @Data
 public class ModifyParams {
-    public String instanceId;
-    public boolean needRestart;
-    public List<params> paramsList;
+    String instanceId;
+    boolean needRestart;
+    List<Params> paramsList;
+    String accountEmail;
+    String accountPassword;
 
     @Data
-    public static class params{
+    public static class Params {
         String paramName;
         String paramValue;
     }
