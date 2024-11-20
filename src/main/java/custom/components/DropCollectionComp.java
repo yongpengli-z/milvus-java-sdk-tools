@@ -26,6 +26,8 @@ public class DropCollectionComp {
                 try {
                     milvusClientV2.dropCollection(DropCollectionReq.builder()
                             .collectionName(collectionName).build());
+                    // 清空globalCollectionNames
+                    globalCollectionNames.clear();
                     dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
                             .collectionName(collectionName)
                             .commonResult(CommonResult.builder()
@@ -49,6 +51,7 @@ public class DropCollectionComp {
                 log.info("Drop collection: " + dropCollectionParams.getCollectionName());
                 milvusClientV2.dropCollection(DropCollectionReq.builder()
                         .collectionName(collectionName).build());
+                globalCollectionNames.remove(collectionName);
                 dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
                         .collectionName(collectionName)
                         .commonResult(CommonResult.builder()
