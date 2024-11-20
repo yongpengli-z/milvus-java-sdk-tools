@@ -44,7 +44,7 @@ public class ReleaseCollectionComp {
             }
         } else {
             String collectionName = (releaseParams.getCollectionName() == null || releaseParams.getCollectionName().equalsIgnoreCase("")) ?
-                    globalCollectionNames.get(0) : releaseParams.getCollectionName();
+                    globalCollectionNames.get(globalCollectionNames.size()-1) : releaseParams.getCollectionName();
             log.info("Release collection [" + collectionName + "]");
             try {
                 milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()

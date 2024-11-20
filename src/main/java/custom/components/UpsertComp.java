@@ -26,7 +26,7 @@ public class UpsertComp {
     public static UpsertResult upsertCollection(UpsertParams upsertParams){
         // 先search collection
         String collectionName = (upsertParams.getCollectionName() == null ||
-                upsertParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : upsertParams.getCollectionName();
+                upsertParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : upsertParams.getCollectionName();
 
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();

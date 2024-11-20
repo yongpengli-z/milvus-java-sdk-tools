@@ -24,7 +24,7 @@ public class SearchComp {
     public static SearchResultA searchCollection(SearchParams searchParams) {
         // 先search collection
         String collection = (searchParams.getCollectionName() == null ||
-                searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : searchParams.getCollectionName();
+                searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : searchParams.getCollectionName();
 
         // 随机向量，从数据库里筛选--暂定1000条
         log.info("从collection里捞取向量: " + 1000);

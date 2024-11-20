@@ -22,7 +22,7 @@ import static custom.BaseTest.*;
 public class QueryComp {
     public static QueryResult queryCollection(QueryParams queryParams) {
         String collectionName = (queryParams.getCollectionName() == null ||
-                queryParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : queryParams.getCollectionName();
+                queryParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : queryParams.getCollectionName();
         ArrayList<Future<QueryItemResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(queryParams.getNumConcurrency());
         float queryTotalTime;

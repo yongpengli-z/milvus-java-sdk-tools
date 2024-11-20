@@ -15,7 +15,7 @@ public class DropIndexComp {
     public static DropIndexResult dropIndex(DropIndexParams dropIndexParams) {
         CommonResult commonResult;
         String collectionName = (dropIndexParams.getCollectionName() == null || dropIndexParams.getCollectionName().equalsIgnoreCase("")) ?
-                globalCollectionNames.get(0) : dropIndexParams.getCollectionName();
+                globalCollectionNames.get(globalCollectionNames.size()-1) : dropIndexParams.getCollectionName();
         try {
             milvusClientV2.dropIndex(DropIndexReq.builder()
                     .collectionName(collectionName)

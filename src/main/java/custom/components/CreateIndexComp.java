@@ -5,16 +5,14 @@ import custom.entity.CreateIndexParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.CreateIndexResult;
 import custom.entity.result.ResultEnum;
-import io.milvus.v2.service.index.request.DescribeIndexReq;
 import lombok.extern.slf4j.Slf4j;
 
 import static custom.BaseTest.globalCollectionNames;
-import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class CreateIndexComp {
     public static CreateIndexResult CreateIndex(CreateIndexParams createIndexParams) {
-        String collectionName = (createIndexParams.getCollectionName() == null || createIndexParams.getCollectionName().equals("")) ? globalCollectionNames.get(0) : createIndexParams.getCollectionName();
+        String collectionName = (createIndexParams.getCollectionName() == null || createIndexParams.getCollectionName().equals("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : createIndexParams.getCollectionName();
         CommonResult commonResult;
         try {
             CommonFunction.createCommonIndex(collectionName, createIndexParams.getIndexParams());

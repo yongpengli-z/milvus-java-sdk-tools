@@ -62,7 +62,7 @@ public class InsertComp {
         float insertTotalTime = 0;
         String collectionName = (insertParams.getCollectionName() == null ||
                 insertParams.getCollectionName().equalsIgnoreCase(""))
-                ? globalCollectionNames.get(0) : insertParams.getCollectionName();
+                ? globalCollectionNames.get(globalCollectionNames.size()-1) : insertParams.getCollectionName();
         log.info("Insert collection [" + collectionName + "] total " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());

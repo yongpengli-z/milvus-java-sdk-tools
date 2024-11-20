@@ -4,7 +4,6 @@ import custom.entity.LoadParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.LoadResult;
 import custom.entity.result.ResultEnum;
-import io.milvus.grpc.LoadState;
 import io.milvus.v2.service.collection.request.GetLoadStateReq;
 import io.milvus.v2.service.collection.request.LoadCollectionReq;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
@@ -59,7 +58,7 @@ public class LoadCollectionComp {
             }
         } else {
             String collectionName = (loadParams.getCollectionName() == null || loadParams.getCollectionName().equalsIgnoreCase("")) ?
-                    globalCollectionNames.get(0) : loadParams.getCollectionName();
+                    globalCollectionNames.get(globalCollectionNames.size()-1) : loadParams.getCollectionName();
 
             try {
                 log.info("Loading collection [" + collectionName + "]");

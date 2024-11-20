@@ -43,7 +43,7 @@ public class CommonFunction {
      * @param fieldParamsList 其他字段
      * @return collection name
      */
-    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList) throws Exception {
+    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList) {
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
@@ -108,7 +108,7 @@ public class CommonFunction {
     public static void createCommonIndex(String collectionName, List<IndexParams> indexParams) {
         List<IndexParam> indexParamList = new ArrayList<>();
         if (indexParams.size() == 0) {
-            DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(0) : collectionName).build());
+            DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : collectionName).build());
             CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
             List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
             for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
@@ -140,7 +140,7 @@ public class CommonFunction {
         }
         log.info("create index :" + indexParamList);
         milvusClientV2.createIndex(CreateIndexReq.builder()
-                .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(0) : collectionName)
+                .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : collectionName)
                 .indexParams(indexParamList)
                 .build());
         // 查询索引是否建完

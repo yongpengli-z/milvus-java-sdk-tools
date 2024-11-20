@@ -3,6 +3,7 @@ package custom.utils;
 import com.alibaba.fastjson.JSONObject;
 import custom.entity.CreateInstanceParams;
 import custom.entity.DeleteInstanceParams;
+import custom.entity.ModifyParams;
 import custom.entity.RollingUpgradeParams;
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,5 +95,12 @@ public class ResourceManagerServiceUtils {
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
     }
 
+    public static String modifyParams(ModifyParams modifyParams){
+        String url = envConfig.getRmHost() +"/resource/v1/param/milvus/modify";
+        String instanceId = modifyParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : modifyParams.getInstanceId();
+        String body = "";
+        return null;
+
+    }
 }
 

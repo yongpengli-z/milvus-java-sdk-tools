@@ -44,7 +44,7 @@ public class DropCollectionComp {
             }
         } else {
             String collectionName = (dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase("")) ?
-                    globalCollectionNames.get(0) : dropCollectionParams.getCollectionName();
+                    globalCollectionNames.get(globalCollectionNames.size()-1) : dropCollectionParams.getCollectionName();
             try {
                 log.info("Drop collection: " + dropCollectionParams.getCollectionName());
                 milvusClientV2.dropCollection(DropCollectionReq.builder()

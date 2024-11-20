@@ -1,20 +1,15 @@
 package custom.components;
 
 import custom.common.CommonFunction;
-import custom.entity.PKFieldInfo;
 import custom.entity.RecallParams;
-import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.SearchResp;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.util.Lists;
 
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
 
 import static custom.BaseTest.*;
 import static custom.BaseTest.recallBaseIdList;
@@ -25,7 +20,7 @@ public class RecallComp {
     public static void calcRecall(RecallParams recallParams) {
         // 先search collection
         String collection = (recallParams.getCollectionName() == null ||
-                recallParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(0) : recallParams.getCollectionName();
+                recallParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : recallParams.getCollectionName();
 
         // 随机向量，从数据库里筛选
         log.info("从collection里捞取向量: " + 10000);
