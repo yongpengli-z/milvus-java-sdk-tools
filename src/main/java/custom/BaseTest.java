@@ -36,8 +36,8 @@ public class BaseTest {
 
     public static void main(String[] args) {
         String env = System.getProperty("env") == null
-                ? "awswest"
-                : System.getProperty("uri");
+                ? ""
+                : System.getProperty("env");
         String uri =
                 System.getProperty("uri") == null || System.getProperty("uri").trim().equals("")
                         ? ""
@@ -74,6 +74,7 @@ public class BaseTest {
         }
 
         EnvEnum envByName = EnvEnum.getEnvByName(env);
+//        log.info("EnvEnum:"+envByName);
         envConfig = ConfigUtils.providerEnvConfig(envByName);
         log.info("当前环境信息:" + envConfig);
         log.info("newInstanceInfo:" + newInstanceInfo.toString());
