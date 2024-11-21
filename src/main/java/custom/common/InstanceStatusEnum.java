@@ -23,15 +23,22 @@ public enum InstanceStatusEnum {
     UNFREEZING(16),
     CREATE_DEMO_COLLECTION(17),
     MIGRATING(18),
-    RESTORE_BACKUP(19);
+    RESTORE_BACKUP(19),
+
+    OTHERS(9999);
+
 
     public final int code;
 
-    InstanceStatusEnum(int code){
-        this.code=code;
+    InstanceStatusEnum(int code) {
+        this.code = code;
     }
 
-    public static InstanceStatusEnum getInstanceStatusByCode(int code){
-        return Arrays.stream(InstanceStatusEnum.values()).filter(x -> x.code==code).findFirst().orElse(null);
+    public static InstanceStatusEnum getInstanceStatusByCode(int code) {
+        InstanceStatusEnum instanceStatusEnum = Arrays.stream(InstanceStatusEnum.values()).filter(x -> x.code == code).findFirst().orElse(null);
+        if (instanceStatusEnum == null) {
+            return OTHERS;
+        }
+        return instanceStatusEnum;
     }
 }
