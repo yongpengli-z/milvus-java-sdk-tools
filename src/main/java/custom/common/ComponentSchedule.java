@@ -154,6 +154,11 @@ public class ComponentSchedule {
             ModifyParamsResult modifyParamsResult = ModifyParamsComp.modifyParams((ModifyParams) object);
             jsonObject.put("ModifyParams_" + index, modifyParamsResult);
         }
+        if (object instanceof RestartInstanceParams) {
+            log.info("*********** < restart instance > ***********");
+            RestartInstanceResult restartInstanceResult = RestartInstanceComp.restartInstance((RestartInstanceParams) object);
+            jsonObject.put("RestartInstance_" + index, restartInstanceResult);
+        }
         return jsonObject;
     }
 }
