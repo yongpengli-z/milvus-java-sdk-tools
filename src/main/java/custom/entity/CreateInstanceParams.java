@@ -14,4 +14,5 @@ public class CreateInstanceParams {
     int replica;
     String rootPassword;
     String roleUse;
+    int useHours;
 }
