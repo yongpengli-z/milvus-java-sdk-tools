@@ -63,10 +63,6 @@ public class ComponentSchedule {
                 }while (taskStatus==TaskStatusEnum.STOPPING.status);
             }
 
-            if (taskStatus==TaskStatusEnum.RUNNING.status){
-                continue;
-            }
-
             if (taskStatus == TaskStatusEnum.TERMINATE.status){
                 log.info("监测到任务终止...");
                 return results;
