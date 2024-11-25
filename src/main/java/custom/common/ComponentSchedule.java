@@ -191,6 +191,7 @@ public class ComponentSchedule {
     public static int queryTaskRedisValue(){
         String uri="http://qtp-server.zilliz.cc/customize-task/query/status?redisKey="+redisKey;
         String s = HttpClientUtils.doGet(uri);
+        log.info("request qtp:"+s);
         JSONObject jsonObject= JSON.parseObject(s);
         return jsonObject.getInteger("data");
     }
