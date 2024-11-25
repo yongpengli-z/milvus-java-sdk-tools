@@ -1,10 +1,11 @@
 package custom.common;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import custom.components.*;
 import custom.entity.*;
 import custom.entity.result.*;
-import custom.utils.RedisUtils;
+import custom.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -188,11 +189,9 @@ public class ComponentSchedule {
     }
 
     public static int queryTaskRedisValue(){
-        String valueByKey = RedisUtils.getValueByKey(redisKey);
-        if (valueByKey == null) {
-            return 1;
-        }else {
-            return Integer.parseInt(valueByKey);
-        }
+        String uri="http://qtp-server.zilliz.cc/customize-task/query/status?redisKey="+redisKey;
+        String s = HttpClientUtils.doGet(uri);
+        JSONObject jsonObject= JSON.parseObject(s);
+        return jsonObject.getInteger("data");
     }
 }

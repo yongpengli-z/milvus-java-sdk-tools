@@ -35,15 +35,11 @@ public class BaseTest {
     public static InstanceInfo newInstanceInfo = new InstanceInfo();
 
     public static String redisKey;
-    public static String redisPassword;
 
     public static void main(String[] args) {
         int taskId = Integer.parseInt(System.getProperty("taskId") == null
                 ? ""
                 : System.getProperty("taskId"));
-        redisPassword = System.getProperty("redisPassword") == null
-                ? ""
-                : System.getProperty("redisPassword");
         String env = System.getProperty("env") == null
                 ? ""
                 : System.getProperty("env");
