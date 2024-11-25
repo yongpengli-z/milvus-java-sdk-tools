@@ -4,11 +4,14 @@ import com.alibaba.fastjson.JSONObject;
 import custom.components.*;
 import custom.entity.*;
 import custom.entity.result.*;
+import custom.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static custom.BaseTest.redisKey;
 
 /**
  * @Author yongpeng.li @Date 2024/6/5 17:26
@@ -45,6 +48,28 @@ public class ComponentSchedule {
         List<JSONObject> results = new ArrayList<>();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
+            int taskStatus = queryTaskRedisValue();
+
+            if (taskStatus==TaskStatusEnum.STOPPING.status){
+                do{
+                    log.info("监测到暂停...");
+                    try {
+                        Thread.sleep(1000*5);
+                    } catch (InterruptedException e) {
+                        log.error(e.getMessage());
+                    }
+                    taskStatus=queryTaskRedisValue();
+                }while (taskStatus==TaskStatusEnum.STOPPING.status);
+            }
+
+            if (taskStatus==TaskStatusEnum.RUNNING.status){
+                continue;
+            }
+
+            if (taskStatus == TaskStatusEnum.TERMINATE.status){
+                log.info("监测到任务终止...");
+                return results;
+            }
             JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
             results.add(jsonObject);
         }
@@ -160,5 +185,14 @@ public class ComponentSchedule {
             jsonObject.put("RestartInstance_" + index, restartInstanceResult);
         }
         return jsonObject;
+    }
+
+    public static int queryTaskRedisValue(){
+        String valueByKey = RedisUtils.getValueByKey(redisKey);
+        if (valueByKey == null) {
+            return 1;
+        }else {
+            return Integer.parseInt(valueByKey);
+        }
     }
 }

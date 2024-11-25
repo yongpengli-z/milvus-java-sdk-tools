@@ -54,7 +54,11 @@
             <version>0.0.1</version>
             <artifactId>npy</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>4.2.3</version> <!-- 请根据需要选择版本 -->
+        </dependency>
 
     </dependencies>
 

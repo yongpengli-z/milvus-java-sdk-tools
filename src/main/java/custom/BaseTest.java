@@ -34,7 +34,16 @@ public class BaseTest {
 
     public static InstanceInfo newInstanceInfo = new InstanceInfo();
 
+    public static String redisKey;
+    public static String redisPassword;
+
     public static void main(String[] args) {
+        int taskId = Integer.parseInt(System.getProperty("taskId") == null
+                ? ""
+                : System.getProperty("taskId"));
+        redisPassword = System.getProperty("redisPassword") == null
+                ? ""
+                : System.getProperty("redisPassword");
         String env = System.getProperty("env") == null
                 ? ""
                 : System.getProperty("env");
@@ -57,10 +66,10 @@ public class BaseTest {
                         || System.getProperty("customize_params").equals("")
                         ? ""
                         : System.getProperty("customize_params");
-
+        redisKey = "customize_task_" + taskId;
         if (!uri.equalsIgnoreCase("")) {
             newInstanceInfo.setUri(uri);
-            if (uri.contains("ali") || uri.contains("tc")|| uri.contains("aws") || uri.contains("gcp") || uri.contains("az")) {
+            if (uri.contains("ali") || uri.contains("tc") || uri.contains("aws") || uri.contains("gcp") || uri.contains("az")) {
                 String substring = uri.substring(uri.indexOf("https://") + 8, 28);
                 newInstanceInfo.setInstanceId(substring);
             }
@@ -79,7 +88,7 @@ public class BaseTest {
         log.info("当前环境信息:" + envConfig);
         log.info("newInstanceInfo:" + newInstanceInfo.toString());
         if (newInstanceInfo.getUri() != null) {
-            log.info("创建milvusClientV2，uri:"+newInstanceInfo.getUri());
+            log.info("创建milvusClientV2，uri:" + newInstanceInfo.getUri());
             milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
             importUrl = uri;
             // 初始化环境
