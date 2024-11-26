@@ -65,7 +65,7 @@ public class ComponentSchedule {
 
             if (taskStatus == TaskStatusEnum.TERMINATE.status){
                 log.info("监测到任务终止...");
-                return results;
+                break;
             }
             JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
             results.add(jsonObject);
