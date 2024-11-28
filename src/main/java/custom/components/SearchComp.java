@@ -35,6 +35,11 @@ public class SearchComp {
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
+        // 处理output
+        List<String> outputs = searchParams.getOutputs();
+        if(outputs.size()==1&&outputs.get(0).equalsIgnoreCase("")){
+            outputs=new ArrayList<>();
+        }
 
         float searchTotalTime;
         long startTimeTotal = System.currentTimeMillis();
@@ -45,6 +50,7 @@ public class SearchComp {
         }
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
+            List<String> finalOutputs = outputs;
             Callable<SearchResult> callable =
                     () -> {
                         List<BaseVector> randomBaseVectors = baseVectors;
@@ -61,7 +67,7 @@ public class SearchComp {
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
                                     .topK(searchParams.getTopK())
-                                    .outputFields(searchParams.getOutputs())
+                                    .outputFields(finalOutputs)
                                     .consistencyLevel(ConsistencyLevel.BOUNDED)
                                     .collectionName(collection)
                                     .searchParams(searchLevel)
