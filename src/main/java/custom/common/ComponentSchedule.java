@@ -198,7 +198,7 @@ public class ComponentSchedule {
     }
 
     public static void updateArgoStatus(int status){
-        String uri= " http://qtp-server.zilliz.cc/customize-task/task/argo/status";
+        String uri= "http://qtp-server.zilliz.cc/customize-task/task/argo/status";
         HashMap<String,Object> params=new HashMap<>();
         params.put("id",taskId);
         params.put("argoStatus",status);
@@ -207,7 +207,7 @@ public class ComponentSchedule {
     }
 
     public static void updateCaseStatus(int status){
-        String uri= " http://qtp-server.zilliz.cc/customize-task/task/case/status";
+        String uri= "http://qtp-server.zilliz.cc/customize-task/task/case/status";
         HashMap<String,Object> params=new HashMap<>();
         params.put("id",taskId);
         params.put("caseStatus",status);
