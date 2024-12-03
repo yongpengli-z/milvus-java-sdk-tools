@@ -8,6 +8,11 @@ import custom.entity.result.*;
 import custom.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -198,21 +203,16 @@ public class ComponentSchedule {
     }
 
     public static void updateArgoStatus(int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status";
-        HashMap<String, Object> params = new HashMap<>();
-        params.put("id", taskId);
-        params.put("argoStatus", status);
-        String s = HttpClientUtils.doPost(uri, null, params);
-        log.info("Update argo status:" + s);
+        String uri = "http://localhost:8081/customize-task/task/argo/status?id="+taskId+"&argoStatus="+status;
+        String s = HttpClientUtils.doPost(uri);
+        log.info("Update case status:" + s);
     }
 
     public static void updateCaseStatus(int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status";
-        HashMap<String, Object> params = new HashMap<>();
-        params.put("id", taskId);
-        params.put("caseStatus", status);
-        log.info("params:" + params);
-        String s = HttpClientUtils.doPost(uri, null, params);
+        String uri = "http://localhost:8081/customize-task/task/case/status?id="+taskId+"&caseStatus="+status;
+        String s = HttpClientUtils.doPost(uri);
         log.info("Update case status:" + s);
     }
+
+
 }
