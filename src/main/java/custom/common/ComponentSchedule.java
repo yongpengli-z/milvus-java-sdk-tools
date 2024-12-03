@@ -87,43 +87,43 @@ public class ComponentSchedule {
             log.info("*********** < create collection > ***********");
             CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
             jsonObject.put("CreateCollection_" + index, createCollectionResult);
-            reportStepResult(CreateCollectionParams.class.getName()+"_"+index,createCollectionResult.toString());
+            reportStepResult(CreateCollectionParams.class.getSimpleName()+"_"+index,createCollectionResult.toString());
         }
         if (object instanceof CreateIndexParams) {
             log.info("*********** < create index > ***********");
             CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) object);
             jsonObject.put("CreateIndex_" + index, createIndexResult);
-            reportStepResult(CreateIndexParams.class.getName()+"_"+index,createIndexResult.toString());
+            reportStepResult(CreateIndexParams.class.getSimpleName()+"_"+index,createIndexResult.toString());
         }
         if (object instanceof LoadParams) {
             log.info("*********** < load collection > ***********");
             LoadResult loadResult = LoadCollectionComp.loadCollection((LoadParams) object);
             jsonObject.put("LoadCollection_" + index, loadResult);
-            reportStepResult(LoadParams.class.getName()+"_"+index,loadResult.toString());
+            reportStepResult(LoadParams.class.getSimpleName()+"_"+index,loadResult.toString());
         }
         if (object instanceof InsertParams) {
             log.info("*********** < insert data > ***********");
             InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
             jsonObject.put("Insert_" + index, insertResult);
-            reportStepResult(InsertParams.class.getName()+"_"+index,insertResult.toString());
+            reportStepResult(InsertParams.class.getSimpleName()+"_"+index,insertResult.toString());
         }
         if (object instanceof SearchParams) {
             log.info("*********** < search collection > ***********");
             SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) object);
             jsonObject.put("Search_" + index, searchResultA);
-            reportStepResult(SearchParams.class.getName()+"_"+index,searchResultA.toString());
+            reportStepResult(SearchParams.class.getSimpleName()+"_"+index,searchResultA.toString());
         }
         if (object instanceof ReleaseParams) {
             log.info("*********** < release collection > ***********");
             ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) object);
             jsonObject.put("ReleaseCollection_" + index, releaseResult);
-            reportStepResult(ReleaseParams.class.getName()+"_"+index,releaseResult.toString());
+            reportStepResult(ReleaseParams.class.getSimpleName()+"_"+index,releaseResult.toString());
         }
         if (object instanceof DropCollectionParams) {
             log.info("*********** < drop collection > ***********");
             DropCollectionResult dropCollectionResult = DropCollectionComp.dropCollection((DropCollectionParams) object);
             jsonObject.put("DropCollection_" + index, dropCollectionResult);
-            reportStepResult(DropCollectionParams.class.getName()+"_"+index,dropCollectionResult.toString());
+            reportStepResult(DropCollectionParams.class.getSimpleName()+"_"+index,dropCollectionResult.toString());
         }
         if (object instanceof RecallParams) {
             log.info("*********** < recall > ***********");
@@ -134,13 +134,13 @@ public class ComponentSchedule {
             log.info("*********** < Wait > ***********");
             WaitResult waitResult = WaitComp.wait((WaitParams) object);
             jsonObject.put("Wait" + index, waitResult);
-            reportStepResult(WaitParams.class.getName()+"_"+index,waitResult.toString());
+            reportStepResult(WaitParams.class.getSimpleName()+"_"+index,waitResult.toString());
         }
         if (object instanceof UpsertParams) {
             log.info("*********** < upsert data > ***********");
             UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
             jsonObject.put("Upsert_" + index, upsertResult);
-            reportStepResult(UpsertParams.class.getName()+"_"+index,upsertResult.toString());
+            reportStepResult(UpsertParams.class.getSimpleName()+"_"+index,upsertResult.toString());
         }
         if (object instanceof ConcurrentParams) {
             log.info("*********** < Concurrent Operator > ***********");
@@ -148,20 +148,20 @@ public class ComponentSchedule {
             List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) object);
             parentNodeName.remove(parentNodeName.size() - 1);
             jsonObject.put("Concurrent_" + index, jsonObjects);
-            reportStepResult(ConcurrentParams.class.getName()+"_"+index,jsonObjects.toString());
+            reportStepResult(ConcurrentParams.class.getSimpleName()+"_"+index,jsonObjects.toString());
         }
 
         if (object instanceof QueryParams) {
             log.info("*********** < query collection > ***********");
             QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
             jsonObject.put("Query_" + index, queryResult);
-            reportStepResult(QueryParams.class.getName()+"_"+index,queryResult.toString());
+            reportStepResult(QueryParams.class.getSimpleName()+"_"+index,queryResult.toString());
         }
         if (object instanceof DropIndexParams) {
             log.info("*********** < drop index > ***********");
             DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);
             jsonObject.put("DropIndex_" + index, dropIndexResult);
-            reportStepResult(DropIndexParams.class.getName()+"_"+index,dropIndexResult.toString());
+            reportStepResult(DropIndexParams.class.getSimpleName()+"_"+index,dropIndexResult.toString());
         }
         if (object instanceof LoopParams) {
             log.info("*********** < Loop Operator> ***********");
@@ -169,49 +169,49 @@ public class ComponentSchedule {
             JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
             parentNodeName.remove(parentNodeName.size() - 1);
             jsonObject.put("Loop_" + index, loopJO);
-            reportStepResult(LoopParams.class.getName()+"_"+index,loopJO.toString());
+            reportStepResult(LoopParams.class.getSimpleName()+"_"+index,loopJO.toString());
         }
         if (object instanceof CreateInstanceParams) {
             log.info("*********** < create instance> ***********");
             CreateInstanceResult createInstanceResult = CreateInstanceComp.createInstance((CreateInstanceParams) object);
             jsonObject.put("CreateInstance_" + index, createInstanceResult);
-            reportStepResult(CreateInstanceParams.class.getName()+"_"+index,createInstanceResult.toString());
+            reportStepResult(CreateInstanceParams.class.getSimpleName()+"_"+index,createInstanceResult.toString());
         }
         if (object instanceof RollingUpgradeParams) {
             log.info("*********** < rolling upgrade > ***********");
             RollingUpgradeResult rollingUpgradeResult = RollingUpgradeComp.rollingUpgradeInstance((RollingUpgradeParams) object);
             jsonObject.put("RollingUpgrade_" + index, rollingUpgradeResult);
-            reportStepResult(RollingUpgradeParams.class.getName()+"_"+index,rollingUpgradeResult.toString());
+            reportStepResult(RollingUpgradeParams.class.getSimpleName()+"_"+index,rollingUpgradeResult.toString());
         }
         if (object instanceof DeleteInstanceParams) {
             log.info("*********** < delete instance > ***********");
             DeleteInstanceResult deleteInstanceResult = DeleteInstanceComp.deleteInstance((DeleteInstanceParams) object);
             jsonObject.put("DeleteInstance_" + index, deleteInstanceResult);
-            reportStepResult(DeleteInstanceParams.class.getName()+"_"+index,deleteInstanceResult.toString());
+            reportStepResult(DeleteInstanceParams.class.getSimpleName()+"_"+index,deleteInstanceResult.toString());
         }
         if (object instanceof StopInstanceParams) {
             log.info("*********** < stop instance > ***********");
             StopInstanceResult stopInstanceResult = StopInstanceComp.stopInstance((StopInstanceParams) object);
             jsonObject.put("StopInstance_" + index, stopInstanceResult);
-            reportStepResult(StopInstanceParams.class.getName()+"_"+index,stopInstanceResult.toString());
+            reportStepResult(StopInstanceParams.class.getSimpleName()+"_"+index,stopInstanceResult.toString());
         }
         if (object instanceof ResumeInstanceParams) {
             log.info("*********** < resume instance > ***********");
             ResumeInstanceResult resumeInstanceResult = ResumeInstanceComp.resumeInstance((ResumeInstanceParams) object);
             jsonObject.put("ResumeInstance_" + index, resumeInstanceResult);
-            reportStepResult(ResumeInstanceParams.class.getName()+"_"+index,resumeInstanceResult.toString());
+            reportStepResult(ResumeInstanceParams.class.getSimpleName()+"_"+index,resumeInstanceResult.toString());
         }
         if (object instanceof ModifyParams) {
             log.info("*********** < modify params > ***********");
             ModifyParamsResult modifyParamsResult = ModifyParamsComp.modifyParams((ModifyParams) object);
             jsonObject.put("ModifyParams_" + index, modifyParamsResult);
-            reportStepResult(ModifyParams.class.getName()+"_"+index,modifyParamsResult.toString());
+            reportStepResult(ModifyParams.class.getSimpleName()+"_"+index,modifyParamsResult.toString());
         }
         if (object instanceof RestartInstanceParams) {
             log.info("*********** < restart instance > ***********");
             RestartInstanceResult restartInstanceResult = RestartInstanceComp.restartInstance((RestartInstanceParams) object);
             jsonObject.put("RestartInstance_" + index, restartInstanceResult);
-            reportStepResult(RestartInstanceParams.class.getName()+"_"+index,restartInstanceResult.toString());
+            reportStepResult(RestartInstanceParams.class.getSimpleName()+"_"+index,restartInstanceResult.toString());
         }
         return jsonObject;
     }
@@ -248,4 +248,8 @@ public class ComponentSchedule {
 
     }
 
+    public static void main(String[] args) {
+        String name = CreateInstanceParams.class.getSimpleName();
+        System.out.println(name);
+    }
 }
