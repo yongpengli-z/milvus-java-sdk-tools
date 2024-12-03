@@ -9,10 +9,11 @@ import custom.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static custom.BaseTest.redisKey;
+import static custom.BaseTest.*;
 
 /**
  * @Author yongpeng.li @Date 2024/6/5 17:26
@@ -21,7 +22,6 @@ import static custom.BaseTest.redisKey;
 public class ComponentSchedule {
     public static List<JSONObject> runningSchedule(String customizeParams) {
         log.info("--customizeParams--:" + customizeParams);
-
         // 获取params的所有根节点
         JSONObject parseJO = JSONObject.parseObject(customizeParams);
         List<String> keyList = new ArrayList<>(parseJO.keySet());
@@ -77,6 +77,7 @@ public class ComponentSchedule {
 
     public static JSONObject callComponentSchedule(Object object, int index) {
         JSONObject jsonObject = new JSONObject();
+        log.info("当前父节点："+parentNodeName.toString());
         if (object instanceof CreateCollectionParams) {
             log.info("*********** < create collection > ***********");
             CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
@@ -128,7 +129,9 @@ public class ComponentSchedule {
         }
         if (object instanceof ConcurrentParams) {
             log.info("*********** < Concurrent Operator > ***********");
+            parentNodeName.add("ConcurrentParams_"+index);
             List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) object);
+            parentNodeName.remove(parentNodeName.size()-1);
             jsonObject.put("Concurrent_" + index, jsonObjects);
         }
         if (object instanceof QueryParams) {
@@ -143,7 +146,9 @@ public class ComponentSchedule {
         }
         if (object instanceof LoopParams) {
             log.info("*********** < Loop Operator> ***********");
+            parentNodeName.add("LoopParams_"+index);
             JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
+            parentNodeName.remove(parentNodeName.size()-1);
             jsonObject.put("Loop_" + index, loopJO);
         }
         if (object instanceof CreateInstanceParams) {
@@ -190,5 +195,23 @@ public class ComponentSchedule {
         log.info("request qtp:"+s);
         JSONObject jsonObject= JSON.parseObject(s);
         return jsonObject.getInteger("data");
+    }
+
+    public static void updateArgoStatus(int status){
+        String uri= " http://qtp-server.zilliz.cc/customize-task/task/argo/status";
+        HashMap<String,Object> params=new HashMap<>();
+        params.put("id",taskId);
+        params.put("argoStatus",status);
+        String s =HttpClientUtils.doPost(uri,null,params);
+        log.info("Update argo status:"+s);
+    }
+
+    public static void updateCaseStatus(int status){
+        String uri= " http://qtp-server.zilliz.cc/customize-task/task/case/status";
+        HashMap<String,Object> params=new HashMap<>();
+        params.put("id",taskId);
+        params.put("caseStatus",status);
+        String s =HttpClientUtils.doPost(uri,null,params);
+        log.info("Update case status:"+s);
     }
 }
