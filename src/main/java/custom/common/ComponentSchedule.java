@@ -203,16 +203,27 @@ public class ComponentSchedule {
     }
 
     public static void updateArgoStatus(int status) {
-        String uri = "http://localhost:8081/customize-task/task/argo/status?id="+taskId+"&argoStatus="+status;
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id="+taskId+"&argoStatus="+status;
         String s = HttpClientUtils.doPost(uri);
         log.info("Update case status:" + s);
     }
 
     public static void updateCaseStatus(int status) {
-        String uri = "http://localhost:8081/customize-task/task/case/status?id="+taskId+"&caseStatus="+status;
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id="+taskId+"&caseStatus="+status;
         String s = HttpClientUtils.doPost(uri);
         log.info("Update case status:" + s);
     }
 
+    public static void reportStepResult(String nodeName,String result){
+        String uri="http://qtp-server.zilliz.cc/customize-task-details/result/insert";
+        JSONObject params=new JSONObject();
+        params.put("taskId",taskId);
+        params.put("nodeName",nodeName);
+        params.put("parentNodeName",parentNodeName);
+        params.put("result",result);
+        String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
+        log.info(parentNodeName+"["+nodeName+"]Insert result:"+s);
+
+    }
 
 }
