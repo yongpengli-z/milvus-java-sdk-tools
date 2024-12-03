@@ -51,19 +51,19 @@ public class ComponentSchedule {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
             int taskStatus = queryTaskRedisValue();
 
-            if (taskStatus==TaskStatusEnum.STOPPING.status){
-                do{
+            if (taskStatus == TaskStatusEnum.STOPPING.status) {
+                do {
                     log.info("监测到暂停...");
                     try {
-                        Thread.sleep(1000*5);
+                        Thread.sleep(1000 * 5);
                     } catch (InterruptedException e) {
                         log.error(e.getMessage());
                     }
-                    taskStatus=queryTaskRedisValue();
-                }while (taskStatus==TaskStatusEnum.STOPPING.status);
+                    taskStatus = queryTaskRedisValue();
+                } while (taskStatus == TaskStatusEnum.STOPPING.status);
             }
 
-            if (taskStatus == TaskStatusEnum.TERMINATE.status){
+            if (taskStatus == TaskStatusEnum.TERMINATE.status) {
                 log.info("监测到任务终止...");
                 break;
             }
@@ -77,7 +77,7 @@ public class ComponentSchedule {
 
     public static JSONObject callComponentSchedule(Object object, int index) {
         JSONObject jsonObject = new JSONObject();
-        log.info("当前父节点："+parentNodeName.toString());
+        log.info("当前父节点：" + parentNodeName.toString());
         if (object instanceof CreateCollectionParams) {
             log.info("*********** < create collection > ***********");
             CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
@@ -129,9 +129,9 @@ public class ComponentSchedule {
         }
         if (object instanceof ConcurrentParams) {
             log.info("*********** < Concurrent Operator > ***********");
-            parentNodeName.add("ConcurrentParams_"+index);
+            parentNodeName.add("ConcurrentParams_" + index);
             List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) object);
-            parentNodeName.remove(parentNodeName.size()-1);
+            parentNodeName.remove(parentNodeName.size() - 1);
             jsonObject.put("Concurrent_" + index, jsonObjects);
         }
         if (object instanceof QueryParams) {
@@ -146,9 +146,9 @@ public class ComponentSchedule {
         }
         if (object instanceof LoopParams) {
             log.info("*********** < Loop Operator> ***********");
-            parentNodeName.add("LoopParams_"+index);
+            parentNodeName.add("LoopParams_" + index);
             JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
-            parentNodeName.remove(parentNodeName.size()-1);
+            parentNodeName.remove(parentNodeName.size() - 1);
             jsonObject.put("Loop_" + index, loopJO);
         }
         if (object instanceof CreateInstanceParams) {
@@ -189,29 +189,30 @@ public class ComponentSchedule {
         return jsonObject;
     }
 
-    public static int queryTaskRedisValue(){
-        String uri="http://qtp-server.zilliz.cc/customize-task/query/status?redisKey="+redisKey;
+    public static int queryTaskRedisValue() {
+        String uri = "http://qtp-server.zilliz.cc/customize-task/query/status?redisKey=" + redisKey;
         String s = HttpClientUtils.doGet(uri);
-        log.info("request qtp:"+s);
-        JSONObject jsonObject= JSON.parseObject(s);
+        log.info("request qtp:" + s);
+        JSONObject jsonObject = JSON.parseObject(s);
         return jsonObject.getInteger("data");
     }
 
-    public static void updateArgoStatus(int status){
-        String uri= "http://qtp-server.zilliz.cc/customize-task/task/argo/status";
-        HashMap<String,Object> params=new HashMap<>();
-        params.put("id",taskId);
-        params.put("argoStatus",status);
-        String s =HttpClientUtils.doPost(uri,null,params);
-        log.info("Update argo status:"+s);
+    public static void updateArgoStatus(int status) {
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status";
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("id", taskId);
+        params.put("argoStatus", status);
+        String s = HttpClientUtils.doPost(uri, null, params);
+        log.info("Update argo status:" + s);
     }
 
-    public static void updateCaseStatus(int status){
-        String uri= "http://qtp-server.zilliz.cc/customize-task/task/case/status";
-        HashMap<String,Object> params=new HashMap<>();
-        params.put("id",taskId);
-        params.put("caseStatus",status);
-        String s =HttpClientUtils.doPost(uri,null,params);
-        log.info("Update case status:"+s);
+    public static void updateCaseStatus(int status) {
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status";
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("id", taskId);
+        params.put("caseStatus", status);
+        log.info("params:" + params);
+        String s = HttpClientUtils.doPost(uri, null, params);
+        log.info("Update case status:" + s);
     }
 }
