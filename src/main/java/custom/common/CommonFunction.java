@@ -50,6 +50,7 @@ public class CommonFunction {
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = parseDataType(fieldParamsList);
         CreateCollectionReq.CollectionSchema collectionSchema = CreateCollectionReq.CollectionSchema.builder()
                 .fieldSchemaList(fieldSchemaList)
+                .enableDynamicField(enableDynamic)
                 .build();
         CreateCollectionReq createCollectionReq = CreateCollectionReq.builder()
                 .collectionSchema(collectionSchema)
