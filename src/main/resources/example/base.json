@@ -61,6 +61,23 @@
     "topK": 1,
     "searchLevel": 1
   },
+  "SearchIteratorParams_4": {
+    "collectionName": "",
+    "filter": "",
+    "nq": 1,
+    "numConcurrency": 10,
+    "outputs": [
+      "*"
+    ],
+    "randomVector": true,
+    "runningMinutes": 5,
+    "topK": 1,
+    "metricType": "L2",
+    "vectorFieldName": "vector",
+    "batchSize": 10,
+    "params": "{\"params\": {\"level\": 1}}",
+    "useV1": false
+  },
   "QueryParams_5": {
     "collectionName": "",
     "ids": [
