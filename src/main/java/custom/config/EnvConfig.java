@@ -8,4 +8,5 @@ public class EnvConfig {
     String rmHost;
     String cloudServiceHost;
     String cloudServiceTestHost;
+    String cloudOpsServiceHost;
 }

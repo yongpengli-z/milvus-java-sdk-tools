@@ -20,6 +20,13 @@ public class ConfigUtils {
         envConfig.setCloudServiceHost(cloudServiceHost);
         envConfig.setRmHost(rmHost);
         envConfig.setCloudServiceTestHost(cloudServiceTestHost);
+        // 文件里暂时未添加，临时方案
+        if (envEnum==EnvEnum.AWS_WEST||envEnum==EnvEnum.GCP_WEST||envEnum==EnvEnum.AZURE_WEST){
+            envConfig.setCloudOpsServiceHost("https://cloud-ops.cloud-uat3.zilliz.com");
+        }
+        if (envEnum==EnvEnum.ALI_HZ||envEnum==EnvEnum.TC_NJ){
+            envConfig.setCloudOpsServiceHost("https://cloud-ops.cloud-uat.zilliz.cn");
+        }
         return envConfig;
     }
 }

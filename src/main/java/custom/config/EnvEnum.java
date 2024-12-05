@@ -5,7 +5,7 @@ import java.util.Arrays;
 public enum EnvEnum {
     DEVOPS("devops", "/test/fouram/config/vdc_config.json", ""),
     FOURAM("fouram", "/test/fouram/config/vdc_config.json", ""),
-    AWS_WEST("awswest", "/test/fouram/config/vdc_config.json", "UAT3"),
+    AWS_WEST("awswest", "src/main/resources/example/vdc_config.json", "UAT3"),
     GCP_WEST("gcpwest", "/test/fouram/config/vdc_config.json", "UAT3-GCP"),
     AZURE_WEST("azurewest", "/test/fouram/config/vdc_config.json", "UAT3-AZURE"),
     ALI_HZ("alihz", "/test/fouram/config/vdc_config.json", "UAT"),
