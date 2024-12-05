@@ -16,17 +16,14 @@ public class ConfigUtils {
         String cloudServiceHost = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_service_host");
         String cloudServiceTestHost = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_service_test_host");
         String regionId = envJO.getJSONObject(envEnum.envNodeName).getString("region_id");
+        String cloudOpsServiceHost = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_ops_service_host");
+        String cloudOpsServiceToken = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_ops_service_token");
         envConfig.setRegionId(regionId);
         envConfig.setCloudServiceHost(cloudServiceHost);
         envConfig.setRmHost(rmHost);
         envConfig.setCloudServiceTestHost(cloudServiceTestHost);
-        // 文件里暂时未添加，临时方案
-        if (envEnum==EnvEnum.AWS_WEST||envEnum==EnvEnum.GCP_WEST||envEnum==EnvEnum.AZURE_WEST){
-            envConfig.setCloudOpsServiceHost("https://cloud-ops.cloud-uat3.zilliz.com");
-        }
-        if (envEnum==EnvEnum.ALI_HZ||envEnum==EnvEnum.TC_NJ){
-            envConfig.setCloudOpsServiceHost("https://cloud-ops.cloud-uat.zilliz.cn");
-        }
+        envConfig.setCloudOpsServiceHost(cloudOpsServiceHost);
+        envConfig.setCloudOpsServiceToken(cloudOpsServiceToken);
         return envConfig;
     }
 }
