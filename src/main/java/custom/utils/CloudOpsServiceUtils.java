@@ -26,7 +26,9 @@ public class CloudOpsServiceUtils {
         paramsDB.put("pageSize", "100");
         paramsDB.put("dbVersion", keywords);
         paramsDB.put("regionId", envConfig.getRegionId());
-        return HttpClientUtils.doGet(url, header, paramsDB);
+        String s = HttpClientUtils.doGet(url, header, paramsDB);
+        log.info("listDBVersionByKeywords:" + s);
+        return s;
 
     }
 
@@ -39,7 +41,9 @@ public class CloudOpsServiceUtils {
         paramsTag.put("pageSize", "100");
         paramsTag.put("tag", keywords);
         paramsTag.put("regionId", envConfig.getRegionId());
-        return HttpClientUtils.doGet(url, header, paramsTag);
+        String s = HttpClientUtils.doGet(url, header, paramsTag);
+        log.info("listTagByKeywords:" + s);
+        return s;
     }
 
 
