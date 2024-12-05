@@ -6,6 +6,7 @@ import custom.entity.RollingUpgradeParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.RollingUpgradeResult;
+import custom.utils.CloudOpsServiceUtils;
 import custom.utils.CloudServiceUtils;
 import custom.utils.ResourceManagerServiceUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,9 @@ public class RollingUpgradeComp {
                             .result(ResultEnum.WARNING.result)
                             .message("instance status can't upgrade!").build()).build();
         }
+        // image重新查询更新
+        String latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(rollingUpgradeParams.getTargetDbVersion());
+        rollingUpgradeParams.setTargetDbVersion(latestImageByKeywords.substring(0,latestImageByKeywords.indexOf("(")));
         // 滚动升级
         String rollingUpgradeResult = ResourceManagerServiceUtils.rollingUpgrade(rollingUpgradeParams);
         JSONObject jsonObjectResult=JSONObject.parseObject(rollingUpgradeResult);
