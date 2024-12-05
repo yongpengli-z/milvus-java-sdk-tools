@@ -100,6 +100,7 @@ public class BaseTest {
 //    // 自动调度
         ComponentSchedule.runningSchedule(customizeParams);
         milvusClientV2.close();
+        ComponentSchedule.updateCaseStatus(10);
         System.exit(0);
     }
 }

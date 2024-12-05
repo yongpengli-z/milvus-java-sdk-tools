@@ -7,15 +7,7 @@ import custom.entity.*;
 import custom.entity.result.*;
 import custom.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.C;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -247,6 +239,12 @@ public class ComponentSchedule {
         String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
         log.info(parentNodeName+"["+nodeName+"]Insert result:"+s);
 
+    }
+
+    public static void updateCaseStatus(String instanceId,String instanceUri,String image) {
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id="+taskId+"&instanceId="+instanceId+"&instanceUri="+instanceUri+"&image="+image;
+        String s = HttpClientUtils.doPost(uri);
+        log.info("add instanceId:" + s);
     }
 
 }
