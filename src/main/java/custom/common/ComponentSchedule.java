@@ -106,6 +106,11 @@ public class ComponentSchedule {
             jsonObject.put("Search_" + index, searchResultA);
             reportStepResult(SearchParams.class.getSimpleName()+"_"+index,JSON.toJSONString(searchResultA));
         }
+        if (object instanceof SearchIteratorParams) {
+            log.info("*********** < search collection > ***********");
+            SearchIteratorResultA searchIteratorResultA = SearchIteratorComp.searchIteratorCollection((SearchIteratorParams) object);
+            jsonObject.put("Search_" + index, searchIteratorResultA);
+        }
         if (object instanceof ReleaseParams) {
             log.info("*********** < release collection > ***********");
             ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) object);
