@@ -8,8 +8,8 @@ public enum EnvEnum {
     AWS_WEST("awswest", "/test/qtp/config/vdcConfig.json", "UAT3"),
     GCP_WEST("gcpwest", "/test/qtp/config/vdcConfig.json", "UAT3-GCP"),
     AZURE_WEST("azurewest", "/test/qtp/config/vdcConfig.json", "UAT3-AZURE"),
-    ALI_HZ("alihz", "/test/fouram/config/vdc_config.json", "UAT"),
-    TC_NJ("tcnj", "/test/fouram/config/vdc_config.json", "UAT");
+    ALI_HZ("alihz", "/test/qtp/config/vdcConfig.json", "UAT"),
+    TC_NJ("tcnj", "/test/qtp/config/vdcConfig.json", "UAT");
 
     public final String region;
     public final String vdcConfigPath;
