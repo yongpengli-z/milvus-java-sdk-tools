@@ -20,7 +20,7 @@ public class CloudOpsServiceUtils {
     public static String listDBVersionByKeywords(String keywords) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
         Map<String, String> header = new HashMap<>();
-        header.put("sa_token", cloudServiceUserInfo.getToken());
+        header.put("sa_token",envConfig.getCloudOpsServiceToken());
         Map<String, String> paramsDB = new HashMap<>();
         paramsDB.put("currentPage", "1");
         paramsDB.put("pageSize", "100");
@@ -35,7 +35,7 @@ public class CloudOpsServiceUtils {
     public static String listTagByKeywords(String keywords) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
         Map<String, String> header = new HashMap<>();
-        header.put("sa_token", cloudServiceUserInfo.getToken());
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
         Map<String, String> paramsTag = new HashMap<>();
         paramsTag.put("currentPage", "1");
         paramsTag.put("pageSize", "100");
