@@ -75,7 +75,7 @@
     "metricType": "L2",
     "vectorFieldName": "vector",
     "batchSize": 10,
-    "params": "{\"params\": {\"level\": 1}}",
+    "params": "{\"level\": 1}",
     "useV1": false
   },
   "QueryParams_5": {
