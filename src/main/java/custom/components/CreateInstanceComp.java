@@ -2,6 +2,7 @@ package custom.components;
 
 import com.alibaba.fastjson.JSONObject;
 import custom.common.ComponentSchedule;
+import custom.common.InstanceStatusEnum;
 import custom.entity.CreateInstanceParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.CreateInstanceResult;
@@ -44,7 +45,7 @@ public class CreateInstanceComp {
         }
         // image重新获取
         String latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(createInstanceParams.getDbVersion());
-        createInstanceParams.setDbVersion(latestImageByKeywords.substring(0,latestImageByKeywords.indexOf("(")));
+        createInstanceParams.setDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
         // 调用rm-service
         String resp = ResourceManagerServiceUtils.createInstance(createInstanceParams);
         log.info("create instance:" + resp);
@@ -87,7 +88,7 @@ public class CreateInstanceComp {
         if (!createSuccess) {
             log.info("轮询超时！未监测到实例创建成功！");
             // 上报结果
-            ComponentSchedule.updateCaseStatus(" ","未创建成功...",latestImageByKeywords);
+            ComponentSchedule.updateCaseStatus(" ", "未创建成功...", latestImageByKeywords, InstanceStatusEnum.DELETED.code);
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message("轮询超时！未监测到实例创建成功！")
                     .result(ResultEnum.EXCEPTION.result).build()).build();
@@ -104,7 +105,7 @@ public class CreateInstanceComp {
         milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
 
         log.info("创建实例成功：" + newInstanceInfo);
-        ComponentSchedule.updateCaseStatus(newInstanceInfo.getInstanceId(),newInstanceInfo.getUri(),latestImageByKeywords);
+        ComponentSchedule.updateCaseStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);
         return CreateInstanceResult.builder()
                 .commonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build())
                 .instanceId(newInstanceInfo.getInstanceId())
