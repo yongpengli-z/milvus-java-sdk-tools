@@ -4,6 +4,8 @@ package custom.common;
 import java.util.Arrays;
 
 public enum InstanceStatusEnum {
+    CREATE_FAILED(-2),
+    WAITING_CREATE(-1),
     CREATING(0),
     RUNNING(1),
     DELETING(2),

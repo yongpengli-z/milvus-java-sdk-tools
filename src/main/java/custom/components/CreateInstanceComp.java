@@ -53,11 +53,13 @@ public class CreateInstanceComp {
         Integer code = jsonObject.getInteger("Code");
         if (code != 0) {
             log.info("create instance failed: " + jsonObject.getString("Message"));
+            ComponentSchedule.updateCaseStatus(" ", " ", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message(jsonObject.getString("Message"))
                     .result(ResultEnum.EXCEPTION.result).build()).build();
         }
         log.info("Submit create instance success!");
+        ComponentSchedule.updateCaseStatus(" ", " ", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
         // 轮询是否建成功
         int waitingTime = 30;
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(waitingTime);
@@ -88,7 +90,7 @@ public class CreateInstanceComp {
         if (!createSuccess) {
             log.info("轮询超时！未监测到实例创建成功！");
             // 上报结果
-            ComponentSchedule.updateCaseStatus(" ", "未创建成功...", latestImageByKeywords, InstanceStatusEnum.DELETED.code);
+            ComponentSchedule.updateCaseStatus(" ", " ", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message("轮询超时！未监测到实例创建成功！")
                     .result(ResultEnum.EXCEPTION.result).build()).build();
