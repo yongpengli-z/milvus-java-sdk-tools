@@ -246,8 +246,14 @@ public class ComponentSchedule {
 
     }
 
-    public static void updateCaseStatus(String instanceId,String instanceUri,String image,int status) {
+    public static void initInstanceStatus(String instanceId,String instanceUri,String image,int status) {
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id="+taskId+"&instanceId="+instanceId+"&instanceUri="+instanceUri+"&image="+image+"&status="+status;
+        String s = HttpClientUtils.doPost(uri);
+        log.info("add instanceId:" + s);
+    }
+
+    public static void updateInstanceStatus(String instanceId,String instanceUri,String image,int status) {
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id="+taskId+"&instanceId="+instanceId+"&instanceUri="+instanceUri+"&image="+image+"&status="+status;
         String s = HttpClientUtils.doPost(uri);
         log.info("add instanceId:" + s);
     }

@@ -53,13 +53,14 @@ public class CreateInstanceComp {
         Integer code = jsonObject.getInteger("Code");
         if (code != 0) {
             log.info("create instance failed: " + jsonObject.getString("Message"));
-            ComponentSchedule.updateCaseStatus(" ", " ", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
+            ComponentSchedule.initInstanceStatus("--", "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message(jsonObject.getString("Message"))
                     .result(ResultEnum.EXCEPTION.result).build()).build();
         }
+        String instanceId=jsonObject.getJSONObject("Data").getString("InstanceId");
         log.info("Submit create instance success!");
-        ComponentSchedule.updateCaseStatus(" ", " ", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
+        ComponentSchedule.initInstanceStatus(instanceId, "", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
         // 轮询是否建成功
         int waitingTime = 30;
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(waitingTime);
@@ -90,7 +91,7 @@ public class CreateInstanceComp {
         if (!createSuccess) {
             log.info("轮询超时！未监测到实例创建成功！");
             // 上报结果
-            ComponentSchedule.updateCaseStatus(" ", " ", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
+            ComponentSchedule.updateInstanceStatus(instanceId, "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message("轮询超时！未监测到实例创建成功！")
                     .result(ResultEnum.EXCEPTION.result).build()).build();
@@ -107,7 +108,7 @@ public class CreateInstanceComp {
         milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
 
         log.info("创建实例成功：" + newInstanceInfo);
-        ComponentSchedule.updateCaseStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);
+        ComponentSchedule.updateInstanceStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);
         return CreateInstanceResult.builder()
                 .commonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build())
                 .instanceId(newInstanceInfo.getInstanceId())
