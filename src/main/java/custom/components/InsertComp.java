@@ -23,7 +23,7 @@ import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class InsertComp {
-    public static InsertResult insertCollection(InsertParams insertParams)  {
+    public static InsertResult insertCollection(InsertParams insertParams) {
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();
         List<Long> fileSizeList = new ArrayList<>();
@@ -62,7 +62,7 @@ public class InsertComp {
         float insertTotalTime = 0;
         String collectionName = (insertParams.getCollectionName() == null ||
                 insertParams.getCollectionName().equalsIgnoreCase(""))
-                ? globalCollectionNames.get(globalCollectionNames.size()-1) : insertParams.getCollectionName();
+                ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
         log.info("Insert collection [" + collectionName + "] total " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
@@ -78,12 +78,12 @@ public class InsertComp {
                         InsertResultItem insertResultItem = new InsertResultItem();
                         List<Double> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
-                        LocalDateTime endRunningTime=LocalDateTime.now().plusMinutes(insertParams.getRunningMinutes());
+                        LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(insertParams.getRunningMinutes());
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
                              r++) {
                             // 时间和数据量谁先到都结束
-                            if(insertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)){
+                            if (insertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {
                                 log.info("Insert已到设定时长，停止插入...");
                                 insertResultItem.setInsertCnt(insertCnt);
                                 insertResultItem.setCostTime(costTime);
@@ -103,6 +103,7 @@ public class InsertComp {
                                 log.error("insert error,reason:" + e.getMessage());
                                 insertResultItem.setInsertCnt(insertCnt);
                                 insertResultItem.setCostTime(costTime);
+                                insertResultItem.setExceptionMessage(e.getMessage());
                                 return insertResultItem;
                             }
                             long endTime = System.currentTimeMillis();
@@ -132,11 +133,13 @@ public class InsertComp {
         double costTotal = 0.0;
         CommonResult commonResult;
         InsertResult insertResult = null;
+        String exceptionFinally = "";
         for (Future<InsertResultItem> future : list) {
             try {
                 InsertResultItem insertResultItem = future.get();
                 long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
                 double sum = insertResultItem.getCostTime().stream().mapToDouble(Double::doubleValue).sum();
+                exceptionFinally = insertResultItem.getExceptionMessage() != null ? insertResultItem.getExceptionMessage() : exceptionFinally;
                 log.info("线程返回结果[InsertCnt]: " + insertResultItem.getInsertCnt());
                 log.info("线程返回结果[CostTime]: " + insertResultItem.getCostTime());
                 requestNum += count;
@@ -157,7 +160,12 @@ public class InsertComp {
         log.info(
                 "Total cost of inserting " + requestNum * insertParams.getBatchSize() + " entities: " + insertTotalTime + " seconds!");
         log.info("Total insert " + requestNum + " 次数,RPS avg :" + costTotal / requestNum + " ");
-        commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        if (exceptionFinally.equalsIgnoreCase("")) {
+            commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        } else {
+            commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
+                    .message(exceptionFinally).build();
+        }
         insertResult = InsertResult.builder()
                 .commonResult(commonResult)
                 .rps(costTotal / requestNum)
@@ -173,5 +181,6 @@ public class InsertComp {
     public static class InsertResultItem {
         private List<Double> costTime;
         private List<Integer> insertCnt;
+        private String exceptionMessage;
     }
 }
