@@ -1,6 +1,7 @@
 package custom.components;
 
 import com.alibaba.fastjson.JSONObject;
+import custom.common.ComponentSchedule;
 import custom.common.InstanceStatusEnum;
 import custom.entity.RollingUpgradeParams;
 import custom.entity.result.CommonResult;
@@ -12,6 +13,7 @@ import custom.utils.ResourceManagerServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static custom.BaseTest.cloudServiceUserInfo;
 
@@ -34,9 +36,16 @@ public class RollingUpgradeComp {
                             .result(ResultEnum.WARNING.result)
                             .message("instance status can't upgrade!").build()).build();
         }
-        // image重新查询更新
-        String latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(rollingUpgradeParams.getTargetDbVersion());
-        rollingUpgradeParams.setTargetDbVersion(latestImageByKeywords.substring(0,latestImageByKeywords.indexOf("(")));
+        // image重新获取
+        String latestImageByKeywords;
+        if (rollingUpgradeParams.getTargetDbVersion().equalsIgnoreCase("latest-release")) {
+            List<String> strings = ComponentSchedule.queryReleaseImage();
+            latestImageByKeywords = strings.get(0);
+            rollingUpgradeParams.setTargetDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
+        } else {
+            latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(rollingUpgradeParams.getTargetDbVersion());
+            rollingUpgradeParams.setTargetDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
+        }
         // 滚动升级
         String rollingUpgradeResult = ResourceManagerServiceUtils.rollingUpgrade(rollingUpgradeParams);
         JSONObject jsonObjectResult=JSONObject.parseObject(rollingUpgradeResult);
