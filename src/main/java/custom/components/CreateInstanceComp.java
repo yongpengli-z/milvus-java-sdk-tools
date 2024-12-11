@@ -44,8 +44,15 @@ public class CreateInstanceComp {
                     .result(ResultEnum.EXCEPTION.result).build()).build();
         }
         // image重新获取
-        String latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(createInstanceParams.getDbVersion());
-        createInstanceParams.setDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
+        String latestImageByKeywords;
+        if (createInstanceParams.getDbVersion().equalsIgnoreCase("latest-release")) {
+            List<String> strings = ComponentSchedule.queryReleaseImage();
+            latestImageByKeywords = strings.get(0);
+            createInstanceParams.setDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
+        } else {
+            latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(createInstanceParams.getDbVersion());
+            createInstanceParams.setDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
+        }
         // 调用rm-service
         String resp = ResourceManagerServiceUtils.createInstance(createInstanceParams);
         log.info("create instance:" + resp);
@@ -58,7 +65,7 @@ public class CreateInstanceComp {
                     .message(jsonObject.getString("Message"))
                     .result(ResultEnum.EXCEPTION.result).build()).build();
         }
-        String instanceId=jsonObject.getJSONObject("Data").getString("InstanceId");
+        String instanceId = jsonObject.getJSONObject("Data").getString("InstanceId");
         log.info("Submit create instance success!");
         ComponentSchedule.initInstanceStatus(instanceId, "", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
         // 轮询是否建成功

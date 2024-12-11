@@ -1,6 +1,7 @@
 package custom.common;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.components.*;
 import custom.entity.*;
@@ -256,6 +257,19 @@ public class ComponentSchedule {
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id="+taskId+"&instanceId="+instanceId+"&instanceUri="+instanceUri+"&image="+image+"&status="+status;
         String s = HttpClientUtils.doPost(uri);
         log.info("add instanceId:" + s);
+    }
+
+    public static List<String> queryReleaseImage(){
+        String uri="http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/history?myselfOnly=0&releaseOnly=1";
+        String s = HttpClientUtils.doPost(uri);
+        // 所得结果为倒序
+        JSONArray respJO=JSON.parseObject(s).getJSONArray("data");
+        List<String> dbVersion=new ArrayList<>();
+        for (int i = 0; i < respJO.size(); i++) {
+            JSONObject jsonObject=respJO.getJSONObject(i);
+            dbVersion.add(jsonObject.getString("dbVersion")+"("+jsonObject.getString("imageInfo")+")");
+        }
+        return dbVersion;
     }
 
 }
