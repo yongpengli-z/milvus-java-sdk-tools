@@ -260,7 +260,7 @@ public class ComponentSchedule {
     }
 
     public static List<String> queryReleaseImage(){
-        String uri="http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/history?myselfOnly=0&releaseOnly=1";
+        String uri="http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/release";
         String s = HttpClientUtils.doGet(uri);
         // 所得结果为倒序
         JSONArray respJO=JSON.parseObject(s).getJSONArray("data");
