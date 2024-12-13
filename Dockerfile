@@ -12,7 +12,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
   
   # 使用 OpenJDK 运行应用程序
-FROM maven:3.8.6-openjdk-11-slim
+FROM openjdk:11-jre-slim
   
   # 设置工作目录
 WORKDIR /app

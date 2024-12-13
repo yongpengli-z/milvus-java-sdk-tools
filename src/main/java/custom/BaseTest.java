@@ -40,34 +40,15 @@ public class BaseTest {
     public static List<String> parentNodeName=new ArrayList<>();
 
     public static void main(String[] args) {
-
-         taskId = Integer.parseInt(System.getProperty("taskId") == null
-                ? ""
-                : System.getProperty("taskId"));
+        System.out.println("参数个数："+args.length);
+         taskId = Integer.parseInt(args[0]);
         //先更新argo任务状态
         ComponentSchedule.updateArgoStatus(1);
-        String env = System.getProperty("env") == null
-                ? ""
-                : System.getProperty("env");
-        String uri =
-                System.getProperty("uri") == null || System.getProperty("uri").trim().equals("")
-                        ? ""
-                        : System.getProperty("uri");
-        String token =
-                System.getProperty("token") == null || System.getProperty("token").trim().equals("")
-                        ? ""
-                        : System.getProperty("token");
-        String initialParams =
-                System.getProperty("initial_params") == null
-                        || System.getProperty("initial_params").equals("")
-                        ? ""
-                        : System.getProperty("initial_params");
-
-        String customizeParams =
-                System.getProperty("customize_params") == null
-                        || System.getProperty("customize_params").equals("")
-                        ? ""
-                        : System.getProperty("customize_params");
+        String env = args[1];
+        String uri = args[2];
+        String token =args[3];
+        String initialParams = args[4];
+        String customizeParams =args[5];
         redisKey = "customize_task_" + taskId;
         if (!uri.equalsIgnoreCase("")) {
             newInstanceInfo.setUri(uri);
