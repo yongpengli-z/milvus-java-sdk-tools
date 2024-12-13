@@ -43,8 +43,10 @@ public class MilvusConnect {
     }
 
     public static MilvusClientV2 createMilvusClientV2(String uri, String token) {
+        log.info("uri:"+uri);
+        log.info("token:"+token);
         MilvusClientV2 milvusClientV2 = new MilvusClientV2(
-                ConnectConfig.builder().uri(uri).token(token).build()
+                ConnectConfig.builder().uri(uri).token(token).connectTimeoutMs(30000).build()
         );
         log.info("Connecting to DB: " + uri);
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
