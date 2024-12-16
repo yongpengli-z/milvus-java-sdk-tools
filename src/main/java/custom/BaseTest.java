@@ -10,7 +10,9 @@ import custom.config.EnvEnum;
 import custom.entity.InitialParams;
 import custom.pojo.InstanceInfo;
 import custom.utils.ConfigUtils;
+import io.milvus.v2.client.ConnectConfig;
 import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -39,7 +41,7 @@ public class BaseTest {
     // 定义根节点
     public static List<String> parentNodeName=new ArrayList<>();
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         System.out.println("参数个数："+args.length);
          taskId = Integer.parseInt(args[0]);
         //先更新argo任务状态
@@ -83,5 +85,25 @@ public class BaseTest {
         milvusClientV2.close();
         ComponentSchedule.updateCaseStatus(10);
         System.exit(0);
+    }*/
+
+    public static void main(String[] args) {
+        // 第一次直接连接
+        String uri="https://in01-95b32b8444ec645.tc-ap-nanjing.cloud-uat.zilliz.cn:443";
+        String token="1e2f2b0aec61f5ff356d2f78e71edea61a22fb5c163eebb5f41ed1afdaab6f2c5618f38ee1c908aa38b59b50c107d35a03937c4b";
+        MilvusClientV2 milvusClientV2 = new MilvusClientV2(
+                ConnectConfig.builder().uri(uri).token(token).connectTimeoutMs(30000).build()
+        );
+        ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
+        log.info("First list collection:"+ listCollectionsResp.getCollectionNames());
+         // 第二次
+        String env = args[1];
+        String uri2 = args[2];
+        String token2 =args[3];
+        MilvusClientV2 milvusClientV22 = new MilvusClientV2(
+                ConnectConfig.builder().uri(uri2).token(token2).connectTimeoutMs(30000).build()
+        );
+        ListCollectionsResp listCollectionsResp2 = milvusClientV22.listCollections();
+        log.info("Second list collection:"+ listCollectionsResp2.getCollectionNames());
     }
 }
