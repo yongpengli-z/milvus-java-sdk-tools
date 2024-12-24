@@ -29,9 +29,15 @@ public class LoadCollectionComp {
                     log.info("Loading collection [" + collectionName + "]");
                     long startLoadTime = System.currentTimeMillis();
                     boolean loadState;
-                    milvusClientV2.loadCollection(LoadCollectionReq.builder().collectionName(collectionName)
-                            .async(false).timeout(60000L)
-                            .build());
+                    LoadCollectionReq collectionReq = LoadCollectionReq.builder().collectionName(collectionName)
+                            .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
+                            .async(false)
+                            .timeout(60000L)
+                            .build();
+                    if (loadParams.getLoadFields().size()>0){
+                        collectionReq.setLoadFields(loadParams.getLoadFields());
+                    }
+                    milvusClientV2.loadCollection(collectionReq);
                     do {
                         loadState = milvusClientV2.getLoadState(GetLoadStateReq.builder()
                                 .collectionName(collectionName).build());
@@ -58,7 +64,7 @@ public class LoadCollectionComp {
             }
         } else {
             String collectionName = (loadParams.getCollectionName() == null || loadParams.getCollectionName().equalsIgnoreCase("")) ?
-                    globalCollectionNames.get(globalCollectionNames.size()-1) : loadParams.getCollectionName();
+                    globalCollectionNames.get(globalCollectionNames.size() - 1) : loadParams.getCollectionName();
 
             try {
                 log.info("Loading collection [" + collectionName + "]");
