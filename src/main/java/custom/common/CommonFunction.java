@@ -293,7 +293,7 @@ public class CommonFunction {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 1000, i, null, 0);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0);
                 } else if (dataType == DataType.Array) {
