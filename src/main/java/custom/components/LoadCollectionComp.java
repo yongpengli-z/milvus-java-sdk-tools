@@ -70,9 +70,15 @@ public class LoadCollectionComp {
                 log.info("Loading collection [" + collectionName + "]");
                 long startLoadTime = System.currentTimeMillis();
                 boolean loadState = false;
-                milvusClientV2.loadCollection(LoadCollectionReq.builder().collectionName(collectionName)
-                        .async(true)
-                        .build());
+                LoadCollectionReq collectionReq = LoadCollectionReq.builder().collectionName(collectionName)
+                        .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
+                        .async(false)
+                        .timeout(60000L)
+                        .build();
+                if (loadParams.getLoadFields().size()>0){
+                    collectionReq.setLoadFields(loadParams.getLoadFields());
+                }
+                milvusClientV2.loadCollection(collectionReq);
                 do {
                     loadState = milvusClientV2.getLoadState(GetLoadStateReq.builder()
                             .collectionName(collectionName).build());
