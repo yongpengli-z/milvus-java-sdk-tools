@@ -20,4 +20,5 @@ public class SearchIteratorParams {
     private String indexAlgo;
     private int batchSize;
     private boolean useV1;
+    private String annsFields;
 }

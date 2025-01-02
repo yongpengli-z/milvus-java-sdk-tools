@@ -28,7 +28,7 @@ public class SearchCompTest {
 
         // 随机向量，从数据库里筛选--暂定1000条
         log.info("从collection里捞取向量: " + 1000);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000,searchParams.getAnnsField());
         log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         // 如果不随机，则随机一个
         List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());

@@ -558,7 +558,7 @@ public class CommonFunction {
      * @param collectionName collection
      * @return VectorInfo
      */
-    public static VectorInfo getCollectionVectorInfo(String collectionName) {
+    public static VectorInfo getCollectionVectorInfo(String collectionName,String annsField) {
         VectorInfo vectorInfo = new VectorInfo();
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
@@ -567,9 +567,7 @@ public class CommonFunction {
             String name = fieldSchema.getName();
             DataType dataType = fieldSchema.getDataType();
             Integer dimension = fieldSchema.getDimension();
-            if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector ||
-                    dataType == DataType.Float16Vector || dataType == DataType.BinaryVector ||
-                    dataType == DataType.SparseFloatVector) {
+            if (name.equalsIgnoreCase(annsField)) {
                 vectorInfo.setDim(dimension);
                 vectorInfo.setFieldName(name);
                 vectorInfo.setDataType(dataType);
@@ -608,8 +606,8 @@ public class CommonFunction {
      * @param randomNum  从collection捞取的向量数
      * @return List<BaseVector>
      */
-    public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum) {
-        VectorInfo collectionVectorInfo = getCollectionVectorInfo(collection);
+    public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum,String annsField) {
+        VectorInfo collectionVectorInfo = getCollectionVectorInfo(collection,annsField);
         DataType vectorDataType = collectionVectorInfo.getDataType();
         // 获取主键信息
         PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
@@ -631,6 +629,22 @@ public class CommonFunction {
             if (vectorDataType == DataType.FloatVector) {
                 List<Float> floatList = (List<Float>) o;
                 baseVectorDataset.add(new FloatVec(floatList));
+            }
+            if (vectorDataType == DataType.BinaryVector){
+                ByteBuffer byteBuffer=(ByteBuffer) o;
+                baseVectorDataset.add(new BinaryVec(byteBuffer));
+            }
+            if (vectorDataType == DataType.Float16Vector){
+                ByteBuffer byteBuffer=(ByteBuffer) o;
+                baseVectorDataset.add(new Float16Vec(byteBuffer));
+            }
+            if (vectorDataType == DataType.BFloat16Vector){
+                ByteBuffer byteBuffer=(ByteBuffer) o;
+                baseVectorDataset.add(new BFloat16Vec(byteBuffer));
+            }
+            if (vectorDataType == DataType.SparseFloatVector){
+                SortedMap<Long, Float> sortedMap=(SortedMap<Long, Float>) o;
+                baseVectorDataset.add(new SparseFloatVec(sortedMap));
             }
             // 收集recall base id
             Object pkObj = queryResult.getEntity().get(pkFieldInfo.getFieldName());

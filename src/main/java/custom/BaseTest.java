@@ -68,7 +68,7 @@ public class BaseTest {
                         || System.getProperty("customize_params").equals("")
                         ? ""
                         : System.getProperty("customize_params");
-        log.info("***********customizeParams*********"+customizeParams);
+//        log.info("***********customizeParams*********"+customizeParams);
         redisKey = "customize_task_" + taskId;
         if (!uri.equalsIgnoreCase("")) {
             newInstanceInfo.setUri(uri);

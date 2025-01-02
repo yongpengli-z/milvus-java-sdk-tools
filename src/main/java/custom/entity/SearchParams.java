@@ -16,5 +16,6 @@ public class SearchParams {
     private long runningMinutes;
     private int searchLevel;
     private String indexAlgo;
+    private String annsField;
 
 }
