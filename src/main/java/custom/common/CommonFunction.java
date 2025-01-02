@@ -566,7 +566,7 @@ public class CommonFunction {
         for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
             String name = fieldSchema.getName();
             DataType dataType = fieldSchema.getDataType();
-            Integer dimension = fieldSchema.getDimension();
+            int dimension = fieldSchema.getDimension()==null?0:fieldSchema.getDimension();
             if (name.equalsIgnoreCase(annsField)) {
                 vectorInfo.setDim(dimension);
                 vectorInfo.setFieldName(name);
