@@ -75,6 +75,7 @@ public class SearchComp {
                                     .data(randomBaseVectors)
                                     .annsField(searchParams.getAnnsField())
                                     .build());
+                            log.info("search-♻️♻️♻️♻️♻️♻️️---"+search.getSearchResults().get(0).toString());
                             long endItemTime = System.currentTimeMillis();
                             costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
                             returnNum.add(search.getSearchResults().get(0).size());
