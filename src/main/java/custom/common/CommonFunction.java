@@ -615,7 +615,7 @@ public class CommonFunction {
         QueryResp query = null;
         try {
             String filterStr;
-            if (pkFieldInfo.getDataType() == DataType.Int64) {
+            if (pkFieldInfo.getDataType() == DataType.VarChar) {
                 filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
             } else {
                 filterStr = pkFieldInfo.getFieldName() + " > 0 ";
