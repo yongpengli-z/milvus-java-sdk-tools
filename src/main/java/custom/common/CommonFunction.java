@@ -109,7 +109,7 @@ public class CommonFunction {
     public static void createCommonIndex(String collectionName, List<IndexParams> indexParams) {
         List<IndexParam> indexParamList = new ArrayList<>();
         if (indexParams.size() == 0) {
-            DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : collectionName).build());
+            DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName).build());
             CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
             List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
             for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
@@ -141,7 +141,7 @@ public class CommonFunction {
         }
         log.info("create index :" + indexParamList);
         milvusClientV2.createIndex(CreateIndexReq.builder()
-                .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : collectionName)
+                .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName)
                 .indexParams(indexParamList)
                 .build());
         // 查询索引是否建完
@@ -558,7 +558,7 @@ public class CommonFunction {
      * @param collectionName collection
      * @return VectorInfo
      */
-    public static VectorInfo getCollectionVectorInfo(String collectionName,String annsField) {
+    public static VectorInfo getCollectionVectorInfo(String collectionName, String annsField) {
         VectorInfo vectorInfo = new VectorInfo();
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
@@ -566,7 +566,7 @@ public class CommonFunction {
         for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
             String name = fieldSchema.getName();
             DataType dataType = fieldSchema.getDataType();
-            int dimension = fieldSchema.getDimension()==null?0:fieldSchema.getDimension();
+            int dimension = fieldSchema.getDimension() == null ? 0 : fieldSchema.getDimension();
             if (name.equalsIgnoreCase(annsField)) {
                 vectorInfo.setDim(dimension);
                 vectorInfo.setFieldName(name);
@@ -606,16 +606,22 @@ public class CommonFunction {
      * @param randomNum  从collection捞取的向量数
      * @return List<BaseVector>
      */
-    public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum,String annsField) {
-        VectorInfo collectionVectorInfo = getCollectionVectorInfo(collection,annsField);
+    public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum, String annsField) {
+        VectorInfo collectionVectorInfo = getCollectionVectorInfo(collection, annsField);
         DataType vectorDataType = collectionVectorInfo.getDataType();
         // 获取主键信息
         PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
         QueryResp query = null;
         try {
+            String filterStr;
+            if (pkFieldInfo.getDataType() == DataType.Int64) {
+                filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
+            } else {
+                filterStr = pkFieldInfo.getFieldName() + " > 0 ";
+            }
             query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
-                    .filter(pkFieldInfo.getFieldName() + " > 0 ")
+                    .filter(filterStr)
                     .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
                     .limit(randomNum)
                     .build());
@@ -630,20 +636,20 @@ public class CommonFunction {
                 List<Float> floatList = (List<Float>) o;
                 baseVectorDataset.add(new FloatVec(floatList));
             }
-            if (vectorDataType == DataType.BinaryVector){
-                ByteBuffer byteBuffer=(ByteBuffer) o;
+            if (vectorDataType == DataType.BinaryVector) {
+                ByteBuffer byteBuffer = (ByteBuffer) o;
                 baseVectorDataset.add(new BinaryVec(byteBuffer));
             }
-            if (vectorDataType == DataType.Float16Vector){
-                ByteBuffer byteBuffer=(ByteBuffer) o;
+            if (vectorDataType == DataType.Float16Vector) {
+                ByteBuffer byteBuffer = (ByteBuffer) o;
                 baseVectorDataset.add(new Float16Vec(byteBuffer));
             }
-            if (vectorDataType == DataType.BFloat16Vector){
-                ByteBuffer byteBuffer=(ByteBuffer) o;
+            if (vectorDataType == DataType.BFloat16Vector) {
+                ByteBuffer byteBuffer = (ByteBuffer) o;
                 baseVectorDataset.add(new BFloat16Vec(byteBuffer));
             }
-            if (vectorDataType == DataType.SparseFloatVector){
-                SortedMap<Long, Float> sortedMap=(SortedMap<Long, Float>) o;
+            if (vectorDataType == DataType.SparseFloatVector) {
+                SortedMap<Long, Float> sortedMap = (SortedMap<Long, Float>) o;
                 baseVectorDataset.add(new SparseFloatVec(sortedMap));
             }
             // 收集recall base id
