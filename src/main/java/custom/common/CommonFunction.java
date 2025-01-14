@@ -346,13 +346,13 @@ public class CommonFunction {
         if (dataType == DataType.VarChar) {
 //            int i = random.nextInt(dimOrLength /2);
             String s;
-            if (countIndex % 9 == 0) {
+           /* if (countIndex % 9 == 0) {
                 s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             } else if (countIndex % 8 == 0) {
                 s = "samevalue";
-            } else {
+            } else {*/
                 s = MathUtil.genRandomString(dimOrLength);
-            }
+//            }
             row.addProperty(fieldName, s);
         }
         if (dataType == DataType.String) {
