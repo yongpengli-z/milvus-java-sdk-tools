@@ -4,10 +4,10 @@ package custom.components;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.entity.BulkImportParams;
-import io.milvus.bulkwriter.BulkImport;
+/*import io.milvus.bulkwriter.BulkImport;
 import io.milvus.bulkwriter.request.describe.MilvusDescribeImportRequest;
 import io.milvus.bulkwriter.request.import_.MilvusImportRequest;
-import io.milvus.bulkwriter.request.list.MilvusListImportJobsRequest;
+import io.milvus.bulkwriter.request.list.MilvusListImportJobsRequest;*/
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
@@ -19,7 +19,7 @@ import static custom.BaseTest.importUrl;
 @Slf4j
 public class BulkImportComp {
     // temp 需要添加根据schema生成新的.npy文件
-    public static void bulkImport(BulkImportParams bulkImportParams) throws InterruptedException {
+    /*public static void bulkImport(BulkImportParams bulkImportParams) throws InterruptedException {
         String collectionName = (bulkImportParams.getCollectionName() == null || bulkImportParams.getCollectionName().equals("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : bulkImportParams.getCollectionName();
 
         MilvusImportRequest milvusImportRequest = MilvusImportRequest.builder()
@@ -63,5 +63,5 @@ public class BulkImportComp {
                 log.info(String.format("The job %s is running, state:%s progress:%s%n", jobId, state, progress));
             }
         }
-    }
+    }*/
 }

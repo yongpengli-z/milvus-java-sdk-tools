@@ -1,5 +1,6 @@
 package custom.common;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.entity.FieldParams;
@@ -24,7 +25,6 @@ import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.data.*;
 import io.milvus.v2.service.vector.response.QueryResp;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hadoop.util.Lists;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;

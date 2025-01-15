@@ -1,10 +1,8 @@
 package custom.utils;
 
 
-import com.nimbusds.jose.shaded.gson.Gson;
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;

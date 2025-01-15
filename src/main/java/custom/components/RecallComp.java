@@ -1,5 +1,6 @@
 package custom.components;
 
+import com.google.common.collect.Lists;
 import custom.common.CommonFunction;
 import custom.entity.RecallParams;
 import io.milvus.v2.common.ConsistencyLevel;
@@ -7,7 +8,6 @@ import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.SearchResp;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hadoop.util.Lists;
 
 import java.util.*;
 
