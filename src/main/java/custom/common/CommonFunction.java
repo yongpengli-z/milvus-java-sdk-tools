@@ -107,6 +107,7 @@ public class CommonFunction {
      * @param indexParams    index field集合
      */
     public static void createCommonIndex(String collectionName, List<IndexParams> indexParams) {
+        log.info("indexParams.size():" + indexParams.size());
         List<IndexParam> indexParamList = new ArrayList<>();
         if (indexParams.size() == 0) {
             DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName).build());
@@ -351,7 +352,7 @@ public class CommonFunction {
             } else if (countIndex % 8 == 0) {
                 s = "samevalue";
             } else {*/
-                s = MathUtil.genRandomString(dimOrLength);
+            s = MathUtil.genRandomString(dimOrLength);
 //            }
             row.addProperty(fieldName, s);
         }
