@@ -188,7 +188,7 @@ public class CommonFunction {
                 map.put("efConstruction", 64);
                 break;
             default:
-                map.put("nlist", 128);
+//                map.put("nlist", 128);
                 break;
         }
         return map;

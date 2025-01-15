@@ -18,6 +18,7 @@ public class CreateIndexComp {
             CommonFunction.createCommonIndex(collectionName, createIndexParams.getIndexParams());
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         } catch (Exception e) {
+            log.error(e.getMessage());
             commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
                     .message(e.getMessage()).build();
         }
