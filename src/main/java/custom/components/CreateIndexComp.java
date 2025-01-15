@@ -32,7 +32,7 @@ public class CreateIndexComp {
         List<DescribeIndexResp.IndexDesc> indexDescriptions =
                 describeIndexResp.getIndexDescriptions();
         for (DescribeIndexResp.IndexDesc indexDescription : indexDescriptions) {
-            log.info(indexDescription.getFieldName() + "-" + indexDescription.getIndexType() + "-" + indexDescription.getIndexState());
+
         }
 
         return CreateIndexResult.builder()

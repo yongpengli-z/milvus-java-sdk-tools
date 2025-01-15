@@ -158,6 +158,7 @@ public class CommonFunction {
                         .fieldName(indexParamList.get(i).getFieldName())
                         .collectionName(collectionName)
                         .build());
+                log.info(indexParamList.get(i).getFieldName()+"--"+describeIndexResp.getIndexDescriptions());
                 if (describeIndexResp.getIndexDescByFieldName(indexParamList.get(i).getFieldName()).getIndexState() == IndexBuildState.Finished) {
                     indexStateList.set(i, true);
                 }
