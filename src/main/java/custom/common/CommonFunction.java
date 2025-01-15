@@ -137,6 +137,7 @@ public class CommonFunction {
                         .extraParams(CommonFunction.provideExtraParam(indexParamItem.getIndextype()))
                         .metricType(indexParamItem.getMetricType())
                         .build();
+                log.info("indexParam:"+ indexParam.toString());
                 indexParamList.add(indexParam);
             }
         }
