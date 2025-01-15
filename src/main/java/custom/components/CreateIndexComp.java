@@ -27,14 +27,6 @@ public class CreateIndexComp {
             commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
                     .message(e.getMessage()).build();
         }
-        // describe index
-        DescribeIndexResp describeIndexResp = milvusClientV2.describeIndex(DescribeIndexReq.builder().collectionName(collectionName).build());
-        List<DescribeIndexResp.IndexDesc> indexDescriptions =
-                describeIndexResp.getIndexDescriptions();
-        for (DescribeIndexResp.IndexDesc indexDescription : indexDescriptions) {
-
-        }
-
         return CreateIndexResult.builder()
                 .collectionName(collectionName)
                 .indexParams(createIndexParams.getIndexParams())
