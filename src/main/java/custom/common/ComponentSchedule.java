@@ -257,6 +257,7 @@ public class ComponentSchedule {
         params.put("result", result);
         String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
         log.info(parentNodeName + "[" + nodeName + "]Insert result:" + s);
+        log.info("params " + "[" + params.toJSONString() + "]Insert result:" + s);
 
     }
 
