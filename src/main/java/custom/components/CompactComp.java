@@ -65,9 +65,12 @@ public class CompactComp {
                 }
             } while (!compactState);
         }
-        return CompactResult.builder().
+
+        CompactResult build = CompactResult.builder().
                 compactResultList(compactResultItemList).
                 build();
+        log.info("Compact result:" + build);
+        return build;
 
     }
 }
