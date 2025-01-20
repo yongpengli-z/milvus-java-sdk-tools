@@ -223,7 +223,7 @@ public class ComponentSchedule {
             log.info("*********** < Compact > ***********");
             CompactResult compactResult = CompactComp.compact((CompactParams) object);
             jsonObject.put("Compact_" + index, compactResult);
-            reportStepResult(CompactResult.class.getSimpleName() + "_" + index, JSON.toJSONString(compactResult));
+            reportStepResult(CompactParams.class.getSimpleName() + "_" + index, JSON.toJSONString(compactResult));
         }
         return jsonObject;
     }
