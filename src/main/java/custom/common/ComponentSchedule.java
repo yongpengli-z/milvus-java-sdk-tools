@@ -8,6 +8,7 @@ import custom.entity.*;
 import custom.entity.result.*;
 import custom.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,31 +82,31 @@ public class ComponentSchedule {
             log.info("*********** < create collection > ***********");
             CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
             jsonObject.put("CreateCollection_" + index, createCollectionResult);
-            reportStepResult(CreateCollectionParams.class.getSimpleName()+"_"+index,JSON.toJSONString(createCollectionResult));
+            reportStepResult(CreateCollectionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createCollectionResult));
         }
         if (object instanceof CreateIndexParams) {
             log.info("*********** < create index > ***********");
             CreateIndexResult createIndexResult = CreateIndexComp.CreateIndex((CreateIndexParams) object);
             jsonObject.put("CreateIndex_" + index, createIndexResult);
-            reportStepResult(CreateIndexParams.class.getSimpleName()+"_"+index,JSON.toJSONString(createIndexResult));
+            reportStepResult(CreateIndexParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createIndexResult));
         }
         if (object instanceof LoadParams) {
             log.info("*********** < load collection > ***********");
             LoadResult loadResult = LoadCollectionComp.loadCollection((LoadParams) object);
             jsonObject.put("LoadCollection_" + index, loadResult);
-            reportStepResult(LoadParams.class.getSimpleName()+"_"+index,JSON.toJSONString(loadResult));
+            reportStepResult(LoadParams.class.getSimpleName() + "_" + index, JSON.toJSONString(loadResult));
         }
         if (object instanceof InsertParams) {
             log.info("*********** < insert data > ***********");
             InsertResult insertResult = InsertComp.insertCollection((InsertParams) object);
             jsonObject.put("Insert_" + index, insertResult);
-            reportStepResult(InsertParams.class.getSimpleName()+"_"+index,JSON.toJSONString(insertResult));
+            reportStepResult(InsertParams.class.getSimpleName() + "_" + index, JSON.toJSONString(insertResult));
         }
         if (object instanceof SearchParams) {
             log.info("*********** < search collection > ***********");
             SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) object);
             jsonObject.put("Search_" + index, searchResultA);
-            reportStepResult(SearchParams.class.getSimpleName()+"_"+index,JSON.toJSONString(searchResultA));
+            reportStepResult(SearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(searchResultA));
         }
         if (object instanceof SearchIteratorParams) {
             log.info("*********** < search collection > ***********");
@@ -116,13 +117,13 @@ public class ComponentSchedule {
             log.info("*********** < release collection > ***********");
             ReleaseResult releaseResult = ReleaseCollectionComp.releaseCollection((ReleaseParams) object);
             jsonObject.put("ReleaseCollection_" + index, releaseResult);
-            reportStepResult(ReleaseParams.class.getSimpleName()+"_"+index,JSON.toJSONString(releaseResult));
+            reportStepResult(ReleaseParams.class.getSimpleName() + "_" + index, JSON.toJSONString(releaseResult));
         }
         if (object instanceof DropCollectionParams) {
             log.info("*********** < drop collection > ***********");
             DropCollectionResult dropCollectionResult = DropCollectionComp.dropCollection((DropCollectionParams) object);
             jsonObject.put("DropCollection_" + index, dropCollectionResult);
-            reportStepResult(DropCollectionParams.class.getSimpleName()+"_"+index,JSON.toJSONString(dropCollectionResult));
+            reportStepResult(DropCollectionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(dropCollectionResult));
         }
         if (object instanceof RecallParams) {
             log.info("*********** < recall > ***********");
@@ -133,13 +134,13 @@ public class ComponentSchedule {
             log.info("*********** < Wait > ***********");
             WaitResult waitResult = WaitComp.wait((WaitParams) object);
             jsonObject.put("Wait" + index, waitResult);
-            reportStepResult(WaitParams.class.getSimpleName()+"_"+index,JSON.toJSONString(waitResult));
+            reportStepResult(WaitParams.class.getSimpleName() + "_" + index, JSON.toJSONString(waitResult));
         }
         if (object instanceof UpsertParams) {
             log.info("*********** < upsert data > ***********");
             UpsertResult upsertResult = UpsertComp.upsertCollection((UpsertParams) object);
             jsonObject.put("Upsert_" + index, upsertResult);
-            reportStepResult(UpsertParams.class.getSimpleName()+"_"+index,JSON.toJSONString(upsertResult));
+            reportStepResult(UpsertParams.class.getSimpleName() + "_" + index, JSON.toJSONString(upsertResult));
         }
         if (object instanceof ConcurrentParams) {
             log.info("*********** < Concurrent Operator > ***********");
@@ -147,20 +148,20 @@ public class ComponentSchedule {
             List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) object);
             parentNodeName.remove(parentNodeName.size() - 1);
             jsonObject.put("Concurrent_" + index, jsonObjects);
-            reportStepResult(ConcurrentParams.class.getSimpleName()+"_"+index,JSON.toJSONString(jsonObjects));
+            reportStepResult(ConcurrentParams.class.getSimpleName() + "_" + index, JSON.toJSONString(jsonObjects));
         }
 
         if (object instanceof QueryParams) {
             log.info("*********** < query collection > ***********");
             QueryResult queryResult = QueryComp.queryCollection((QueryParams) object);
             jsonObject.put("Query_" + index, queryResult);
-            reportStepResult(QueryParams.class.getSimpleName()+"_"+index,JSON.toJSONString(queryResult));
+            reportStepResult(QueryParams.class.getSimpleName() + "_" + index, JSON.toJSONString(queryResult));
         }
         if (object instanceof DropIndexParams) {
             log.info("*********** < drop index > ***********");
             DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);
             jsonObject.put("DropIndex_" + index, dropIndexResult);
-            reportStepResult(DropIndexParams.class.getSimpleName()+"_"+index,JSON.toJSONString(dropIndexResult));
+            reportStepResult(DropIndexParams.class.getSimpleName() + "_" + index, JSON.toJSONString(dropIndexResult));
         }
         if (object instanceof LoopParams) {
             log.info("*********** < Loop Operator> ***********");
@@ -168,49 +169,61 @@ public class ComponentSchedule {
             JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
             parentNodeName.remove(parentNodeName.size() - 1);
             jsonObject.put("Loop_" + index, loopJO);
-            reportStepResult(LoopParams.class.getSimpleName()+"_"+index,JSON.toJSONString(loopJO));
+            reportStepResult(LoopParams.class.getSimpleName() + "_" + index, JSON.toJSONString(loopJO));
         }
         if (object instanceof CreateInstanceParams) {
             log.info("*********** < create instance> ***********");
             CreateInstanceResult createInstanceResult = CreateInstanceComp.createInstance((CreateInstanceParams) object);
             jsonObject.put("CreateInstance_" + index, createInstanceResult);
-            reportStepResult(CreateInstanceParams.class.getSimpleName()+"_"+index,JSON.toJSONString(createInstanceResult));
+            reportStepResult(CreateInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createInstanceResult));
         }
         if (object instanceof RollingUpgradeParams) {
             log.info("*********** < rolling upgrade > ***********");
             RollingUpgradeResult rollingUpgradeResult = RollingUpgradeComp.rollingUpgradeInstance((RollingUpgradeParams) object);
             jsonObject.put("RollingUpgrade_" + index, rollingUpgradeResult);
-            reportStepResult(RollingUpgradeParams.class.getSimpleName()+"_"+index,JSON.toJSONString(rollingUpgradeResult));
+            reportStepResult(RollingUpgradeParams.class.getSimpleName() + "_" + index, JSON.toJSONString(rollingUpgradeResult));
         }
         if (object instanceof DeleteInstanceParams) {
             log.info("*********** < delete instance > ***********");
             DeleteInstanceResult deleteInstanceResult = DeleteInstanceComp.deleteInstance((DeleteInstanceParams) object);
             jsonObject.put("DeleteInstance_" + index, deleteInstanceResult);
-            reportStepResult(DeleteInstanceParams.class.getSimpleName()+"_"+index,JSON.toJSONString(deleteInstanceResult));
+            reportStepResult(DeleteInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(deleteInstanceResult));
         }
         if (object instanceof StopInstanceParams) {
             log.info("*********** < stop instance > ***********");
             StopInstanceResult stopInstanceResult = StopInstanceComp.stopInstance((StopInstanceParams) object);
             jsonObject.put("StopInstance_" + index, stopInstanceResult);
-            reportStepResult(StopInstanceParams.class.getSimpleName()+"_"+index,JSON.toJSONString(stopInstanceResult));
+            reportStepResult(StopInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(stopInstanceResult));
         }
         if (object instanceof ResumeInstanceParams) {
             log.info("*********** < resume instance > ***********");
             ResumeInstanceResult resumeInstanceResult = ResumeInstanceComp.resumeInstance((ResumeInstanceParams) object);
             jsonObject.put("ResumeInstance_" + index, resumeInstanceResult);
-            reportStepResult(ResumeInstanceParams.class.getSimpleName()+"_"+index,JSON.toJSONString(resumeInstanceResult));
+            reportStepResult(ResumeInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(resumeInstanceResult));
         }
         if (object instanceof ModifyParams) {
             log.info("*********** < modify params > ***********");
             ModifyParamsResult modifyParamsResult = ModifyParamsComp.modifyParams((ModifyParams) object);
             jsonObject.put("ModifyParams_" + index, modifyParamsResult);
-            reportStepResult(ModifyParams.class.getSimpleName()+"_"+index,JSON.toJSONString(modifyParamsResult));
+            reportStepResult(ModifyParams.class.getSimpleName() + "_" + index, JSON.toJSONString(modifyParamsResult));
         }
         if (object instanceof RestartInstanceParams) {
             log.info("*********** < restart instance > ***********");
             RestartInstanceResult restartInstanceResult = RestartInstanceComp.restartInstance((RestartInstanceParams) object);
             jsonObject.put("RestartInstance_" + index, restartInstanceResult);
-            reportStepResult(RestartInstanceParams.class.getSimpleName()+"_"+index,JSON.toJSONString(restartInstanceResult));
+            reportStepResult(RestartInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(restartInstanceResult));
+        }
+        if (object instanceof FlushParams) {
+            log.info("*********** < Flush > ***********");
+            FlushResult flushResult = FlushComp.flush((FlushParams) object);
+            jsonObject.put("Flush_" + index, flushResult);
+            reportStepResult(FlushParams.class.getSimpleName() + "_" + index, JSON.toJSONString(flushResult));
+        }
+        if (object instanceof CompactParams) {
+            log.info("*********** < Compact > ***********");
+            CompactResult compactResult = CompactComp.compact((CompactParams) object);
+            jsonObject.put("Compact_" + index, compactResult);
+            reportStepResult(CompactResult.class.getSimpleName() + "_" + index, JSON.toJSONString(compactResult));
         }
         return jsonObject;
     }
@@ -224,50 +237,50 @@ public class ComponentSchedule {
     }
 
     public static void updateArgoStatus(int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id="+taskId+"&argoStatus="+status;
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
         String s = HttpClientUtils.doPost(uri);
         log.info("Update case status:" + s);
     }
 
     public static void updateCaseStatus(int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id="+taskId+"&caseStatus="+status;
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
         String s = HttpClientUtils.doPost(uri);
         log.info("Update case status:" + s);
     }
 
-    public static void reportStepResult(String nodeName,String result){
-        String uri="http://qtp-server.zilliz.cc/customize-task-details/result/insert";
-        JSONObject params=new JSONObject();
-        params.put("taskId",taskId);
-        params.put("nodeName",nodeName);
-        params.put("parentNodeName",parentNodeName);
-        params.put("result",result);
+    public static void reportStepResult(String nodeName, String result) {
+        String uri = "http://qtp-server.zilliz.cc/customize-task-details/result/insert";
+        JSONObject params = new JSONObject();
+        params.put("taskId", taskId);
+        params.put("nodeName", nodeName);
+        params.put("parentNodeName", parentNodeName);
+        params.put("result", result);
         String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
-        log.info(parentNodeName+"["+nodeName+"]Insert result:"+s);
+        log.info(parentNodeName + "[" + nodeName + "]Insert result:" + s);
 
     }
 
-    public static void initInstanceStatus(String instanceId,String instanceUri,String image,int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id="+taskId+"&instanceId="+instanceId+"&instanceUri="+instanceUri+"&image="+image+"&status="+status;
+    public static void initInstanceStatus(String instanceId, String instanceUri, String image, int status) {
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
         String s = HttpClientUtils.doPost(uri);
         log.info("add instanceId:" + s);
     }
 
-    public static void updateInstanceStatus(String instanceId,String instanceUri,String image,int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id="+taskId+"&instanceId="+instanceId+"&instanceUri="+instanceUri+"&image="+image+"&status="+status;
+    public static void updateInstanceStatus(String instanceId, String instanceUri, String image, int status) {
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
         String s = HttpClientUtils.doPost(uri);
         log.info("add instanceId:" + s);
     }
 
-    public static List<String> queryReleaseImage(){
-        String uri="http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/release";
+    public static List<String> queryReleaseImage() {
+        String uri = "http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/release";
         String s = HttpClientUtils.doGet(uri);
         // 所得结果为倒序
-        JSONArray respJO=JSON.parseObject(s).getJSONArray("data");
-        List<String> dbVersion=new ArrayList<>();
+        JSONArray respJO = JSON.parseObject(s).getJSONArray("data");
+        List<String> dbVersion = new ArrayList<>();
         for (int i = 0; i < respJO.size(); i++) {
-            JSONObject jsonObject=respJO.getJSONObject(i);
-            dbVersion.add(jsonObject.getString("dbVersion")+"("+jsonObject.getString("imageInfo")+")");
+            JSONObject jsonObject = respJO.getJSONObject(i);
+            dbVersion.add(jsonObject.getString("dbVersion") + "(" + jsonObject.getString("imageInfo") + ")");
         }
         return dbVersion;
     }
