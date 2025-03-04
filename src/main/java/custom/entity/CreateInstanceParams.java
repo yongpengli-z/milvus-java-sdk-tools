@@ -15,4 +15,6 @@ public class CreateInstanceParams {
     String rootPassword;
     String roleUse;
     int useHours;
+    // dev ops 提供的独占label
+    boolean bizCritical;
 }

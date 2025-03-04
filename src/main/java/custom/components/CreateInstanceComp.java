@@ -14,6 +14,7 @@ import custom.utils.ResourceManagerServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 import static custom.BaseTest.*;
@@ -68,6 +69,13 @@ public class CreateInstanceComp {
         String instanceId = jsonObject.getJSONObject("Data").getString("InstanceId");
         log.info("Submit create instance success!");
         ComponentSchedule.initInstanceStatus(instanceId, "", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
+        // 判断是否需要独占
+        if (createInstanceParams.isBizCritical()){
+            HashMap<String,String> labels=new HashMap<>();
+            labels.put("biz-critical","true");
+            String s = ResourceManagerServiceUtils.updateLabel(instanceId, labels);
+            log.info("update labels: "+s);
+        }
         // 轮询是否建成功
         int waitingTime = 30;
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(waitingTime);

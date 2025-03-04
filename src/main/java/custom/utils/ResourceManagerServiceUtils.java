@@ -3,6 +3,7 @@ package custom.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
 import custom.entity.CreateInstanceParams;
 import custom.entity.DeleteInstanceParams;
 import custom.entity.ModifyParams;
@@ -42,7 +43,7 @@ public class ResourceManagerServiceUtils {
                 "  \"whitelistAddress\": \"0.0.0.0/0\"\n" +
                 "}";
         Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         String resp = HttpClientUtils.doPostJson(url, header, body);
@@ -56,7 +57,7 @@ public class ResourceManagerServiceUtils {
         }
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?InstanceId=" + instanceId;
         Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doGet(url, header, null);
@@ -78,7 +79,7 @@ public class ResourceManagerServiceUtils {
                 "  \"targetDbVersion\": \"" + rollingUpgradeParams.getTargetDbVersion() + "\"\n" +
                 "}";
         Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
@@ -94,7 +95,7 @@ public class ResourceManagerServiceUtils {
                 "  \"storageDelay\": 0\n" +
                 "}";
         Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
@@ -113,7 +114,7 @@ public class ResourceManagerServiceUtils {
                     "  \"switchType\": 0\n" +
                     "}";
             Map<String, String> header = new HashMap<>();
-            header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+            header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
             header.put("UserId", cloudServiceUserInfo.getUserId());
             header.put("SourceApp", "Cloud-Meta");
             String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
@@ -125,7 +126,7 @@ public class ResourceManagerServiceUtils {
         String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
         String url = envConfig.getRmHost() + "/resource/v1/param/milvus/list?all=true&InstanceId=" + instanceIdTemp;
         Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         String resp = HttpClientUtils.doGet(url, header, null);
@@ -161,7 +162,7 @@ public class ResourceManagerServiceUtils {
                     "  \"paramValue\": \"" + params.getParamValue() + "\"\n" +
                     "}";
             Map<String, String> header = new HashMap<>();
-            header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+            header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
             header.put("UserId", cloudServiceUserInfo.getUserId());
             header.put("SourceApp", "Cloud-Meta");
             String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
@@ -179,11 +180,24 @@ public class ResourceManagerServiceUtils {
                 "  \"switchType\": 0\n" +
                 "}";
         Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-"+MathUtil.genRandomString(10));
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
         log.info("Restart instance:" + s);
+        return s;
+    }
+
+    public static String updateLabel(String instanceId, Map<String, String> labels) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_labels?InstanceId=" + instanceId;
+        Gson gson = new Gson();
+        String jsonParams = gson.toJson(labels);
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(jsonParams).toJSONString());
+        log.info("update label:" + s);
         return s;
     }
 }
