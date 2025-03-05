@@ -48,9 +48,11 @@ public class QueryComp {
                                 .filter(queryParams.getFilter().equalsIgnoreCase("")?null:queryParams.getFilter())
                                 .consistencyLevel(ConsistencyLevel.STRONG)
                                 .partitionNames(queryParams.getPartitionNames()==null||queryParams.getPartitionNames().size()==0?new ArrayList<>():queryParams.getPartitionNames())
-                                .limit(queryParams.getLimit())
                                 .offset(queryParams.getOffset())
                                 .build();
+                        if(queryParams.getLimit()>0){
+                            queryReq.setLimit(queryParams.getLimit());
+                        }
                         query = milvusClientV2.query(queryReq);
                     } catch (Exception e) {
                         log.error("query exception:"+e.getMessage());
