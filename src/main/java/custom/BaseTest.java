@@ -37,11 +37,11 @@ public class BaseTest {
     public static String redisKey;
     public static int taskId;
     // 定义根节点
-    public static List<String> parentNodeName=new ArrayList<>();
+    public static List<String> parentNodeName = new ArrayList<>();
 
     public static void main(String[] args) {
 
-         taskId = Integer.parseInt(System.getProperty("taskId") == null
+        taskId = Integer.parseInt(System.getProperty("taskId") == null
                 ? ""
                 : System.getProperty("taskId"));
         //先更新argo任务状态
@@ -100,7 +100,9 @@ public class BaseTest {
         }
 //    // 自动调度
         ComponentSchedule.runningSchedule(customizeParams);
-        milvusClientV2.close();
+        if (milvusClientV2 != null) {
+            milvusClientV2.close();
+        }
         ComponentSchedule.updateCaseStatus(10);
         System.exit(0);
     }
