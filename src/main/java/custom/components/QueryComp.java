@@ -54,6 +54,7 @@ public class QueryComp {
                             queryReq.setLimit(queryParams.getLimit());
                         }
                         query = milvusClientV2.query(queryReq);
+                        log.info("query size: "+query.getQueryResults().size());
                     } catch (Exception e) {
                         log.error("query exception:"+e.getMessage());
                     }
