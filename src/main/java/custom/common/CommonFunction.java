@@ -344,7 +344,7 @@ public class CommonFunction {
             row.add(fieldName, gson.toJsonTree(list));
         }
         if (dataType == DataType.Bool) {
-            row.addProperty(fieldName, countIndex % 2 == 0);
+            row.addProperty(fieldName, true);
         }
         if (dataType == DataType.VarChar) {
 //            int i = random.nextInt(dimOrLength /2);
