@@ -39,6 +39,8 @@ public class BaseTest {
     // 定义根节点
     public static List<String> parentNodeName = new ArrayList<>();
 
+    public static EnvEnum envEnum;
+
     public static void main(String[] args) {
 
         taskId = Integer.parseInt(System.getProperty("taskId") == null
@@ -85,9 +87,9 @@ public class BaseTest {
             newInstanceInfo.setToken(token);
         }
 
-        EnvEnum envByName = EnvEnum.getEnvByName(env);
+        envEnum = EnvEnum.getEnvByName(env);
 //        log.info("EnvEnum:"+envByName);
-        envConfig = ConfigUtils.providerEnvConfig(envByName);
+        envConfig = ConfigUtils.providerEnvConfig(envEnum);
         log.info("当前环境信息:" + envConfig);
         log.info("newInstanceInfo:" + newInstanceInfo.toString());
         if (newInstanceInfo.getUri() != null) {
