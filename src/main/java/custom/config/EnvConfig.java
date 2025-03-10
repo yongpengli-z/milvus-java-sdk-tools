@@ -10,4 +10,6 @@ public class EnvConfig {
     String cloudServiceTestHost;
     String cloudOpsServiceHost;
     String cloudOpsServiceToken;
+    String infraHost;
+    String infraToken;
 }

@@ -10,6 +10,7 @@ import custom.entity.result.ResultEnum;
 import custom.pojo.InstanceInfo;
 import custom.utils.CloudOpsServiceUtils;
 import custom.utils.CloudServiceUtils;
+import custom.utils.InfraServiceUtils;
 import custom.utils.ResourceManagerServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,11 +71,11 @@ public class CreateInstanceComp {
         log.info("Submit create instance success!");
         ComponentSchedule.initInstanceStatus(instanceId, "", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
         // 判断是否需要独占
-        if (createInstanceParams.isBizCritical()){
-            HashMap<String,String> labels=new HashMap<>();
-            labels.put("biz-critical","true");
+        if (createInstanceParams.isBizCritical()) {
+            HashMap<String, String> labels = new HashMap<>();
+            labels.put("biz-critical", "true");
             String s = ResourceManagerServiceUtils.updateLabel(instanceId, labels);
-            log.info("update labels: "+s);
+            log.info("update labels: " + s);
         }
         // 轮询是否建成功
         int waitingTime = 30;
@@ -111,6 +112,23 @@ public class CreateInstanceComp {
                     .message("轮询超时！未监测到实例创建成功！")
                     .result(ResultEnum.EXCEPTION.result).build()).build();
         }
+
+        CreateInstanceResult createInstanceResult = CreateInstanceResult.builder().build();
+        // 创建成功，检查是否是独占
+        if (createInstanceParams.isBizCritical()) {
+            String milvusPodLabels = InfraServiceUtils.getMilvusPodLabels(envEnum.cluster, instanceId);
+            JSONObject jsonObject1 = JSONObject.parseObject(milvusPodLabels);
+            JSONObject data = jsonObject1.getJSONObject("data");
+            if (data.containsKey("biz-critical")) {
+                log.info("监测到实例已经独占！");
+                createInstanceResult.setAlone(true);
+            } else {
+                createInstanceResult.setAlone(false);
+            }
+        } else {
+            createInstanceResult.setAlone(false);
+        }
+
         // 初始化实例
         if (createInstanceParams.getRoleUse().equalsIgnoreCase("root")) {
             String token = MilvusConnect.provideToken(newInstanceInfo.getUri());
@@ -124,11 +142,10 @@ public class CreateInstanceComp {
 
         log.info("创建实例成功：" + newInstanceInfo);
         ComponentSchedule.updateInstanceStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);
-        return CreateInstanceResult.builder()
-                .commonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build())
-                .instanceId(newInstanceInfo.getInstanceId())
-                .uri(newInstanceInfo.getUri())
-                .build();
+        createInstanceResult.setCommonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build());
+        createInstanceResult.setInstanceId(newInstanceInfo.getInstanceId());
+        createInstanceResult.setUri(newInstanceInfo.getUri());
+        return createInstanceResult;
 
     }
 }
