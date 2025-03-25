@@ -10,17 +10,14 @@ import java.util.Map;
 public class JsonObjectUtil {
 
     public static JsonObject jsonMerge(JsonObject jsonObject1,JsonObject jsonObject2){
-        Gson gson = new Gson();
-        // 将 JsonObject 转换为 Map
-        Map<String, Object> map1 = gson.fromJson(jsonObject1, HashMap.class);
-        Map<String, Object> map2 = gson.fromJson(jsonObject2, HashMap.class);
+        JsonObject merged = new JsonObject();
 
-        // 合并两个 Map
-        Map<String, Object> mergedMap = new HashMap<>(map1);
-        mergedMap.putAll(map2);
+        // 将第一个 JsonObject 的所有属性添加到合并对象中
+        jsonObject1.entrySet().forEach(entry -> merged.add(entry.getKey(), entry.getValue()));
 
-        // 将合并后的 Map 转换为 JsonObject
-        JsonObject mergedJsonObject = JsonParser.parseString(gson.toJson(mergedMap)).getAsJsonObject();
-        return mergedJsonObject;
+        // 将第二个 JsonObject 的所有属性添加到合并对象中
+        jsonObject2.entrySet().forEach(entry -> merged.add(entry.getKey(), entry.getValue()));
+
+        return merged;
     }
 }
