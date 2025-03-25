@@ -137,7 +137,7 @@ public class CommonFunction {
                         .extraParams(CommonFunction.provideExtraParam(indexParamItem.getIndextype()))
                         .metricType(indexParamItem.getMetricType())
                         .build();
-                log.info("indexParam:"+ indexParam.toString());
+                log.info("indexParam:" + indexParam.toString());
                 indexParamList.add(indexParam);
             }
         }
@@ -158,7 +158,7 @@ public class CommonFunction {
                         .fieldName(indexParamList.get(i).getFieldName())
                         .collectionName(collectionName)
                         .build());
-                log.info(indexParamList.get(i).getFieldName()+"--"+describeIndexResp.getIndexDescriptions());
+                log.info(indexParamList.get(i).getFieldName() + "--" + describeIndexResp.getIndexDescriptions());
                 if (describeIndexResp.getIndexDescByFieldName(indexParamList.get(i).getFieldName()).getIndexState() == IndexBuildState.Finished) {
                     indexStateList.set(i, true);
                 }
@@ -325,26 +325,26 @@ public class CommonFunction {
         Gson gson = new Gson();
         Random random = new Random();
         if (dataType == DataType.Int64) {
-            row.addProperty(fieldName, countIndex);
+            row.add(fieldName, gson.toJsonTree(countIndex));
         }
         if (dataType == DataType.Int32) {
-            row.addProperty(fieldName, (int) countIndex % 32767);
+            row.add(fieldName, gson.toJsonTree((int) countIndex % 32767));
         }
         if (dataType == DataType.Int16) {
-            row.addProperty(fieldName, (int) countIndex % 32767);
+            row.add(fieldName, gson.toJsonTree((int) countIndex % 32767));
         }
         if (dataType == DataType.Int8) {
-            row.addProperty(fieldName, (short) countIndex % 127);
+            row.add(fieldName, gson.toJsonTree((short) countIndex % 127));
         }
         if (dataType == DataType.Double) {
-            row.addProperty(fieldName, (double) countIndex * 0.1f);
+            row.add(fieldName, gson.toJsonTree((double) countIndex * 0.1f));
         }
         if (dataType == DataType.Array) {
             List<Object> list = MathUtil.providerArrayData(elementType, dimOrLength, lengthForCapacity);
             row.add(fieldName, gson.toJsonTree(list));
         }
         if (dataType == DataType.Bool) {
-            row.addProperty(fieldName, true);
+            row.add(fieldName, gson.toJsonTree(true));
         }
         if (dataType == DataType.VarChar) {
 //            int i = random.nextInt(dimOrLength /2);
@@ -354,17 +354,17 @@ public class CommonFunction {
             } else if (countIndex % 8 == 0) {
                 s = "samevalue";
             } else {
-            s = MathUtil.genRandomString(dimOrLength);
+                s = MathUtil.genRandomString(dimOrLength);
             }
-            row.addProperty(fieldName, s);
+            row.add(fieldName, gson.toJsonTree(s));
         }
         if (dataType == DataType.String) {
 //            int i = random.nextInt(dimOrLength );
             String s = MathUtil.genRandomString(dimOrLength);
-            row.addProperty(fieldName, s);
+            row.add(fieldName, gson.toJsonTree(s));
         }
         if (dataType == DataType.Float) {
-            row.addProperty(fieldName, (float) countIndex * 0.1f);
+            row.add(fieldName, gson.toJsonTree((float) countIndex * 0.1f));
         }
         if (dataType == DataType.FloatVector) {
             List<Float> vector = new ArrayList<>();
@@ -387,13 +387,13 @@ public class CommonFunction {
         }
         if (dataType == DataType.JSON) {
             JsonObject json = new JsonObject();
-            json.addProperty(CommonData.fieldInt64, (int) countIndex % 32767);
-            json.addProperty(CommonData.fieldInt32, (int) countIndex % 32767);
-            json.addProperty(CommonData.fieldDouble, (double) countIndex);
+            json.add(CommonData.fieldInt64, gson.toJsonTree((int) countIndex % 32767));
+            json.add(CommonData.fieldInt32, gson.toJsonTree((int) countIndex % 32767));
+            json.add(CommonData.fieldDouble, gson.toJsonTree((double) countIndex));
             json.add(CommonData.fieldArray, gson.toJsonTree(Arrays.asList(countIndex, countIndex + 1, countIndex + 2)));
-            json.addProperty(CommonData.fieldBool, countIndex % 2 == 0);
-            json.addProperty(CommonData.fieldVarchar, "Str" + countIndex);
-            json.addProperty(CommonData.fieldFloat, (float) countIndex);
+            json.add(CommonData.fieldBool, gson.toJsonTree(countIndex % 2 == 0));
+            json.add(CommonData.fieldVarchar, gson.toJsonTree("Str" + countIndex));
+            json.add(CommonData.fieldFloat, gson.toJsonTree((float) countIndex));
             row.add(fieldName, json);
         }
         return row;
