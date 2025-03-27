@@ -80,6 +80,7 @@ public class CommonFunction {
                     .dataType(dataType)
                     .name(fieldParams.getFieldName() == null ? dataType + "_" + i : fieldParams.getFieldName())
                     .isPrimaryKey(fieldParams.isPrimaryKey())
+                    .isNullable(fieldParams.isNullable())
                     .build();
             if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
                 fieldSchema.setDimension(fieldParams.getDim());
@@ -277,6 +278,7 @@ public class CommonFunction {
                 Integer maxCapacity = fieldSchema.getMaxCapacity();
                 Integer maxLength = fieldSchema.getMaxLength();
                 DataType elementType = fieldSchema.getElementType();
+                boolean isNullable = fieldSchema.getIsNullable();
                 JsonObject jsonObject = new JsonObject();
                 Gson gson = new Gson();
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
@@ -298,11 +300,17 @@ public class CommonFunction {
                 } else if (dataType == DataType.SparseFloatVector) {
                     jsonObject = generalJsonObjectByDataType(name, dataType, 1000, i, null, 0);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0);
+                    JsonObject jsonObjectItem = new JsonObject();
+                    jsonObjectItem.add(name, null);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0);
                 } else if (dataType == DataType.Array) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength);
+                    JsonObject jsonObjectItem = new JsonObject();
+                    jsonObjectItem.add(name, null);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength);
                 } else {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 0, i, null, 0);
+                    JsonObject jsonObjectItem = new JsonObject();
+                    jsonObjectItem.add(name, null);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }

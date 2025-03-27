@@ -12,7 +12,6 @@ public class CreateCollectionParams {
     private String collectionName;
     private int shardNum;
     private int  numPartitions;
-    private String enableMmap;
     private boolean enableDynamic;
     private List<FieldParams> fieldParamsList;
 

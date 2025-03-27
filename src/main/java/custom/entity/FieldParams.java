@@ -13,4 +13,5 @@ public class FieldParams {
     int maxCapacity;
     DataType elementType;
     boolean isPartitionKey;
+    boolean isNullable;
 }
