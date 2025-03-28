@@ -225,6 +225,12 @@ public class ComponentSchedule {
             jsonObject.put("Compact_" + index, compactResult);
             reportStepResult(CompactParams.class.getSimpleName() + "_" + index, JSON.toJSONString(compactResult));
         }
+        if (object instanceof UpdateIndexPoolParams) {
+            log.info("*********** < Update Index Pool > ***********");
+            UpdateIndexPoolResult updateIndexPoolResult = UpdateIndexPoolComp.updateIndexPool((UpdateIndexPoolParams) object);
+            jsonObject.put("UpdateIndexPool_" + index, updateIndexPoolResult);
+            reportStepResult(UpdateIndexPoolParams.class.getSimpleName() + "_" + index, JSON.toJSONString(updateIndexPoolResult));
+        }
         return jsonObject;
     }
 
