@@ -98,7 +98,7 @@ public class CloudOpsServiceUtils {
                 indexPoolInfo.setK8sCluster(jsonObject1.getString("k8sCluster"));
                 indexPoolInfo.setK8sNamespace(jsonObject1.getString("k8sNamespace"));
                 indexPoolInfo.setName(jsonObject1.getString("name"));
-                indexPoolInfo.setManagerImageTag(jsonObject1.getString("imageTag"));
+                indexPoolInfo.setImageTag(jsonObject1.getString("imageTag"));
                 indexPoolInfo.setWorkerImageTag(jsonObject1.getString("workerImageTag"));
                 indexPoolInfo.setIndexTypes(Lists.newArrayList(2));
                 indexPoolInfo.setArchitecture(jsonObject1.getInteger("architecture"));

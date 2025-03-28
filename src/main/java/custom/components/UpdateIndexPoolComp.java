@@ -18,7 +18,7 @@ public class UpdateIndexPoolComp {
         IndexPoolInfo indexPoolInfo = CloudOpsServiceUtils.providerIndexPool();
         if (!(updateIndexPoolParams.getManagerImageTag()==null ||
                 updateIndexPoolParams.getManagerImageTag().equalsIgnoreCase(""))){
-            indexPoolInfo.setManagerImageTag(updateIndexPoolParams.getManagerImageTag());
+            indexPoolInfo.setImageTag(updateIndexPoolParams.getManagerImageTag());
         }
         if(!(updateIndexPoolParams.getWorkerImageTag()==null ||
                 updateIndexPoolParams.getWorkerImageTag().equalsIgnoreCase(""))){
@@ -44,7 +44,7 @@ public class UpdateIndexPoolComp {
         }
         return UpdateIndexPoolResult.builder()
                 .commonResult(commonResultBuilder.build())
-                .currentManagerImage(indexPoolInfo.getManagerImageTag())
+                .currentManagerImage(indexPoolInfo.getImageTag())
                 .currentWorkerImage(indexPoolInfo.getWorkerImageTag())
                 .build();
     }

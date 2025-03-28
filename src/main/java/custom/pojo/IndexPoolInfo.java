@@ -11,7 +11,7 @@ public class IndexPoolInfo {
     String k8sCluster;
     String k8sNamespace;
     String name;
-    String managerImageTag;
+    String imageTag;
     String workerImageTag;
     List<Integer> indexTypes;
     int architecture;
