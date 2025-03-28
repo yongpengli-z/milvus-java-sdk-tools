@@ -99,7 +99,7 @@ public class CloudOpsServiceUtils {
                 indexPoolInfo.setName(jsonObject1.getString("name"));
                 indexPoolInfo.setManagerImageTag(jsonObject1.getString("imageTag"));
                 indexPoolInfo.setWorkerImageTag(jsonObject1.getString("workerImageTag"));
-                indexPoolInfo.setIndexTypesSupport(Lists.newArrayList(2));
+                indexPoolInfo.setIndexTypes(Lists.newArrayList(2));
                 indexPoolInfo.setArchitecture(jsonObject1.getInteger("architecture"));
                 indexPoolInfo.setDomain(jsonObject1.getString("domain"));
                 indexPoolInfo.setPort(jsonObject1.getInteger("port"));

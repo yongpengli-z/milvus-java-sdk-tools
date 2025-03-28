@@ -12,7 +12,7 @@ public class IndexPoolInfo {
     String name;
     String managerImageTag;
     String workerImageTag;
-    List<Integer> indexTypesSupport;
+    List<Integer> indexTypes;
     int architecture;
     String domain;
     int port;
