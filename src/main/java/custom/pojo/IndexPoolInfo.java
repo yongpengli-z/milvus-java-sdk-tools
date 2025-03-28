@@ -9,6 +9,7 @@ public class IndexPoolInfo {
     int id;
     String regionId;
     String k8sCluster;
+    String k8sNamespace;
     String name;
     String managerImageTag;
     String workerImageTag;
