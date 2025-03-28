@@ -16,8 +16,8 @@ import java.util.List;
 public class UpdateIndexPoolComp {
     public static UpdateIndexPoolResult updateIndexPool(UpdateIndexPoolParams updateIndexPoolParams){
         IndexPoolInfo indexPoolInfo = CloudOpsServiceUtils.providerIndexPool();
-        if (!(updateIndexPoolParams.getWorkerImageTag()==null ||
-                updateIndexPoolParams.getWorkerImageTag().equalsIgnoreCase(""))){
+        if (!(updateIndexPoolParams.getManagerImageTag()==null ||
+                updateIndexPoolParams.getManagerImageTag().equalsIgnoreCase(""))){
             indexPoolInfo.setManagerImageTag(updateIndexPoolParams.getManagerImageTag());
         }
         if(!(updateIndexPoolParams.getWorkerImageTag()==null ||
@@ -27,10 +27,10 @@ public class UpdateIndexPoolComp {
             if(updateIndexPoolParams.getWorkerImageTag().equalsIgnoreCase("latest-release")){
                 List<String> strings = ComponentSchedule.queryReleaseImage();
                 latestImageByKeywords = strings.get(0);
-                indexPoolInfo.setManagerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(")+1,latestImageByKeywords.indexOf(")")));
+                indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(")+1,latestImageByKeywords.indexOf(")")));
             }else{
                 latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(updateIndexPoolParams.getWorkerImageTag());
-                indexPoolInfo.setManagerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(")+1,latestImageByKeywords.indexOf(")")));
+                indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(")+1,latestImageByKeywords.indexOf(")")));
             }
         }
         String s = CloudOpsServiceUtils.updateIndexPool(indexPoolInfo);
