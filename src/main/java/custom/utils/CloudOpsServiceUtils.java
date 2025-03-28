@@ -113,10 +113,12 @@ public class CloudOpsServiceUtils {
                 break;
             }
         }
+        log.info("current index pool :"+indexPoolInfo);
         return indexPoolInfo;
     }
 
     public static String updateIndexPool(IndexPoolInfo indexPoolInfo){
+        log.info("update index pool params:"+JSONObject.toJSONString(indexPoolInfo));
         String url = envConfig.getCloudOpsServiceHost()+"/api/v1/ops/resource/index/cluster";
         Map<String, String> header = new HashMap<>();
         header.put("sa_token",envConfig.getCloudOpsServiceToken());
