@@ -231,6 +231,18 @@ public class ComponentSchedule {
             jsonObject.put("UpdateIndexPool_" + index, updateIndexPoolResult);
             reportStepResult(UpdateIndexPoolParams.class.getSimpleName() + "_" + index, JSON.toJSONString(updateIndexPoolResult));
         }
+        if (object instanceof QuerySegmentInfoParams) {
+            log.info("*********** < Query Segment Info > ***********");
+            QuerySegmentInfoResult querySegmentInfoResult = QuerySegmentInfoComp.querySegmentInfo((QuerySegmentInfoParams) object);
+            jsonObject.put("QuerySegmentInfo" + index, querySegmentInfoResult);
+            reportStepResult(QuerySegmentInfoParams.class.getSimpleName() + "_" + index, JSON.toJSONString(querySegmentInfoResult));
+        }
+        if (object instanceof PersistentSegmentInfoParams) {
+            log.info("*********** < Persistent Segment Info > ***********");
+            PersistentSegmentInfoResult persistentSegmentInfoResult = PersistentSegmentInfoComp.persistentSegmentInfo((PersistentSegmentInfoParams) object);
+            jsonObject.put("PersistentSegmentInfo" + index, persistentSegmentInfoResult);
+            reportStepResult(PersistentSegmentInfoParams.class.getSimpleName() + "_" + index, JSON.toJSONString(persistentSegmentInfoResult));
+        }
         return jsonObject;
     }
 

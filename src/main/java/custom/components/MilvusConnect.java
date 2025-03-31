@@ -1,6 +1,8 @@
 package custom.components;
 
 import com.alibaba.fastjson.JSON;
+import io.milvus.client.MilvusServiceClient;
+import io.milvus.param.ConnectParam;
 import io.milvus.v2.client.ConnectConfig;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
@@ -50,6 +52,13 @@ public class MilvusConnect {
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
         log.info("List collection: " + listCollectionsResp.getCollectionNames());
         return milvusClientV2;
+    }
+
+    public static MilvusServiceClient createMilvusClientV1(String uri, String token){
+        MilvusServiceClient milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
+                .withUri(uri).withToken(token).build());
+        log.info("Use clientV1 connecting to DB: " + uri);
+        return milvusServiceClient;
     }
 
 }

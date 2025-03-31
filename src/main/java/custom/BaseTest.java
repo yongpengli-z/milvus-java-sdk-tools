@@ -10,6 +10,7 @@ import custom.config.EnvEnum;
 import custom.entity.InitialParams;
 import custom.pojo.InstanceInfo;
 import custom.utils.ConfigUtils;
+import io.milvus.client.MilvusServiceClient;
 import io.milvus.v2.client.MilvusClientV2;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +23,7 @@ import java.util.List;
 @Slf4j
 public class BaseTest {
     public static MilvusClientV2 milvusClientV2 = null;
+    public static MilvusServiceClient milvusClientV1 = null;
     public static List<String> globalCollectionNames = new ArrayList<>();
     public static String importUrl = null;
     public static int logInterval = 500;
@@ -95,6 +97,7 @@ public class BaseTest {
         if (newInstanceInfo.getUri() != null) {
             log.info("创建milvusClientV2，uri:" + newInstanceInfo.getUri());
             milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
+            milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
             importUrl = uri;
             // 初始化环境
             InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
@@ -104,6 +107,7 @@ public class BaseTest {
         ComponentSchedule.runningSchedule(customizeParams);
         if (milvusClientV2 != null) {
             milvusClientV2.close();
+            milvusClientV1.close();
         }
         ComponentSchedule.updateCaseStatus(10);
         System.exit(0);
