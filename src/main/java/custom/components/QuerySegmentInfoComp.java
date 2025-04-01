@@ -11,6 +11,7 @@ import io.milvus.param.R;
 import io.milvus.param.control.GetQuerySegmentInfoParam;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static custom.BaseTest.globalCollectionNames;
@@ -26,10 +27,26 @@ public class QuerySegmentInfoComp {
         try {
             R<GetQuerySegmentInfoResponse> querySegmentInfo = milvusClientV1.getQuerySegmentInfo(GetQuerySegmentInfoParam.newBuilder().withCollectionName(collection).build());
             List<QuerySegmentInfo> querySegmentInfoList = querySegmentInfo.getData().getInfosList();
+            List<QuerySegmentInfoResult.segmentInfo> segmentInfoList=new ArrayList<>();
+            for (QuerySegmentInfo item : querySegmentInfoList) {
+                segmentInfoList.add(QuerySegmentInfoResult.segmentInfo.builder()
+                                .segmentID(item.getSegmentID())
+                                .collectionID(item.getCollectionID())
+                                .partitionID(item.getPartitionID())
+                                .numRows(item.getNumRows())
+                                .state(item.getState().toString())
+                                .level(item.getLevel().toString())
+                                .isSorted(item.getIsSorted())
+                                .indexName(item.getIndexName())
+                                .nodeIds(item.getNodeIds(0))
+                        .build());
+            }
+
+
             commonResult.setResult(ResultEnum.SUCCESS.result);
             return QuerySegmentInfoResult.builder()
                     .commonResult(commonResult)
-                    .querySegmentInfoList(querySegmentInfoList).build();
+                    .segmentInfoList(segmentInfoList).build();
         } catch (ParamException e) {
             commonResult.setResult(ResultEnum.EXCEPTION.result);
             commonResult.setMessage(e.getMessage());

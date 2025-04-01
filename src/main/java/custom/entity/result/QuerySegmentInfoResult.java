@@ -1,6 +1,5 @@
 package custom.entity.result;
 
-import io.milvus.grpc.QuerySegmentInfo;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,6 +9,19 @@ import java.util.List;
 @Builder
 public class QuerySegmentInfoResult {
     CommonResult commonResult;
-    List<QuerySegmentInfo> querySegmentInfoList;
+    List<segmentInfo> segmentInfoList;
 
+    @Data
+    @Builder
+    public static class segmentInfo{
+        long segmentID;
+        long collectionID;
+        long partitionID;
+        long numRows;
+        String state;
+        String level;
+        boolean isSorted;
+        String indexName;
+        long nodeIds;
+    }
 }
