@@ -10,5 +10,17 @@ import java.util.List;
 @Builder
 public class PersistentSegmentInfoResult {
     CommonResult commonResult;
-    List<PersistentSegmentInfo> persistentSegmentInfoList;
+    List<segmentInfo> segmentInfoList;
+
+    @Data
+    @Builder
+    public static class segmentInfo{
+        long segmentID;
+        long collectionID;
+        long partitionID;
+        long numRows;
+        String state;
+        String level;
+        boolean isSorted;
+    }
 }

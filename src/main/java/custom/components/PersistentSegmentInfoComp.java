@@ -10,6 +10,7 @@ import io.milvus.param.R;
 import io.milvus.param.control.GetPersistentSegmentInfoParam;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static custom.BaseTest.globalCollectionNames;
@@ -26,8 +27,22 @@ public class PersistentSegmentInfoComp {
             R<GetPersistentSegmentInfoResponse> persistentSegmentInfo = milvusClientV1.getPersistentSegmentInfo(GetPersistentSegmentInfoParam.newBuilder()
                     .withCollectionName(collection).build());
             List<PersistentSegmentInfo> persistentSegmentInfoList = persistentSegmentInfo.getData().getInfosList();
+            List<PersistentSegmentInfoResult.segmentInfo> segmentInfoList = new ArrayList<>();
+            for (PersistentSegmentInfo persistentSegmentItem : persistentSegmentInfoList) {
+                segmentInfoList.add(
+                        PersistentSegmentInfoResult.segmentInfo.builder()
+                                .segmentID(persistentSegmentItem.getSegmentID())
+                                .collectionID(persistentSegmentItem.getCollectionID())
+                                .partitionID(persistentSegmentItem.getPartitionID())
+                                .numRows(persistentSegmentItem.getNumRows())
+                                .state(persistentSegmentItem.getState().toString())
+                                .level(persistentSegmentItem.getLevel().toString())
+                                .isSorted(persistentSegmentItem.getIsSorted())
+                                .build()
+                );
+            }
             commonResult.setResult(ResultEnum.SUCCESS.result);
-            return PersistentSegmentInfoResult.builder().persistentSegmentInfoList(persistentSegmentInfoList)
+            return PersistentSegmentInfoResult.builder().segmentInfoList(segmentInfoList)
                     .commonResult(commonResult).build();
         } catch (Exception e) {
             commonResult.setResult(ResultEnum.EXCEPTION.result);
