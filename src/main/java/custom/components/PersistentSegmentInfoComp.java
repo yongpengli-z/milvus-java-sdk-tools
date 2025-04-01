@@ -24,6 +24,7 @@ public class PersistentSegmentInfoComp {
                 persistentSegmentInfoParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : persistentSegmentInfoParams.getCollectionName();
         CommonResult commonResult = CommonResult.builder().build();
         try {
+            log.info("Start to get persistent segment info of collection: " + collection);
             R<GetPersistentSegmentInfoResponse> persistentSegmentInfo = milvusClientV1.getPersistentSegmentInfo(GetPersistentSegmentInfoParam.newBuilder()
                     .withCollectionName(collection).build());
             List<PersistentSegmentInfo> persistentSegmentInfoList = persistentSegmentInfo.getData().getInfosList();

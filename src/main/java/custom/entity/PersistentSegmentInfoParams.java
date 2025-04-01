@@ -1,6 +1,5 @@
 package custom.entity;
 
-import lombok.Builder;
 import lombok.Data;
 
 @Data
