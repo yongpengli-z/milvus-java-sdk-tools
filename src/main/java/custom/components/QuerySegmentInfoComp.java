@@ -27,7 +27,8 @@ public class QuerySegmentInfoComp {
         try {
             // get query segment info
             log.info("Get query segment info of collection: " + collection);
-            R<GetQuerySegmentInfoResponse> querySegmentInfo = milvusClientV1.getQuerySegmentInfo(GetQuerySegmentInfoParam.newBuilder().withCollectionName(collection).build());
+            R<GetQuerySegmentInfoResponse> querySegmentInfo
+                    = milvusClientV1.getQuerySegmentInfo(GetQuerySegmentInfoParam.newBuilder().withCollectionName(collection).build());
             List<QuerySegmentInfo> querySegmentInfoList = querySegmentInfo.getData().getInfosList();
             List<QuerySegmentInfoResult.segmentInfo> segmentInfoList=new ArrayList<>();
             for (QuerySegmentInfo item : querySegmentInfoList) {
