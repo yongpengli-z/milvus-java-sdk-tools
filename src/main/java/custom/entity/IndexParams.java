@@ -8,4 +8,6 @@ public class IndexParams {
     private String fieldName;
     private  IndexParam.IndexType indextype;
     private IndexParam.MetricType metricType;
+    private String jsonCastType;
+    private String jsonPath;
 }

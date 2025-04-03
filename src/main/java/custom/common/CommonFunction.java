@@ -130,15 +130,26 @@ public class CommonFunction {
                 }
             }
         } else {
-            for (IndexParams indexParamItem : indexParams) {
+            for (int i = 0; i < indexParams.size(); i++) {
+                IndexParams indexParamItem = indexParams.get(i);
+                Map<String, Object> params = new HashMap<>();
+                // 判断是否是json index
+                if (indexParamItem.getJsonPath() != null && !indexParamItem.getJsonPath().equals("")) {
+                    params.put("json_cast_type", indexParamItem.getJsonCastType());
+                    params.put("json_path", indexParamItem.getJsonPath());
+                } else {
+                    params = CommonFunction.provideExtraParam(indexParamItem.getIndextype());
+                }
                 IndexParam indexParam = IndexParam.builder()
                         .fieldName(indexParamItem.getFieldName())
-                        .indexName("idx_" + indexParamItem.getFieldName())
+                        .indexName("idx_" + indexParamItem.getFieldName() + "_" + i)
                         .indexType(indexParamItem.getIndextype())
-                        .extraParams(CommonFunction.provideExtraParam(indexParamItem.getIndextype()))
-                        .metricType(indexParamItem.getMetricType())
+                        .extraParams(params)
                         .build();
-                log.info("indexParam:" + indexParam.toString());
+                if (indexParamItem.getMetricType() != null) {
+                    indexParam.setMetricType(indexParamItem.getMetricType());
+                }
+                log.info("indexParam (i={}): {}", i, indexParam.toString());
                 indexParamList.add(indexParam);
             }
         }
