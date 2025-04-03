@@ -312,10 +312,11 @@ public class CommonFunction {
                     jsonObjectItem.add(name, null);
                     jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0);
                 }
-                // 判断是否有动态列
-                if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
-                    jsonObject=generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0);
-                }
+                row = JsonObjectUtil.jsonMerge(row, jsonObject);
+            }
+            // 判断是否有动态列
+            if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
+                JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0);
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
             jsonList.add(row);
