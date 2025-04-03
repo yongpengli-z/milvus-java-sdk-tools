@@ -1,5 +1,6 @@
 package custom.common;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -418,6 +419,17 @@ public class CommonFunction {
             json.add(CommonData.fieldBool, gson.toJsonTree(countIndex % 2 == 0));
             json.add(CommonData.fieldVarchar, gson.toJsonTree("Str" + countIndex));
             json.add(CommonData.fieldFloat, gson.toJsonTree((float) countIndex));
+
+            JsonObject json2 = new JsonObject();
+            json2.add(CommonData.fieldInt64, gson.toJsonTree((int) countIndex % 32767));
+            json2.add(CommonData.fieldInt32, gson.toJsonTree((int) countIndex % 32767));
+            json2.add(CommonData.fieldDouble, gson.toJsonTree((double) countIndex));
+            json2.add(CommonData.fieldArray, gson.toJsonTree(Arrays.asList(countIndex, countIndex + 1, countIndex + 2)));
+            json2.add(CommonData.fieldBool, gson.toJsonTree(countIndex % 2 == 0));
+            json2.add(CommonData.fieldVarchar, gson.toJsonTree("Str" + countIndex));
+            json2.add(CommonData.fieldFloat, gson.toJsonTree((float) countIndex));
+
+            json.add(CommonData.fieldJson,json2);
             row.add(fieldName, json);
         }
         return row;
