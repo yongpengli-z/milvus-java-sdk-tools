@@ -11,7 +11,18 @@ import custom.utils.DatasetUtil;
 import custom.utils.GenerateUtil;
 import custom.utils.JsonObjectUtil;
 import custom.utils.MathUtil;
+import io.milvus.client.MilvusClient;
+import io.milvus.client.MilvusServiceClient;
 import io.milvus.common.utils.Float16Utils;
+import io.milvus.grpc.GetPersistentSegmentInfoResponse;
+import io.milvus.grpc.GetQuerySegmentInfoResponse;
+import io.milvus.grpc.PersistentSegmentInfo;
+import io.milvus.param.ConnectParam;
+import io.milvus.param.R;
+import io.milvus.param.control.GetPersistentSegmentInfoParam;
+import io.milvus.param.control.GetQuerySegmentInfoParam;
+import io.milvus.v2.client.ConnectConfig;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.common.IndexBuildState;
 import io.milvus.v2.common.IndexParam;
@@ -21,6 +32,7 @@ import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
+import io.milvus.v2.service.vector.request.DeleteReq;
 import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.data.*;
 import io.milvus.v2.service.vector.response.QueryResp;
@@ -311,6 +323,10 @@ public class CommonFunction {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
                     jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0);
+                }
+                // 判断是否有动态列
+                if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
+                    jsonObject=generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }

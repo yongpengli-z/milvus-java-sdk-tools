@@ -25,6 +25,7 @@ public class CommonData {
     public static String fieldBool="fieldBool";
     public static String fieldVarchar="fieldVarchar";
     public static String fieldFloat="fieldFloat";
+    public static String dynamicField="dynamicField";
     public static String fieldJson="fieldJson";
     public static String fieldFloatVector="fieldFloatVector";
     public static String fieldBinaryVector="fieldBinaryVector";
