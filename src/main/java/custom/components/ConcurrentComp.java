@@ -124,8 +124,8 @@ public class ConcurrentComp {
         }
         if (object instanceof LoopParams) {
             log.info("*********** < [Concurrent] Loop Operator> ***********");
-            JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
-            jsonObject.put("Loop_" + index, loopJO);
+            LoopResult loopResult = LoopComp.loopComp((LoopParams) object);
+            jsonObject.put("Loop_" + index,  JSON.toJSONString(loopResult));
         }
         return jsonObject;
     }

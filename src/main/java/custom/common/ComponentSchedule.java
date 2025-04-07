@@ -166,10 +166,10 @@ public class ComponentSchedule {
         if (object instanceof LoopParams) {
             log.info("*********** < Loop Operator> ***********");
             parentNodeName.add("LoopParams_" + index);
-            JSONObject loopJO = LoopComp.loopComp((LoopParams) object);
+            LoopResult loopResult = LoopComp.loopComp((LoopParams) object);
             parentNodeName.remove(parentNodeName.size() - 1);
-            jsonObject.put("Loop_" + index, loopJO);
-            reportStepResult(LoopParams.class.getSimpleName() + "_" + index, JSON.toJSONString(loopJO));
+            jsonObject.put("Loop_" + index, loopResult);
+            reportStepResult(LoopParams.class.getSimpleName() + "_" + index, JSON.toJSONString(loopResult));
         }
         if (object instanceof CreateInstanceParams) {
             log.info("*********** < create instance> ***********");
