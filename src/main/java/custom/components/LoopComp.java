@@ -1,5 +1,6 @@
 package custom.components;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import custom.common.ComponentSchedule;
 import custom.entity.LoopParams;
@@ -32,13 +33,13 @@ public class LoopComp {
             List<JSONObject> jsonObjects = ComponentSchedule.runningSchedule(paramComb);
             if (jsonObjBaseList.size() == 0 && !JSONObject.toJSONString(jsonObjects).contains("exception")) {
                 for (int i = 0; i < jsonObjects.size(); i++) {
-                    jsonObjBaseList.add(createAggregateStructure(jsonObjects.get(i)));
+                    jsonObjBaseList.add(createAggregateStructure(JSON.parseObject(jsonObjects.get(i).toJSONString())));
                 }
             }
             if (!JSONObject.toJSONString(jsonObjects).contains("exception")) {
                 // 将结果全部收集
                 for (int i = 0; i < jsonObjects.size(); i++) {
-                    aggregateValues(jsonObjBaseList.get(i), jsonObjects.get(i));
+                    aggregateValues(jsonObjBaseList.get(i), JSON.parseObject(jsonObjects.get(i).toJSONString()));
                 }
             } else {
                 exceptionNum++;
