@@ -49,7 +49,7 @@ public class ComponentSchedule {
         List<JSONObject> results = new ArrayList<>();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
-            int taskStatus = queryTaskRedisValue();
+            /*int taskStatus = queryTaskRedisValue();
 
             if (taskStatus == TaskStatusEnum.STOPPING.status) {
                 do {
@@ -66,7 +66,7 @@ public class ComponentSchedule {
             if (taskStatus == TaskStatusEnum.TERMINATE.status) {
                 log.info("监测到任务终止...");
                 break;
-            }
+            }*/
             JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
             results.add(jsonObject);
         }
