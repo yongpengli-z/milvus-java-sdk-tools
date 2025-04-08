@@ -1,6 +1,5 @@
 package custom.entity.result;
 
-import io.milvus.grpc.PersistentSegmentInfo;
 import lombok.Builder;
 import lombok.Data;
 
