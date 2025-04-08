@@ -262,39 +262,39 @@ public class ComponentSchedule {
     }
 
     public static void updateArgoStatus(int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
-        String s = HttpClientUtils.doPost(uri);
+//        String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
+//        String s = HttpClientUtils.doPost(uri);
 //        log.info("Update case status:" + s);
     }
 
     public static void updateCaseStatus(int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
-        String s = HttpClientUtils.doPost(uri);
-//        log.info("Update case status:" + s);
+//        String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
+//        String s = HttpClientUtils.doPost(uri);
+////        log.info("Update case status:" + s);
     }
 
     public static void reportStepResult(String nodeName, String result) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task-details/result/insert";
-        JSONObject params = new JSONObject();
-        params.put("taskId", taskId);
-        params.put("nodeName", nodeName);
-        params.put("parentNodeName", parentNodeName);
-        params.put("result", result);
-        String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
+//        String uri = "http://qtp-server.zilliz.cc/customize-task-details/result/insert";
+//        JSONObject params = new JSONObject();
+//        params.put("taskId", taskId);
+//        params.put("nodeName", nodeName);
+//        params.put("parentNodeName", parentNodeName);
+//        params.put("result", result);
+//        String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
 //        log.info(parentNodeName + "[" + nodeName + "]Insert result:" + s);
 //        log.info("params " + "[" + params.toJSONString() + "]Insert result:" + s);
 
     }
 
     public static void initInstanceStatus(String instanceId, String instanceUri, String image, int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
-        String s = HttpClientUtils.doPost(uri);
+//        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
+//        String s = HttpClientUtils.doPost(uri);
 //        log.info("add instanceId:" + s);
     }
 
     public static void updateInstanceStatus(String instanceId, String instanceUri, String image, int status) {
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
-        String s = HttpClientUtils.doPost(uri);
+//        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
+//        String s = HttpClientUtils.doPost(uri);
 //        log.info("add instanceId:" + s);
     }
 
