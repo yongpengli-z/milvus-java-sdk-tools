@@ -49,7 +49,7 @@ public class BaseTest {
                 ? ""
                 : System.getProperty("taskId"));
         //先更新argo任务状态
-        ComponentSchedule.updateArgoStatus(1);
+//        ComponentSchedule.updateArgoStatus(1);
         String env = System.getProperty("env") == null
                 ? ""
                 : System.getProperty("env");
@@ -109,7 +109,7 @@ public class BaseTest {
             milvusClientV2.close();
             milvusClientV1.close();
         }
-        ComponentSchedule.updateCaseStatus(10);
+//        ComponentSchedule.updateCaseStatus(10);
         System.exit(0);
     }
 }
