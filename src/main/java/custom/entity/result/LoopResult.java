@@ -11,7 +11,7 @@ import java.util.List;
 @Builder
 public class LoopResult {
     CommonResult result;
-    List<JSONObject> jsonObjectList;
+    List<JSONObject> resultList;
     int runningNum;
     int exceptionNum;
 
