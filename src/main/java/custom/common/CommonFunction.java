@@ -1,6 +1,5 @@
 package custom.common;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -291,6 +290,10 @@ public class CommonFunction {
                 Integer maxLength = fieldSchema.getMaxLength();
                 DataType elementType = fieldSchema.getElementType();
                 boolean isNullable = fieldSchema.getIsNullable();
+                // primary key auto id
+                if (fieldSchema.getIsPrimaryKey() && fieldSchema.getAutoID()){
+                    continue;
+                }
                 JsonObject jsonObject = new JsonObject();
                 Gson gson = new Gson();
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
