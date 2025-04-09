@@ -14,4 +14,5 @@ public class FieldParams {
     DataType elementType;
     boolean isPartitionKey;
     boolean isNullable;
+    boolean isAutoId;
 }

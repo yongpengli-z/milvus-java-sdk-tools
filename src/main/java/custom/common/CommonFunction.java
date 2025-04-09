@@ -82,6 +82,10 @@ public class CommonFunction {
                     .isPrimaryKey(fieldParams.isPrimaryKey())
                     .isNullable(fieldParams.isNullable())
                     .build();
+            // 判断主键是否autoid
+            if (fieldParams.isPrimaryKey()) {
+                fieldSchema.setAutoID(fieldParams.isAutoId());
+            }
             if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
                 fieldSchema.setDimension(fieldParams.getDim());
             }
@@ -291,7 +295,7 @@ public class CommonFunction {
                 DataType elementType = fieldSchema.getElementType();
                 boolean isNullable = fieldSchema.getIsNullable();
                 // primary key auto id
-                if (fieldSchema.getIsPrimaryKey() && fieldSchema.getAutoID()){
+                if (fieldSchema.getIsPrimaryKey() && fieldSchema.getAutoID()) {
                     continue;
                 }
                 JsonObject jsonObject = new JsonObject();
@@ -432,7 +436,7 @@ public class CommonFunction {
             json2.add(CommonData.fieldVarchar, gson.toJsonTree("Str" + countIndex));
             json2.add(CommonData.fieldFloat, gson.toJsonTree((float) countIndex));
 
-            json.add(CommonData.fieldJson,json2);
+            json.add(CommonData.fieldJson, json2);
             row.add(fieldName, json);
         }
         return row;
