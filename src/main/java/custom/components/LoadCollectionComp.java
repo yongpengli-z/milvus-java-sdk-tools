@@ -32,7 +32,7 @@ public class LoadCollectionComp {
                     LoadCollectionReq collectionReq = LoadCollectionReq.builder().collectionName(collectionName)
                             .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
                             .async(false)
-                            .timeout(60000L)
+                            .timeout(600000L)
                             .build();
                     if (loadParams.getLoadFields().size()>0){
                         collectionReq.setLoadFields(loadParams.getLoadFields());
