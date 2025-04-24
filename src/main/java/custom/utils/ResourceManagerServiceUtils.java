@@ -55,7 +55,7 @@ public class ResourceManagerServiceUtils {
         if (instanceId == null || instanceId.equals("")) {
             instanceId = newInstanceInfo.getInstanceId();
         }
-        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?InstanceId=" + instanceId;
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?innerCall=true&InstanceId=" + instanceId;
         Map<String, String> header = new HashMap<>();
         String requestId="qtp-java-tools-" + MathUtil.genRandomString(10);
         header.put("RequestId", requestId);
