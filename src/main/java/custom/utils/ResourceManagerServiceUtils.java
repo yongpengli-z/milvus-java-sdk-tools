@@ -57,9 +57,11 @@ public class ResourceManagerServiceUtils {
         }
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?InstanceId=" + instanceId;
         Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        String requestId="qtp-java-tools-" + MathUtil.genRandomString(10);
+        header.put("RequestId", requestId);
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
+        log.info("head-requestId: "+requestId);
         return HttpClientUtils.doGet(url, header, null);
     }
 

@@ -24,8 +24,9 @@ public class RollingUpgradeComp {
         if(cloudServiceUserInfo.getUserId()==null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("") ){
             cloudServiceUserInfo= CloudServiceUtils.queryUserIdOfCloudService(null,null);
         }
-        // 先查询当前实例状态
+        // 先查询当前实例状态 ----需要修改，不用cloud-service获取，改ops-service获取状态
         String s = ResourceManagerServiceUtils.describeInstance(null);
+        log.info("describe instance:"+s);
         JSONObject jsonObject = JSONObject.parseObject(s);
         Integer status = jsonObject.getJSONObject("Data").getInteger("Status");
         InstanceStatusEnum instanceStatusByCode = InstanceStatusEnum.getInstanceStatusByCode(status);
