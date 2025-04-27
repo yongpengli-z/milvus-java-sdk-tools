@@ -14,5 +14,6 @@ public class CreateCollectionParams {
     private int  numPartitions;
     private boolean enableDynamic;
     private List<FieldParams> fieldParamsList;
+    private FunctionParams functionParams;
 
 }

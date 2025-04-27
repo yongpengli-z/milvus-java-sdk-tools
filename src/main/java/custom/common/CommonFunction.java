@@ -3,10 +3,8 @@ package custom.common;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import custom.entity.FieldParams;
-import custom.entity.IndexParams;
-import custom.entity.PKFieldInfo;
-import custom.entity.VectorInfo;
+import custom.components.MilvusConnect;
+import custom.entity.*;
 import custom.utils.DatasetUtil;
 import custom.utils.GenerateUtil;
 import custom.utils.JsonObjectUtil;
@@ -17,6 +15,7 @@ import io.milvus.v2.common.IndexBuildState;
 import io.milvus.v2.common.IndexParam;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.request.HasCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
@@ -43,7 +42,7 @@ public class CommonFunction {
      * @param fieldParamsList 其他字段
      * @return collection name
      */
-    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList) {
+    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList, FunctionParams functionParams) {
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
@@ -52,6 +51,19 @@ public class CommonFunction {
                 .fieldSchemaList(fieldSchemaList)
                 .enableDynamicField(enableDynamic)
                 .build();
+        // schema add function
+        if (functionParams != null
+                && functionParams.getFunctionType() != null
+                && functionParams.getInputFieldNames().size() > 0
+                && functionParams.getOutputFieldNames().size() > 0) {
+            collectionSchema.addFunction(CreateCollectionReq.Function.builder()
+                    .functionType(functionParams.getFunctionType())
+                    .name(functionParams.getName())
+                    .inputFieldNames(functionParams.getInputFieldNames())
+                    .outputFieldNames(functionParams.getOutputFieldNames())
+                    .build()
+            );
+        }
         CreateCollectionReq createCollectionReq = CreateCollectionReq.builder()
                 .collectionSchema(collectionSchema)
                 .collectionName(collectionName)
@@ -101,6 +113,7 @@ public class CommonFunction {
             }
             fieldSchemaList.add(fieldSchema);
         }
+
         return fieldSchemaList;
     }
 

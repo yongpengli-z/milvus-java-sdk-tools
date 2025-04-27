@@ -23,7 +23,7 @@ public class CreateCollectionComp {
         try {
             collection = CommonFunction.genCommonCollection(createCollectionParams.getCollectionName(),
                     createCollectionParams.isEnableDynamic(), createCollectionParams.getShardNum(), createCollectionParams.getNumPartitions(),
-                    createCollectionParams.getFieldParamsList());
+                    createCollectionParams.getFieldParamsList(),createCollectionParams.getFunctionParams());
             log.info("create collection [" + collection + "] success!");
             commonResult = CommonResult.builder()
                     .result(ResultEnum.SUCCESS.result)
