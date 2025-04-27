@@ -327,6 +327,9 @@ public class CommonFunction {
                     continue;
                 }
                 // 如果使用function自动生成数据，则继续
+                log.info("function fields:"+tempOutputFieldNames);
+                log.info("name:"+name);
+                log.info("判断"+tempOutputFieldNames.contains(name));
                 if (tempOutputFieldNames.contains(name)){
                     continue;
                 }
