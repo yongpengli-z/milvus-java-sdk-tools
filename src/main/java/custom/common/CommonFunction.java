@@ -788,7 +788,7 @@ public class CommonFunction {
                     .outputFields(Lists.newArrayList(inputFieldName))
                     .limit(randomNum)
                     .build());
-
+            log.info("query result:"+query.getQueryResults().size());
         } catch (Exception e){
             log.error("query 异常: " + e.getMessage());
         }

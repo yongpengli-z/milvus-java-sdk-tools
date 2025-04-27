@@ -39,6 +39,7 @@ public class SearchComp {
             if (function.getOutputFieldNames().contains(searchParams.getAnnsField())) {
                 int i = function.getOutputFieldNames().indexOf(searchParams.getAnnsField());
                 inputFieldName = function.getInputFieldNames().get(i);
+                log.info("inputFieldName:"+inputFieldName);
                 isUseFunction = true;
                 break;
             }
