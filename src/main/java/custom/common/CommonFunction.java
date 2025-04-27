@@ -796,7 +796,7 @@ public class CommonFunction {
             Object o = queryResult.getEntity().get(inputFieldName);
             baseVectorDataset.add(new EmbeddedText(o.toString()));
         }
-        return null;
+        return baseVectorDataset;
     }
 
     public static void main(String[] args) {

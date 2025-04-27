@@ -48,6 +48,7 @@ public class SearchComp {
         if (isUseFunction) {
             log.info("从collection里捞取input filed num: " + 1000);
             searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+            log.info("searchBaseVectors:"+searchBaseVectors.toString());
             log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
         } else {
             // 随机向量，从数据库里筛选--暂定1000条
