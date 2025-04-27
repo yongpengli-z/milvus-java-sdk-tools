@@ -23,8 +23,10 @@ import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
 import io.milvus.v2.service.vector.request.QueryReq;
+import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.*;
 import io.milvus.v2.service.vector.response.QueryResp;
+import io.milvus.v2.service.vector.response.SearchResp;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
@@ -762,5 +764,82 @@ public class CommonFunction {
         return baseVectors;
     }
 
+    /**
+     *
+     * @param collection  collection
+     * @param randomNum 从collection捞取的向量数
+     * @param inputFieldName function BM25的输入文本
+     * @return List<BaseVector>
+     */
+    public static List<BaseVector> providerSearchFunctionData(String collection,int randomNum,String inputFieldName) {
+        // 获取主键信息
+        PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
+        List<BaseVector> baseVectorDataset = new ArrayList<>();
+        QueryResp query = null;
+        try {
+            String filterStr;
+            if (pkFieldInfo.getDataType() == DataType.VarChar) {
+                filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
+            } else {
+                filterStr = pkFieldInfo.getFieldName() + " > 0 ";
+            }
+            query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
+                    .filter(filterStr)
+                    .outputFields(Lists.newArrayList(inputFieldName))
+                    .limit(randomNum)
+                    .build());
+
+        } catch (Exception e){
+            log.error("query 异常: " + e.getMessage());
+        }
+        for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
+            Object o = queryResult.getEntity().get(inputFieldName);
+            baseVectorDataset.add(new EmbeddedText(o.toString()));
+        }
+        return null;
+    }
+
+    public static void main(String[] args) {
+
+        String uri1="https://in01-b1dc77ab75a8fdd.aws-us-west-2.vectordb-uat3.zillizcloud.com:19530";
+        String uri2="https://in01-c560fd4b0c11191.aws-us-west-2.vectordb-uat3.zillizcloud.com:19532";
+        String uri3="https://in01-8b4bf16d21680d1.aws-us-west-2.vectordb-uat3.zillizcloud.com:19534";
+        String collection1="Collection_TAbaiqfFxG";
+        String collection2="Collection_zabLqnEHjG";
+        String collection3="Collection_BOnJHTNzYP";
+        MilvusClientV2 milvusClientV22222 = new MilvusClientV2(
+                ConnectConfig.builder().uri(uri2).secure(true)
+                        .token("29e5f94f1244eae2bd1cb6fd627d299d2f7e17bf4390d53a904eb30d954ab9ce03dfd18ad4ff9d66cea05714bb6b142a7722e434").build());
+        String collectionName=collection2;
+        DescribeCollectionResp describeCollectionResp = milvusClientV22222.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
+        List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
+        // 获取function列表，查找不需要构建数据的 outputFieldNames
+        List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
+        List<String> tempOutputFieldNames=new ArrayList<>();
+        for (CreateCollectionReq.Function function : functionList) {
+            List<String> outputFieldNames1 = function.getOutputFieldNames();
+            tempOutputFieldNames.addAll(outputFieldNames1);
+        }
+        System.out.println(tempOutputFieldNames);
+
+        // query
+        QueryResp queryResp = milvusClientV22222.query(QueryReq.builder().collectionName(collectionName)
+                .filter("Int64_0 > 160000 ")
+                .outputFields(Lists.newArrayList("VarChar_14"))
+                .limit(10)
+                .build());
+        List<QueryResp.QueryResult> queryResults = queryResp.getQueryResults();
+        System.out.println(queryResults.get(0).getEntity().get("VarChar_14"));
+        // search
+        SearchResp suijishu = milvusClientV22222.search(SearchReq.builder()
+                .collectionName(collectionName)
+                .data(Collections.singletonList(new EmbeddedText(queryResults.get(0).getEntity().get("VarChar_14").toString())))
+                        .topK(1)
+                .annsField("SparseFloatVector_22").build());
+        System.out.println(suijishu.getSearchResults());
+
+
+    }
 
 }

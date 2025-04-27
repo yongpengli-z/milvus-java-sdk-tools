@@ -7,6 +7,9 @@ import custom.entity.result.ResultEnum;
 import custom.entity.result.SearchResultA;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.service.collection.request.CreateCollectionReq;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.SearchResp;
@@ -24,12 +27,33 @@ public class SearchComp {
     public static SearchResultA searchCollection(SearchParams searchParams) {
         // 先search collection
         String collection = (searchParams.getCollectionName() == null ||
-                searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : searchParams.getCollectionName();
-
-        // 随机向量，从数据库里筛选--暂定1000条
-        log.info("从collection里捞取向量: " + 1000);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000,searchParams.getAnnsField());
-        log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+                searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
+        // 判定是不是sparse向量，并且是由Function BM25生成
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
+        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
+        // 获取function列表，查找不需要构建数据的 outputFieldNames
+        List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
+        boolean isUseFunction = false;
+        String inputFieldName = "";
+        for (CreateCollectionReq.Function function : functionList) {
+            if (function.getOutputFieldNames().contains(searchParams.getAnnsField())) {
+                int i = function.getOutputFieldNames().indexOf(searchParams.getAnnsField());
+                inputFieldName = function.getInputFieldNames().get(i);
+                isUseFunction = true;
+                break;
+            }
+        }
+        List<BaseVector> searchBaseVectors;
+        if (isUseFunction) {
+            log.info("从collection里捞取input filed num: " + 1000);
+            searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+            log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
+        } else {
+            // 随机向量，从数据库里筛选--暂定1000条
+            log.info("从collection里捞取向量: " + 1000);
+            searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField());
+            log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+        }
         // 如果不随机，则随机一个
         List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
 
@@ -37,14 +61,14 @@ public class SearchComp {
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
         // 处理output
         List<String> outputs = searchParams.getOutputs();
-        if(outputs.size()==1&&outputs.get(0).equalsIgnoreCase("")){
-            outputs=new ArrayList<>();
+        if (outputs.size() == 1 && outputs.get(0).equalsIgnoreCase("")) {
+            outputs = new ArrayList<>();
         }
 
         float searchTotalTime;
         long startTimeTotal = System.currentTimeMillis();
         Map<String, Object> searchLevel = new HashMap<>();
-        searchLevel.put("level", searchParams.getSearchLevel()==0?1:searchParams.getSearchLevel());
+        searchLevel.put("level", searchParams.getSearchLevel() == 0 ? 1 : searchParams.getSearchLevel());
         if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
             searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }
