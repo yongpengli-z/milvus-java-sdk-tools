@@ -56,6 +56,12 @@ public class CommonFunction {
                 && functionParams.getFunctionType() != null
                 && functionParams.getInputFieldNames().size() > 0
                 && functionParams.getOutputFieldNames().size() > 0) {
+            // enableAnalyzer input fields
+            for (String inputFieldName : functionParams.getInputFieldNames()) {
+                fieldSchemaList.stream().filter(x -> x.getName().equals(inputFieldName)).findFirst().ifPresent(y -> {
+                    y.setEnableAnalyzer(true);
+                });
+            }
             collectionSchema.addFunction(CreateCollectionReq.Function.builder()
                     .functionType(functionParams.getFunctionType())
                     .name(functionParams.getName())
