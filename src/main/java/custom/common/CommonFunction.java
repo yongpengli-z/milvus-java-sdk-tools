@@ -293,7 +293,7 @@ public class CommonFunction {
         List<String> tempOutputFieldNames=new ArrayList<>();
         for (CreateCollectionReq.Function function : functionList) {
             List<String> outputFieldNames1 = function.getOutputFieldNames();
-            tempOutputFieldNames.containsAll(outputFieldNames1);
+            tempOutputFieldNames.addAll(outputFieldNames1);
         }
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         List<JsonObject> jsonList = new ArrayList<>();
@@ -327,9 +327,6 @@ public class CommonFunction {
                     continue;
                 }
                 // 如果使用function自动生成数据，则继续
-                log.info("function fields:"+tempOutputFieldNames);
-                log.info("name:"+name);
-                log.info("判断"+tempOutputFieldNames.contains(name));
                 if (tempOutputFieldNames.contains(name)){
                     continue;
                 }
@@ -765,14 +762,5 @@ public class CommonFunction {
         return baseVectors;
     }
 
-    public static void main(String[] args) {
-        MilvusClientV2 milvusClientV22222 = new MilvusClientV2(
-                ConnectConfig.builder().uri("https://in01-ec5ad849df03594.aws-us-west-2.vectordb-uat3.zillizcloud.com:19530")
-                        .token("29e5f94f1244eae2bd1cb6fd627d299d2f7e17bf4390d53a904eb30d954ab9ce03dfd18ad4ff9d66cea05714bb6b142a7722e434").build());
-        String collectionName="Collection_YJRYWFGuFS";
-        DescribeCollectionResp describeCollectionResp = milvusClientV22222.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
-        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
-        List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
 
-    }
 }
