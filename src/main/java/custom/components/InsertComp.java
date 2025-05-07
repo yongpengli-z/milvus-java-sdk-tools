@@ -117,8 +117,9 @@ public class InsertComp {
                                 }
                                 if (insertParams.isRetryAfterDeny()) {
                                     retryCount++;
-                                    log.info("第" + retryCount + "次监测到禁写，等待2分钟");
-                                    Thread.sleep(1000 * 60 * 2);
+                                    log.info("第" + retryCount + "次监测到禁写，等待1分钟");
+                                    Thread.sleep(1000 * 60 );
+                                    continue;
                                 }
                             }
                             long endTime = System.currentTimeMillis();
