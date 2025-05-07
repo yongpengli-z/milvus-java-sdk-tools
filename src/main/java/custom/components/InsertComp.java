@@ -85,7 +85,7 @@ public class InsertComp {
                              r++) {
                             // 时间和数据量谁先到都结束
                             if (insertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {
-                                log.info("Insert已到设定时长，停止插入...");
+                                log.info("线程[" + finalC + "]"+" Insert已到设定时长，停止插入...");
                                 insertResultItem.setInsertCnt(insertCnt);
                                 insertResultItem.setCostTime(costTime);
                                 return insertResultItem;
@@ -107,7 +107,7 @@ public class InsertComp {
                                     retryCount = 0;
                                 }
                             } catch (Exception e) {
-                                log.error("insert error,reason:" + e.getMessage());
+                                log.error("线程[" + finalC + "]"+"insert error,reason:" + e.getMessage());
                                 // 禁写后重试判断
                                 if ((!insertParams.isRetryAfterDeny()) || (retryCount == 10)) {
                                     insertResultItem.setInsertCnt(insertCnt);
@@ -117,8 +117,8 @@ public class InsertComp {
                                 }
                                 if (insertParams.isRetryAfterDeny()) {
                                     retryCount++;
-                                    log.info("第" + retryCount + "次监测到禁写，等待1分钟");
-                                    Thread.sleep(1000 * 60 );
+                                    log.info("线程[" + finalC + "]"+"第" + retryCount + "次监测到禁写，等待30秒...");
+                                    Thread.sleep(1000 * 30 );
                                     continue;
                                 }
                             }
