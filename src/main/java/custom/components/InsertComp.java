@@ -59,7 +59,7 @@ public class InsertComp {
         log.info("文件长度:" + fileSizeList);
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
-        float insertTotalTime = 0;
+        float insertTotalTime;
         String collectionName = (insertParams.getCollectionName() == null ||
                 insertParams.getCollectionName().equalsIgnoreCase(""))
                 ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
@@ -78,6 +78,7 @@ public class InsertComp {
                         InsertResultItem insertResultItem = new InsertResultItem();
                         List<Double> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
+                        int retryCount = 0;
                         LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(insertParams.getRunningMinutes());
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
@@ -102,12 +103,23 @@ public class InsertComp {
                                         .data(jsonObjects)
                                         .collectionName(collectionName)
                                         .build());
+                                if (insert.getInsertCnt() > 0) {
+                                    retryCount = 0;
+                                }
                             } catch (Exception e) {
                                 log.error("insert error,reason:" + e.getMessage());
-                                insertResultItem.setInsertCnt(insertCnt);
-                                insertResultItem.setCostTime(costTime);
-                                insertResultItem.setExceptionMessage(e.getMessage());
-                                return insertResultItem;
+                                // 禁写后重试判断
+                                if ((!insertParams.isRetryAfterDeny()) || (retryCount == 10)) {
+                                    insertResultItem.setInsertCnt(insertCnt);
+                                    insertResultItem.setCostTime(costTime);
+                                    insertResultItem.setExceptionMessage(e.getMessage());
+                                    return insertResultItem;
+                                }
+                                if (insertParams.isRetryAfterDeny()) {
+                                    retryCount++;
+                                    log.info("第" + retryCount + "次监测到禁写，等待2分钟");
+                                    Thread.sleep(1000 * 60 * 2);
+                                }
                             }
                             long endTime = System.currentTimeMillis();
                             costTime.add((endTime - startTime) / 1000.00);
@@ -135,7 +147,7 @@ public class InsertComp {
         long requestNum = 0;
         double costTotal = 0.0;
         CommonResult commonResult;
-        InsertResult insertResult = null;
+        InsertResult insertResult;
         String exceptionFinally = "";
         for (Future<InsertResultItem> future : list) {
             try {

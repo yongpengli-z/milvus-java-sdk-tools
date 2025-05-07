@@ -11,4 +11,5 @@ public class InsertParams {
     private int numConcurrency;
     private String dataset;
     private long runningMinutes;
+    private boolean retryAfterDeny;
 }
