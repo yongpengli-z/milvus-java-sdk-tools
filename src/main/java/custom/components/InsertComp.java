@@ -95,7 +95,7 @@ public class InsertComp {
                                     r * insertParams.getBatchSize(), insertParams.getDataset(), finalFileNames, finalFileSizeList);
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + r * insertParams.getBatchSize() + "~" + ((r + 1) * insertParams.getBatchSize()));
-                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
+//                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
                             InsertResp insert = null;
                             long startTime = System.currentTimeMillis();
                             try {
@@ -175,7 +175,7 @@ public class InsertComp {
         // 查询实际导入数据量
         log.info(
                 "Total cost of inserting " + requestNum * insertParams.getBatchSize() + " entities: " + insertTotalTime + " seconds!");
-        log.info("Total insert " + requestNum + " 次数,RPS avg :" + costTotal / requestNum + " ");
+        log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / costTotal   + " ");
         if (exceptionFinally.equalsIgnoreCase("")) {
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         } else {
@@ -184,7 +184,7 @@ public class InsertComp {
         }
         insertResult = InsertResult.builder()
                 .commonResult(commonResult)
-                .rps(costTotal / requestNum)
+                .rps(requestNum / costTotal)
                 .numEntries(requestNum * insertParams.getBatchSize())
                 .requestNum(requestNum)
                 .costTime(insertTotalTime)

@@ -172,11 +172,11 @@ public class UpsertComp {
         // 查询实际导入数据量
         log.info(
                 "Total cost of inserting " + requestNum * upsertParams.getBatchSize() + " entities: " + upsertTotalTime + " seconds!");
-        log.info("Total insert " + requestNum + " 次数,RPS avg :" + costTotal / requestNum + " ");
+        log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / costTotal + " ");
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         upsertResult = UpsertResult.builder()
                 .commonResult(commonResult)
-                .rps(costTotal / requestNum)
+                .rps(requestNum / costTotal)
                 .numEntries(requestNum * upsertParams.getBatchSize())
                 .requestNum(requestNum)
                 .costTime(upsertTotalTime)
