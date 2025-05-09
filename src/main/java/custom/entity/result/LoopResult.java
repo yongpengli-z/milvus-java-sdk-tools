@@ -13,6 +13,6 @@ public class LoopResult {
     CommonResult result;
     List<JSONObject> resultList;
     int runningNum;
-    int exceptionNum;
+    int abnormalNum;
 
 }

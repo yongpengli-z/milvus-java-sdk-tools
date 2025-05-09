@@ -55,9 +55,9 @@ public class LoopComp {
         } else {
             commonResult.setResult(ResultEnum.SUCCESS.result);
         }
-        return LoopResult.builder().exceptionNum(exceptionNum)
+        return LoopResult.builder()
                 .runningNum(runningCount)
-                .exceptionNum(exceptionNum)
+                .abnormalNum(exceptionNum)
                 .resultList(jsonObjBaseList)
                 .build();
     }
