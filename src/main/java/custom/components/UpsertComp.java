@@ -23,10 +23,10 @@ import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class UpsertComp {
-    public static UpsertResult upsertCollection(UpsertParams upsertParams){
+    public static UpsertResult upsertCollection(UpsertParams upsertParams) {
         // 先search collection
         String collectionName = (upsertParams.getCollectionName() == null ||
-                upsertParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : upsertParams.getCollectionName();
+                upsertParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : upsertParams.getCollectionName();
 
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();
@@ -64,12 +64,12 @@ public class UpsertComp {
         // 要循环upsert的次数--insertRounds
         long upsertRounds = upsertParams.getNumEntries() / upsertParams.getBatchSize();
         float upsertTotalTime = 0;
-        log.info("Upsert collection [" + upsertParams.getCollectionName() + "]  from id:"+upsertParams.getStartId()+" , total " + upsertParams.getNumEntries() + " entities... ");
+        log.info("Upsert collection [" + upsertParams.getCollectionName() + "]  from id:" + upsertParams.getStartId() + " , total " + upsertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(upsertParams.getNumConcurrency());
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
 
-       // upsert data with multiple threads
+        // upsert data with multiple threads
         for (int c = 0; c < upsertParams.getNumConcurrency(); c++) {
             int finalC = c;
             List<String> finalFileNames = fileNames;
@@ -80,21 +80,22 @@ public class UpsertComp {
                         UpsertResultItem upsertResultItem = new UpsertComp.UpsertResultItem();
                         List<Double> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
-                        LocalDateTime endRunningTime=LocalDateTime.now().plusMinutes(upsertParams.getRunningMinutes());
+                        int retryCount = 0;
+                        LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(upsertParams.getRunningMinutes());
                         for (long r = ((upsertRounds / upsertParams.getNumConcurrency()) * finalC);
                              r < ((upsertRounds / upsertParams.getNumConcurrency()) * (finalC + 1));
                              r++) {
                             // 时间和数据量谁先到都结束
-                            if(upsertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)){
-                                log.info("Upsert已到设定时长，停止插入...");
+                            if (upsertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {
+                                log.info("线程[" + finalC + "] Upsert已到设定时长，停止插入...");
                                 upsertResultItem.setUpsertCnt(insertCnt);
                                 upsertResultItem.setCostTime(costTime);
                                 return upsertResultItem;
                             }
 
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, upsertParams.getBatchSize(),
-                                    (r * upsertParams.getBatchSize()+upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList);
-                            log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize()+upsertParams.getStartId() )+ "~" + ((r + 1) * upsertParams.getBatchSize()+upsertParams.getStartId()));
+                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList);
+                            log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             UpsertResp upsertResp = null;
                             long startTime = System.currentTimeMillis();
                             try {
@@ -102,11 +103,24 @@ public class UpsertComp {
                                         .data(jsonObjects)
                                         .collectionName(collectionName)
                                         .build());
+                                if (upsertResp.getUpsertCnt() > 0) {
+                                    retryCount = 0;
+                                }
                             } catch (Exception e) {
-                                log.error("upsert error,reason:" + e.getMessage());
-                                upsertResultItem.setUpsertCnt(insertCnt);
-                                upsertResultItem.setCostTime(costTime);
-                                return upsertResultItem;
+                                log.error("线程[" + finalC + "]" + "upsert error,reason:" + e.getMessage());
+                                // 禁写后重试判断
+                                if ((!upsertParams.isRetryAfterDeny()) || (retryCount == 10)) {
+                                    upsertResultItem.setUpsertCnt(insertCnt);
+                                    upsertResultItem.setCostTime(costTime);
+                                    upsertResultItem.setExceptionMessage(e.getMessage());
+                                    return upsertResultItem;
+                                }
+                                if (upsertParams.isRetryAfterDeny()) {
+                                    retryCount++;
+                                    log.info("线程[" + finalC + "]" + "第" + retryCount + "次监测到禁写，等待30秒...");
+                                    Thread.sleep(1000 * 30);
+                                    continue;
+                                }
                             }
                             long endTime = System.currentTimeMillis();
                             costTime.add((endTime - startTime) / 1000.00);
@@ -175,5 +189,6 @@ public class UpsertComp {
     public static class UpsertResultItem {
         private List<Double> costTime;
         private List<Integer> upsertCnt;
+        private String exceptionMessage;
     }
 }
