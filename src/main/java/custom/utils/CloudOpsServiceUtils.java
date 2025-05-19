@@ -111,6 +111,29 @@ public class CloudOpsServiceUtils {
                 indexPoolInfo.setMaxWaitingTask(jsonObject1.getInteger("maxWaitingTask"));
                 indexPoolInfo.setDescription(jsonObject1.getString("description"));
                 indexPoolInfo.setScalingStrategy(jsonObject1.getInteger("scalingStrategy"));
+                indexPoolInfo.setMinFreeNum(jsonObject1.getString("minFreeNum"));
+                indexPoolInfo.setFreePercent(jsonObject1.getString("freePercent"));
+                indexPoolInfo.setMaxWaitingTimeSeconds(jsonObject1.getInteger("maxWaitingTimeSeconds"));
+                indexPoolInfo.setArchitecture(jsonObject1.getInteger("architecture"));
+                indexPoolInfo.setFreeSlots(jsonObject1.getInteger("freeSlots"));
+                indexPoolInfo.setMaxSlots(jsonObject1.getInteger("maxSlots"));
+                indexPoolInfo.setStrideSlots(jsonObject1.getInteger("strideSlots"));
+                JSONArray workerSpecs = jsonObject1.getJSONArray("workerSpecs");
+                List<IndexPoolInfo.WorkerSpec> workerSpecsList=new ArrayList<>();
+                for (int i1 = 0; i1 < workerSpecs.size(); i1++) {
+                    IndexPoolInfo.WorkerSpec workerSpec=new IndexPoolInfo.WorkerSpec();
+                    JSONObject specsJSONObject = workerSpecs.getJSONObject(i1);
+                    workerSpec.setId(specsJSONObject.getInteger("id"));
+                    workerSpec.setIndexClusterId(specsJSONObject.getInteger("indexClusterId"));
+                    workerSpec.setMaxSlots(specsJSONObject.getInteger("maxSlots"));
+                    workerSpec.setRequestsCpu(specsJSONObject.getString("requestsCpu"));
+                    workerSpec.setRequestsMemory(specsJSONObject.getString("requestsMemory"));
+                    workerSpec.setLimitsCpu(specsJSONObject.getString("limitsCpu"));
+                    workerSpec.setLimitsMemory(specsJSONObject.getString("limitsMemory"));
+                    workerSpec.setEnable(specsJSONObject.getBoolean("enable"));
+                    workerSpecsList.add(workerSpec);
+                }
+                indexPoolInfo.setWorkerSpecs(workerSpecsList);
                 break;
             }
         }

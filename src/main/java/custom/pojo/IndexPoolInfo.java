@@ -24,4 +24,23 @@ public class IndexPoolInfo {
     int maxWaitingTask;
     String description;
     int scalingStrategy;
+    String freePercent;
+    String minFreeNum;
+    private int maxWaitingTimeSeconds;
+    private int freeSlots;
+    private int maxSlots;
+    private int strideSlots;
+    private List<WorkerSpec> workerSpecs;
+
+    @Data
+    public static class WorkerSpec{
+        int id;
+        int indexClusterId;
+        int maxSlots;
+        String requestsCpu;
+        String requestsMemory;
+        String limitsCpu;
+        String limitsMemory;
+        boolean enable;
+    }
 }
