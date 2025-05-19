@@ -35,28 +35,37 @@ public class MilvusConnect {
                             + substring
                             + "";
             String pwdString = HttpClientUtils.doGet(urlPWD);
-            log.info("pwdString:"+pwdString);
+            log.info("pwdString:" + pwdString);
             token = "root:" + JSON.parseObject(pwdString).getString("Data");
         } else {
             token = "root:Milvus";
-            isCloud=false;
+            isCloud = false;
         }
         return token;
     }
 
     public static MilvusClientV2 createMilvusClientV2(String uri, String token) {
-        MilvusClientV2 milvusClientV2 = new MilvusClientV2(
-                ConnectConfig.builder().uri(uri).token(token).build()
-        );
+        ConnectConfig build = ConnectConfig.builder().uri(uri).build();
+        if (!token.equalsIgnoreCase("123456")) {
+            build.setToken(token);
+        }
+        MilvusClientV2 milvusClientV2 = new MilvusClientV2(build);
         log.info("Connecting to DB: " + uri);
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
         log.info("List collection: " + listCollectionsResp.getCollectionNames());
         return milvusClientV2;
     }
 
-    public static MilvusServiceClient createMilvusClientV1(String uri, String token){
-        MilvusServiceClient milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
-                .withUri(uri).withToken(token).build());
+    public static MilvusServiceClient createMilvusClientV1(String uri, String token) {
+        MilvusServiceClient milvusServiceClient = null;
+        if (!token.equalsIgnoreCase("123456")) {
+            milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
+                    .withUri(uri).withToken(token).build());
+        }
+        if (token.equalsIgnoreCase("123456")) {
+            milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
+                    .withUri(uri).build());
+        }
         log.info("Use clientV1 connecting to DB: " + uri);
         return milvusServiceClient;
     }
