@@ -21,7 +21,7 @@ public class CloudOpsServiceUtils {
     public static String listDBVersionByKeywords(String keywords) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
         Map<String, String> header = new HashMap<>();
-        header.put("sa_token",envConfig.getCloudOpsServiceToken());
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
         Map<String, String> paramsDB = new HashMap<>();
         paramsDB.put("currentPage", "1");
         paramsDB.put("pageSize", "100");
@@ -31,6 +31,7 @@ public class CloudOpsServiceUtils {
         log.info("listDBVersionByKeywords:" + s);
         return s;
     }
+
     public static String listTagByKeywords(String keywords) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
         Map<String, String> header = new HashMap<>();
@@ -44,6 +45,7 @@ public class CloudOpsServiceUtils {
         log.info("listTagByKeywords:" + s);
         return s;
     }
+
     public static String getLatestImageByKeywords(String keywords) {
         List<String> collect;
         JSONObject jsonResponse = JSON.parseObject(listDBVersionByKeywords(keywords));
@@ -70,10 +72,11 @@ public class CloudOpsServiceUtils {
         collect = lists.stream().distinct().collect(Collectors.toList());
         return collect.stream().findFirst().orElse("");
     }
-    public static String listRunningIndexPool(){
-        String url = envConfig.getCloudOpsServiceHost()+"/api/v1/ops/resource/index/cluster";
+
+    public static String listRunningIndexPool() {
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/index/cluster";
         Map<String, String> header = new HashMap<>();
-        header.put("sa_token",envConfig.getCloudOpsServiceToken());
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
         Map<String, String> params = new HashMap<>();
         params.put("currentPage", "1");
         params.put("pageSize", "100");
@@ -81,18 +84,18 @@ public class CloudOpsServiceUtils {
         params.put("status", "1");
         params.put("enable", "true");
         String s = HttpClientUtils.doGet(url, header, params);
-        log.info("list index pool"+s);
+        log.info("list index pool" + s);
         return s;
     }
 
-    public static IndexPoolInfo providerIndexPool(){
+    public static IndexPoolInfo providerIndexPool() {
         String s = listRunningIndexPool();
         JSONObject jsonObject = JSONObject.parseObject(s);
         JSONArray jsonArray = jsonObject.getJSONObject("data").getJSONArray("list");
-        IndexPoolInfo indexPoolInfo=new IndexPoolInfo();
+        IndexPoolInfo indexPoolInfo = new IndexPoolInfo();
         for (int i = 0; i < jsonArray.size(); i++) {
             JSONObject jsonObject1 = jsonArray.getJSONObject(i);
-            if(!(jsonObject1.getString("name").contains("byoc")||jsonObject1.getString("name").contains("poc"))){
+            if (!(jsonObject1.getString("name").contains("byoc") || jsonObject1.getString("name").contains("poc"))) {
                 indexPoolInfo.setId(jsonObject1.getInteger("id"));
                 indexPoolInfo.setRegionId(jsonObject1.getString("regionId"));
                 indexPoolInfo.setK8sCluster(jsonObject1.getString("k8sCluster"));
@@ -119,9 +122,9 @@ public class CloudOpsServiceUtils {
                 indexPoolInfo.setMaxSlots(jsonObject1.getInteger("maxSlots"));
                 indexPoolInfo.setStrideSlots(jsonObject1.getInteger("strideSlots"));
                 JSONArray workerSpecs = jsonObject1.getJSONArray("workerSpecs");
-                List<IndexPoolInfo.WorkerSpec> workerSpecsList=new ArrayList<>();
+                List<IndexPoolInfo.WorkerSpec> workerSpecsList = new ArrayList<>();
                 for (int i1 = 0; i1 < workerSpecs.size(); i1++) {
-                    IndexPoolInfo.WorkerSpec workerSpec=new IndexPoolInfo.WorkerSpec();
+                    IndexPoolInfo.WorkerSpec workerSpec = new IndexPoolInfo.WorkerSpec();
                     JSONObject specsJSONObject = workerSpecs.getJSONObject(i1);
                     workerSpec.setId(specsJSONObject.getInteger("id"));
                     workerSpec.setIndexClusterId(specsJSONObject.getInteger("indexClusterId"));
@@ -137,24 +140,19 @@ public class CloudOpsServiceUtils {
                 break;
             }
         }
-        log.info("current index pool :"+indexPoolInfo);
+        log.info("current index pool :" + indexPoolInfo);
         return indexPoolInfo;
     }
 
-    public static String updateIndexPool(IndexPoolInfo indexPoolInfo){
-        log.info("update index pool params:"+JSONObject.toJSONString(indexPoolInfo));
-        String url = envConfig.getCloudOpsServiceHost()+"/api/v1/ops/resource/index/cluster";
+    public static String updateIndexPool(IndexPoolInfo indexPoolInfo) {
+        log.info("update index pool params:" + JSONObject.toJSONString(indexPoolInfo));
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/index/cluster";
         Map<String, String> header = new HashMap<>();
-        header.put("sa_token",envConfig.getCloudOpsServiceToken());
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
         String s = HttpClientUtils.doPut(url, header, JSONObject.toJSONString(indexPoolInfo));
-        log.info("updateIndexPool:"+s);
+        log.info("updateIndexPool:" + s);
         return s;
     }
-
-
-
-
-
 
 
 }
