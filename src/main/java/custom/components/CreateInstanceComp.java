@@ -120,11 +120,19 @@ public class CreateInstanceComp {
             log.info("InfraServiceUtils.getMilvusPodLabels:" + milvusPodLabels);
             JSONObject jsonObject1 = JSONObject.parseObject(milvusPodLabels);
             JSONObject data = jsonObject1.getJSONObject("data");
-            if (data.containsKey("biz-critical")) {
-                log.info("监测到实例已经独占！");
-                createInstanceResult.setAlone(true);
+            if (data == null) {
+                return CreateInstanceResult.builder().commonResult(CommonResult.builder()
+                                .message("实例创建成功！但未独占！！！")
+                                .result(ResultEnum.EXCEPTION.result).build())
+                        .uri(newInstanceInfo.getUri())
+                        .instanceId(newInstanceInfo.getInstanceId()).build();
             } else {
-                createInstanceResult.setAlone(false);
+                if (data.containsKey("biz-critical")) {
+                    log.info("监测到实例已经独占！");
+                    createInstanceResult.setAlone(true);
+                } else {
+                    createInstanceResult.setAlone(false);
+                }
             }
         } else {
             createInstanceResult.setAlone(false);
