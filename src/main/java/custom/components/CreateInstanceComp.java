@@ -119,6 +119,7 @@ public class CreateInstanceComp {
             String milvusPodLabels = InfraServiceUtils.getMilvusPodLabels(envEnum.cluster, instanceId);
             JSONObject jsonObject1 = JSONObject.parseObject(milvusPodLabels);
             JSONObject data = jsonObject1.getJSONObject("data");
+            log.info("debug data:"+data.toJSONString());
             if (data.containsKey("biz-critical")) {
                 log.info("监测到实例已经独占！");
                 createInstanceResult.setAlone(true);
