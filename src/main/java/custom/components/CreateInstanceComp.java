@@ -121,6 +121,7 @@ public class CreateInstanceComp {
             JSONObject jsonObject1 = JSONObject.parseObject(milvusPodLabels);
             JSONObject data = jsonObject1.getJSONObject("data");
             if (data == null) {
+                ComponentSchedule.updateInstanceStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);
                 return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                                 .message("实例创建成功！但未独占！！！")
                                 .result(ResultEnum.EXCEPTION.result).build())
