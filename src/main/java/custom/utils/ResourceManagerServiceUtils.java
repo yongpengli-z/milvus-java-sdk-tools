@@ -202,5 +202,16 @@ public class ResourceManagerServiceUtils {
         log.info("update label:" + s);
         return s;
     }
+
+    public static String updateQNMonopoly(String instanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_qn_monopoly?InstanceId=" + instanceId;
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String s = HttpClientUtils.doPost(url, header,null);
+        log.info("update qn monopoly: " + s);
+        return s;
+    }
 }
 

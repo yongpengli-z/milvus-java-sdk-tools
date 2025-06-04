@@ -70,12 +70,17 @@ public class CreateInstanceComp {
         String instanceId = jsonObject.getJSONObject("Data").getString("InstanceId");
         log.info("Submit create instance success!");
         ComponentSchedule.initInstanceStatus(instanceId, "", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
-        // 判断是否需要独占
+        // 判断是否需要重保
         if (createInstanceParams.isBizCritical()) {
             HashMap<String, String> labels = new HashMap<>();
             labels.put("biz-critical", "true");
             String s = ResourceManagerServiceUtils.updateLabel(instanceId, labels);
-            log.info("update labels: " + s);
+            log.info("update biz-critical: " + s);
+        }
+        // 判断是否需要独占
+        if (createInstanceParams.isMonopolized()) {
+            String s = ResourceManagerServiceUtils.updateQNMonopoly(instanceId);
+            log.info("update monopolized: " + s);
         }
         // 轮询是否建成功
         int waitingTime = 30;
@@ -115,29 +120,7 @@ public class CreateInstanceComp {
 
         CreateInstanceResult createInstanceResult = CreateInstanceResult.builder().build();
         // 创建成功，检查是否是独占
-        if (createInstanceParams.isBizCritical()) {
-            String milvusPodLabels = InfraServiceUtils.getMilvusPodLabels(envEnum.cluster, instanceId);
-            log.info("InfraServiceUtils.getMilvusPodLabels:" + milvusPodLabels);
-            JSONObject jsonObject1 = JSONObject.parseObject(milvusPodLabels);
-            JSONObject data = jsonObject1.getJSONObject("data");
-            if (data == null) {
-                ComponentSchedule.updateInstanceStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);
-                return CreateInstanceResult.builder().commonResult(CommonResult.builder()
-                                .message("实例创建成功！但未独占！！！")
-                                .result(ResultEnum.EXCEPTION.result).build())
-                        .uri(newInstanceInfo.getUri())
-                        .instanceId(newInstanceInfo.getInstanceId()).build();
-            } else {
-                if (data.containsKey("biz-critical")) {
-                    log.info("监测到实例已经独占！");
-                    createInstanceResult.setAlone(true);
-                } else {
-                    createInstanceResult.setAlone(false);
-                }
-            }
-        } else {
-            createInstanceResult.setAlone(false);
-        }
+        createInstanceResult.setBizCritical(createInstanceParams.isBizCritical());
 
         // 初始化实例
         if (createInstanceParams.getRoleUse().equalsIgnoreCase("root")) {

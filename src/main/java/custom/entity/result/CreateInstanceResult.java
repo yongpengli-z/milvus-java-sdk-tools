@@ -9,5 +9,6 @@ public class CreateInstanceResult {
     CommonResult commonResult;
     String uri;
     String instanceId;
-    boolean alone;
+    boolean bizCritical;
+    boolean monopolized;
 }
