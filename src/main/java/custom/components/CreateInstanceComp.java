@@ -119,9 +119,10 @@ public class CreateInstanceComp {
         }
 
         CreateInstanceResult createInstanceResult = CreateInstanceResult.builder().build();
-        // 创建成功，检查是否是独占
+        // 创建成功，检查是否是重保
         createInstanceResult.setBizCritical(createInstanceParams.isBizCritical());
-
+        // 创建成功，检查是否是独占
+        createInstanceResult.setMonopolized(createInstanceParams.isMonopolized());
         // 初始化实例
         if (createInstanceParams.getRoleUse().equalsIgnoreCase("root")) {
             String token = MilvusConnect.provideToken(newInstanceInfo.getUri());
