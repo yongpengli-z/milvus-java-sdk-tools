@@ -191,7 +191,7 @@ public class ResourceManagerServiceUtils {
     }
 
     public static String updateLabel(String instanceId, Map<String, String> labels) {
-        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_labels?InstanceId=" + instanceId;
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_biz_critical?InstanceId=" + instanceId;
         Gson gson = new Gson();
         String jsonParams = gson.toJson(labels);
         Map<String, String> header = new HashMap<>();
