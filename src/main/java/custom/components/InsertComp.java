@@ -175,7 +175,7 @@ public class InsertComp {
         // 查询实际导入数据量
         log.info(
                 "Total cost of inserting " + requestNum * insertParams.getBatchSize() + " entities: " + insertTotalTime + " seconds!");
-        log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / costTotal   + " ");
+        log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / insertTotalTime   + " ");
         if (exceptionFinally.equalsIgnoreCase("")) {
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         } else {
@@ -184,7 +184,7 @@ public class InsertComp {
         }
         insertResult = InsertResult.builder()
                 .commonResult(commonResult)
-                .rps(requestNum / costTotal)
+                .rps(requestNum / insertTotalTime)
                 .numEntries(requestNum * insertParams.getBatchSize())
                 .requestNum(requestNum)
                 .costTime(insertTotalTime)
