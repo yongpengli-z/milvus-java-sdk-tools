@@ -57,11 +57,11 @@ public class ResourceManagerServiceUtils {
         }
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/describe?innerCall=true&InstanceId=" + instanceId;
         Map<String, String> header = new HashMap<>();
-        String requestId="qtp-java-tools-" + MathUtil.genRandomString(10);
+        String requestId = "qtp-java-tools-" + MathUtil.genRandomString(10);
         header.put("RequestId", requestId);
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
-        log.info("head-requestId: "+requestId);
+        log.info("head-requestId: " + requestId);
         return HttpClientUtils.doGet(url, header, null);
     }
 
@@ -190,10 +190,12 @@ public class ResourceManagerServiceUtils {
         return s;
     }
 
-    public static String updateLabel(String instanceId, Map<String, String> labels) {
+    public static String updateLabel(String instanceId) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_biz_critical?InstanceId=" + instanceId;
         Gson gson = new Gson();
-        String jsonParams = gson.toJson(labels);
+        Map<String, Object> params = new HashMap<>();
+        params.put("enable", true);
+        String jsonParams = gson.toJson(params);
         Map<String, String> header = new HashMap<>();
         header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
@@ -205,11 +207,15 @@ public class ResourceManagerServiceUtils {
 
     public static String updateQNMonopoly(String instanceId) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_qn_monopoly?InstanceId=" + instanceId;
+        Gson gson = new Gson();
+        Map<String, Object> params = new HashMap<>();
+        params.put("enable", true);
+        String jsonParams = gson.toJson(params);
         Map<String, String> header = new HashMap<>();
         header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
-        String s = HttpClientUtils.doPost(url, header,null);
+        String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(jsonParams).toJSONString());
         log.info("update qn monopoly: " + s);
         return s;
     }

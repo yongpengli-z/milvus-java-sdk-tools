@@ -74,7 +74,7 @@ public class CreateInstanceComp {
         if (createInstanceParams.isBizCritical()) {
             HashMap<String, String> labels = new HashMap<>();
             labels.put("biz-critical", "true");
-            String s = ResourceManagerServiceUtils.updateLabel(instanceId, labels);
+            String s = ResourceManagerServiceUtils.updateLabel(instanceId);
             log.info("update biz-critical: " + s);
         }
         // 判断是否需要独占
