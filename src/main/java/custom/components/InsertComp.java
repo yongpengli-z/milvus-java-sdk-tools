@@ -86,7 +86,7 @@ public class InsertComp {
                              r++) {
                             // 时间和数据量谁先到都结束
                             if (insertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {
-                                log.info("线程[" + finalC + "]"+" Insert已到设定时长，停止插入...");
+                                log.info("线程[" + finalC + "]" + " Insert已到设定时长，停止插入...");
                                 insertResultItem.setInsertCnt(insertCnt);
                                 insertResultItem.setCostTime(costTime);
                                 return insertResultItem;
@@ -99,16 +99,19 @@ public class InsertComp {
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
                             InsertResp insert = null;
                             long startTime = System.currentTimeMillis();
+                            long endTime = 0;
                             try {
                                 insert = milvusClientV2.insert(InsertReq.builder()
                                         .data(jsonObjects)
                                         .collectionName(collectionName)
                                         .build());
+                                endTime = System.currentTimeMillis();
+                                costTime.add((float) ((endTime - startTime) / 1000.00));
                                 if (insert.getInsertCnt() > 0) {
                                     retryCount = 0;
                                 }
                             } catch (Exception e) {
-                                log.error("线程[" + finalC + "]"+"insert error,reason:" + e.getMessage());
+                                log.error("线程[" + finalC + "]" + "insert error,reason:" + e.getMessage());
                                 // 禁写后重试判断
                                 if ((!insertParams.isRetryAfterDeny()) || (retryCount == 10)) {
                                     insertResultItem.setInsertCnt(insertCnt);
@@ -118,13 +121,12 @@ public class InsertComp {
                                 }
                                 if (insertParams.isRetryAfterDeny()) {
                                     retryCount++;
-                                    log.info("线程[" + finalC + "]"+"第" + retryCount + "次监测到禁写，等待30秒...");
-                                    Thread.sleep(1000 * 30 );
+                                    log.info("线程[" + finalC + "]" + "第" + retryCount + "次监测到禁写，等待30秒...");
+                                    Thread.sleep(1000 * 30);
                                     continue;
                                 }
                             }
-                            long endTime = System.currentTimeMillis();
-                            costTime.add((float) ((endTime - startTime) / 1000.00));
+
                             insertCnt.add((int) insert.getInsertCnt());
                             log.info(
                                     "线程 ["
@@ -155,7 +157,7 @@ public class InsertComp {
             try {
                 InsertResultItem insertResultItem = future.get();
                 long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
-                double sum = insertResultItem.getCostTime().stream().mapToDouble(Float::floatValue).sum();
+//                double sum = insertResultItem.getCostTime().stream().mapToDouble(Float::floatValue).sum();
                 exceptionFinally = insertResultItem.getExceptionMessage() != null ? insertResultItem.getExceptionMessage() : exceptionFinally;
                 log.info("线程返回结果[InsertCnt]: " + insertResultItem.getInsertCnt());
                 log.info("线程返回结果[CostTime]: " + insertResultItem.getCostTime());
