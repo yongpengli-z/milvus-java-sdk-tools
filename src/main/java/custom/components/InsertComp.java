@@ -8,6 +8,7 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.InsertResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.DatasetUtil;
+import custom.utils.MathUtil;
 import io.milvus.v2.service.vector.request.InsertReq;
 import io.milvus.v2.service.vector.response.InsertResp;
 import lombok.Data;
@@ -76,7 +77,7 @@ public class InsertComp {
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
                         InsertResultItem insertResultItem = new InsertResultItem();
-                        List<Double> costTime = new ArrayList<>();
+                        List<Float> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
                         int retryCount = 0;
                         LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(insertParams.getRunningMinutes());
@@ -123,7 +124,7 @@ public class InsertComp {
                                 }
                             }
                             long endTime = System.currentTimeMillis();
-                            costTime.add((endTime - startTime) / 1000.00);
+                            costTime.add((float) ((endTime - startTime) / 1000.00));
                             insertCnt.add((int) insert.getInsertCnt());
                             log.info(
                                     "线程 ["
@@ -146,7 +147,7 @@ public class InsertComp {
         }
 
         long requestNum = 0;
-        double costTotal = 0.0;
+        List<Float> costTimeTotal = new ArrayList<>();
         CommonResult commonResult;
         InsertResult insertResult;
         String exceptionFinally = "";
@@ -154,12 +155,12 @@ public class InsertComp {
             try {
                 InsertResultItem insertResultItem = future.get();
                 long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
-                double sum = insertResultItem.getCostTime().stream().mapToDouble(Double::doubleValue).sum();
+                double sum = insertResultItem.getCostTime().stream().mapToDouble(Float::floatValue).sum();
                 exceptionFinally = insertResultItem.getExceptionMessage() != null ? insertResultItem.getExceptionMessage() : exceptionFinally;
                 log.info("线程返回结果[InsertCnt]: " + insertResultItem.getInsertCnt());
                 log.info("线程返回结果[CostTime]: " + insertResultItem.getCostTime());
                 requestNum += count;
-                costTotal += sum;
+                costTimeTotal.addAll(insertResultItem.getCostTime());
 
             } catch (InterruptedException | ExecutionException e) {
                 insertResult = InsertResult.builder()
@@ -176,6 +177,13 @@ public class InsertComp {
         log.info(
                 "Total cost of inserting " + requestNum * insertParams.getBatchSize() + " entities: " + insertTotalTime + " seconds!");
         log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / insertTotalTime   + " ");
+        log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
+        log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
+        log.info("TP98:" + MathUtil.calculateTP99(costTimeTotal, 0.98f));
+        log.info("TP90:" + MathUtil.calculateTP99(costTimeTotal, 0.90f));
+        log.info("TP85:" + MathUtil.calculateTP99(costTimeTotal, 0.85f));
+        log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
+        log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
         if (exceptionFinally.equalsIgnoreCase("")) {
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         } else {
@@ -188,6 +196,13 @@ public class InsertComp {
                 .numEntries(requestNum * insertParams.getBatchSize())
                 .requestNum(requestNum)
                 .costTime(insertTotalTime)
+                .avg(MathUtil.calculateAverage(costTimeTotal))
+                .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
+                .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
+                .tp90(MathUtil.calculateTP99(costTimeTotal, 0.90f))
+                .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
+                .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
+                .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .build();
         executorService.shutdown();
         return insertResult;
@@ -195,7 +210,7 @@ public class InsertComp {
 
     @Data
     public static class InsertResultItem {
-        private List<Double> costTime;
+        private List<Float> costTime;
         private List<Integer> insertCnt;
         private String exceptionMessage;
     }

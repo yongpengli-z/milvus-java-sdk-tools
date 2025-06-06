@@ -11,4 +11,11 @@ public class InsertResult {
     double costTime;
     long requestNum;
     double rps;
+    double avg;
+    double tp99;
+    double tp98;
+    double tp90;
+    double tp85;
+    double tp80;
+    double tp50;
 }
