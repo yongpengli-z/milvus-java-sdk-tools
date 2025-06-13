@@ -74,6 +74,7 @@ public class CommonFunction {
                     .build()
             );
         }
+        log.info(" collectionSchema:"+ collectionSchema.toString());
         CreateCollectionReq createCollectionReq = CreateCollectionReq.builder()
                 .collectionSchema(collectionSchema)
                 .collectionName(collectionName)
@@ -82,6 +83,7 @@ public class CommonFunction {
                 .numShards(shardNum)
                 .numPartitions(numPartitions)
                 .build();
+        log.info("createCollectionReq:"+ createCollectionReq.toString());
         milvusClientV2.createCollection(createCollectionReq);
         return collectionName;
     }
