@@ -85,10 +85,7 @@ public class BaseTest {
             token = MilvusConnect.provideToken(uri);
             log.info("查询到token:" + token);
         }
-        if (!token.equalsIgnoreCase("")) {
-            newInstanceInfo.setToken(token);
-        }
-
+        newInstanceInfo.setToken(token);
         envEnum = EnvEnum.getEnvByName(env);
 //        log.info("EnvEnum:"+envByName);
         if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
