@@ -74,7 +74,6 @@ public class CommonFunction {
                     .build()
             );
         }
-        log.info(" collectionSchema:"+ collectionSchema.toString());
         CreateCollectionReq createCollectionReq = CreateCollectionReq.builder()
                 .collectionSchema(collectionSchema)
                 .collectionName(collectionName)
@@ -83,7 +82,6 @@ public class CommonFunction {
                 .numShards(shardNum)
                 .numPartitions(numPartitions)
                 .build();
-        log.info("createCollectionReq:"+ createCollectionReq.toString());
         milvusClientV2.createCollection(createCollectionReq);
         return collectionName;
     }
@@ -106,6 +104,7 @@ public class CommonFunction {
                     .enableMatch(dataType.equals(DataType.VarChar))
                     .enableAnalyzer(dataType.equals(DataType.VarChar))
                     .isPrimaryKey(fieldParams.isPrimaryKey())
+                    .isPartitionKey(fieldParams.isPartitionKey())
                     .isNullable(fieldParams.isNullable())
                     .build();
             // 判断主键是否autoid
