@@ -81,7 +81,7 @@ public class BaseTest {
                 newInstanceInfo.setInstanceId(substring);
             }
         }
-        if (!uri.equalsIgnoreCase("") & token.equals("")) {
+        if (!uri.equalsIgnoreCase("") && token.equals("")) {
             token = MilvusConnect.provideToken(uri);
             log.info("查询到token:" + token);
         }
@@ -91,8 +91,10 @@ public class BaseTest {
 
         envEnum = EnvEnum.getEnvByName(env);
 //        log.info("EnvEnum:"+envByName);
-        envConfig = ConfigUtils.providerEnvConfig(envEnum);
-        log.info("当前环境信息:" + envConfig);
+        if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
+            envConfig = ConfigUtils.providerEnvConfig(envEnum);
+            log.info("当前环境信息:" + envConfig);
+        }
         log.info("newInstanceInfo:" + newInstanceInfo.toString());
         if (newInstanceInfo.getUri() != null) {
             log.info("创建milvusClientV2，uri:" + newInstanceInfo.getUri());

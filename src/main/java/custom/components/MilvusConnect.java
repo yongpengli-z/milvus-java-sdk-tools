@@ -38,7 +38,7 @@ public class MilvusConnect {
             log.info("pwdString:" + pwdString);
             token = "root:" + JSON.parseObject(pwdString).getString("Data");
         } else {
-            token = "root:Milvus";
+            token = "";
             isCloud = false;
         }
         return token;
@@ -46,7 +46,7 @@ public class MilvusConnect {
 
     public static MilvusClientV2 createMilvusClientV2(String uri, String token) {
         ConnectConfig build = ConnectConfig.builder().uri(uri).build();
-        if (!token.equalsIgnoreCase("123456")) {
+        if (!token.equalsIgnoreCase("123456") && !token.equalsIgnoreCase("")) {
             build.setToken(token);
         }
         MilvusClientV2 milvusClientV2 = new MilvusClientV2(build);
@@ -58,11 +58,11 @@ public class MilvusConnect {
 
     public static MilvusServiceClient createMilvusClientV1(String uri, String token) {
         MilvusServiceClient milvusServiceClient = null;
-        if (!token.equalsIgnoreCase("123456")) {
+        if (!token.equalsIgnoreCase("123456") && !token.equalsIgnoreCase("")) {
             milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
                     .withUri(uri).withToken(token).build());
         }
-        if (token.equalsIgnoreCase("123456")) {
+        if (token.equalsIgnoreCase("123456") || token.equalsIgnoreCase("")) {
             milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
                     .withUri(uri).build());
         }
