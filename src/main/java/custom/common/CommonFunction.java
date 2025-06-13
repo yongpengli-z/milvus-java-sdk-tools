@@ -101,6 +101,7 @@ public class CommonFunction {
             CreateCollectionReq.FieldSchema fieldSchema = CreateCollectionReq.FieldSchema.builder()
                     .dataType(dataType)
                     .name(fieldParams.getFieldName() == null ? dataType + "_" + i : fieldParams.getFieldName())
+                    .enableMatch(dataType.equals(DataType.VarChar))
                     .isPrimaryKey(fieldParams.isPrimaryKey())
                     .isNullable(fieldParams.isNullable())
                     .build();

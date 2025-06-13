@@ -15,4 +15,6 @@ public class FieldParams {
     boolean isPartitionKey;
     boolean isNullable;
     boolean isAutoId;
+    boolean enableMatch;
+
 }
