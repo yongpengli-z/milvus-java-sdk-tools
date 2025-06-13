@@ -102,6 +102,7 @@ public class CommonFunction {
                     .dataType(dataType)
                     .name(fieldParams.getFieldName() == null ? dataType + "_" + i : fieldParams.getFieldName())
                     .enableMatch(dataType.equals(DataType.VarChar))
+                    .enableAnalyzer(dataType.equals(DataType.VarChar))
                     .isPrimaryKey(fieldParams.isPrimaryKey())
                     .isNullable(fieldParams.isNullable())
                     .build();
