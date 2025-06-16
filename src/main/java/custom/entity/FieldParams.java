@@ -16,5 +16,6 @@ public class FieldParams {
     boolean isNullable;
     boolean isAutoId;
     boolean enableMatch;
+    boolean enableAnalyzer;
 
 }
