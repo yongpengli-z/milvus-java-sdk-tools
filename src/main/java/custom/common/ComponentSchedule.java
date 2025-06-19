@@ -249,6 +249,12 @@ public class ComponentSchedule {
             jsonObject.put("Delete_" + index, deleteResult);
             reportStepResult(DeleteParams.class.getSimpleName() + "_" + index, JSON.toJSONString(deleteResult));
         }
+        if (object instanceof UseDatabaseParams) {
+            log.info("*********** < UseDatabase > ***********");
+            UseDatabaseResult useDatabaseResult = UseDatabaseComp.useDatabase((UseDatabaseParams) object);
+            jsonObject.put("UseDatabase_" + index, useDatabaseResult);
+            reportStepResult(UseDatabaseParams.class.getSimpleName() + "_" + index, JSON.toJSONString(useDatabaseResult));
+        }
 
         return jsonObject;
     }
