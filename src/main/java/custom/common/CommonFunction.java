@@ -3,7 +3,6 @@ package custom.common;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import custom.components.MilvusConnect;
 import custom.entity.*;
 import custom.utils.DatasetUtil;
 import custom.utils.GenerateUtil;
@@ -17,7 +16,6 @@ import io.milvus.v2.common.IndexBuildState;
 import io.milvus.v2.common.IndexParam;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
-import io.milvus.v2.service.collection.request.HasCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
@@ -111,7 +109,7 @@ public class CommonFunction {
             if (fieldParams.isPrimaryKey()) {
                 fieldSchema.setAutoID(fieldParams.isAutoId());
             }
-            if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
+            if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                 fieldSchema.setDimension(fieldParams.getDim());
             }
             if (dataType == DataType.String || dataType == DataType.VarChar) {
@@ -148,7 +146,7 @@ public class CommonFunction {
                 String name = fieldSchema.getName();
                 DataType dataType = fieldSchema.getDataType();
                 // 给向量自动建索引
-                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
+                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     IndexParam indexParam = IndexParam.builder()
                             .fieldName(name)
                             .indexName("idx_" + name)
@@ -250,6 +248,7 @@ public class CommonFunction {
             case 101:
             case 102:
             case 103:
+            case 105:
                 return IndexParam.MetricType.L2;
             case 100:
                 return IndexParam.MetricType.HAMMING;
@@ -278,6 +277,8 @@ public class CommonFunction {
                 return IndexParam.IndexType.BIN_IVF_FLAT;
             case 104:
                 return IndexParam.IndexType.SPARSE_WAND;
+            case 105:
+                return IndexParam.IndexType.HNSW;
             default:
                 return IndexParam.IndexType.TRIE;
         }
@@ -295,7 +296,7 @@ public class CommonFunction {
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
-        List<String> tempOutputFieldNames=new ArrayList<>();
+        List<String> tempOutputFieldNames = new ArrayList<>();
         for (CreateCollectionReq.Function function : functionList) {
             List<String> outputFieldNames1 = function.getOutputFieldNames();
             tempOutputFieldNames.addAll(outputFieldNames1);
@@ -332,12 +333,12 @@ public class CommonFunction {
                     continue;
                 }
                 // 如果使用function自动生成数据，则继续
-                if (tempOutputFieldNames.contains(name)){
+                if (tempOutputFieldNames.contains(name)) {
                     continue;
                 }
                 JsonObject jsonObject = new JsonObject();
                 Gson gson = new Gson();
-                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector) {
+                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     if (dataset.equalsIgnoreCase("random")) {
                         jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0);
                     }
@@ -444,6 +445,9 @@ public class CommonFunction {
         }
         if (dataType == DataType.BinaryVector) {
             row.add(fieldName, gson.toJsonTree(generateBinaryVector(dimOrLength).array()));
+        }
+        if (dataType == DataType.Int8Vector) {
+            row.add(fieldName, gson.toJsonTree(generateInt8Vector(dimOrLength).array()));
         }
         if (dataType == DataType.Float16Vector) {
             row.add(fieldName, gson.toJsonTree(generateFloat16Vector(dimOrLength).array()));
@@ -611,6 +615,10 @@ public class CommonFunction {
             List<ByteBuffer> byteBuffers = generateBinaryVectors(dim, nq);
             byteBuffers.forEach(x -> data.add(new BinaryVec(x)));
         }
+        if (vectorType.equals(DataType.Int8Vector)) {
+            List<ByteBuffer> byteBuffers = generateInt8Vectors(dim, nq);
+            byteBuffers.forEach(x -> data.add(new Int8Vec(x)));
+        }
         if (vectorType.equals(DataType.Float16Vector)) {
             List<ByteBuffer> byteBuffers = generateFloat16Vectors(dim, nq);
             byteBuffers.forEach(x -> data.add(new Float16Vec(x)));
@@ -640,6 +648,41 @@ public class CommonFunction {
             vectors.add(generateBinaryVector(dim));
         }
         return vectors;
+    }
+
+    /**
+     * 创建指定条数Int8Vector
+     *
+     * @param dim   Int8Vector 维度
+     * @param count Int8Vector向量的数据条数
+     * @return List<ByteBuffer>
+     */
+    private static List<ByteBuffer> generateInt8Vectors(int dim, long count) {
+        Random RANDOM = new Random();
+        List<ByteBuffer> vectors = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            ByteBuffer vector = ByteBuffer.allocate(dim);
+            for (int k = 0; k < dim; ++k) {
+                vector.put((byte) (RANDOM.nextInt(256) - 128));
+            }
+            vectors.add(vector);
+        }
+        return vectors;
+    }
+
+    /**
+     * 创建一条Int8Vector
+     *
+     * @param dim 维度
+     * @return ByteBuffer
+     */
+    private static ByteBuffer generateInt8Vector(int dim) {
+        Random RANDOM = new Random();
+        ByteBuffer vector = ByteBuffer.allocate(dim);
+        for (int k = 0; k < dim; ++k) {
+            vector.put((byte) (RANDOM.nextInt(256) - 128));
+        }
+        return vector;
     }
 
     /**
@@ -768,13 +811,12 @@ public class CommonFunction {
     }
 
     /**
-     *
-     * @param collection  collection
-     * @param randomNum 从collection捞取的向量数
+     * @param collection     collection
+     * @param randomNum      从collection捞取的向量数
      * @param inputFieldName function BM25的输入文本
      * @return List<BaseVector>
      */
-    public static List<BaseVector> providerSearchFunctionData(String collection,int randomNum,String inputFieldName) {
+    public static List<BaseVector> providerSearchFunctionData(String collection, int randomNum, String inputFieldName) {
         // 获取主键信息
         PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
@@ -791,8 +833,8 @@ public class CommonFunction {
                     .outputFields(Lists.newArrayList(inputFieldName))
                     .limit(randomNum)
                     .build());
-            log.info("query result:"+query.getQueryResults().size());
-        } catch (Exception e){
+            log.info("query result:" + query.getQueryResults().size());
+        } catch (Exception e) {
             log.error("query 异常: " + e.getMessage());
         }
         for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
@@ -804,22 +846,22 @@ public class CommonFunction {
 
     public static void main(String[] args) {
 
-        String uri1="https://in01-b1dc77ab75a8fdd.aws-us-west-2.vectordb-uat3.zillizcloud.com:19530";
-        String uri2="https://in01-c560fd4b0c11191.aws-us-west-2.vectordb-uat3.zillizcloud.com:19532";
-        String uri3="https://in01-8b4bf16d21680d1.aws-us-west-2.vectordb-uat3.zillizcloud.com:19534";
-        String collection1="Collection_TAbaiqfFxG";
-        String collection2="Collection_zabLqnEHjG";
-        String collection3="Collection_BOnJHTNzYP";
+        String uri1 = "https://in01-b1dc77ab75a8fdd.aws-us-west-2.vectordb-uat3.zillizcloud.com:19530";
+        String uri2 = "https://in01-c560fd4b0c11191.aws-us-west-2.vectordb-uat3.zillizcloud.com:19532";
+        String uri3 = "https://in01-8b4bf16d21680d1.aws-us-west-2.vectordb-uat3.zillizcloud.com:19534";
+        String collection1 = "Collection_TAbaiqfFxG";
+        String collection2 = "Collection_zabLqnEHjG";
+        String collection3 = "Collection_BOnJHTNzYP";
         MilvusClientV2 milvusClientV22222 = new MilvusClientV2(
                 ConnectConfig.builder().uri(uri2).secure(true)
                         .token("29e5f94f1244eae2bd1cb6fd627d299d2f7e17bf4390d53a904eb30d954ab9ce03dfd18ad4ff9d66cea05714bb6b142a7722e434").build());
-        String collectionName=collection2;
+        String collectionName = collection2;
         DescribeCollectionResp describeCollectionResp = milvusClientV22222.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
-        List<String> tempOutputFieldNames=new ArrayList<>();
+        List<String> tempOutputFieldNames = new ArrayList<>();
         for (CreateCollectionReq.Function function : functionList) {
             List<String> outputFieldNames1 = function.getOutputFieldNames();
             tempOutputFieldNames.addAll(outputFieldNames1);
@@ -838,7 +880,7 @@ public class CommonFunction {
         SearchResp suijishu = milvusClientV22222.search(SearchReq.builder()
                 .collectionName(collectionName)
                 .data(Collections.singletonList(new EmbeddedText(queryResults.get(0).getEntity().get("VarChar_14").toString())))
-                        .topK(1)
+                .topK(1)
                 .annsField("SparseFloatVector_22").build());
         System.out.println(suijishu.getSearchResults());
 
