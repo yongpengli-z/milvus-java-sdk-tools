@@ -255,7 +255,12 @@ public class ComponentSchedule {
             jsonObject.put("UseDatabase_" + index, useDatabaseResult);
             reportStepResult(UseDatabaseParams.class.getSimpleName() + "_" + index, JSON.toJSONString(useDatabaseResult));
         }
-
+        if (object instanceof AlterInstanceIndexClusterParams) {
+            log.info("*********** < Alter Instance Index Cluster > ***********");
+            AlterInstanceIndexClusterResult alterInstanceIndexClusterResult = AlterInstanceIndexClusterComp.alterIndexCluster((AlterInstanceIndexClusterParams) object);
+            jsonObject.put("AlterInstanceIndexCluster_" + index, alterInstanceIndexClusterResult);
+            reportStepResult(AlterInstanceIndexClusterParams.class.getSimpleName() + "_" + index, JSON.toJSONString(alterInstanceIndexClusterResult));
+        }
         return jsonObject;
     }
 

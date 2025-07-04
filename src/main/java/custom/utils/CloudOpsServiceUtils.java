@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import custom.entity.AlterInstanceIndexClusterParams;
 import custom.pojo.IndexPoolInfo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static custom.BaseTest.envConfig;
+import static custom.BaseTest.newInstanceInfo;
 
 @Slf4j
 public class CloudOpsServiceUtils {
@@ -151,6 +153,20 @@ public class CloudOpsServiceUtils {
         header.put("sa_token", envConfig.getCloudOpsServiceToken());
         String s = HttpClientUtils.doPut(url, header, JSONObject.toJSONString(indexPoolInfo));
         log.info("updateIndexPool:" + s);
+        return s;
+    }
+
+    public static String alterIndexCluster(AlterInstanceIndexClusterParams alterInstanceIndexClusterParams){
+        String instanceId = alterInstanceIndexClusterParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : alterInstanceIndexClusterParams.getInstanceId();
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/index/cluster/instance/alterCluster";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, Object> body = new HashMap<>();
+        body.put("instanceId",instanceId);
+        body.put("newClusterId",alterInstanceIndexClusterParams.getIndexClusterId());
+        body.put("regionId",envConfig.getRegionId());
+        String s = HttpClientUtils.doPost(url, header, body);
+        log.info("alter instance index cluster:"+s);
         return s;
     }
 
