@@ -156,17 +156,18 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
-    public static String alterIndexCluster(AlterInstanceIndexClusterParams alterInstanceIndexClusterParams){
+    public static String alterIndexCluster(AlterInstanceIndexClusterParams alterInstanceIndexClusterParams) {
         String instanceId = alterInstanceIndexClusterParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : alterInstanceIndexClusterParams.getInstanceId();
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/index/cluster/instance/alterCluster";
         Map<String, String> header = new HashMap<>();
         header.put("sa_token", envConfig.getCloudOpsServiceToken());
         Map<String, Object> body = new HashMap<>();
-        body.put("instanceId",instanceId);
-        body.put("newClusterId",alterInstanceIndexClusterParams.getIndexClusterId());
-        body.put("regionId",envConfig.getRegionId());
+        body.put("instanceId", instanceId);
+        body.put("newClusterId", alterInstanceIndexClusterParams.getIndexClusterId());
+        body.put("regionId", envConfig.getRegionId());
+        log.info("alterIndexCluster req:" + body);
         String s = HttpClientUtils.doPost(url, header, body);
-        log.info("alter instance index cluster:"+s);
+        log.info("alter instance index cluster:" + s);
         return s;
     }
 
