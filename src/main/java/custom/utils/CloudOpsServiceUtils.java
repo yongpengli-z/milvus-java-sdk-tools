@@ -165,8 +165,8 @@ public class CloudOpsServiceUtils {
         body.put("instanceId", instanceId);
         body.put("newClusterId", alterInstanceIndexClusterParams.getIndexClusterId());
         body.put("regionId", envConfig.getRegionId());
-        log.info("alterIndexCluster req:" + body);
-        String s = HttpClientUtils.doPost(url, header, body);
+        log.info("alterIndexCluster req:" + JSON.toJSONString(body));
+        String s = HttpClientUtils.doPostJson(url, header, JSON.toJSONString(body));
         log.info("alter instance index cluster:" + s);
         return s;
     }
