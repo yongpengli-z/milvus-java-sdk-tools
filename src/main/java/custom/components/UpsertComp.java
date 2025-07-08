@@ -68,7 +68,8 @@ public class UpsertComp {
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(upsertParams.getNumConcurrency());
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
-        // 根据startId，剔除之前已经使用过的file
+
+/*        // 根据startId，剔除之前已经使用过的file
         long tempFileSizeTotal = 0;
         int fileIndex = 0;
         for (int i = 0; i < fileSizeList.size(); i++) {
@@ -82,7 +83,7 @@ public class UpsertComp {
         fileNames.subList(0, removeIndex).clear();
         fileSizeList.subList(0, removeIndex).clear();
         log.info("根据startId，将使用的文件名称:" + fileNames);
-        log.info("根据startId，将使用的文件长度:" + fileSizeList);
+        log.info("根据startId，将使用的文件长度:" + fileSizeList);*/
 
 
         // upsert data with multiple threads
