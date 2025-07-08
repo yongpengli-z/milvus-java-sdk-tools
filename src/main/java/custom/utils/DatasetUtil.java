@@ -15,6 +15,7 @@ import java.util.*;
 public class DatasetUtil {
 
     public static List<String> providerFileNames(DatasetEnum datasetEnum) {
+        log.info("正在遍历检查数据集...");
         List<String> fileNameList = new ArrayList<>();
         File file = new File(datasetEnum.path);
         // 检查目录是否存在且是一个目录
@@ -40,6 +41,7 @@ public class DatasetUtil {
     }
 
     public static List<Long> providerFileSize(List<String> filesNames, DatasetEnum datasetEnum) {
+        log.info("正在统计数据集各个文件大小...");
         List<Long> fileSizeList = new ArrayList<>();
         int i = 0;
         while (i < filesNames.size()) {
