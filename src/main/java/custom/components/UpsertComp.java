@@ -68,6 +68,22 @@ public class UpsertComp {
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(upsertParams.getNumConcurrency());
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
+        // 根据startId，剔除之前已经使用过的file
+        long tempFileSizeTotal = 0;
+        int fileIndex = 0;
+        for (int i = 0; i < fileSizeList.size(); i++) {
+            tempFileSizeTotal = +fileSizeList.get(0);
+            if (tempFileSizeTotal > upsertParams.getStartId()) {
+                fileIndex = i;
+                break;
+            }
+        }
+        int removeIndex = Math.min(fileIndex+1, fileSizeList.size());
+        fileNames.subList(0, removeIndex).clear();
+        fileSizeList.subList(0, removeIndex).clear();
+        log.info("根据startId，将使用的文件名称:" + fileNames);
+        log.info("根据startId，将使用的文件长度:" + fileSizeList);
+
 
         // upsert data with multiple threads
         for (int c = 0; c < upsertParams.getNumConcurrency(); c++) {
@@ -190,5 +206,16 @@ public class UpsertComp {
         private List<Double> costTime;
         private List<Integer> upsertCnt;
         private String exceptionMessage;
+    }
+
+    // 删除 index 之前的所有元素（保留 index 及之后的数据）
+    public static <T> void removeBeforeIndex(List<T> list, int index) {
+        if (index <= 0 || list.isEmpty()) return;
+
+        // 计算实际删除数量（避免越界）
+        int removeCount = Math.min(index, list.size());
+
+        // 使用 subList 批量删除（O(1) 时间复杂度）
+        list.subList(0, removeCount).clear();
     }
 }
