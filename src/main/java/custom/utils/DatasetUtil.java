@@ -88,6 +88,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             i++;
         }*/
         int fileIndex = findIndex(index, fileSizeList);
+        log.info("使用文件："+fileNames.get(fileIndex));
         String npyDataPath = datasetEnum.path + fileNames.get(fileIndex);
         File file = new File(npyDataPath);
         NpyArray<?> npyArray = Npy.read(file);
