@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.openlca.npy.Npy;
 import org.openlca.npy.arrays.NpyArray;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 @Slf4j
@@ -40,19 +37,35 @@ public class DatasetUtil {
         return fileNameList;
     }
 
-    public static List<Long> providerFileSize(List<String> filesNames, DatasetEnum datasetEnum) {
-        log.info("正在统计数据集各个文件大小...");
-        List<Long> fileSizeList = new ArrayList<>();
-        int i = 0;
-        while (i < filesNames.size()) {
-            String npyDataPath = datasetEnum.path + filesNames.get(i);
-            File file = new File(npyDataPath);
-            NpyArray<?> npyArray = Npy.read(file);
-            fileSizeList.add((long) npyArray.shape()[0]);
-            i++;
+//    public static List<Long> providerFileSize(List<String> filesNames, DatasetEnum datasetEnum) {
+//        log.info("正在统计数据集各个文件大小...");
+//        List<Long> fileSizeList = new ArrayList<>();
+//        int i = 0;
+//        while (i < filesNames.size()) {
+//            String npyDataPath = datasetEnum.path + filesNames.get(i);
+//            File file = new File(npyDataPath);
+//            NpyArray<?> npyArray = Npy.read(file);
+//            fileSizeList.add((long) npyArray.shape()[0]);
+//            i++;
+//        }
+//        return fileSizeList;
+//    }
+public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum datasetEnum) {
+    log.info("正在统计数据集各个文件大小...");
+    List<Long> fileSizeList = new ArrayList<>(fileNames.size());
+    for (String fileName : fileNames) {
+        String path = datasetEnum.path + fileName;
+        try (FileInputStream fis = new FileInputStream(path)) {
+            // 仅读取文件头获取维度信息
+            long rows = NpyLoader.readFirstDimensionSize(fis);
+            fileSizeList.add(rows);
+        } catch (IOException e) {
+            log.error("读取文件维度失败: {}", path, e);
+            fileSizeList.add(0L); // 错误处理
         }
-        return fileSizeList;
     }
+    return fileSizeList;
+}
 
     public static List<List<Float>> providerFloatVectorByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum, List<Long> fileSizeList) {
         List<List<Float>> floatList = new ArrayList<>();
