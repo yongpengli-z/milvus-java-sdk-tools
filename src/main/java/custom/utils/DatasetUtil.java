@@ -103,6 +103,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
         // 截取需要的一段
         float[] subArray= Arrays.copyOfRange(floatData, (int) ((index - tempIndex ) * npyArray.shape()[1]), (int) ((index - tempIndex + count) * npyArray.shape()[1]));
         floatList=splitArray(subArray,npyArray.shape()[1]);
+        log.info("读取文件，可以使用的数据长度："+floatList.size());
 //        floatList = floats.subList((int) (index - tempIndex), (int) (index - tempIndex + count));
         return floatList;
     }
