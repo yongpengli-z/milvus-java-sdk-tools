@@ -6,6 +6,7 @@ import lombok.Data;
 public class InsertParams {
     private String collectionName;
     private String partitionName;
+    private long startId;
     private long numEntries;
     private long batchSize;
     private int numConcurrency;
