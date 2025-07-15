@@ -52,6 +52,8 @@ public class CloudServiceUtils {
         Map<String,String> header=new HashMap<>();
         header.put("authorization","Bearer "+cloudServiceUserInfo.getToken());
         header.put("orgid",cloudServiceUserInfo.getOrgIdList().get(0));
+        log.info("authorization token: "+"Bearer "+cloudServiceUserInfo.getToken());
+        log.info("使用的 orgid: "+cloudServiceUserInfo.getOrgIdList().get(0));
         String s = HttpClientUtils.doGet(url, header,null);
         log.info("[cloudService][listInstance]:"+s);
         List<InstanceInfo> instanceInfoList=new ArrayList<>();
