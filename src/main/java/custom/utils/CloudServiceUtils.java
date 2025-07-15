@@ -20,7 +20,7 @@ import static custom.BaseTest.*;
 public class CloudServiceUtils {
     public static CloudServiceUserInfo queryUserIdOfCloudService(String userName, String password){
         // 先登录vdc，获取token
-        String loginUrl=envConfig.getCloudServiceHost()+"/account/inner/v1/account/login";
+        String loginUrl=envConfig.getCloudServiceHost().replace("cloud-service","cloud-account")+"/account/inner/v1/account/login";
         if (userName==null||userName.equalsIgnoreCase("")){
             userName="vdc_default_test@linshiyouxiang.net";
             password = "LyXp9%Hnxhl";
