@@ -98,8 +98,11 @@ public class CloudServiceUtils {
         List<String> orgIdList=new ArrayList<>();
         JSONArray jsonArray = JSONObject.parseObject(s).getJSONObject("Data").getJSONArray("orgs");
         for (int i = 0; i < jsonArray.size(); i++) {
-            String orgId = jsonArray.getJSONObject(i).getString("orgId");
-            orgIdList.add(orgId);
+            JSONObject jsonObjectItem = jsonArray.getJSONObject(i);
+            if(jsonObjectItem.getString("type").equalsIgnoreCase("SAAS") && !jsonObjectItem.getBoolean("frozen")) {
+                String orgId = jsonObjectItem.getString("orgId");
+                orgIdList.add(orgId);
+            }
         }
         return orgIdList;
     }
