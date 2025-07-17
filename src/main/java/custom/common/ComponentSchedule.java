@@ -104,7 +104,7 @@ public class ComponentSchedule {
         }
         if (object instanceof SearchParams) {
             log.info("*********** < search collection > ***********");
-            SearchResultA searchResultA = SearchCompTest.searchCollection((SearchParams) object);
+            SearchResultA searchResultA = SearchComp.searchCollection((SearchParams) object);
             jsonObject.put("Search_" + index, searchResultA);
             reportStepResult(SearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(searchResultA));
         }
