@@ -77,8 +77,8 @@ public class SearchCompTest {
         // 1. 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
 //        if (searchParams.getTargetQps() > 0) {
-            rateLimiter = RateLimiter.create(100);
-            log.info("启用QPS控制: {} 请求/秒", 100);
+            rateLimiter = RateLimiter.create(500);
+            log.info("启用QPS控制: {} 请求/秒", 500);
 //        }
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
