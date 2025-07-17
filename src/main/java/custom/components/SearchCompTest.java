@@ -1,5 +1,6 @@
 package custom.components;
 
+import com.google.common.util.concurrent.RateLimiter;
 import custom.common.CommonFunction;
 import custom.entity.SearchParams;
 import custom.entity.result.CommonResult;
@@ -7,6 +8,9 @@ import custom.entity.result.ResultEnum;
 import custom.entity.result.SearchResultA;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.service.collection.request.CreateCollectionReq;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.SearchResp;
@@ -21,30 +25,64 @@ import static custom.BaseTest.*;
 
 @Slf4j
 public class SearchCompTest {
+    private static RateLimiter rateLimiter = null;
+
+    public SearchCompTest(RateLimiter rateLimiter) {
+        this.rateLimiter = RateLimiter.create(100);
+    }
+
     public static SearchResultA searchCollection(SearchParams searchParams) {
         // 先search collection
         String collection = (searchParams.getCollectionName() == null ||
-                searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : searchParams.getCollectionName();
-
-        // 随机向量，从数据库里筛选--暂定1000条
-        log.info("从collection里捞取向量: " + 1000);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000,searchParams.getAnnsField());
-        log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+                searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
+        // 判定是不是sparse向量，并且是由Function BM25生成
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
+        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
+        // 获取function列表，查找不需要构建数据的 outputFieldNames
+        List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
+        boolean isUseFunction = false;
+        String inputFieldName = "";
+        for (CreateCollectionReq.Function function : functionList) {
+            if (function.getOutputFieldNames().contains(searchParams.getAnnsField())) {
+                int i = function.getOutputFieldNames().indexOf(searchParams.getAnnsField());
+                inputFieldName = function.getInputFieldNames().get(i);
+                log.info("inputFieldName:"+inputFieldName);
+                isUseFunction = true;
+                break;
+            }
+        }
+        List<BaseVector> searchBaseVectors;
+        if (isUseFunction) {
+            log.info("从collection里捞取input filed num: " + 1000);
+            searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+            log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
+        } else {
+            // 随机向量，从数据库里筛选--暂定1000条
+            log.info("从collection里捞取向量: " + 1000);
+            searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField());
+            log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+        }
         // 如果不随机，则随机一个
         List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
+        // 处理output
+        List<String> outputs = searchParams.getOutputs();
+        if (outputs.size() == 1 && outputs.get(0).equalsIgnoreCase("")) {
+            outputs = new ArrayList<>();
+        }
 
         float searchTotalTime;
         long startTimeTotal = System.currentTimeMillis();
         Map<String, Object> searchLevel = new HashMap<>();
-        searchLevel.put("level", searchParams.getSearchLevel());
+        searchLevel.put("level", searchParams.getSearchLevel() == 0 ? 1 : searchParams.getSearchLevel());
         if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
             searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
+            List<String> finalOutputs = outputs;
             Callable<SearchResult> callable =
                     () -> {
                         List<BaseVector> randomBaseVectors = baseVectors;
@@ -54,43 +92,35 @@ public class SearchCompTest {
                         List<Float> costTime = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         int printLog = 1;
-                        long itemRequestNum=0;
                         while (LocalDateTime.now().isBefore(endTime)) {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
                             }
-                            try {
-                                long startItemTime = System.currentTimeMillis();
-                                SearchResp search = milvusClientV2.search(SearchReq.builder()
-                                        .topK(searchParams.getTopK())
-                                        .outputFields(searchParams.getOutputs())
-                                        .consistencyLevel(ConsistencyLevel.BOUNDED)
-                                        .collectionName(collection)
-                                        .searchParams(searchLevel)
-                                        .filter(searchParams.getFilter())
-                                        .data(randomBaseVectors)
-                                        .build());
-                                long endItemTime = System.currentTimeMillis();
-                                costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
-                                returnNum.add(search.getSearchResults().size());
-                            } catch (Exception e) {
-                                if(printLog >= logInterval){
-                                    log.warn("线程[ " + finalC + "] Search 异常" + e.getMessage());
-                                    printLog = 0;
-                                }
-                            }
+                            long startItemTime = System.currentTimeMillis();
+                            SearchResp search = milvusClientV2.search(SearchReq.builder()
+                                    .topK(searchParams.getTopK())
+                                    .outputFields(finalOutputs)
+                                    .consistencyLevel(ConsistencyLevel.BOUNDED)
+                                    .collectionName(collection)
+                                    .searchParams(searchLevel)
+                                    .filter(searchParams.getFilter())
+                                    .data(randomBaseVectors)
+                                    .annsField(searchParams.getAnnsField())
+                                    .build());
+                            long endItemTime = System.currentTimeMillis();
+                            costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
+                            returnNum.add(search.getSearchResults().get(0).size());
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 printLog = 0;
                             }
                             printLog++;
-                            itemRequestNum++;
                         }
                         searchResult.setResultNum(returnNum);
                         searchResult.setCostTime(costTime);
-                        searchResult.setItemRequestNum(itemRequestNum);
                         return searchResult;
                     };
+            rateLimiter.acquire(); // 获取令牌（阻塞直到可用）
             Future<SearchResult> future = executorService.submit(callable);
             list.add(future);
         }
@@ -102,8 +132,8 @@ public class SearchCompTest {
         for (Future<SearchResult> future : list) {
             try {
                 SearchResult searchResult = future.get();
-                successNum += searchResult.getResultNum().size();
-                requestNum+= searchResult.getItemRequestNum();
+                requestNum += searchResult.getResultNum().size();
+                successNum += searchResult.getResultNum().stream().filter(x -> x == searchParams.getTopK()).count();
                 costTimeTotal.addAll(searchResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
@@ -118,8 +148,8 @@ public class SearchCompTest {
         long endTimeTotal = System.currentTimeMillis();
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         log.info(
-                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.00 * successNum / requestNum) + "%");
-        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + successNum / searchTotalTime);
+                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "%");
+        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
         log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
         log.info("TP98:" + MathUtil.calculateTP99(costTimeTotal, 0.98f));
@@ -129,7 +159,7 @@ public class SearchCompTest {
         log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         searchResultA = SearchResultA.builder()
-                .rps(successNum / searchTotalTime)
+                .rps(requestNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)
@@ -151,6 +181,5 @@ public class SearchCompTest {
     public static class SearchResult {
         private List<Float> costTime;
         private List<Integer> resultNum;
-        private long itemRequestNum;
     }
 }
