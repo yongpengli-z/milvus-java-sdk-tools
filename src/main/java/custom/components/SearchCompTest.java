@@ -1,6 +1,5 @@
 package custom.components;
 
-import com.google.common.util.concurrent.RateLimiter;
 import custom.common.CommonFunction;
 import custom.entity.SearchParams;
 import custom.entity.result.CommonResult;
@@ -74,16 +73,9 @@ public class SearchCompTest {
         if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
             searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }
-        // 1. 创建RateLimiter实例（根据配置的QPS）
-        RateLimiter rateLimiter = null;
-//        if (searchParams.getTargetQps() > 0) {
-            rateLimiter = RateLimiter.create(500);
-            log.info("启用QPS控制: {} 请求/秒", 500);
-//        }
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
             List<String> finalOutputs = outputs;
-            RateLimiter finalRateLimiter = rateLimiter;
             Callable<SearchResult> callable =
                     () -> {
                         List<BaseVector> randomBaseVectors = baseVectors;
@@ -93,14 +85,7 @@ public class SearchCompTest {
                         List<Float> costTime = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
                         int printLog = 1;
-                        // QPS控制计数器
-                        int requestCount = 0;
-                        long lastLogTime = System.currentTimeMillis();
                         while (LocalDateTime.now().isBefore(endTime)) {
-                            // 3. QPS控制点（如果需要）
-                            if (finalRateLimiter != null) {
-                                finalRateLimiter.acquire(); // 阻塞直到获得令牌
-                            }
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
                             }
@@ -123,15 +108,6 @@ public class SearchCompTest {
                                 printLog = 0;
                             }
                             printLog++;
-                            // 4. QPS监控日志
-                            requestCount++;
-                            long currentTime = System.currentTimeMillis();
-                            if (currentTime - lastLogTime > 5000) { // 每5秒打印一次QPS
-                                double actualQps = requestCount / ((currentTime - lastLogTime) / 1000.0);
-                                log.info("线程[{}] 当前QPS: {:.2f}", finalC, actualQps);
-                                requestCount = 0;
-                                lastLogTime = currentTime;
-                            }
                         }
                         searchResult.setResultNum(returnNum);
                         searchResult.setCostTime(costTime);

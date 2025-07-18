@@ -17,5 +17,6 @@ public class SearchParams {
     private int searchLevel;
     private String indexAlgo;
     private String annsField;
+    private double targetQps;
 
 }
