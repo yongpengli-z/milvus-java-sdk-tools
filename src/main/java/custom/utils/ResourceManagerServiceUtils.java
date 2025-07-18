@@ -47,6 +47,7 @@ public class ResourceManagerServiceUtils {
         header.put("OrgId",  cloudServiceUserInfo.getOrgIdList().get(0));
         header.put("SourceApp", "Cloud-Meta");
         String resp = HttpClientUtils.doPostJson(url, header, body);
+        log.info("[head cloudServiceUserInfo]: " + cloudServiceUserInfo);
         log.info("[rm-service][create instance]: " + resp);
         return resp;
     }
