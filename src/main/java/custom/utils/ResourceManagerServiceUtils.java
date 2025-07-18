@@ -44,7 +44,7 @@ public class ResourceManagerServiceUtils {
                 "}";
         Map<String, String> header = new HashMap<>();
         header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
-        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("OrgId",  cloudServiceUserInfo.getOrgIdList().get(0));
         header.put("SourceApp", "Cloud-Meta");
         String resp = HttpClientUtils.doPostJson(url, header, body);
         log.info("[rm-service][create instance]: " + resp);
