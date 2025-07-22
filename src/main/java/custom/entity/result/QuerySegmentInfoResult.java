@@ -13,7 +13,7 @@ public class QuerySegmentInfoResult {
 
     @Data
     @Builder
-    public static class SegmentInfoList{
+    public static class SegmentInfoList {
         long collectionId;
         List<Long> segmentIDList;
         List<Long> partitionIDList;
@@ -22,6 +22,6 @@ public class QuerySegmentInfoResult {
         List<String> levelList;
         List<Boolean> isSortedList;
         List<String> indexNameList;
-        List<Long> nodeIdList;
+        List<List<Long>> nodeIdList;
     }
 }

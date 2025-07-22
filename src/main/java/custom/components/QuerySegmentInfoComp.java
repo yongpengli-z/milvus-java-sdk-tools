@@ -38,7 +38,7 @@ public class QuerySegmentInfoComp {
             List<String> levelList = new ArrayList<>();
             List<Boolean> isSortedList = new ArrayList<>();
             List<String> indexNameList = new ArrayList<>();
-            List<Long> nodeIdList = new ArrayList<>();
+            List<List<Long>> nodeIdList = new ArrayList<>();
             for (QuerySegmentInfo item : querySegmentInfoList) {
                 collectionId = item.getCollectionID();
                 segmentIDList.add(item.getSegmentID());
@@ -48,7 +48,7 @@ public class QuerySegmentInfoComp {
                 levelList.add(item.getLevel().toString());
                 isSortedList.add(item.getIsSorted());
                 indexNameList.add(item.getIndexName());
-                nodeIdList.add(item.getNodeIds(0));
+                nodeIdList.add(item.getNodeIdsList());
             }
             QuerySegmentInfoResult.SegmentInfoList segmentInfoList = QuerySegmentInfoResult.SegmentInfoList.builder()
                     .collectionId(collectionId)
