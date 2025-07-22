@@ -10,7 +10,7 @@ import java.util.List;
 public class PersistentSegmentInfoResult {
     CommonResult commonResult;
     SegmentInfoList segmentInfoList;
-
+    int segmentCount;
     @Data
     @Builder
     public static class SegmentInfoList{

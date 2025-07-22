@@ -10,6 +10,7 @@ import java.util.List;
 public class QuerySegmentInfoResult {
     CommonResult commonResult;
     SegmentInfoList segmentInfoList;
+    int segmentCount;
 
     @Data
     @Builder

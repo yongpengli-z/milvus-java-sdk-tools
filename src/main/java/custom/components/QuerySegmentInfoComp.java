@@ -65,7 +65,8 @@ public class QuerySegmentInfoComp {
             commonResult.setResult(ResultEnum.SUCCESS.result);
             return QuerySegmentInfoResult.builder()
                     .commonResult(commonResult)
-                    .segmentInfoList(segmentInfoList).build();
+                    .segmentInfoList(segmentInfoList)
+                    .segmentCount(segmentInfoList.getSegmentIDList().size()).build();
         } catch (ParamException e) {
             commonResult.setResult(ResultEnum.EXCEPTION.result);
             commonResult.setMessage(e.getMessage());

@@ -55,7 +55,8 @@ public class PersistentSegmentInfoComp {
                     .build();
             commonResult.setResult(ResultEnum.SUCCESS.result);
             return PersistentSegmentInfoResult.builder().segmentInfoList(segmentInfoList)
-                    .commonResult(commonResult).build();
+                    .commonResult(commonResult)
+                    .segmentCount(segmentInfoList.getSegmentIDList().size()).build();
         } catch (Exception e) {
             commonResult.setResult(ResultEnum.EXCEPTION.result);
             commonResult.setMessage(e.getMessage());
