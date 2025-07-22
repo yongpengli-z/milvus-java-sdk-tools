@@ -30,21 +30,37 @@ public class QuerySegmentInfoComp {
             R<GetQuerySegmentInfoResponse> querySegmentInfo
                     = milvusClientV1.getQuerySegmentInfo(GetQuerySegmentInfoParam.newBuilder().withCollectionName(collection).build());
             List<QuerySegmentInfo> querySegmentInfoList = querySegmentInfo.getData().getInfosList();
-            List<QuerySegmentInfoResult.segmentInfo> segmentInfoList=new ArrayList<>();
+            long collectionId = 0;
+            List<Long> segmentIDList = new ArrayList<>();
+            List<Long> partitionIDList = new ArrayList<>();
+            List<Long> numRowsList = new ArrayList<>();
+            List<String> stateList = new ArrayList<>();
+            List<String> levelList = new ArrayList<>();
+            List<Boolean> isSortedList = new ArrayList<>();
+            List<String> indexNameList = new ArrayList<>();
+            List<Long> nodeIdList = new ArrayList<>();
             for (QuerySegmentInfo item : querySegmentInfoList) {
-                segmentInfoList.add(QuerySegmentInfoResult.segmentInfo.builder()
-                                .segmentID(item.getSegmentID())
-                                .collectionID(item.getCollectionID())
-                                .partitionID(item.getPartitionID())
-                                .numRows(item.getNumRows())
-                                .state(item.getState().toString())
-                                .level(item.getLevel().toString())
-                                .isSorted(item.getIsSorted())
-                                .indexName(item.getIndexName())
-                                .nodeIds(item.getNodeIds(0))
-                        .build());
+                collectionId = item.getCollectionID();
+                segmentIDList.add(item.getSegmentID());
+                partitionIDList.add(item.getPartitionID());
+                numRowsList.add(item.getNumRows());
+                stateList.add(item.getState().toString());
+                levelList.add(item.getLevel().toString());
+                isSortedList.add(item.getIsSorted());
+                indexNameList.add(item.getIndexName());
+                nodeIdList.add(item.getNodeIds(0));
             }
-
+            QuerySegmentInfoResult.SegmentInfoList segmentInfoList = QuerySegmentInfoResult.SegmentInfoList.builder()
+                    .collectionId(collectionId)
+                    .segmentIDList(segmentIDList)
+                    .partitionIDList(partitionIDList)
+                    .numRowsList(numRowsList)
+                    .stateList(stateList)
+                    .levelList(levelList)
+                    .isSortedList(isSortedList)
+                    .indexNameList(indexNameList)
+                    .nodeIdList(nodeIdList)
+                    .build();
 
             commonResult.setResult(ResultEnum.SUCCESS.result);
             return QuerySegmentInfoResult.builder()

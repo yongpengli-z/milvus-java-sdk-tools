@@ -28,20 +28,31 @@ public class PersistentSegmentInfoComp {
             R<GetPersistentSegmentInfoResponse> persistentSegmentInfo = milvusClientV1.getPersistentSegmentInfo(GetPersistentSegmentInfoParam.newBuilder()
                     .withCollectionName(collection).build());
             List<PersistentSegmentInfo> persistentSegmentInfoList = persistentSegmentInfo.getData().getInfosList();
-            List<PersistentSegmentInfoResult.segmentInfo> segmentInfoList = new ArrayList<>();
+            long collectionId = 0;
+            List<Long> segmentIDList = new ArrayList<>();
+            List<Long> partitionIDList = new ArrayList<>();
+            List<Long> numRowsList = new ArrayList<>();
+            List<String> stateList = new ArrayList<>();
+            List<String> levelList = new ArrayList<>();
+            List<Boolean> isSortedList = new ArrayList<>();
             for (PersistentSegmentInfo persistentSegmentItem : persistentSegmentInfoList) {
-                segmentInfoList.add(
-                        PersistentSegmentInfoResult.segmentInfo.builder()
-                                .segmentID(persistentSegmentItem.getSegmentID())
-                                .collectionID(persistentSegmentItem.getCollectionID())
-                                .partitionID(persistentSegmentItem.getPartitionID())
-                                .numRows(persistentSegmentItem.getNumRows())
-                                .state(persistentSegmentItem.getState().toString())
-                                .level(persistentSegmentItem.getLevel().toString())
-                                .isSorted(persistentSegmentItem.getIsSorted())
-                                .build()
-                );
+                collectionId = persistentSegmentItem.getCollectionID();
+                segmentIDList.add(persistentSegmentItem.getSegmentID());
+                partitionIDList.add(persistentSegmentItem.getPartitionID());
+                numRowsList.add(persistentSegmentItem.getNumRows());
+                stateList.add(persistentSegmentItem.getState().toString());
+                levelList.add(persistentSegmentItem.getLevel().toString());
+                isSortedList.add(persistentSegmentItem.getIsSorted());
             }
+            PersistentSegmentInfoResult.SegmentInfoList segmentInfoList = PersistentSegmentInfoResult.SegmentInfoList.builder()
+                    .collectionId(collectionId)
+                    .segmentIDList(segmentIDList)
+                    .partitionIDList(partitionIDList)
+                    .numRowsList(numRowsList)
+                    .stateList(stateList)
+                    .levelList(levelList)
+                    .isSortedList(isSortedList)
+                    .build();
             commonResult.setResult(ResultEnum.SUCCESS.result);
             return PersistentSegmentInfoResult.builder().segmentInfoList(segmentInfoList)
                     .commonResult(commonResult).build();
