@@ -146,7 +146,7 @@ public class CommonFunction {
                 String name = fieldSchema.getName();
                 DataType dataType = fieldSchema.getDataType();
                 // 给向量自动建索引
-                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
+                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector || dataType == DataType.SparseFloatVector) {
                     IndexParam indexParam = IndexParam.builder()
                             .fieldName(name)
                             .indexName("idx_" + name)
@@ -167,6 +167,10 @@ public class CommonFunction {
                     params.put("json_path", indexParamItem.getJsonPath());
                 } else {
                     params = CommonFunction.provideExtraParam(indexParamItem.getIndextype());
+                }
+                // 增加build——level
+                if (indexParamItem.getBuildLevel() !=null && !indexParamItem.getBuildLevel().equalsIgnoreCase("")){
+                    params.put("build_level",indexParamItem.getBuildLevel());
                 }
                 IndexParam indexParam = IndexParam.builder()
                         .fieldName(indexParamItem.getFieldName())

@@ -10,4 +10,5 @@ public class IndexParams {
     private IndexParam.MetricType metricType;
     private String jsonCastType;
     private String jsonPath;
+    private String buildLevel;
 }
