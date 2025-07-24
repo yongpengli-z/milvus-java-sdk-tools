@@ -138,10 +138,10 @@ public class CommonFunction {
     public static void createCommonIndex(String collectionName, List<IndexParams> indexParams) {
         log.info("indexParams.size():" + indexParams.size());
         List<IndexParam> indexParamList = new ArrayList<>();
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName).build());
+        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
+        List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         if (indexParams.size() == 0) {
-            DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName).build());
-            CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
-            List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
             for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
                 String name = fieldSchema.getName();
                 DataType dataType = fieldSchema.getDataType();
@@ -169,8 +169,11 @@ public class CommonFunction {
                     params = CommonFunction.provideExtraParam(indexParamItem.getIndextype());
                 }
                 // 增加build——level
-                if (indexParamItem.getBuildLevel() !=null && !indexParamItem.getBuildLevel().equalsIgnoreCase("")){
-                    params.put("build_level",indexParamItem.getBuildLevel());
+                CreateCollectionReq.FieldSchema fieldSchema = fieldSchemaList.stream().filter(x -> x.getName().equalsIgnoreCase(indexParamItem.getFieldName())).findFirst().orElse(null);
+                if (fieldSchema != null && (fieldSchema.getDataType() == DataType.BFloat16Vector || fieldSchema.getDataType() == DataType.Float16Vector || fieldSchema.getDataType() == DataType.FloatVector)) {
+                    if (indexParamItem.getBuildLevel() != null && !indexParamItem.getBuildLevel().equalsIgnoreCase("")) {
+                        params.put("build_level", indexParamItem.getBuildLevel());
+                    }
                 }
                 IndexParam indexParam = IndexParam.builder()
                         .fieldName(indexParamItem.getFieldName())
