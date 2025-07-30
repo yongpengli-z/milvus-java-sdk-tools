@@ -128,7 +128,7 @@ public class SearchComp {
                             long currentTime = System.currentTimeMillis();
                             if (currentTime - lastLogTime > 5000) { // 每5秒打印一次QPS
                                 double actualQps = requestCount / ((currentTime - lastLogTime) / 1000.0);
-                                log.info("线程[{}] 当前QPS: {:.2f}", finalC, actualQps);
+                                log.info("线程[{}] 当前QPS: {}", finalC, actualQps);
                                 requestCount = 0;
                                 lastLogTime = currentTime;
                             }
