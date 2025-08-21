@@ -85,7 +85,7 @@ public class CreateInstanceComp {
             log.info("update monopolized: " + s);
         }
         //判断是否需要修改streamingNode配置--2.6 image 才行
-        if (latestImageByKeywords.contains("2.6")) {
+        if (latestImageByKeywords.contains("2.6") && createInstanceParams.getStreamingNodeParams() !=null ) {
             // 判断是否需要修改replica
             if (createInstanceParams.getStreamingNodeParams().getReplicaNum() > 0) {
                 String s = ResourceManagerServiceUtils.updateReplica(instanceId, createInstanceParams.getStreamingNodeParams().getReplicaNum(),
