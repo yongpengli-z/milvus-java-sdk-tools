@@ -1,6 +1,7 @@
 package custom.components;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import custom.common.ComponentSchedule;
 import custom.common.InstanceStatusEnum;
 import custom.entity.CreateInstanceParams;
@@ -15,6 +16,7 @@ import custom.utils.ResourceManagerServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -82,6 +84,25 @@ public class CreateInstanceComp {
             String s = ResourceManagerServiceUtils.updateQNMonopoly(instanceId);
             log.info("update monopolized: " + s);
         }
+        //判断是否需要修改streamingNode配置--2.6 image 才行
+        if (latestImageByKeywords.contains("2.6")) {
+            // 判断是否需要修改replica
+            if (createInstanceParams.getStreamingNodeParams().getReplicaNum() > 0) {
+                String s = ResourceManagerServiceUtils.updateReplica(instanceId, createInstanceParams.getStreamingNodeParams().getReplicaNum(),
+                        Lists.newArrayList("streamingNode"));
+                log.info("update replica: " + s);
+            }
+            // 判断是否需要修改limits
+            if (createInstanceParams.getStreamingNodeParams().getCpu() !=null && !createInstanceParams.getStreamingNodeParams().getCpu().equalsIgnoreCase("")){
+                String streamingNode = ResourceManagerServiceUtils.updateLimits(instanceId,
+                        createInstanceParams.getStreamingNodeParams().getCpu(),
+                        createInstanceParams.getStreamingNodeParams().getMemory(),
+                        createInstanceParams.getStreamingNodeParams().getDisk(),
+                        Lists.newArrayList("streamingNode"));
+                log.info("update limit: " + streamingNode);
+            }
+        }
+
         // 轮询是否建成功
         int waitingTime = 30;
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(waitingTime);

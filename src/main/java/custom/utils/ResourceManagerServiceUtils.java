@@ -45,7 +45,7 @@ public class ResourceManagerServiceUtils {
         Map<String, String> header = new HashMap<>();
         header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
 //        header.put("OrgId",  cloudServiceUserInfo.getOrgIdList().get(0));
-        header.put("UserId",cloudServiceUserInfo.getUserId());
+        header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         String resp = HttpClientUtils.doPostJson(url, header, body);
         log.info("[head cloudServiceUserInfo]: " + cloudServiceUserInfo);
@@ -220,6 +220,43 @@ public class ResourceManagerServiceUtils {
         String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(jsonParams).toJSONString());
         log.info("update qn monopoly: " + s);
         return s;
+    }
+
+    public static String updateReplica(String instanceId, int replicaNum, List<String> nodeCategories) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_replicas?InstanceId=" + instanceId;
+        Gson gson = new Gson();
+        Map<String, Object> params = new HashMap<>();
+        params.put("replicas", replicaNum);
+        params.put("nodeCategories", nodeCategories);
+        String jsonParams = gson.toJson(params);
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(jsonParams).toJSONString());
+        log.info("update " + nodeCategories + " replica: " + s);
+        return s;
+    }
+
+    public static String updateLimits(String instanceId, String cpu, String memory, String disk, List<String> nodeCategories) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_limits?InstanceId=" + instanceId;
+        Gson gson = new Gson();
+        Map<String, Object> params = new HashMap<>();
+        params.put("nodeCategories", nodeCategories);
+        Map<String, Object> resourceListParam = new HashMap<>();
+        resourceListParam.put("cpu", cpu);
+        resourceListParam.put("memory", memory);
+        resourceListParam.put("ephemeral-storage", disk);
+        params.put("resourceList", resourceListParam);
+        String jsonParams = gson.toJson(params);
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(jsonParams).toJSONString());
+        log.info("update " + nodeCategories + " limits: " + s);
+        return s;
+
     }
 }
 

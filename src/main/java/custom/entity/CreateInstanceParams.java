@@ -19,4 +19,6 @@ public class CreateInstanceParams {
     boolean bizCritical;
     // dev ops 提供独占
     boolean monopolized;
+    // dev ops 提供修改sn的配置
+    StreamingNodeParams streamingNodeParams;
 }
