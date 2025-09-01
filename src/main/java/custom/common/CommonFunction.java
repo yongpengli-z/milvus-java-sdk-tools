@@ -409,11 +409,11 @@ public class CommonFunction {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
                     if (countIndex >11000){
-                        int i = advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, startId);
-                        log.info("sequence:count-{},countIndex-{},startId-{}",totalNum,countIndex,startId);
+                        int i = advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, 0);
+                        log.info("sequence:count-{},countIndex-{},startId-{}",totalNum,countIndex,0);
                         log.info("sequence:{}",i);
                     }
-                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum, countIndex,  startId)));
+                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum, countIndex,  0)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
