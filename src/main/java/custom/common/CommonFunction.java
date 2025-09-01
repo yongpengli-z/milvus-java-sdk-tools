@@ -408,7 +408,12 @@ public class CommonFunction {
         if (dataType == DataType.Int64) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(), (int) count, (int) countIndex, (int) startId)));
+                    if (countIndex >9100){
+                        int i = advanceSequence(generalDataRole.getRandomRangeParamsList(), count, countIndex, startId);
+                        log.info("sequence:count-{},countIndex-{},startId-{}",count,countIndex,startId);
+                        log.info("sequence:{}",i);
+                    }
+                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  count, countIndex,  startId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
@@ -438,7 +443,7 @@ public class CommonFunction {
         if (dataType == DataType.VarChar) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), (int) count, (int) countIndex, (int) startId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  count,  countIndex,  startId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
@@ -449,7 +454,7 @@ public class CommonFunction {
         if (dataType == DataType.String) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), (int) count, (int) countIndex, (int) startId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  count,  countIndex,  startId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
