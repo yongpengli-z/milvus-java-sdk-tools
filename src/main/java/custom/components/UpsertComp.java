@@ -111,7 +111,7 @@ public class UpsertComp {
                             }
 
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, upsertParams.getBatchSize(),
-                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList,upsertParams.getGeneralDataRoleList());
+                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList,upsertParams.getGeneralDataRoleList(),upsertParams.getNumEntries());
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             UpsertResp upsertResp = null;
                             long startTime = System.currentTimeMillis();

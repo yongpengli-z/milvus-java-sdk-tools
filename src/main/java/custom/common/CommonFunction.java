@@ -300,7 +300,7 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList,long totalNum) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -349,7 +349,7 @@ public class CommonFunction {
                 Gson gson = new Gson();
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     if (dataset.equalsIgnoreCase("random")) {
-                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, count, startId);
+                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, startId);
                     }
                     if (dataset.equalsIgnoreCase("gist")) {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
@@ -364,25 +364,25 @@ public class CommonFunction {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 100, i, null, 0, generalDataRoleList, count, startId);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 100, i, null, 0, generalDataRoleList, totalNum, startId);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0, generalDataRoleList, count, startId);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0, generalDataRoleList, totalNum, startId);
                 } else if (dataType == DataType.Array) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength, generalDataRoleList, count, startId);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength, generalDataRoleList, totalNum, startId);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0, generalDataRoleList, count, startId);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0, generalDataRoleList, totalNum, startId);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
             // 判断是否有动态列
             if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
-                JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0, generalDataRoleList, count, startId);
+                JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0, generalDataRoleList, totalNum, startId);
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
             jsonList.add(row);
@@ -399,7 +399,7 @@ public class CommonFunction {
      * @param countIndex  索引i，避免多次创建时数据内容一样
      * @return JsonObject
      */
-    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType, int lengthForCapacity, List<GeneralDataRole> generalDataRoleList, long count, long startId) {
+    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType, int lengthForCapacity, List<GeneralDataRole> generalDataRoleList, long totalNum, long startId) {
         JsonObject row = new JsonObject();
         Gson gson = new Gson();
         Random random = new Random();
@@ -408,12 +408,12 @@ public class CommonFunction {
         if (dataType == DataType.Int64) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    if (countIndex >9100){
-                        int i = advanceSequence(generalDataRole.getRandomRangeParamsList(), count, countIndex, startId);
-                        log.info("sequence:count-{},countIndex-{},startId-{}",count,countIndex,startId);
-                        log.info("sequence:{}",i);
-                    }
-                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  count, countIndex,  startId)));
+//                    if (countIndex >9100){
+//                        int i = advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, startId);
+//                        log.info("sequence:count-{},countIndex-{},startId-{}",totalNum,countIndex,startId);
+//                        log.info("sequence:{}",i);
+//                    }
+                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum, countIndex,  startId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
@@ -443,7 +443,7 @@ public class CommonFunction {
         if (dataType == DataType.VarChar) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  count,  countIndex,  startId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  startId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
@@ -454,7 +454,7 @@ public class CommonFunction {
         if (dataType == DataType.String) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  count,  countIndex,  startId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  startId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }

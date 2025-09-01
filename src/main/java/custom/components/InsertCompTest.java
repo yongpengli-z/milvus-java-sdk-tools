@@ -93,9 +93,9 @@ public class InsertCompTest {
                             }
                             long genDataStartTime = System.currentTimeMillis();
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(),
-                                    (r * insertParams.getBatchSize()+insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList,insertParams.getGeneralDataRoleList());
+                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries());
                             long genDataEndTime = System.currentTimeMillis();
-                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize()+ insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
+                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
                             InsertResp insert = null;
                             long startTime = System.currentTimeMillis();
@@ -178,7 +178,7 @@ public class InsertCompTest {
         // 查询实际导入数据量
         log.info(
                 "Total cost of inserting " + requestNum * insertParams.getBatchSize() + " entities: " + insertTotalTime + " seconds!");
-        log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / insertTotalTime   + " ");
+        log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / insertTotalTime + " ");
         log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
         log.info("TP98:" + MathUtil.calculateTP99(costTimeTotal, 0.98f));
