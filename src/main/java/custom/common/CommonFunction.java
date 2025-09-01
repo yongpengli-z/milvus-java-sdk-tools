@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -443,7 +444,6 @@ public class CommonFunction {
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
-                ;
             }
         }
         if (dataType == DataType.String) {
@@ -905,11 +905,11 @@ public class CommonFunction {
      * @param startId               起始ID
      * @return integer
      */
-    public static int advanceSequence(List<RandomRangeParams> randomRangeParamsList, int totalNum, int countIndex, int startId) {
+    public static int advanceSequence(List<RandomRangeParams> randomRangeParamsList, long totalNum, long countIndex, long startId) {
         randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
         int i = 0;
         int compareNum = 0;
-        while (i < randomRangeParamsList.size() - 1) {
+        while (i < (randomRangeParamsList.size() - 1)) {
             compareNum = compareNum + (int) (randomRangeParamsList.get(i).getRate() * totalNum);
             if (compareNum > (countIndex - startId)) {
                 break;
@@ -920,7 +920,7 @@ public class CommonFunction {
         for (int j = 0; j < i; j++) {
             countNum = countNum + (int) (randomRangeParamsList.get(j).getRate() * totalNum);
         }
-        int countNum2 = (countIndex - startId) - countNum;
+        long countNum2 = (countIndex - startId) - countNum;
         double averageCount = (totalNum * randomRangeParamsList.get(i).getRate()) / (randomRangeParamsList.get(i).getEnd() - randomRangeParamsList.get(i).getStart() + 1);
         return (int) ((countNum2 / averageCount) + randomRangeParamsList.get(i).getStart());
     }
@@ -932,21 +932,28 @@ public class CommonFunction {
         r1.setRate(0.1);
         RandomRangeParams r2 = new RandomRangeParams();
         r2.setStart(1);
-        r2.setEnd(1);
+        r2.setEnd(16);
         r2.setRate(0.1);
         RandomRangeParams r3 = new RandomRangeParams();
-        r3.setStart(3);
-        r3.setEnd(10);
+        r3.setStart(17);
+        r3.setEnd(128000);
         r3.setRate(0.8);
         List<RandomRangeParams> randomRangeParamsList = new ArrayList<>();
         randomRangeParamsList.add(r1);
         randomRangeParamsList.add(r3);
         randomRangeParamsList.add(r2);
         List<Integer> intList = new ArrayList<>();
-        for (int i = 500; i < 1500; i++) {
-            intList.add(advanceSequence(randomRangeParamsList, 1000, i, 500));
+        for (int i = 0; i < 1000000; i++) {
+            intList.add(advanceSequence(randomRangeParamsList, 1000000, i, 0));
         }
-        System.out.println(intList);
+        List<Integer> collect0 = intList.stream().filter(x -> x == 0).collect(Collectors.toList());
+        List<Integer> collect1 = intList.stream().filter(x -> x == 1).collect(Collectors.toList());
+        List<Integer> collect2 = intList.stream().filter(x -> x == 2).collect(Collectors.toList());
+        List<Integer> collect10 = intList.stream().filter(x -> x == 10).collect(Collectors.toList());
+        System.out.println(collect0.size());
+        System.out.println(collect1.size());
+        System.out.println(collect2.size());
+        System.out.println(collect10.size());
     }
 
 
