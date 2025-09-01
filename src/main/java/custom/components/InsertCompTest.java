@@ -93,7 +93,7 @@ public class InsertCompTest {
                             }
                             long genDataStartTime = System.currentTimeMillis();
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(),
-                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries());
+                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(),insertParams.getStartId());
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
