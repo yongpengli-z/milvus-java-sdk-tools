@@ -1,6 +1,9 @@
 package custom.entity;
 
+import custom.pojo.GeneralDataRole;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class UpsertParams {
@@ -13,4 +16,5 @@ public class UpsertParams {
     private String dataset;
     private long runningMinutes;
     private boolean retryAfterDeny;
+    private List<GeneralDataRole> generalDataRoleList;
 }

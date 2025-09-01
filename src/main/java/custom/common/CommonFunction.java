@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.entity.*;
+import custom.pojo.GeneralDataRole;
+import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
 import custom.utils.GenerateUtil;
 import custom.utils.JsonObjectUtil;
@@ -21,15 +23,14 @@ import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
 import io.milvus.v2.service.vector.request.QueryReq;
-import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.*;
 import io.milvus.v2.service.vector.response.QueryResp;
-import io.milvus.v2.service.vector.response.SearchResp;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static custom.BaseTest.*;
 
@@ -298,7 +299,7 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -347,7 +348,7 @@ public class CommonFunction {
                 Gson gson = new Gson();
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     if (dataset.equalsIgnoreCase("random")) {
-                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0);
+                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, count, startId);
                     }
                     if (dataset.equalsIgnoreCase("gist")) {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
@@ -362,25 +363,25 @@ public class CommonFunction {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 100, i, null, 0);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 100, i, null, 0, generalDataRoleList, count, startId);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0, generalDataRoleList, count, startId);
                 } else if (dataType == DataType.Array) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength, generalDataRoleList, count, startId);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0, generalDataRoleList, count, startId);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
             // 判断是否有动态列
             if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
-                JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0);
+                JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0, generalDataRoleList, count, startId);
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
             jsonList.add(row);
@@ -397,12 +398,22 @@ public class CommonFunction {
      * @param countIndex  索引i，避免多次创建时数据内容一样
      * @return JsonObject
      */
-    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType, int lengthForCapacity) {
+    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType, int lengthForCapacity, List<GeneralDataRole> generalDataRoleList, long count, long startId) {
         JsonObject row = new JsonObject();
         Gson gson = new Gson();
         Random random = new Random();
+        // 判断是否有设定生成数据的规则
+        GeneralDataRole generalDataRole = generalDataRoleList.stream().filter(x -> x.getFieldName().equalsIgnoreCase(fieldName)).findFirst().orElse(null);
         if (dataType == DataType.Int64) {
-            row.add(fieldName, gson.toJsonTree(countIndex));
+            if (generalDataRole != null) {
+                if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
+                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(), (int) count, (int) countIndex, (int) startId)));
+                } else {
+                    row.add(fieldName, gson.toJsonTree(advanceRandom(generalDataRole.getRandomRangeParamsList())));
+                }
+            } else {
+                row.add(fieldName, gson.toJsonTree(countIndex));
+            }
         }
         if (dataType == DataType.Int32) {
             row.add(fieldName, gson.toJsonTree((int) countIndex % 32767));
@@ -424,21 +435,27 @@ public class CommonFunction {
             row.add(fieldName, gson.toJsonTree(true));
         }
         if (dataType == DataType.VarChar) {
-//            int i = random.nextInt(dimOrLength /2);
-            String s;
-            if (countIndex % 9 == 0) {
-                s = "abcdefg";
-            } else if (countIndex % 8 == 0) {
-                s = "samevalue";
+            if (generalDataRole != null) {
+                if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), (int) count, (int) countIndex, (int) startId)));
+                } else {
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
+                }
             } else {
-                s = MathUtil.genRandomString(dimOrLength);
+                row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
+                ;
             }
-            row.add(fieldName, gson.toJsonTree(s));
         }
         if (dataType == DataType.String) {
-//            int i = random.nextInt(dimOrLength );
-            String s = MathUtil.genRandomString(dimOrLength);
-            row.add(fieldName, gson.toJsonTree(s));
+            if (generalDataRole != null) {
+                if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), (int) count, (int) countIndex, (int) startId)));
+                } else {
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
+                }
+            } else {
+                row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
+            }
         }
         if (dataType == DataType.Float) {
             row.add(fieldName, gson.toJsonTree((float) countIndex * 0.1f));
@@ -851,47 +868,86 @@ public class CommonFunction {
         return baseVectorDataset;
     }
 
-    public static void main(String[] args) {
 
-        String uri1 = "https://in01-b1dc77ab75a8fdd.aws-us-west-2.vectordb-uat3.zillizcloud.com:19530";
-        String uri2 = "https://in01-c560fd4b0c11191.aws-us-west-2.vectordb-uat3.zillizcloud.com:19532";
-        String uri3 = "https://in01-8b4bf16d21680d1.aws-us-west-2.vectordb-uat3.zillizcloud.com:19534";
-        String collection1 = "Collection_TAbaiqfFxG";
-        String collection2 = "Collection_zabLqnEHjG";
-        String collection3 = "Collection_BOnJHTNzYP";
-        MilvusClientV2 milvusClientV22222 = new MilvusClientV2(
-                ConnectConfig.builder().uri(uri2).secure(true)
-                        .token("29e5f94f1244eae2bd1cb6fd627d299d2f7e17bf4390d53a904eb30d954ab9ce03dfd18ad4ff9d66cea05714bb6b142a7722e434").build());
-        String collectionName = collection2;
-        DescribeCollectionResp describeCollectionResp = milvusClientV22222.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
-        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
-        List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
-        // 获取function列表，查找不需要构建数据的 outputFieldNames
-        List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
-        List<String> tempOutputFieldNames = new ArrayList<>();
-        for (CreateCollectionReq.Function function : functionList) {
-            List<String> outputFieldNames1 = function.getOutputFieldNames();
-            tempOutputFieldNames.addAll(outputFieldNames1);
-        }
-        System.out.println(tempOutputFieldNames);
-
-        // query
-        QueryResp queryResp = milvusClientV22222.query(QueryReq.builder().collectionName(collectionName)
-                .filter("Int64_0 > 160000 ")
-                .outputFields(Lists.newArrayList("VarChar_14"))
-                .limit(10)
-                .build());
-        List<QueryResp.QueryResult> queryResults = queryResp.getQueryResults();
-        System.out.println(queryResults.get(0).getEntity().get("VarChar_14"));
-        // search
-        SearchResp suijishu = milvusClientV22222.search(SearchReq.builder()
-                .collectionName(collectionName)
-                .data(Collections.singletonList(new EmbeddedText(queryResults.get(0).getEntity().get("VarChar_14").toString())))
-                .topK(1)
-                .annsField("SparseFloatVector_22").build());
-        System.out.println(suijishu.getSearchResults());
-
-
+    // 按照定义规则生成对应的varchar数据
+    public String generalVarcharByRoles(String prefix) {
+        return null;
     }
+
+    /**
+     * 按照随机的规则随机数
+     *
+     * @param randomRangeParamsList randomRangeParamsList
+     * @return integer
+     */
+    public static int advanceRandom(List<RandomRangeParams> randomRangeParamsList) {
+        randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
+        int bucket = ThreadLocalRandom.current().nextInt(100); // 0..99
+        int i = 0;
+        double rate = 0.00;
+        while (i < randomRangeParamsList.size() - 1) {
+            rate = rate + randomRangeParamsList.get(i).getRate();
+            int compareNum = (int) (rate * 100);
+            if (compareNum >= bucket) {
+                break;
+            }
+            i++;
+        }
+        return ThreadLocalRandom.current().nextInt(randomRangeParamsList.get(i).getEnd() + 1 - randomRangeParamsList.get(i).getStart()) + randomRangeParamsList.get(i).getStart();
+    }
+
+    /**
+     * 按照随机的规则，按顺序生成
+     *
+     * @param randomRangeParamsList randomRangeParamsList
+     * @param totalNum              总数据量
+     * @param countIndex            生成的数据的下标
+     * @param startId               起始ID
+     * @return integer
+     */
+    public static int advanceSequence(List<RandomRangeParams> randomRangeParamsList, int totalNum, int countIndex, int startId) {
+        randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
+        int i = 0;
+        int compareNum = 0;
+        while (i < randomRangeParamsList.size() - 1) {
+            compareNum = compareNum + (int) (randomRangeParamsList.get(i).getRate() * totalNum);
+            if (compareNum > (countIndex - startId)) {
+                break;
+            }
+            i++;
+        }
+        int countNum = 0;
+        for (int j = 0; j < i; j++) {
+            countNum = countNum + (int) (randomRangeParamsList.get(j).getRate() * totalNum);
+        }
+        int countNum2 = (countIndex - startId) - countNum;
+        double averageCount = (totalNum * randomRangeParamsList.get(i).getRate()) / (randomRangeParamsList.get(i).getEnd() - randomRangeParamsList.get(i).getStart() + 1);
+        return (int) ((countNum2 / averageCount) + randomRangeParamsList.get(i).getStart());
+    }
+
+    public static void main(String[] args) {
+        RandomRangeParams r1 = new RandomRangeParams();
+        r1.setStart(0);
+        r1.setEnd(0);
+        r1.setRate(0.1);
+        RandomRangeParams r2 = new RandomRangeParams();
+        r2.setStart(1);
+        r2.setEnd(1);
+        r2.setRate(0.1);
+        RandomRangeParams r3 = new RandomRangeParams();
+        r3.setStart(3);
+        r3.setEnd(10);
+        r3.setRate(0.8);
+        List<RandomRangeParams> randomRangeParamsList = new ArrayList<>();
+        randomRangeParamsList.add(r1);
+        randomRangeParamsList.add(r3);
+        randomRangeParamsList.add(r2);
+        List<Integer> intList = new ArrayList<>();
+        for (int i = 500; i < 1500; i++) {
+            intList.add(advanceSequence(randomRangeParamsList, 1000, i, 500));
+        }
+        System.out.println(intList);
+    }
+
 
 }
