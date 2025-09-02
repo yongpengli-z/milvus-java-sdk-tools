@@ -118,7 +118,8 @@ public class SearchComp {
                             if (searchParams.getGeneralFilterRoleList().size() > 0) {
                                 for (GeneralDataRole generalFilterRole : searchParams.getGeneralFilterRoleList()) {
                                     int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
-                                    filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                                    log.info("search random:{}", replaceFilterParams);
+                                    filter.replace("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                                 }
                                 log.info("search filter:{}", filter);
                             }
