@@ -300,7 +300,7 @@ public class CommonFunction {
      * @param count          生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList,long totalNum,long realStartId) {
+    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId) {
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -404,11 +404,14 @@ public class CommonFunction {
         Gson gson = new Gson();
         Random random = new Random();
         // 判断是否有设定生成数据的规则
-        GeneralDataRole generalDataRole = generalDataRoleList.stream().filter(x -> x.getFieldName().equalsIgnoreCase(fieldName)).findFirst().orElse(null);
+        GeneralDataRole generalDataRole = null;
+        if (generalDataRoleList != null) {
+            generalDataRole = generalDataRoleList.stream().filter(x -> x.getFieldName().equalsIgnoreCase(fieldName)).findFirst().orElse(null);
+        }
         if (dataType == DataType.Int64) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum, countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, realStartId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
@@ -438,7 +441,7 @@ public class CommonFunction {
         if (dataType == DataType.VarChar) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, realStartId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
@@ -449,7 +452,7 @@ public class CommonFunction {
         if (dataType == DataType.String) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, realStartId)));
                 } else {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
@@ -924,10 +927,144 @@ public class CommonFunction {
     }
 
     public static void main(String[] args) {
-        String a="asdad$abcbbb$abcyyyy";
-        String b=a.replace("$"+"abc","111");
-        System.out.println(a);
-        System.out.println(b);
+        List<String> etcdList = Lists.newArrayList(
+                "in01-0e0cf375e78473e",
+                "in01-0e2385fb177d7c6",
+                "in01-10961a54a0bd11e",
+                "in01-122d67f76eb9708",
+                "in01-1276a38403b20d3",
+                "in01-151cbbaa6f75458",
+                "in01-16d150c7844fbaa",
+                "in01-172e79548a19e62",
+                "in01-1756232651cee62",
+                "in01-23a043ad3df0fea",
+                "in01-27b6792ab4ba1a8",
+                "in01-2d1c4a67a6e02a7",
+                "in01-2dcbef3e6f36faa",
+                "in01-2dce25419ed7939",
+                "in01-2fc6541a8c625bf",
+                "in01-3879e5d34be8d3e",
+                "in01-388982ee6b2f554",
+                "in01-393ae9356d56101",
+                "in01-3a0252afa8fef5e",
+                "in01-3a84a14fa8486d4",
+                "in01-43db762ab50f049",
+                "in01-43fcf860437c70a",
+                "in01-47b3de73731bbcb",
+                "in01-47b4198a8963f77",
+                "in01-507dcb5f30741ea",
+                "in01-540017f2c1d2d4b",
+                "in01-55191795f8465e3",
+                "in01-567e18623917b6e",
+                "in01-58fe7bacab80459",
+                "in01-5a5080c99b7eff0",
+                "in01-5d6cad6a090d59f",
+                "in01-5de45e10da777ba",
+                "in01-65b832cfbf0f434",
+                "in01-673cbaeab5a9a15",
+                "in01-69ee6fc11000928",
+                "in01-6c88c405a270086",
+                "in01-6d75f28396d90ec",
+                "in01-7263bce32baa333",
+                "in01-733f3e1497b7720",
+                "in01-79ef93e3c681ceb",
+                "in01-804deabaef2ba22",
+                "in01-84dc0274b51f367",
+                "in01-859aa8738e63b29",
+                "in01-864c6e0abde89f7",
+                "in01-8670d6c67954964",
+                "in01-86883c0344a2e03",
+                "in01-9091089af7b26c8",
+                "in01-944481d03a5ebf8",
+                "in01-9ca5e6e0c42eff4",
+                "in01-a0af09ff1434c98",
+                "in01-a2e77f2b100cdbc",
+                "in01-a62d42199561ff6",
+                "in01-a639697b7f465e8",
+                "in01-aac3d011d62e0ed",
+                "in01-aaf8dfa00b58da7",
+                "in01-ac06df9bfeb3be9",
+                "in01-ac92c927816e1a3",
+                "in01-b843277205ed619",
+                "in01-c095cae52066283",
+                "in01-c127b61d08956a9",
+                "in01-c5c4397f11c0a25",
+                "in01-c628439b28a43a8",
+                "in01-c6d13579c7a1a3f",
+                "in01-cdc9600fc901177",
+                "in01-d13875ba5ffd7b2",
+                "in01-d170536f6807661",
+                "in01-d1b9a9890c6343d",
+                "in01-d66924e989156e4",
+                "in01-ddb9d348e730da8",
+                "in01-df0c4e5090239b1",
+                "in01-e1e9a397ed74fe7",
+                "in01-e52d6c852e53265",
+                "in01-e91a7eb6dabda76",
+                "in01-f327a00926ba965",
+                "in01-f47e78719ff57c6",
+                "in01-fe2592492a482bc",
+                "in01-ff39d8ce87fb063",
+                "in01-ff57961840dafa0"
+        );
+
+        List<String> instanceList = Lists.newArrayList(
+                "in01-0e2385fb177d7c6",
+                "in01-10961a54a0bd11e",
+                "in01-1276a38403b20d3",
+                "in01-151cbbaa6f75458",
+                "in01-16d150c7844fbaa",
+                "in01-172e79548a19e62",
+                "in01-23a043ad3df0fea",
+                "in01-2d1c4a67a6e02a7",
+                "in01-2dce25419ed7939",
+                "in01-2fc6541a8c625bf",
+                "in01-3879e5d34be8d3e",
+                "in01-388982ee6b2f554",
+                "in01-507dcb5f30741ea",
+                "in01-55191795f8465e3",
+                "in01-567e18623917b6e",
+                "in01-58fe7bacab80459",
+                "in01-5a5080c99b7eff0",
+                "in01-5de45e10da777ba",
+                "in01-65b832cfbf0f434",
+                "in01-673cbaeab5a9a15",
+                "in01-69ee6fc11000928",
+                "in01-7263bce32baa333",
+                "in01-733f3e1497b7720",
+                "in01-79ef93e3c681ceb",
+                "in01-804deabaef2ba22",
+                "in01-864c6e0abde89f7",
+                "in01-8670d6c67954964",
+                "in01-9091089af7b26c8",
+                "in01-a0af09ff1434c98",
+                "in01-a2e77f2b100cdbc",
+                "in01-aac3d011d62e0ed",
+                "in01-aaf8dfa00b58da7",
+                "in01-b843277205ed619",
+                "in01-c095cae52066283",
+                "in01-c5c4397f11c0a25",
+                "in01-c628439b28a43a8",
+                "in01-c6d13579c7a1a3f",
+                "in01-d170536f6807661",
+                "in01-df0c4e5090239b1",
+                "in01-e91a7eb6dabda76",
+                "in01-f327a00926ba965",
+                "in01-f47e78719ff57c6",
+                "in01-fe2592492a482bc",
+                "in01-ff39d8ce87fb063",
+                "in01-ff57961840dafa0"
+        );
+
+        List<String> deleteList = new ArrayList<>();
+        for (String s : etcdList) {
+            if (!instanceList.contains(s)) {
+                deleteList.add(s);
+            }
+        }
+        System.out.println(deleteList);
+        System.out.println(deleteList.size());
+
     }
 
 
