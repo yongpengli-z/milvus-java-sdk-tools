@@ -924,34 +924,10 @@ public class CommonFunction {
     }
 
     public static void main(String[] args) {
-        RandomRangeParams r1 = new RandomRangeParams();
-        r1.setStart(0);
-        r1.setEnd(0);
-        r1.setRate(0.1);
-        RandomRangeParams r2 = new RandomRangeParams();
-        r2.setStart(1);
-        r2.setEnd(16);
-        r2.setRate(0.1);
-        RandomRangeParams r3 = new RandomRangeParams();
-        r3.setStart(17);
-        r3.setEnd(128000);
-        r3.setRate(0.8);
-        List<RandomRangeParams> randomRangeParamsList = new ArrayList<>();
-        randomRangeParamsList.add(r1);
-        randomRangeParamsList.add(r3);
-        randomRangeParamsList.add(r2);
-        List<Integer> intList = new ArrayList<>();
-        for (int i = 0; i < 1000000; i++) {
-            intList.add(advanceSequence(Collections.synchronizedList(randomRangeParamsList), 1000000, i, 0));
-        }
-        List<Integer> collect0 = intList.stream().filter(x -> x == 0).collect(Collectors.toList());
-        List<Integer> collect1 = intList.stream().filter(x -> x == 1).collect(Collectors.toList());
-        List<Integer> collect2 = intList.stream().filter(x -> x == 2).collect(Collectors.toList());
-        List<Integer> collect10 = intList.stream().filter(x -> x == 10).collect(Collectors.toList());
-        System.out.println(collect0.size());
-        System.out.println(collect1.size());
-        System.out.println(collect2.size());
-        System.out.println(collect10.size());
+        String a="asdad$abcbbb$abcyyyy";
+        String b=a.replace("$"+"abc","111");
+        System.out.println(a);
+        System.out.println(b);
     }
 
 
