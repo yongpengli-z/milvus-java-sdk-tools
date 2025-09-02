@@ -408,14 +408,9 @@ public class CommonFunction {
         if (dataType == DataType.Int64) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    if (countIndex >11000){
-                        int i = advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, realStartId);
-                        log.info("sequence:count-{},countIndex-{},startId-{}",totalNum,countIndex,realStartId);
-                        log.info("sequence:{}",i);
-                    }
-                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum, countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(advanceSequence(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()),  totalNum, countIndex,  realStartId)));
                 } else {
-                    row.add(fieldName, gson.toJsonTree(advanceRandom(generalDataRole.getRandomRangeParamsList())));
+                    row.add(fieldName, gson.toJsonTree(advanceRandom(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()))));
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(countIndex));
@@ -443,9 +438,9 @@ public class CommonFunction {
         if (dataType == DataType.VarChar) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()),  totalNum,  countIndex,  realStartId)));
                 } else {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()))));
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
@@ -454,9 +449,9 @@ public class CommonFunction {
         if (dataType == DataType.String) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()),  totalNum,  countIndex,  realStartId)));
                 } else {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()))));
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
@@ -949,7 +944,7 @@ public class CommonFunction {
         randomRangeParamsList.add(r2);
         List<Integer> intList = new ArrayList<>();
         for (int i = 0; i < 1000000; i++) {
-            intList.add(advanceSequence(randomRangeParamsList, 1000000, i, 0));
+            intList.add(advanceSequence(Collections.synchronizedList(randomRangeParamsList), 1000000, i, 0));
         }
         List<Integer> collect0 = intList.stream().filter(x -> x == 0).collect(Collectors.toList());
         List<Integer> collect1 = intList.stream().filter(x -> x == 1).collect(Collectors.toList());
