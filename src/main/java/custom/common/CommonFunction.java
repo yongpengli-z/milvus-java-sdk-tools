@@ -408,9 +408,9 @@ public class CommonFunction {
         if (dataType == DataType.Int64) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(advanceSequence(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()),  totalNum, countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum, countIndex,  realStartId)));
                 } else {
-                    row.add(fieldName, gson.toJsonTree(advanceRandom(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()))));
+                    row.add(fieldName, gson.toJsonTree(advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(countIndex));
@@ -438,9 +438,9 @@ public class CommonFunction {
         if (dataType == DataType.VarChar) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()),  totalNum,  countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  realStartId)));
                 } else {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()))));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
@@ -449,9 +449,9 @@ public class CommonFunction {
         if (dataType == DataType.String) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()),  totalNum,  countIndex,  realStartId)));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(),  totalNum,  countIndex,  realStartId)));
                 } else {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(Collections.synchronizedList(generalDataRole.getRandomRangeParamsList()))));
+                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
@@ -881,7 +881,6 @@ public class CommonFunction {
      * @return integer
      */
     public static int advanceRandom(List<RandomRangeParams> randomRangeParamsList) {
-        randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
         int bucket = ThreadLocalRandom.current().nextInt(100); // 0..99
         int i = 0;
         double rate = 0.00;
@@ -906,7 +905,6 @@ public class CommonFunction {
      * @return integer
      */
     public static int advanceSequence(List<RandomRangeParams> randomRangeParamsList, long totalNum, long countIndex, long startId) {
-        randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
         int i = 0;
         int compareNum = 0;
         while (i < (randomRangeParamsList.size() - 1)) {

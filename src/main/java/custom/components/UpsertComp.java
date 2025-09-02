@@ -7,6 +7,8 @@ import custom.entity.UpsertParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.UpsertResult;
+import custom.pojo.GeneralDataRole;
+import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
 import io.milvus.v2.service.vector.request.UpsertReq;
 import io.milvus.v2.service.vector.response.UpsertResp;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -31,6 +34,13 @@ public class UpsertComp {
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();
         List<Long> fileSizeList = new ArrayList<>();
+        //先处理upsert里数据生成的规则，先进行排序处理
+        if (upsertParams.getGeneralDataRoleList().size()> 0){
+            for (GeneralDataRole generalDataRole : upsertParams.getGeneralDataRoleList()) {
+                List<RandomRangeParams> randomRangeParamsList = generalDataRole.getRandomRangeParamsList();
+                randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
+            }
+        }
         // 先检查dataset
         switch (upsertParams.getDataset().toLowerCase()) {
             case "gist":

@@ -7,6 +7,8 @@ import custom.entity.InsertParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.InsertResult;
 import custom.entity.result.ResultEnum;
+import custom.pojo.GeneralDataRole;
+import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
 import io.milvus.v2.service.vector.request.InsertReq;
@@ -16,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -28,6 +31,14 @@ public class InsertCompTest {
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();
         List<Long> fileSizeList = new ArrayList<>();
+        //先处理insert里数据生成的规则，先进行排序处理
+        if (insertParams.getGeneralDataRoleList().size()> 0){
+            for (GeneralDataRole generalDataRole : insertParams.getGeneralDataRoleList()) {
+                List<RandomRangeParams> randomRangeParamsList = generalDataRole.getRandomRangeParamsList();
+                randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
+            }
+        }
+
         // 先检查dataset
         switch (insertParams.getDataset().toLowerCase()) {
             case "gist":
