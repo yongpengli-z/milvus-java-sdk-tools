@@ -118,8 +118,9 @@ public class SearchComp {
                             if (searchParams.getGeneralFilterRoleList().size() > 0) {
                                 for (GeneralDataRole generalFilterRole : searchParams.getGeneralFilterRoleList()) {
                                     int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
-                                    filter.replaceAll("$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                                    filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                                 }
+                                log.info("search filter:{}", filter);
                             }
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
@@ -128,7 +129,7 @@ public class SearchComp {
                                     .consistencyLevel(ConsistencyLevel.BOUNDED)
                                     .collectionName(collection)
                                     .searchParams(searchLevel)
-                                    .filter(searchParams.getFilter())
+                                    .filter(filter)
                                     .data(randomBaseVectors)
                                     .annsField(searchParams.getAnnsField())
                                     .build());
