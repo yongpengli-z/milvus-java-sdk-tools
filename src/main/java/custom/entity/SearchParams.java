@@ -1,5 +1,6 @@
 package custom.entity;
 
+import custom.pojo.GeneralDataRole;
 import lombok.Data;
 
 import java.util.List;
@@ -18,5 +19,5 @@ public class SearchParams {
     private String indexAlgo;
     private String annsField;
     private double targetQps;
-
+    private List<GeneralDataRole> generalFilterRoleList;
 }

@@ -6,6 +6,8 @@ import custom.entity.SearchParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.SearchResultA;
+import custom.pojo.GeneralDataRole;
+import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
@@ -40,9 +42,16 @@ public class SearchComp {
             if (function.getOutputFieldNames().contains(searchParams.getAnnsField())) {
                 int i = function.getOutputFieldNames().indexOf(searchParams.getAnnsField());
                 inputFieldName = function.getInputFieldNames().get(i);
-                log.info("inputFieldName:"+inputFieldName);
+                log.info("inputFieldName:" + inputFieldName);
                 isUseFunction = true;
                 break;
+            }
+        }
+        //先处理search里数据生成的规则，先进行排序处理
+        if (searchParams.getGeneralFilterRoleList().size() > 0) {
+            for (GeneralDataRole generalFilterRole : searchParams.getGeneralFilterRoleList()) {
+                List<RandomRangeParams> randomRangeParamsList = generalFilterRole.getRandomRangeParamsList();
+                randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
             }
         }
         List<BaseVector> searchBaseVectors;
@@ -104,6 +113,14 @@ public class SearchComp {
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
                             }
+                            // 配置filter
+                            String filter = searchParams.getFilter();
+                            if (searchParams.getGeneralFilterRoleList().size() > 0) {
+                                for (GeneralDataRole generalFilterRole : searchParams.getGeneralFilterRoleList()) {
+                                    int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
+                                    filter.replaceAll("$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                                }
+                            }
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
                                     .topK(searchParams.getTopK())
@@ -128,7 +145,7 @@ public class SearchComp {
                             long currentTime = System.currentTimeMillis();
                             if (currentTime - lastLogTime > 5000) { // 每5秒打印一次QPS
                                 double actualQps = requestCount / ((currentTime - lastLogTime) / 1000.0);
-                                log.info("线程[{}] 当前QPS: {}", finalC, actualQps);
+//                                log.info("线程[{}] 当前QPS: {}", finalC, actualQps);
                                 requestCount = 0;
                                 lastLogTime = currentTime;
                             }
