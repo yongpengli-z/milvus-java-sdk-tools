@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -115,13 +116,16 @@ public class SearchComp {
                             }
                             // 配置filter
                             String filter = searchParams.getFilter();
-                            if (searchParams.getGeneralFilterRoleList().size() > 0) {
-                                for (GeneralDataRole generalFilterRole : searchParams.getGeneralFilterRoleList()) {
-                                    int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
-                                    log.info("search random:{}", replaceFilterParams);
-                                    filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                            if (searchParams.getGeneralFilterRoleList() != null && searchParams.getGeneralFilterRoleList().size() > 0) {
+                                List<GeneralDataRole> generalDataRoleList = searchParams.getGeneralFilterRoleList().stream().filter(x -> (x.getFieldName() != null && !x.getFieldName().equalsIgnoreCase(""))).collect(Collectors.toList());
+                                if (generalDataRoleList.size() > 0) {
+                                    for (GeneralDataRole generalFilterRole : generalDataRoleList) {
+                                        int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
+                                        log.info("search random:{}", replaceFilterParams);
+                                        filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                                    }
+                                    log.info("search filter:{}", filter);
                                 }
-                                log.info("search filter:{}", filter);
                             }
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
