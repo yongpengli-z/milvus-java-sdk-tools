@@ -49,11 +49,14 @@ public class SearchComp {
             }
         }
         //先处理search里数据生成的规则，先进行排序处理
-        if (searchParams.getGeneralFilterRoleList().size() > 0) {
+        List<GeneralDataRole> generalDataRoleList = null;
+        if (searchParams.getGeneralFilterRoleList() != null && searchParams.getGeneralFilterRoleList().size() > 0) {
             for (GeneralDataRole generalFilterRole : searchParams.getGeneralFilterRoleList()) {
                 List<RandomRangeParams> randomRangeParamsList = generalFilterRole.getRandomRangeParamsList();
                 randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
             }
+            generalDataRoleList = searchParams.getGeneralFilterRoleList().stream().filter(x -> (x.getFieldName() != null && !x.getFieldName().equalsIgnoreCase(""))).collect(Collectors.toList());
+
         }
         List<BaseVector> searchBaseVectors;
         if (isUseFunction) {
@@ -94,6 +97,7 @@ public class SearchComp {
             int finalC = c;
             List<String> finalOutputs = outputs;
             RateLimiter finalRateLimiter = rateLimiter;
+            List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
             Callable<SearchResult> callable =
                     () -> {
                         List<BaseVector> randomBaseVectors = baseVectors;
@@ -116,16 +120,13 @@ public class SearchComp {
                             }
                             // 配置filter
                             String filter = searchParams.getFilter();
-                            if (searchParams.getGeneralFilterRoleList() != null && searchParams.getGeneralFilterRoleList().size() > 0) {
-                                List<GeneralDataRole> generalDataRoleList = searchParams.getGeneralFilterRoleList().stream().filter(x -> (x.getFieldName() != null && !x.getFieldName().equalsIgnoreCase(""))).collect(Collectors.toList());
-                                if (generalDataRoleList.size() > 0) {
-                                    for (GeneralDataRole generalFilterRole : generalDataRoleList) {
-                                        int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
-                                        log.info("search random:{}", replaceFilterParams);
-                                        filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
-                                    }
-                                    log.info("search filter:{}", filter);
+                            if (finalGeneralDataRoleList!=null && finalGeneralDataRoleList.size() > 0) {
+                                for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
+                                    int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
+                                    log.info("search random:{}", replaceFilterParams);
+                                    filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                                 }
+                                log.info("search filter:{}", filter);
                             }
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = milvusClientV2.search(SearchReq.builder()
