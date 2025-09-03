@@ -23,6 +23,7 @@ import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
 import io.milvus.v2.service.vector.request.QueryReq;
+import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.*;
 import io.milvus.v2.service.vector.response.QueryResp;
 import lombok.extern.slf4j.Slf4j;
@@ -851,9 +852,9 @@ public class CommonFunction {
         try {
             String filterStr;
             if (pkFieldInfo.getDataType() == DataType.VarChar) {
-                filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
+                filterStr = pkFieldInfo.getFieldName() + " > \"0\" and random_sample(0.1) ";
             } else {
-                filterStr = pkFieldInfo.getFieldName() + " > 0 ";
+                filterStr = pkFieldInfo.getFieldName() + " > 0 and random_sample(0.1) ";
             }
             query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
                     .filter(filterStr)
