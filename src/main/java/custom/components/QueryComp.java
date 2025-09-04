@@ -61,7 +61,7 @@ public class QueryComp {
                     if (finalGeneralDataRoleList != null && finalGeneralDataRoleList.size() > 0) {
                         for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
                             int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
-                            log.info("search random:{}", replaceFilterParams);
+                            log.info("query random:{}", replaceFilterParams);
                             filterParams = filterParams.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                         }
                         log.info("query filter:{}", filterParams);
