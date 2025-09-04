@@ -1,5 +1,6 @@
 package custom.entity;
 
+import custom.pojo.GeneralDataRole;
 import lombok.Data;
 
 import java.util.List;
@@ -15,4 +16,5 @@ public class QueryParams {
     private long limit;
     private List<String> partitionNames;
     private long offset;
+    private List<GeneralDataRole> generalFilterRoleList;
 }

@@ -1,9 +1,12 @@
 package custom.components;
 
+import custom.common.CommonFunction;
 import custom.entity.QueryParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.QueryResult;
 import custom.entity.result.ResultEnum;
+import custom.pojo.GeneralDataRole;
+import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.vector.request.QueryReq;
@@ -13,8 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -22,41 +27,62 @@ import static custom.BaseTest.*;
 public class QueryComp {
     public static QueryResult queryCollection(QueryParams queryParams) {
         String collectionName = (queryParams.getCollectionName() == null ||
-                queryParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : queryParams.getCollectionName();
+                queryParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : queryParams.getCollectionName();
         ArrayList<Future<QueryItemResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(queryParams.getNumConcurrency());
         float queryTotalTime;
         long startTimeTotal = System.currentTimeMillis();
-        log.info("query参数："+queryParams);
+        log.info("query参数：" + queryParams);
+        //先处理query里数据生成的规则，先进行排序处理
+        List<GeneralDataRole> generalDataRoleList = null;
+        if (queryParams.getGeneralFilterRoleList() != null && queryParams.getGeneralFilterRoleList().size() > 0) {
+            for (GeneralDataRole generalFilterRole : queryParams.getGeneralFilterRoleList()) {
+                List<RandomRangeParams> randomRangeParamsList = generalFilterRole.getRandomRangeParamsList();
+                randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
+            }
+            generalDataRoleList = queryParams.getGeneralFilterRoleList().stream().filter(x -> (x.getFieldName() != null && !x.getFieldName().equalsIgnoreCase(""))).collect(Collectors.toList());
+
+        }
         for (int i = 0; i < queryParams.getNumConcurrency(); i++) {
             int finalI = i;
-            Callable<QueryItemResult> callable = ()->{
+            List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
+            Callable<QueryItemResult> callable = () -> {
                 log.info("线程[" + finalI + "]启动...");
-                QueryItemResult queryItemResult=new QueryItemResult();
-                List<Integer> returnNum=new ArrayList<>();
+                QueryItemResult queryItemResult = new QueryItemResult();
+                List<Integer> returnNum = new ArrayList<>();
                 List<Float> costTime = new ArrayList<>();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(queryParams.getRunningMinutes());
-                int  printLog = 1;
+                int printLog = 1;
                 while (LocalDateTime.now().isBefore(endTime)) {
                     long startItemTime = System.currentTimeMillis();
                     QueryResp query = null;
+                    // 配置filter
+                    String filterParams = queryParams.getFilter();
+                    if (finalGeneralDataRoleList != null && finalGeneralDataRoleList.size() > 0) {
+                        for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
+                            int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
+                            log.info("search random:{}", replaceFilterParams);
+                            filterParams = filterParams.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                        }
+                        log.info("query filter:{}", filterParams);
+                    }
                     try {
                         QueryReq queryReq = QueryReq.builder()
                                 .collectionName(collectionName)
                                 .outputFields(queryParams.getOutputs())
-                                .ids(queryParams.getIds().size()==0?null:queryParams.getIds())
-                                .filter(queryParams.getFilter().equalsIgnoreCase("")?null:queryParams.getFilter())
+                                .ids(queryParams.getIds().size() == 0 ? null : queryParams.getIds())
+                                .filter(filterParams.equalsIgnoreCase("") ? null : filterParams)
                                 .consistencyLevel(ConsistencyLevel.BOUNDED)
-                                .partitionNames(queryParams.getPartitionNames()==null||queryParams.getPartitionNames().size()==0?new ArrayList<>():queryParams.getPartitionNames())
+                                .partitionNames(queryParams.getPartitionNames() == null || queryParams.getPartitionNames().size() == 0 ? new ArrayList<>() : queryParams.getPartitionNames())
                                 .offset(queryParams.getOffset())
                                 .build();
-                        if(queryParams.getLimit()>0){
+                        if (queryParams.getLimit() > 0) {
                             queryReq.setLimit(queryParams.getLimit());
                         }
                         query = milvusClientV2.query(queryReq);
-                        log.info("query size: "+query.getQueryResults().size());
+                        log.info("query size: " + query.getQueryResults().size());
                     } catch (Exception e) {
-                        log.error("query exception:"+e.getMessage());
+                        log.error("query exception:" + e.getMessage());
                     }
                     long endItemTime = System.currentTimeMillis();
                     costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
@@ -83,7 +109,7 @@ public class QueryComp {
             try {
                 QueryItemResult queryItemResult = future.get();
                 requestNum += queryItemResult.getResultNum().size();
-                successNum += queryItemResult.getResultNum().stream().filter(x->x == queryParams.getLimit()).count();
+                successNum += queryItemResult.getResultNum().stream().filter(x -> x == queryParams.getLimit()).count();
                 costTimeTotal.addAll(queryItemResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("query 统计异常:" + e.getMessage());
@@ -128,7 +154,7 @@ public class QueryComp {
     }
 
     @Data
-    public static class QueryItemResult{
+    public static class QueryItemResult {
         private List<Float> costTime;
         private List<Integer> resultNum;
     }
