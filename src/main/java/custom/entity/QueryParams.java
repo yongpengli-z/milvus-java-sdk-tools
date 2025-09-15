@@ -17,4 +17,5 @@ public class QueryParams {
     private List<String> partitionNames;
     private long offset;
     private List<GeneralDataRole> generalFilterRoleList;
+    private double targetQps;
 }

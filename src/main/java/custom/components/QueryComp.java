@@ -1,5 +1,6 @@
 package custom.components;
 
+import com.google.common.util.concurrent.RateLimiter;
 import custom.common.CommonFunction;
 import custom.entity.QueryParams;
 import custom.entity.result.CommonResult;
@@ -43,8 +44,16 @@ public class QueryComp {
             generalDataRoleList = queryParams.getGeneralFilterRoleList().stream().filter(x -> (x.getFieldName() != null && !x.getFieldName().equalsIgnoreCase(""))).collect(Collectors.toList());
 
         }
+        // 1. 创建RateLimiter实例（根据配置的QPS）
+        RateLimiter rateLimiter = null;
+        if (queryParams.getTargetQps() > 0) {
+            rateLimiter = RateLimiter.create(queryParams.getTargetQps());
+            log.info("启用QPS控制: {} 请求/秒", queryParams.getTargetQps());
+        }
+
         for (int i = 0; i < queryParams.getNumConcurrency(); i++) {
             int finalI = i;
+            RateLimiter finalRateLimiter = rateLimiter;
             List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
             Callable<QueryItemResult> callable = () -> {
                 log.info("线程[" + finalI + "]启动...");
@@ -54,6 +63,10 @@ public class QueryComp {
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(queryParams.getRunningMinutes());
                 int printLog = 1;
                 while (LocalDateTime.now().isBefore(endTime)) {
+                    // 3. QPS控制点（如果需要）
+                    if (finalRateLimiter != null) {
+                        finalRateLimiter.acquire(); // 阻塞直到获得令牌
+                    }
                     long startItemTime = System.currentTimeMillis();
                     QueryResp query = null;
                     // 配置filter
