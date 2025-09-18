@@ -49,8 +49,8 @@ public class ComponentSchedule {
         List<JSONObject> results = new ArrayList<>();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
-            int taskStatus = queryTaskRedisValue();
-
+//            int taskStatus = queryTaskRedisValue();
+            int taskStatus = TaskStatusEnum.RUNNING.status;
             if (taskStatus == TaskStatusEnum.STOPPING.status) {
                 do {
                     log.info("监测到暂停...");
@@ -266,21 +266,22 @@ public class ComponentSchedule {
 
     public static int queryTaskRedisValue() {
         String uri = "http://qtp-server.zilliz.cc/customize-task/query/status?redisKey=" + redisKey;
-        String s = HttpClientUtils.doGet(uri);
-//        log.info("request qtp:" + s);
-        JSONObject jsonObject = JSON.parseObject(s);
-        return jsonObject.getInteger("data");
+//        String s = HttpClientUtils.doGet(uri);
+////        log.info("request qtp:" + s);
+//        JSONObject jsonObject = JSON.parseObject(s);
+//        return jsonObject.getInteger("data");
+        return 0;
     }
 
     public static void updateArgoStatus(int status) {
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
-        String s = HttpClientUtils.doPost(uri);
+//        String s = HttpClientUtils.doPost(uri);
 //        log.info("Update case status:" + s);
     }
 
     public static void updateCaseStatus(int status) {
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
-        String s = HttpClientUtils.doPost(uri);
+//        String s = HttpClientUtils.doPost(uri);
 //        log.info("Update case status:" + s);
     }
 
@@ -291,35 +292,36 @@ public class ComponentSchedule {
         params.put("nodeName", nodeName);
         params.put("parentNodeName", parentNodeName);
         params.put("result", result);
-        String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
-        log.info(parentNodeName + "[" + nodeName + "]Insert result:" + s);
-        log.info("params " + "[" + params.toJSONString() + "]Insert result:" + s);
+//        String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
+//        log.info(parentNodeName + "[" + nodeName + "]Insert result:" + s);
+//        log.info("params " + "[" + params.toJSONString() + "]Insert result:" + s);
 
     }
 
     public static void initInstanceStatus(String instanceId, String instanceUri, String image, int status) {
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
-        String s = HttpClientUtils.doPost(uri);
-        log.info("add instanceId:" + s);
+//        String s = HttpClientUtils.doPost(uri);
+//        log.info("add instanceId:" + s);
     }
 
     public static void updateInstanceStatus(String instanceId, String instanceUri, String image, int status) {
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
-        String s = HttpClientUtils.doPost(uri);
-        log.info("add instanceId:" + s);
+//        String s = HttpClientUtils.doPost(uri);
+//        log.info("add instanceId:" + s);
     }
 
     public static List<String> queryReleaseImage() {
         String uri = "http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/release";
-        String s = HttpClientUtils.doGet(uri);
-        // 所得结果为倒序
-        JSONArray respJO = JSON.parseObject(s).getJSONArray("data");
-        List<String> dbVersion = new ArrayList<>();
-        for (int i = 0; i < respJO.size(); i++) {
-            JSONObject jsonObject = respJO.getJSONObject(i);
-            dbVersion.add(jsonObject.getString("dbVersion") + "(" + jsonObject.getString("imageInfo") + ")");
-        }
-        return dbVersion;
+//        String s = HttpClientUtils.doGet(uri);
+//        // 所得结果为倒序
+//        JSONArray respJO = JSON.parseObject(s).getJSONArray("data");
+//        List<String> dbVersion = new ArrayList<>();
+//        for (int i = 0; i < respJO.size(); i++) {
+//            JSONObject jsonObject = respJO.getJSONObject(i);
+//            dbVersion.add(jsonObject.getString("dbVersion") + "(" + jsonObject.getString("imageInfo") + ")");
+//        }
+//        return dbVersion;
+        return null;
     }
 
 }
