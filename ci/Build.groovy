@@ -106,7 +106,7 @@ spec:
                     --build-arg=GIT_REPO=${GIT_REPO} \
                     --build-arg=GIT_BRANCH=${params.BRANCH} \
                     --build-arg=GIT_COMMIT_HASH=${GIT_COMMIT} \
-                    --dockerfile "ci/docker/Dockerfile_Backup" \
+                    --dockerfile "ci/docker/Dockerfile" \
                     --destination=${DOCKER_IMAGE}:${image_tag}
                     """
                   }
