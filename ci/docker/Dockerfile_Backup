@@ -18,7 +18,7 @@ FROM maven:3.8.6-openjdk-11-slim
 WORKDIR /app
   
   # 复制构建的 JAR 文件到新镜像
-COPY --from=build /app/target/milvus-java-sdk-toos-1.0-jar-with-dependencies.jar app.jar
+COPY --from=build /app/target/*-with-dependencies.jar app.jar
   
   # 指定容器启动时执行的命令
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -9,7 +9,7 @@ spec:
     args: ["cat"]
     tty: true
   - name: maven
-    image: maven:3.8.4-jdk-8-slim
+    image: maven:3.8.6-openjdk-11-slim
     args: ["cat"]
     tty: true
     volumeMounts:
