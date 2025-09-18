@@ -29,7 +29,7 @@ spec:
     args: ["cat"]
     tty: true
   - name: maven
-    image: maven:3.8.4-jdk-8-slim
+    image: maven:3.8.6-openjdk-11-slim
     args: ["cat"]
     tty: true
     volumeMounts:
@@ -106,7 +106,7 @@ spec:
                     --build-arg=GIT_REPO=${GIT_REPO} \
                     --build-arg=GIT_BRANCH=${params.BRANCH} \
                     --build-arg=GIT_COMMIT_HASH=${GIT_COMMIT} \
-                    --dockerfile "ci/docker/Dockerfile" \
+                    --dockerfile "ci/docker/Dockerfile_Backup" \
                     --destination=${DOCKER_IMAGE}:${image_tag}
                     """
                   }
