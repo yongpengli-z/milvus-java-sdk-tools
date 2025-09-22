@@ -1,6 +1,6 @@
 FROM openjdk:11
 
-COPY target/*-with-dependencies.jar  app.jar
+COPY target/milvus-java-sdk-toos-1.0.jar  app.jar
 
 ARG REVERSION=""
 ARG GIT_REPO=""
