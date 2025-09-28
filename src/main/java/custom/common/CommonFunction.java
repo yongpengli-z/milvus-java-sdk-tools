@@ -813,6 +813,10 @@ public class CommonFunction {
                 SortedMap<Long, Float> sortedMap = (SortedMap<Long, Float>) o;
                 baseVectorDataset.add(new SparseFloatVec(sortedMap));
             }
+            if (vectorDataType == DataType.Int8Vector) {
+                ByteBuffer byteBuffer = (ByteBuffer) o;
+                baseVectorDataset.add(new Int8Vec(byteBuffer));
+            }
             // 收集recall base id
             Object pkObj = queryResult.getEntity().get(pkFieldInfo.getFieldName());
             recallBaseIdList.add(pkObj);
