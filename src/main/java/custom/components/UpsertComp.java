@@ -35,7 +35,7 @@ public class UpsertComp {
         List<String> fileNames = new ArrayList<>();
         List<Long> fileSizeList = new ArrayList<>();
         //先处理upsert里数据生成的规则，先进行排序处理
-        if (upsertParams.getGeneralDataRoleList().size()> 0){
+        if (upsertParams.getGeneralDataRoleList() != null && upsertParams.getGeneralDataRoleList().size() > 0) {
             for (GeneralDataRole generalDataRole : upsertParams.getGeneralDataRoleList()) {
                 List<RandomRangeParams> randomRangeParamsList = generalDataRole.getRandomRangeParamsList();
                 randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
@@ -121,7 +121,7 @@ public class UpsertComp {
                             }
 
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, upsertParams.getBatchSize(),
-                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList,upsertParams.getGeneralDataRoleList(),upsertParams.getNumEntries(),upsertParams.getStartId());
+                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList, upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId());
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             UpsertResp upsertResp = null;
                             long startTime = System.currentTimeMillis();
