@@ -195,6 +195,7 @@ public class CommonFunction {
         milvusClientV2.createIndex(CreateIndexReq.builder()
                 .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName)
                 .indexParams(indexParamList)
+                .timeout(6000000L)
                 .build());
         // 查询索引是否建完
         List<Boolean> indexStateList = new ArrayList<>();
