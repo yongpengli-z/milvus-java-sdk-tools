@@ -859,7 +859,7 @@ public class CommonFunction {
             if (pkFieldInfo.getDataType() == DataType.VarChar) {
                 filterStr = pkFieldInfo.getFieldName() + " > \"0\" and random_sample(0.1) ";
             } else {
-                filterStr = pkFieldInfo.getFieldName() + " > 0  ";
+                filterStr = pkFieldInfo.getFieldName() + " > 0 and random_sample(0.1) ";
             }
             query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
                     .filter(filterStr)
