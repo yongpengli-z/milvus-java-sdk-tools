@@ -12,4 +12,5 @@ public class CreateIndexResult {
     String collectionName;
     List<IndexParams> indexParams;
     CommonResult commonResult;
+    float costTimes;
 }
