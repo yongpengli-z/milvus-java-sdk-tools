@@ -120,7 +120,7 @@ public class SearchComp {
                             }
                             // 配置filter
                             String filter = searchParams.getFilter();
-                            if (finalGeneralDataRoleList!=null && finalGeneralDataRoleList.size() > 0) {
+                            if (finalGeneralDataRoleList != null && finalGeneralDataRoleList.size() > 0) {
                                 for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
                                     int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
 //                                    log.info("search random:{}", replaceFilterParams);
@@ -140,7 +140,9 @@ public class SearchComp {
                                     .annsField(searchParams.getAnnsField())
                                     .build());
                             long endItemTime = System.currentTimeMillis();
-                            costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
+                            float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
+                            log.info("线程[" + finalC + "]  search cost:" + costTimeItem);
+                            costTime.add(costTimeItem);
                             returnNum.add(search.getSearchResults().get(0).size());
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
