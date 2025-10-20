@@ -5,10 +5,15 @@ import custom.entity.CreateCollectionParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.CreateCollectionResult;
 import custom.entity.result.ResultEnum;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import lombok.extern.slf4j.Slf4j;
 
 
+import java.util.Map;
+
 import static custom.BaseTest.globalCollectionNames;
+import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class CreateCollectionComp {
@@ -30,6 +35,16 @@ public class CreateCollectionComp {
                     .build();
         }
         globalCollectionNames.add(collection);
+        // 检查properties
+        if (createCollectionParams.getProperties() != null && createCollectionParams.getProperties().size() > 0) {
+            DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder()
+                    .collectionName(collection).build());
+            Map<String, String> properties =
+                    describeCollectionResp.getProperties();
+            for (String s : properties.keySet()) {
+                log.info(String.format("property %s : %s", s, properties.get(s)));
+            }
+        }
         return CreateCollectionResult.builder()
                 .commonResult(commonResult)
                 .collectionName(collection).build();
