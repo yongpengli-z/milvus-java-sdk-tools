@@ -75,6 +75,8 @@ public class CommonFunction {
                     .build()
             );
         }
+        Map<String, String> properties = new HashMap<>();
+        properties.put("partitionkey.isolation", "true");
         CreateCollectionReq createCollectionReq = CreateCollectionReq.builder()
                 .collectionSchema(collectionSchema)
                 .collectionName(collectionName)
@@ -82,6 +84,7 @@ public class CommonFunction {
                 .description("collection desc")
                 .numShards(shardNum)
                 .numPartitions(numPartitions)
+                .properties(properties)
                 .build();
         milvusClientV2.createCollection(createCollectionReq);
         return collectionName;
