@@ -128,8 +128,7 @@ public class SearchComp {
                                 }
                                 log.info("search filter:{}", filter);
                             }
-                            long startItemTime = System.currentTimeMillis();
-                            SearchResp search = milvusClientV2.search(SearchReq.builder()
+                            SearchReq searchReq = SearchReq.builder()
                                     .topK(searchParams.getTopK())
                                     .outputFields(finalOutputs)
                                     .consistencyLevel(ConsistencyLevel.BOUNDED)
@@ -138,7 +137,9 @@ public class SearchComp {
                                     .filter(filter)
                                     .data(randomBaseVectors)
                                     .annsField(searchParams.getAnnsField())
-                                    .build());
+                                    .build();
+                            long startItemTime = System.currentTimeMillis();
+                            SearchResp search = milvusClientV2.search(searchReq);
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                             log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s");
