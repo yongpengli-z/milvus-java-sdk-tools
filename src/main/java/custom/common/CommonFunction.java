@@ -47,7 +47,7 @@ public class CommonFunction {
      * @param fieldParamsList 其他字段
      * @return collection name
      */
-    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList, FunctionParams functionParams) {
+    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList, FunctionParams functionParams, Map<String,String> properties) {
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
@@ -75,8 +75,6 @@ public class CommonFunction {
                     .build()
             );
         }
-        Map<String, String> properties = new HashMap<>();
-        properties.put("partitionkey.isolation", "true");
         CreateCollectionReq createCollectionReq = CreateCollectionReq.builder()
                 .collectionSchema(collectionSchema)
                 .collectionName(collectionName)

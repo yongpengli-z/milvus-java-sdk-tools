@@ -2,7 +2,9 @@ package custom.entity;
 
 import lombok.Data;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author yongpeng.li @Date 2024/6/4 16:57
@@ -15,5 +17,6 @@ public class CreateCollectionParams {
     private boolean enableDynamic;
     private List<FieldParams> fieldParamsList;
     private FunctionParams functionParams;
+    private Map<String, String> properties;
 
 }
