@@ -47,7 +47,7 @@ public class CommonFunction {
      * @param fieldParamsList 其他字段
      * @return collection name
      */
-    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList, FunctionParams functionParams, Map<String,String> properties) {
+    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList, FunctionParams functionParams, List<CreateCollectionParams.PropertyM> properties) {
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
@@ -75,14 +75,22 @@ public class CommonFunction {
                     .build()
             );
         }
+        Map<String, String> propertyList = new HashMap<>();
+        if (properties != null && properties.size() > 0) {
+            for (CreateCollectionParams.PropertyM property : properties) {
+                if (!property.getPropertyKey().equalsIgnoreCase("")) {
+                    propertyList.put(property.getPropertyKey(), property.getPropertyValue());
+                }
+            }
+        }
         CreateCollectionReq createCollectionReq = CreateCollectionReq.builder()
                 .collectionSchema(collectionSchema)
                 .collectionName(collectionName)
                 .enableDynamicField(enableDynamic)
-                .description("collection desc")
+                .description("created by qtp!")
                 .numShards(shardNum)
                 .numPartitions(numPartitions)
-                .properties(properties)
+                .properties(propertyList)
                 .build();
         milvusClientV2.createCollection(createCollectionReq);
         return collectionName;

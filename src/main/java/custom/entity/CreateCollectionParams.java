@@ -17,6 +17,12 @@ public class CreateCollectionParams {
     private boolean enableDynamic;
     private List<FieldParams> fieldParamsList;
     private FunctionParams functionParams;
-    private Map<String, String> properties;
+    private List<PropertyM> properties;
+
+    @Data
+    public static class PropertyM {
+        String propertyKey;
+        String propertyValue;
+    }
 
 }
