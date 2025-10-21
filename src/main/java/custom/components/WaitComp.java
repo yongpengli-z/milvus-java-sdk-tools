@@ -17,7 +17,7 @@ public class WaitComp {
         CommonResult commonResult;
         try {
             log.info("Waiting " + waitParams.getWaitMinutes() + " minutes...");
-            Thread.sleep(waitParams.getWaitMinutes()  * 1000);
+            Thread.sleep(waitParams.getWaitMinutes() * 60 * 1000);
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         } catch (InterruptedException e) {
             log.warn("Wait exception:" + e.getMessage());
