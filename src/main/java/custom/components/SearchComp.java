@@ -73,9 +73,15 @@ public class SearchComp {
             }
         } else {
             searchBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), 768, DataType.FloatVector);
+            log.info("searchBaseVectors length：" + searchBaseVectors.size());
         }
         // 如果不随机，则随机一个
-        List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
+        List<BaseVector> baseVectors;
+        if (searchParams.isRandomVector()) {
+            baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
+        } else {
+            baseVectors = searchBaseVectors;
+        }
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
