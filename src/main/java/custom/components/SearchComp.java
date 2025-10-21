@@ -10,6 +10,7 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -59,15 +60,19 @@ public class SearchComp {
 
         }
         List<BaseVector> searchBaseVectors;
-        if (isUseFunction) {
-            log.info("从collection里捞取input filed num: " + 1000);
-            searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
-            log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
+        if (searchParams.isRandomVector()) {
+            if (isUseFunction) {
+                log.info("从collection里捞取input filed num: " + 1000);
+                searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+                log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
+            } else {
+                // 随机向量，从数据库里筛选--暂定1000条
+                log.info("从collection里捞取向量: " + 1000);
+                searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField());
+                log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+            }
         } else {
-            // 随机向量，从数据库里筛选--暂定1000条
-            log.info("从collection里捞取向量: " + 1000);
-            searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField());
-            log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
+            searchBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), 768, DataType.FloatVector);
         }
         // 如果不随机，则随机一个
         List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
