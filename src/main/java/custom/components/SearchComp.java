@@ -60,28 +60,19 @@ public class SearchComp {
 
         }
         List<BaseVector> searchBaseVectors;
-        if (searchParams.isRandomVector()) {
-            if (isUseFunction) {
-                log.info("从collection里捞取input filed num: " + 1000);
-                searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
-                log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
-            } else {
-                // 随机向量，从数据库里筛选--暂定1000条
-                log.info("从collection里捞取向量: " + 1000);
-                searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField());
-                log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
-            }
+        if (isUseFunction) {
+            log.info("从collection里捞取input filed num: " + 1000);
+            searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+            log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
         } else {
-            searchBaseVectors = CommonFunction.providerSearchVector(searchParams.getNq(), 768, DataType.FloatVector);
-            log.info("searchBaseVectors length：" + searchBaseVectors.size());
+            // 随机向量，从数据库里筛选--暂定1000条
+            log.info("从collection里捞取向量: " + 1000);
+            searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField());
+            log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         }
+
         // 如果不随机，则随机一个
-        List<BaseVector> baseVectors;
-        if (searchParams.isRandomVector()) {
-            baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
-        } else {
-            baseVectors = searchBaseVectors;
-        }
+        List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
