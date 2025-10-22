@@ -144,7 +144,7 @@ public class SearchComp {
                             SearchResp search = milvusClientV2.search(searchReq);
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
-                            log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s");
+                            log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s"+"，result size："+search.getSearchResults().size());
                             costTime.add(costTimeItem);
                             returnNum.add(search.getSearchResults().get(0).size());
                             if (printLog >= logInterval) {
