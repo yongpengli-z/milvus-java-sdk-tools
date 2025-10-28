@@ -124,11 +124,16 @@ public class SearchComp {
                             String filter = searchParams.getFilter();
                             if (finalGeneralDataRoleList != null && finalGeneralDataRoleList.size() > 0) {
                                 for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
-                                    int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
+                                    int replaceFilterParams;
+                                    if (generalFilterRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
+                                        replaceFilterParams = CommonFunction.advanceSequenceForSearch(generalFilterRole.getRandomRangeParamsList(), searchParams.getNumConcurrency(), finalC, returnNum.size());
+                                    } else {
+                                        replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
+                                    }
 //                                    log.info("search random:{}", replaceFilterParams);
                                     filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                                 }
-                                log.info("search filter:{}", filter);
+                                log.info("线程[" + finalC + "] search filter:{}", filter);
                             }
                             SearchReq searchReq = SearchReq.builder()
                                     .topK(searchParams.getTopK())
@@ -144,7 +149,7 @@ public class SearchComp {
                             SearchResp search = milvusClientV2.search(searchReq);
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
-                            log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s"+"，result size："+search.getSearchResults().size()+","+search.getSearchResults().get(0).get(0).getEntity());
+                            log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，result size：" + search.getSearchResults().size() + "," + search.getSearchResults().get(0).get(0).getEntity());
                             costTime.add(costTimeItem);
                             returnNum.add(search.getSearchResults().get(0).size());
                             if (printLog >= logInterval) {
