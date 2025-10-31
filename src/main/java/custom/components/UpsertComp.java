@@ -1,5 +1,6 @@
 package custom.components;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
 import custom.common.DatasetEnum;
@@ -95,9 +96,16 @@ public class UpsertComp {
         log.info("根据startId，将使用的文件名称:" + fileNames);
         log.info("根据startId，将使用的文件长度:" + fileSizeList);*/
 
+        // 1. 创建RateLimiter实例（根据配置的QPS）
+        RateLimiter rateLimiter = null;
+        if (upsertParams.getTargetQps() > 0) {
+            rateLimiter = RateLimiter.create(upsertParams.getTargetQps());
+            log.info("启用QPS控制: {} 请求/秒", upsertParams.getTargetQps());
+        }
 
         // upsert data with multiple threads
         for (int c = 0; c < upsertParams.getNumConcurrency(); c++) {
+            RateLimiter finalRateLimiter = rateLimiter;
             int finalC = c;
             List<String> finalFileNames = fileNames;
             List<Long> finalFileSizeList = fileSizeList;
@@ -114,6 +122,10 @@ public class UpsertComp {
                              r++) {
                             // 时间和数据量谁先到都结束
                             if (upsertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {
+                                // 3. QPS控制点（如果需要）
+                                if (finalRateLimiter != null) {
+                                    finalRateLimiter.acquire(); // 阻塞直到获得令牌
+                                }
                                 log.info("线程[" + finalC + "] Upsert已到设定时长，停止插入...");
                                 upsertResultItem.setUpsertCnt(insertCnt);
                                 upsertResultItem.setCostTime(costTime);

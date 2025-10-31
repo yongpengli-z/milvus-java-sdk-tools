@@ -17,4 +17,5 @@ public class UpsertParams {
     private long runningMinutes;
     private boolean retryAfterDeny;
     private List<GeneralDataRole> generalDataRoleList;
+    private int targetQps;
 }
