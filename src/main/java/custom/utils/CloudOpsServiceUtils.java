@@ -90,14 +90,14 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
-    public static IndexPoolInfo providerIndexPool() {
+    public static IndexPoolInfo providerIndexPool(int indexClusterId) {
         String s = listRunningIndexPool();
         JSONObject jsonObject = JSONObject.parseObject(s);
         JSONArray jsonArray = jsonObject.getJSONObject("data").getJSONArray("list");
         IndexPoolInfo indexPoolInfo = new IndexPoolInfo();
         for (int i = 0; i < jsonArray.size(); i++) {
             JSONObject jsonObject1 = jsonArray.getJSONObject(i);
-            if (!(jsonObject1.getString("name").contains("byoc") || jsonObject1.getString("name").contains("poc"))) {
+            if (jsonObject1.getInteger("id") == indexClusterId) {
                 indexPoolInfo.setId(jsonObject1.getInteger("id"));
                 indexPoolInfo.setRegionId(jsonObject1.getString("regionId"));
                 indexPoolInfo.setK8sCluster(jsonObject1.getString("k8sCluster"));

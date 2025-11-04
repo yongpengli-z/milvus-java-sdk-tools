@@ -6,4 +6,5 @@ import lombok.Data;
 public class UpdateIndexPoolParams {
     String managerImageTag;
     String workerImageTag;
+    int indexClusterId;
 }

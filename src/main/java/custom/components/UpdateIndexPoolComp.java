@@ -14,32 +14,32 @@ import java.util.List;
 
 @Slf4j
 public class UpdateIndexPoolComp {
-    public static UpdateIndexPoolResult updateIndexPool(UpdateIndexPoolParams updateIndexPoolParams){
-        IndexPoolInfo indexPoolInfo = CloudOpsServiceUtils.providerIndexPool();
-        if (!(updateIndexPoolParams.getManagerImageTag()==null ||
-                updateIndexPoolParams.getManagerImageTag().equalsIgnoreCase(""))){
+    public static UpdateIndexPoolResult updateIndexPool(UpdateIndexPoolParams updateIndexPoolParams) {
+        IndexPoolInfo indexPoolInfo = CloudOpsServiceUtils.providerIndexPool(updateIndexPoolParams.getIndexClusterId());
+        if (!(updateIndexPoolParams.getManagerImageTag() == null ||
+                updateIndexPoolParams.getManagerImageTag().equalsIgnoreCase(""))) {
             indexPoolInfo.setImageTag(updateIndexPoolParams.getManagerImageTag());
         }
-        if(!(updateIndexPoolParams.getWorkerImageTag()==null ||
-                updateIndexPoolParams.getWorkerImageTag().equalsIgnoreCase(""))){
+        if (!(updateIndexPoolParams.getWorkerImageTag() == null ||
+                updateIndexPoolParams.getWorkerImageTag().equalsIgnoreCase(""))) {
             // image重新获取
             String latestImageByKeywords;
-            if(updateIndexPoolParams.getWorkerImageTag().equalsIgnoreCase("latest-release")){
+            if (updateIndexPoolParams.getWorkerImageTag().equalsIgnoreCase("latest-release")) {
                 List<String> strings = ComponentSchedule.queryReleaseImage();
                 latestImageByKeywords = strings.get(0);
-                indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(")+1,latestImageByKeywords.indexOf(")")));
-            }else{
+                indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(") + 1, latestImageByKeywords.indexOf(")")));
+            } else {
                 latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(updateIndexPoolParams.getWorkerImageTag());
-                indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(")+1,latestImageByKeywords.indexOf(")")));
+                indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(") + 1, latestImageByKeywords.indexOf(")")));
             }
         }
         String s = CloudOpsServiceUtils.updateIndexPool(indexPoolInfo);
         JSONObject jsonObject = JSONObject.parseObject(s);
         Integer code = jsonObject.getInteger("code");
         CommonResult.CommonResultBuilder commonResultBuilder = CommonResult.builder();
-        if (code==0){
+        if (code == 0) {
             commonResultBuilder.result(ResultEnum.SUCCESS.result);
-        }else {
+        } else {
             commonResultBuilder.result(ResultEnum.EXCEPTION.result).message(jsonObject.getString("message"));
         }
         return UpdateIndexPoolResult.builder()
