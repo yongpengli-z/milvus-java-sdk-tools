@@ -105,7 +105,7 @@ public class CloudOpsServiceUtils {
                 indexPoolInfo.setName(jsonObject1.getString("name"));
                 indexPoolInfo.setImageTag(jsonObject1.getString("imageTag"));
                 indexPoolInfo.setWorkerImageTag(jsonObject1.getString("workerImageTag"));
-                indexPoolInfo.setIndexTypes(Lists.newArrayList(2));
+                indexPoolInfo.setIndexTypes(jsonObject1.getJSONArray("indexTypes").toJavaList(Integer.class));
                 indexPoolInfo.setArchitecture(jsonObject1.getInteger("architecture"));
                 indexPoolInfo.setDomain(jsonObject1.getString("domain"));
                 indexPoolInfo.setPort(jsonObject1.getInteger("port"));
@@ -123,6 +123,7 @@ public class CloudOpsServiceUtils {
                 indexPoolInfo.setFreeSlots(jsonObject1.getInteger("freeSlots"));
                 indexPoolInfo.setMaxSlots(jsonObject1.getInteger("maxSlots"));
                 indexPoolInfo.setStrideSlots(jsonObject1.getInteger("strideSlots"));
+                indexPoolInfo.setWorkerRole(jsonObject1.getInteger("workerRole"));
                 JSONArray workerSpecs = jsonObject1.getJSONArray("workerSpecs");
                 List<IndexPoolInfo.WorkerSpec> workerSpecsList = new ArrayList<>();
                 for (int i1 = 0; i1 < workerSpecs.size(); i1++) {

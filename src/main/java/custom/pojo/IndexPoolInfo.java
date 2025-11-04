@@ -30,6 +30,7 @@ public class IndexPoolInfo {
     private int freeSlots;
     private int maxSlots;
     private int strideSlots;
+    private int workerRole;
     private List<WorkerSpec> workerSpecs;
 
     @Data
