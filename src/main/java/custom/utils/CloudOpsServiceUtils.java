@@ -83,7 +83,7 @@ public class CloudOpsServiceUtils {
         params.put("currentPage", "1");
         params.put("pageSize", "100");
         params.put("regionId", envConfig.getRegionId());
-        params.put("status", "1");
+//        params.put("status", "1");
         params.put("enable", "true");
         String s = HttpClientUtils.doGet(url, header, params);
         log.info("list index pool" + s);
