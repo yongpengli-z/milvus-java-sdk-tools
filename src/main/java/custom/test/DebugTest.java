@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
+import custom.components.UpsertComp;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import io.milvus.v2.service.vector.request.UpsertReq;
 import io.milvus.v2.service.vector.response.UpsertResp;
@@ -68,6 +69,7 @@ public class DebugTest {
         rateLimiter = RateLimiter.create(1);
         int concurrencyNum=10;
         ExecutorService executorService = Executors.newFixedThreadPool(concurrencyNum);
+        ArrayList<Future> list = new ArrayList<>();
         for (int c = 0; c < concurrencyNum; c++) {
             RateLimiter finalRateLimiter = rateLimiter;
             int finalC = c;
@@ -97,8 +99,10 @@ public class DebugTest {
                 return null;
             };
             Future future = executorService.submit(callable);
-
+            list.add(future);
         }
+        log.info("result" + list);
         log.info("upsert done !");
+        executorService.shutdown();
     }
 }
