@@ -41,7 +41,7 @@ public class DebugTest {
         List<String> collectionNames = listCollectionsResp.getCollectionNames();
         String collectionName=collectionNames.get(0);
         // 1. 读取文件
-        Path path = Paths.get("test/milvus/temp/upsert_data.json");
+        Path path = Paths.get("/test/milvus/temp/upsert_data.json");
         String content = Files.readString(path);
 
         // 2. 解析JSON
