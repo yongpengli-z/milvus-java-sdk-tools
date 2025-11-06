@@ -63,7 +63,7 @@ public class DebugTest {
         // 1. 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
         rateLimiter = RateLimiter.create(1);
-        int concurrencyNum=10;
+        int concurrencyNum=1;
         // 使用CountDownLatch确保所有线程完成
         CountDownLatch latch = new CountDownLatch(concurrencyNum);
         ExecutorService executorService = Executors.newFixedThreadPool(concurrencyNum);
@@ -84,14 +84,20 @@ public class DebugTest {
                         row.add("tenant", gson.toJsonTree(gson.toJsonTree(result.get(j).getTenant())));
                         jsonList.add(row);
                     }
-                    log.info("线程[" + finalC + "]执行批次："+i);
+
                     if (finalRateLimiter != null) {
                         finalRateLimiter.acquire(); // 阻塞直到获得令牌
                     }
-                    UpsertResp collection_v = milvusClientV2.upsert(UpsertReq.builder()
-                            .data(jsonList)
-                            .collectionName(collectionName)
-                            .build());
+                    log.info("线程[" + finalC + "]执行批次："+i);
+                    UpsertResp collection_v = null;
+                    try {
+                        collection_v = milvusClientV2.upsert(UpsertReq.builder()
+                                .data(jsonList)
+                                .collectionName(collectionName)
+                                .build());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                     log.info("线程[" + finalC + "]upsert result:"+ collection_v.getUpsertCnt());
                 }
                 return null;
