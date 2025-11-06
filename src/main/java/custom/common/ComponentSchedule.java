@@ -261,6 +261,12 @@ public class ComponentSchedule {
             jsonObject.put("AlterInstanceIndexCluster_" + index, alterInstanceIndexClusterResult);
             reportStepResult(AlterInstanceIndexClusterParams.class.getSimpleName() + "_" + index, JSON.toJSONString(alterInstanceIndexClusterResult));
         }
+        if (object instanceof DebugTestParams) {
+            log.info("*********** < DebugTest > ***********");
+            DebugTestComp.debugTest((DebugTestParams) object);
+            jsonObject.put("DebugTest_" + index, "debug");
+            reportStepResult(DebugTestParams.class.getSimpleName() + "_" + index, "debug");
+        }
         return jsonObject;
     }
 
