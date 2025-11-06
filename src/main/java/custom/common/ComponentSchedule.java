@@ -263,9 +263,9 @@ public class ComponentSchedule {
         }
         if (object instanceof DebugTestParams) {
             log.info("*********** < DebugTest > ***********");
-            DebugTestComp.debugTest((DebugTestParams) object);
-            jsonObject.put("DebugTest_" + index, "debug");
-            reportStepResult(DebugTestParams.class.getSimpleName() + "_" + index, "debug");
+            String s = DebugTestComp.debugTest((DebugTestParams) object);
+            jsonObject.put("DebugTest_" + index, s);
+            reportStepResult(DebugTestParams.class.getSimpleName() + "_" + index, s);
         }
         return jsonObject;
     }

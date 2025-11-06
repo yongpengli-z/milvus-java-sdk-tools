@@ -7,7 +7,6 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
-import custom.components.UpsertComp;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import io.milvus.v2.service.vector.request.UpsertReq;
 import io.milvus.v2.service.vector.response.UpsertResp;
@@ -37,7 +36,7 @@ public class DebugTest {
         private String tenant;
     }
 
-    public static void upsertOption() throws IOException {
+    public static String upsertOption() throws IOException {
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
         List<String> collectionNames = listCollectionsResp.getCollectionNames();
         String collectionName=collectionNames.get(0);
@@ -104,5 +103,6 @@ public class DebugTest {
         log.info("result" + list);
         log.info("upsert done !");
         executorService.shutdown();
+        return list.toString();
     }
 }
