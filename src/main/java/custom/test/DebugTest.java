@@ -36,7 +36,7 @@ public class DebugTest {
     public static String upsertOption() throws IOException {
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
         List<String> collectionNames = listCollectionsResp.getCollectionNames();
-        String collectionName=collectionNames.get(0);
+        String collectionName = collectionNames.get(0);
         // 1. 读取文件
         Path path = Paths.get("/test/milvus/temp/upsert_data.json");
         String content = Files.readString(path);
@@ -63,7 +63,7 @@ public class DebugTest {
         // 1. 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
         rateLimiter = RateLimiter.create(1);
-        int concurrencyNum=1;
+        int concurrencyNum = 1;
         // 使用CountDownLatch确保所有线程完成
         CountDownLatch latch = new CountDownLatch(concurrencyNum);
         ExecutorService executorService = Executors.newFixedThreadPool(concurrencyNum);
@@ -72,8 +72,9 @@ public class DebugTest {
             RateLimiter finalRateLimiter = rateLimiter;
             int finalC = c;
             Callable callable = () -> {
+                int retryCount = 0;
                 log.info("线程[" + finalC + "]启动...");
-                for (int i = (600/concurrencyNum)*finalC; i < (600/concurrencyNum)*(finalC+1); i++) {
+                for (int i = (600 / concurrencyNum) * finalC; i < (600 / concurrencyNum) * (finalC + 1); i++) {
                     int startId = i * 12500;
                     int endId = startId + 12500;
                     List<JsonObject> jsonList = new ArrayList<>();
@@ -88,17 +89,29 @@ public class DebugTest {
                     if (finalRateLimiter != null) {
                         finalRateLimiter.acquire(); // 阻塞直到获得令牌
                     }
-                    log.info("线程[" + finalC + "]执行批次："+i);
+                    log.info("线程[" + finalC + "]执行批次：" + i);
                     UpsertResp collection_v = null;
                     try {
                         collection_v = milvusClientV2.upsert(UpsertReq.builder()
                                 .data(jsonList)
                                 .collectionName(collectionName)
                                 .build());
+                        if (collection_v.getUpsertCnt() > 0) {
+                            retryCount = 0;
+                        }
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        log.error("线程[" + finalC + "]" + "upsert error,reason:" + e.getMessage());
+// 禁写后重试判断
+                        if (retryCount == 10) {
+                            return null;
+                        }
+                        retryCount++;
+                        log.info("线程[" + finalC + "]" + "第" + retryCount + "次监测到禁写，等待30秒...");
+                        Thread.sleep(1000 * 30);
+                        continue;
+
                     }
-                    log.info("线程[" + finalC + "]upsert result:"+ collection_v.getUpsertCnt());
+                    log.info("线程[" + finalC + "]upsert result:" + collection_v.getUpsertCnt());
                 }
                 return null;
             };
