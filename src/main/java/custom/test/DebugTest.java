@@ -20,10 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import static custom.BaseTest.milvusClientV2;
 
@@ -67,6 +64,8 @@ public class DebugTest {
         RateLimiter rateLimiter = null;
         rateLimiter = RateLimiter.create(1);
         int concurrencyNum=10;
+        // 使用CountDownLatch确保所有线程完成
+        CountDownLatch latch = new CountDownLatch(concurrencyNum);
         ExecutorService executorService = Executors.newFixedThreadPool(concurrencyNum);
         ArrayList<Future> list = new ArrayList<>();
         for (int c = 0; c < concurrencyNum; c++) {
@@ -99,6 +98,12 @@ public class DebugTest {
             };
             Future future = executorService.submit(callable);
             list.add(future);
+        }
+        // 关键修改1：等待所有线程完成
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
         log.info("result" + list);
         log.info("upsert done !");
