@@ -151,7 +151,8 @@ public class SearchComp {
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                             log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，result size：" + search.getSearchResults().size() + "," + search.getSearchResults().get(0).get(0).getEntity());
                             costTime.add(costTimeItem);
-                            returnNum.add(search.getSearchResults().get(0).size());
+//                            returnNum.add(search.getSearchResults().get(0).size());
+                            returnNum.add(search.getSearchResults().size());
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 printLog = 0;
