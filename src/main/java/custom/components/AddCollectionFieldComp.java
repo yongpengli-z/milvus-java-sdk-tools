@@ -24,12 +24,14 @@ public class AddCollectionFieldComp {
                 addCollectionFieldParams.getAnalyzerParamsList();
         if (analyzerParamsList != null && analyzerParamsList.size() > 0) {
             for (AddCollectionFieldParams.AnalyzerParams params : analyzerParamsList) {
-                analyzerParams.put(params.getParamsKey(), params.getParamsValue());
+                if (!params.getParamsKey().equalsIgnoreCase("")) {
+                    analyzerParams.put(params.getParamsKey(), params.getParamsValue());
+                }
             }
         }
 
         try {
-            milvusClientV2.addCollectionField(AddCollectionFieldReq.builder()
+            AddCollectionFieldReq addCollectionFieldReq = AddCollectionFieldReq.builder()
                     .collectionName(collectionName)
                     .fieldName(addCollectionFieldParams.getFieldName())
                     .defaultValue(addCollectionFieldParams.getDefaultValue())
@@ -37,7 +39,6 @@ public class AddCollectionFieldComp {
                     .isNullable(addCollectionFieldParams.getIsNullable())
                     .maxLength(addCollectionFieldParams.getMaxLength())
                     .autoID(addCollectionFieldParams.getAutoID())
-                    .databaseName(addCollectionFieldParams.getDatabaseName())
                     .dimension(addCollectionFieldParams.getDimension())
                     .elementType(addCollectionFieldParams.getElementType())
                     .enableAnalyzer(addCollectionFieldParams.getEnableAnalyzer())
@@ -48,7 +49,11 @@ public class AddCollectionFieldComp {
                     .isPrimaryKey(addCollectionFieldParams.getIsPrimaryKey())
                     .maxCapacity(addCollectionFieldParams.getMaxCapacity())
                     .analyzerParams(analyzerParams)
-                    .build());
+                    .build();
+            if (addCollectionFieldParams.getDatabaseName() != null && !addCollectionFieldParams.getDatabaseName().equalsIgnoreCase("")) {
+                addCollectionFieldReq.setDatabaseName(addCollectionFieldParams.getDatabaseName());
+            }
+            milvusClientV2.addCollectionField(addCollectionFieldReq);
             commonResult.setResult(ResultEnum.SUCCESS.result);
         } catch (Exception e) {
             commonResult.setResult(ResultEnum.EXCEPTION.result);
