@@ -3,6 +3,7 @@ package custom.components;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import custom.entity.AddCollectionFieldParams;
 import custom.entity.result.AddCollectionFieldResult;
 import custom.entity.result.CommonResult;
@@ -49,14 +50,12 @@ public class AddCollectionFieldComp {
             } else if (addCollectionFieldParams.getDataType() == DataType.Int64) {
                 defaultValue = Long.parseLong(addCollectionFieldParams.getDefaultValue());
             } else if (addCollectionFieldParams.getDataType() == DataType.JSON) {
-                JsonObject json = new JsonObject();
-                defaultValue = json.getAsJsonObject(addCollectionFieldParams.getDefaultValue());
+                defaultValue = JsonParser.parseString(addCollectionFieldParams.getDefaultValue()).getAsJsonObject();
                 log.info("defaultValue:" + defaultValue);
                 log.info("defaultValue type:" + defaultValue.getClass().getName());
             } else if (addCollectionFieldParams.getDataType() == DataType.Array) {
                 if (addCollectionFieldParams.getElementType() == DataType.JSON) {
-                    JsonObject json = new JsonObject();
-                    defaultValue = json.getAsJsonObject(addCollectionFieldParams.getDefaultValue());
+                    defaultValue = JsonParser.parseString(addCollectionFieldParams.getDefaultValue()).getAsJsonArray();
                 }
                 if (addCollectionFieldParams.getElementType() == DataType.VarChar ||
                         addCollectionFieldParams.getElementType() == DataType.Int8 ||
