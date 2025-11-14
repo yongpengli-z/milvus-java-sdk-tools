@@ -34,9 +34,12 @@ public class AddCollectionFieldComp {
         try {
             Object defaultValue = new Object();
             if (addCollectionFieldParams.getDataType() == DataType.Float){
-                defaultValue = ((Float) addCollectionFieldParams.getDefaultValue());
+                defaultValue = Float.parseFloat((String) addCollectionFieldParams.getDefaultValue());
             }else if (addCollectionFieldParams.getDataType() == DataType.Int8){
-                defaultValue = (Short) addCollectionFieldParams.getDefaultValue();
+                defaultValue = Short.parseShort((String) addCollectionFieldParams.getDefaultValue());
+            }
+            else if (addCollectionFieldParams.getDataType() == DataType.Bool){
+                defaultValue =  Boolean.parseBoolean((String) addCollectionFieldParams.getDefaultValue());
             }else {
                 defaultValue = addCollectionFieldParams.getDefaultValue();
             }
