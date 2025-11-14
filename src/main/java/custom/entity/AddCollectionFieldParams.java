@@ -22,7 +22,7 @@ public class AddCollectionFieldParams {
     private DataType elementType;
     private Integer maxCapacity;
     private Boolean isNullable;
-    private Object defaultValue;
+    private String defaultValue;
     private boolean enableDefaultValue;
     private Boolean enableAnalyzer;
     private Boolean enableMatch;

@@ -1,5 +1,7 @@
 package custom.components;
 
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import custom.entity.AddCollectionFieldParams;
 import custom.entity.result.AddCollectionFieldResult;
 import custom.entity.result.CommonResult;
@@ -7,6 +9,7 @@ import custom.entity.result.ResultEnum;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.AddCollectionFieldReq;
 
+import java.lang.annotation.ElementType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +35,35 @@ public class AddCollectionFieldComp {
         }
 
         try {
-            Object defaultValue = new Object();
-            if (addCollectionFieldParams.getDataType() == DataType.Float){
-                defaultValue = Float.parseFloat((String) addCollectionFieldParams.getDefaultValue());
-            }else if (addCollectionFieldParams.getDataType() == DataType.Int8){
-                defaultValue = Short.parseShort((String) addCollectionFieldParams.getDefaultValue());
-            }
-            else if (addCollectionFieldParams.getDataType() == DataType.Bool){
-                defaultValue =  Boolean.parseBoolean((String) addCollectionFieldParams.getDefaultValue());
-            }else {
+            Object defaultValue = null;
+            if (addCollectionFieldParams.getDataType() == DataType.Float) {
+                defaultValue = Float.parseFloat(addCollectionFieldParams.getDefaultValue());
+            } else if (addCollectionFieldParams.getDataType() == DataType.Int8) {
+                defaultValue = Short.parseShort(addCollectionFieldParams.getDefaultValue());
+            } else if (addCollectionFieldParams.getDataType() == DataType.Int16) {
+                defaultValue = Short.parseShort(addCollectionFieldParams.getDefaultValue());
+            } else if (addCollectionFieldParams.getDataType() == DataType.Int32) {
+                defaultValue = Integer.parseInt(addCollectionFieldParams.getDefaultValue());
+            } else if (addCollectionFieldParams.getDataType() == DataType.Int64) {
+                defaultValue = Long.parseLong(addCollectionFieldParams.getDefaultValue());
+            } else if (addCollectionFieldParams.getDataType() == DataType.JSON) {
+                defaultValue = JSONObject.parseObject(addCollectionFieldParams.getDefaultValue());
+            } else if (addCollectionFieldParams.getDataType() == DataType.Array) {
+                if (addCollectionFieldParams.getElementType() == DataType.JSON) {
+                    defaultValue = JSONObject.parseArray(addCollectionFieldParams.getDefaultValue());
+                }
+                if (addCollectionFieldParams.getElementType() == DataType.VarChar ||
+                        addCollectionFieldParams.getElementType() == DataType.Int8 ||
+                        addCollectionFieldParams.getElementType() == DataType.Int16 ||
+                        addCollectionFieldParams.getElementType() == DataType.Int32 ||
+                        addCollectionFieldParams.getElementType() == DataType.Int64 ||
+                        addCollectionFieldParams.getElementType() == DataType.Float
+                ) {
+                    defaultValue = Lists.newArrayList(addCollectionFieldParams.getDefaultValue());
+                }
+            } else if (addCollectionFieldParams.getDataType() == DataType.Bool) {
+                defaultValue = Boolean.parseBoolean(addCollectionFieldParams.getDefaultValue());
+            } else {
                 defaultValue = addCollectionFieldParams.getDefaultValue();
             }
 
