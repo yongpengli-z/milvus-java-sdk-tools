@@ -261,6 +261,12 @@ public class ComponentSchedule {
             jsonObject.put("AlterInstanceIndexCluster_" + index, alterInstanceIndexClusterResult);
             reportStepResult(AlterInstanceIndexClusterParams.class.getSimpleName() + "_" + index, JSON.toJSONString(alterInstanceIndexClusterResult));
         }
+        if (object instanceof AddCollectionFieldParams) {
+            log.info("*********** < Add Collection Field > ***********");
+            AddCollectionFieldResult addCollectionFieldResult = AddCollectionFieldComp.addCollectionField((AddCollectionFieldParams) object);
+            jsonObject.put("AddCollectionField_" + index, addCollectionFieldResult);
+            reportStepResult(AddCollectionFieldParams.class.getSimpleName() + "_" + index, JSON.toJSONString(addCollectionFieldResult));
+        }
         if (object instanceof DebugTestParams) {
             log.info("*********** < DebugTest > ***********");
             String s = DebugTestComp.debugTest((DebugTestParams) object);
