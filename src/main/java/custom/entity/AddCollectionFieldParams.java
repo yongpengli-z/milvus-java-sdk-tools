@@ -4,6 +4,8 @@ package custom.entity;
 import io.milvus.v2.common.DataType;
 import lombok.Data;
 
+import java.util.List;
+
 
 @Data
 public class AddCollectionFieldParams {
@@ -24,4 +26,11 @@ public class AddCollectionFieldParams {
     private boolean enableDefaultValue;
     private Boolean enableAnalyzer;
     private Boolean enableMatch;
+    private List<AnalyzerParams> analyzerParamsList;
+
+    @Data
+    public static class AnalyzerParams{
+        String paramsKey;
+        Object paramsValue;
+    }
 }

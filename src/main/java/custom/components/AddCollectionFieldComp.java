@@ -6,6 +6,10 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import io.milvus.v2.service.collection.request.AddCollectionFieldReq;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
@@ -14,6 +18,16 @@ public class AddCollectionFieldComp {
         String collectionName = (addCollectionFieldParams.getCollectionName() == null || addCollectionFieldParams.getCollectionName().equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : addCollectionFieldParams.getCollectionName();
         CommonResult commonResult = CommonResult.builder().build();
         AddCollectionFieldResult addCollectionFieldResult = AddCollectionFieldResult.builder().collectionName(collectionName).build();
+        // 处理params
+        Map<String, Object> analyzerParams = new HashMap<>();
+        List<AddCollectionFieldParams.AnalyzerParams> analyzerParamsList =
+                addCollectionFieldParams.getAnalyzerParamsList();
+        if (analyzerParamsList != null && analyzerParamsList.size() > 0) {
+            for (AddCollectionFieldParams.AnalyzerParams params : analyzerParamsList) {
+                analyzerParams.put(params.getParamsKey(), params.getParamsValue());
+            }
+        }
+
         try {
             milvusClientV2.addCollectionField(AddCollectionFieldReq.builder()
                     .collectionName(collectionName)
@@ -33,6 +47,7 @@ public class AddCollectionFieldComp {
                     .isPartitionKey(addCollectionFieldParams.getIsPartitionKey())
                     .isPrimaryKey(addCollectionFieldParams.getIsPrimaryKey())
                     .maxCapacity(addCollectionFieldParams.getMaxCapacity())
+                    .analyzerParams(analyzerParams)
                     .build());
             commonResult.setResult(ResultEnum.SUCCESS.result);
         } catch (Exception e) {
