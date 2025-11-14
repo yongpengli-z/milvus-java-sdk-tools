@@ -47,7 +47,7 @@ public class AddCollectionFieldComp {
             } else if (addCollectionFieldParams.getDataType() == DataType.Int64) {
                 defaultValue = Long.parseLong(addCollectionFieldParams.getDefaultValue());
             } else if (addCollectionFieldParams.getDataType() == DataType.JSON) {
-                defaultValue = JSONObject.parseObject(addCollectionFieldParams.getDefaultValue());
+                defaultValue = JSONObject.parseObject(addCollectionFieldParams.getDefaultValue()).toJSONString();
             } else if (addCollectionFieldParams.getDataType() == DataType.Array) {
                 if (addCollectionFieldParams.getElementType() == DataType.JSON) {
                     defaultValue = JSONObject.parseArray(addCollectionFieldParams.getDefaultValue());
