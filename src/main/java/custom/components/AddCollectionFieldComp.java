@@ -8,8 +8,8 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.AddCollectionFieldReq;
+import lombok.extern.slf4j.Slf4j;
 
-import java.lang.annotation.ElementType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +17,7 @@ import java.util.Map;
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
+@Slf4j
 public class AddCollectionFieldComp {
     public static AddCollectionFieldResult addCollectionField(AddCollectionFieldParams addCollectionFieldParams) {
         String collectionName = (addCollectionFieldParams.getCollectionName() == null || addCollectionFieldParams.getCollectionName().equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : addCollectionFieldParams.getCollectionName();
@@ -46,8 +47,11 @@ public class AddCollectionFieldComp {
                 defaultValue = Integer.parseInt(addCollectionFieldParams.getDefaultValue());
             } else if (addCollectionFieldParams.getDataType() == DataType.Int64) {
                 defaultValue = Long.parseLong(addCollectionFieldParams.getDefaultValue());
-            } else if (addCollectionFieldParams.getDataType() == DataType.JSON) {
-                defaultValue = JSONObject.parseObject(addCollectionFieldParams.getDefaultValue()).toJSONString();
+            } else if (addCollectionFieldParams.getDataType() == DataType.JSON)
+            {
+                defaultValue = JSONObject.parseObject(addCollectionFieldParams.getDefaultValue());
+                log.info("defaultValue:"+defaultValue);
+                log.info("defaultValue type:"+defaultValue.getClass().getName());
             } else if (addCollectionFieldParams.getDataType() == DataType.Array) {
                 if (addCollectionFieldParams.getElementType() == DataType.JSON) {
                     defaultValue = JSONObject.parseArray(addCollectionFieldParams.getDefaultValue());
