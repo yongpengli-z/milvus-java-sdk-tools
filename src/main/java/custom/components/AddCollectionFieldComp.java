@@ -4,6 +4,7 @@ import custom.entity.AddCollectionFieldParams;
 import custom.entity.result.AddCollectionFieldResult;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
+import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.AddCollectionFieldReq;
 
 import java.util.HashMap;
@@ -31,10 +32,19 @@ public class AddCollectionFieldComp {
         }
 
         try {
+            Object defaultValue = new Object();
+            if (addCollectionFieldParams.getDataType() == DataType.Float){
+                defaultValue = ((Float) addCollectionFieldParams.getDefaultValue());
+            }else if (addCollectionFieldParams.getDataType() == DataType.Int8){
+                defaultValue = (Short) addCollectionFieldParams.getDefaultValue();
+            }else {
+                defaultValue = addCollectionFieldParams.getDefaultValue();
+            }
+
             AddCollectionFieldReq addCollectionFieldReq = AddCollectionFieldReq.builder()
                     .collectionName(collectionName)
                     .fieldName(addCollectionFieldParams.getFieldName())
-                    .defaultValue(addCollectionFieldParams.getDefaultValue())
+                    .defaultValue(defaultValue)
                     .dataType(addCollectionFieldParams.getDataType())
                     .isNullable(addCollectionFieldParams.getIsNullable())
                     .maxLength(addCollectionFieldParams.getMaxLength())
