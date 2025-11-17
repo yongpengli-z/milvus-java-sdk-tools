@@ -3,6 +3,7 @@ package custom.common;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.type.DateTime;
 import custom.entity.*;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
@@ -35,6 +36,9 @@ import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -530,10 +534,10 @@ public class CommonFunction {
                 geoData = generateRandomGeoPoint();
             }
             if (countIndex % 3 == 1) {
-                geoData = generateRandomGeoLineString(random.nextInt(5));
+                geoData = generateRandomGeoLineString(random.nextInt(5)+2);
             }
             if (countIndex % 3 == 2) {
-                geoData = generateRandomGeoPolygon(random.nextInt(5));
+                geoData = generateRandomGeoPolygon(random.nextInt(5)+3);
             }
             row.add(fieldName, gson.toJsonTree(geoData));
         }
@@ -1034,6 +1038,11 @@ public class CommonFunction {
         );
         Point point = gf.createPoint(coord);
         return point.toText();
+    }
+
+    public static String generateTimeStamp(){
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        return LocalDateTime.now().format(dtf);
     }
 
 
