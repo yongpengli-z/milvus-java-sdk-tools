@@ -534,12 +534,15 @@ public class CommonFunction {
                 geoData = generateRandomGeoPoint();
             }
             if (countIndex % 3 == 1) {
-                geoData = generateRandomGeoLineString(random.nextInt(5)+2);
+                geoData = generateRandomGeoLineString(random.nextInt(5) + 2);
             }
             if (countIndex % 3 == 2) {
-                geoData = generateRandomGeoPolygon(random.nextInt(5)+3);
+                geoData = generateRandomGeoPolygon(random.nextInt(5) + 3);
             }
             row.add(fieldName, gson.toJsonTree(geoData));
+        }
+        if (dataType == DataType.Timestamptz) {
+            row.add(fieldName, gson.toJsonTree(generateTimeStamp()));
         }
         return row;
     }
@@ -1040,7 +1043,7 @@ public class CommonFunction {
         return point.toText();
     }
 
-    public static String generateTimeStamp(){
+    public static String generateTimeStamp() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         return LocalDateTime.now().format(dtf);
     }
