@@ -27,10 +27,16 @@ import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.*;
 import io.milvus.v2.service.vector.response.QueryResp;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
 
 import javax.annotation.Nullable;
+import java.awt.*;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -518,6 +524,19 @@ public class CommonFunction {
             json.add(CommonData.fieldJson, json2);
             row.add(fieldName, json);
         }
+        if (dataType == DataType.Geometry) {
+            String geoData = "";
+            if (countIndex % 3 == 0) {
+                geoData = generateRandomGeoPoint();
+            }
+            if (countIndex % 3 == 1) {
+                geoData = generateRandomGeoLineString(random.nextInt(5));
+            }
+            if (countIndex % 3 == 2) {
+                geoData = generateRandomGeoPolygon(random.nextInt(5));
+            }
+            row.add(fieldName, gson.toJsonTree(geoData));
+        }
         return row;
     }
 
@@ -959,4 +978,63 @@ public class CommonFunction {
         int perConcurrencyDataNum = totalDataNum / totalConcurrencyNum;
         return (searchCount % perConcurrencyDataNum) + start + (perConcurrencyDataNum * concurrencyIndex);
     }
+
+    /**
+     * 随机生成geo-polygon
+     *
+     * @param numPoints 点数
+     * @return POLYGON ((0 100, 100 100, 100 50, 0 50, 0 100))
+     */
+    public static String generateRandomGeoPolygon(int numPoints) {
+        GeometryFactory gf = new GeometryFactory();
+        Coordinate[] coords = new Coordinate[numPoints + 1];
+
+        // 生成随机顶点
+        for (int i = 0; i < numPoints; i++) {
+            coords[i] = new Coordinate(
+                    Math.random() * 100,
+                    Math.random() * 100
+            );
+        }
+        coords[numPoints] = coords[0]; // 闭合多边形
+        Polygon polygon = gf.createPolygon(coords);
+        return polygon.toText();
+    }
+
+    /**
+     * 随机生成geo-lineString
+     *
+     * @param numPoints 点数
+     * @return LINESTRING (10 10, 10 30, 40 40)
+     */
+    public static String generateRandomGeoLineString(int numPoints) {
+        GeometryFactory gf = new GeometryFactory();
+        Coordinate[] coords = new Coordinate[numPoints];
+        // 生成随机坐标点
+        for (int i = 0; i < numPoints; i++) {
+            coords[i] = new Coordinate(
+                    Math.random() * 100,  // X坐标 (0-100范围)
+                    Math.random() * 100   // Y坐标 (0-100范围)
+            );
+        }
+        LineString lineString = gf.createLineString(coords);
+        return lineString.toText();
+    }
+
+    /**
+     * 地理坐标生成（WGS84）
+     *
+     * @return 随机生成 POINT (1 1)
+     */
+    public static String generateRandomGeoPoint() {
+        GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326); // SRID 4326
+        Coordinate coord = new Coordinate(
+                -180 + Math.random() * 360,  // 经度 (-180到180)
+                -90 + Math.random() * 180    // 纬度 (-90到90)
+        );
+        Point point = gf.createPoint(coord);
+        return point.toText();
+    }
+
+
 }
