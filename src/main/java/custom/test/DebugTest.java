@@ -145,7 +145,7 @@ public class DebugTest {
         Random random = new Random();
         Gson gson = new Gson();
         LocalDateTime endRunningTime = LocalDateTime.now().plusHours(24);
-        while (LocalDateTime.now().isAfter(endRunningTime)) {
+        while (LocalDateTime.now().isBefore(endRunningTime)) {
             long startTime = System.currentTimeMillis();
             // 随机10000条用户
             for (int i = 0; i < 10000; i++) {
