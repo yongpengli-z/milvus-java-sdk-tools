@@ -3,12 +3,18 @@ package custom.test;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
+import io.milvus.grpc.QueryResults;
+import io.milvus.param.R;
+import io.milvus.param.dml.QueryParam;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
+import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.UpsertReq;
+import io.milvus.v2.service.vector.response.QueryResp;
 import io.milvus.v2.service.vector.response.UpsertResp;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,8 +24,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.*;
 
 import static custom.BaseTest.milvusClientV2;
@@ -128,5 +136,70 @@ public class DebugTest {
         log.info("upsert done !");
         executorService.shutdown();
         return list.toString();
+    }
+
+    public static String upsert24hours() {
+        ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
+        List<String> collectionNames = listCollectionsResp.getCollectionNames();
+        String collectionName = collectionNames.get(0);
+        Random random = new Random();
+        Gson gson = new Gson();
+        LocalDateTime endRunningTime = LocalDateTime.now().plusHours(24);
+        while (LocalDateTime.now().isAfter(endRunningTime)) {
+            long startTime = System.currentTimeMillis();
+            // 随机10000条用户
+            for (int i = 0; i < 10000; i++) {
+                String user = "user_" + (random.nextInt(127982) + 17);
+                QueryResp queryResp = milvusClientV2.query(QueryReq.builder()
+                        .collectionName(collectionName)
+                        .filter("tenant == \"" + user + "\"")
+                        .outputFields(Lists.newArrayList("Int64_0"))
+                        .limit(10).build());
+                List<QueryResp.QueryResult> queryResults = queryResp.getQueryResults();
+                List<JsonObject> jsonList = new ArrayList<>();
+                for (QueryResp.QueryResult queryResult : queryResults) {
+                    int pk = (int) queryResult.getEntity().get("Int64_0");
+                    JsonObject row = new JsonObject();
+                    row.add("Int64_0", gson.toJsonTree(pk));
+                    row.add("FloatVector_1", gson.toJsonTree(CommonFunction.generateFloatVector(768)));
+                    row.add("tenant", gson.toJsonTree(user));
+                    jsonList.add(row);
+                }
+                UpsertResp upsert = milvusClientV2.upsert(UpsertReq.builder()
+                        .data(jsonList)
+                        .collectionName(collectionName)
+                        .build());
+
+            }
+            long endTime = System.currentTimeMillis();
+            log.info(endTime + "本次10000条用户耗时：" + (endTime - startTime) / 1000.00 + "秒");
+            try {
+                Thread.sleep(1000 * 60 * 60);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return "Done！";
+    }
+
+    public static void main(String[] args) {
+        String s = "{\"abnormalNum\":0,\"resultList\":[{\"ReleaseCollection_0\":{\"releaseResultList\":[[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}]]}},{\"Wait1\":{\"waitMinutes\":[10,10,10,10,10,10,10,10,10,10],\"commonResult\":{\"result\":[\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\"]}}},{\"LoadCollection_2\":{\"loadResultList\":[[{\"costTimes\":18.739,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":18.671,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":18.177,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":18.665,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":14.137,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":18.699,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":17.693,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":16.176,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":17.656,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":18.662,\"collectionName\":\"Collection_IqMmWNRVLR\",\"commonResult\":{\"result\":\"success\"}}]]}},{\"Wait3\":{\"waitMinutes\":[10,10,10,10,10,10,10,10,10,10],\"commonResult\":{\"result\":[\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\"]}}}],\"runningNum\":10}";
+        JSONObject jsonObject = JSONObject.parseObject(s);
+        JSONObject resultList = jsonObject.getJSONArray("resultList").getJSONObject(2);
+        JSONArray jsonArray = resultList.getJSONObject("LoadCollection_2").getJSONArray("loadResultList");
+        List<Double> doubleList = new ArrayList<>();
+        for (int i = 0; i < jsonArray.size(); i++) {
+            doubleList.add(jsonArray.getJSONArray(i).getJSONObject(0).getDouble("costTimes"));
+        }
+        System.out.println(doubleList);
+
+//        List<Double> doubleList= Lists.newArrayList(32.257,85.102,69.977,145.426,18.655,18.663,17.138,19.155,17.652,15.63);
+        double d = 0.0;
+        for (int i = 0; i < doubleList.size(); i++) {
+            d += doubleList.get(i);
+        }
+        System.out.println(d / 10);
+
     }
 }

@@ -8,13 +8,10 @@ import java.io.IOException;
 
 @Slf4j
 public class DebugTestComp {
-    public static String  debugTest(DebugTestParams debugTestParams) {
+    public static String debugTest(DebugTestParams debugTestParams) {
         String s;
-        try {
-            s = DebugTest.upsertOption();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        //            s = DebugTest.upsertOption();
+        s = DebugTest.upsert24hours();
         return s;
     }
 }
