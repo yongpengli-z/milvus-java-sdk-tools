@@ -158,7 +158,7 @@ public class DebugTest {
                 List<QueryResp.QueryResult> queryResults = queryResp.getQueryResults();
                 List<JsonObject> jsonList = new ArrayList<>();
                 for (QueryResp.QueryResult queryResult : queryResults) {
-                    int pk = (int) queryResult.getEntity().get("Int64_0");
+                    long pk = (long) queryResult.getEntity().get("Int64_0");
                     JsonObject row = new JsonObject();
                     row.add("Int64_0", gson.toJsonTree(pk));
                     row.add("FloatVector_1", gson.toJsonTree(CommonFunction.generateFloatVector(768)));
