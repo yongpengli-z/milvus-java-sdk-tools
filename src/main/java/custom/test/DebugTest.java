@@ -169,14 +169,15 @@ public class DebugTest {
                         .data(jsonList)
                         .collectionName(collectionName)
                         .build());
-
+                log.info(String.format("upsert tenant %s , %s 数据.", user, upsert.getUpsertCnt()));
             }
             long endTime = System.currentTimeMillis();
             log.info(endTime + "本次10000条用户耗时：" + (endTime - startTime) / 1000.00 + "秒");
             try {
-                Thread.sleep(1000 * 60 * 1);
+                log.info("进度等待...");
+                Thread.sleep(1000 * 60 * 53);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                log.error(e.getMessage());
             }
         }
 
