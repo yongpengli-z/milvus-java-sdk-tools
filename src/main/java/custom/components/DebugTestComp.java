@@ -11,7 +11,11 @@ public class DebugTestComp {
     public static String debugTest(DebugTestParams debugTestParams) {
         String s;
         //            s = DebugTest.upsertOption();
-        s = DebugTest.upsert24hours();
+        try {
+            s = DebugTest.upsertOption();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return s;
     }
 }
