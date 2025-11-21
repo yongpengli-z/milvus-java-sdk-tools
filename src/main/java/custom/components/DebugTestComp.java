@@ -12,8 +12,8 @@ public class DebugTestComp {
         String s;
         //            s = DebugTest.upsertOption();
         try {
-            s = DebugTest.upsertOption();
-        } catch (IOException e) {
+            s = DebugTest.upsert24hours();
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return s;
