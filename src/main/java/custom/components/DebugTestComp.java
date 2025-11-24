@@ -12,7 +12,7 @@ public class DebugTestComp {
         String s;
         //            s = DebugTest.upsertOption();
         try {
-            s = DebugTest.upsert24hours();
+            s = DebugTest.upsertRandomTenant();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

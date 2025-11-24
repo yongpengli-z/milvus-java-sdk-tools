@@ -8,13 +8,19 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
+import custom.utils.MathUtil;
 import io.milvus.grpc.QueryResults;
 import io.milvus.param.R;
 import io.milvus.param.dml.QueryParam;
+import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import io.milvus.v2.service.vector.request.QueryReq;
+import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.UpsertReq;
+import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.QueryResp;
+import io.milvus.v2.service.vector.response.SearchResp;
 import io.milvus.v2.service.vector.response.UpsertResp;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -184,8 +190,63 @@ public class DebugTest {
         return "Done！";
     }
 
+    public static String upsertRandomTenant() {
+        ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
+        List<String> collectionNames = listCollectionsResp.getCollectionNames();
+        String collectionName = collectionNames.get(0);
+        Random random = new Random();
+        Gson gson = new Gson();
+        List<Float> costTimeTotal = new ArrayList<>();
+        LocalDateTime endRunningTime = LocalDateTime.now().plusHours(4);
+        while (LocalDateTime.now().isBefore(endRunningTime)) {
+            String user = "user_" + (random.nextInt(127982) + 17);
+            QueryResp queryResp = milvusClientV2.query(QueryReq.builder()
+                    .collectionName(collectionName)
+                    .filter("tenant == \"" + user + "\"")
+                    .outputFields(Lists.newArrayList("Int64_0"))
+                    .limit(310).build());
+            List<QueryResp.QueryResult> queryResults = queryResp.getQueryResults();
+            List<JsonObject> jsonList = new ArrayList<>();
+            for (QueryResp.QueryResult queryResult : queryResults) {
+                long pk = (long) queryResult.getEntity().get("Int64_0");
+                JsonObject row = new JsonObject();
+                row.add("Int64_0", gson.toJsonTree(pk));
+                row.add("FloatVector_1", gson.toJsonTree(CommonFunction.generateFloatVector(768)));
+                row.add("tenant", gson.toJsonTree(user));
+                jsonList.add(row);
+            }
+            long startTimeUpsert = System.currentTimeMillis();
+            UpsertResp upsert = milvusClientV2.upsert(UpsertReq.builder()
+                    .data(jsonList)
+                    .collectionName(collectionName)
+                    .build());
+            long endTimeUpsert = System.currentTimeMillis();
+            log.info(String.format("Upsert tenant %s , %s data，cost：%s s", user, upsert.getUpsertCnt(), (endTimeUpsert - startTimeUpsert) / 1000.00));
+
+            List<BaseVector> baseVectors = CommonFunction.providerSearchVector(1, 768, DataType.FloatVector);
+            long startTimeSearch = System.currentTimeMillis();
+            SearchResp searchResp = milvusClientV2.search(SearchReq.builder()
+                    .filter("tenant == \"" + user + "\"")
+                    .consistencyLevel(ConsistencyLevel.BOUNDED)
+                    .topK(1)
+                    .annsField("FloatVector_1")
+                    .data(baseVectors)
+                    .collectionName(collectionName)
+                    .build());
+            long endTimeSearch = System.currentTimeMillis();
+            double searchCost = (endTimeSearch - startTimeSearch) / 1000.00;
+            costTimeTotal.add((float) searchCost);
+            log.info(String.format("Search %s,cost %s s", user, searchCost));
+        }
+        double avg = costTimeTotal.stream()
+                .mapToDouble(Float::floatValue)
+                .average()
+                .orElse(0.0);
+        return String.format("UpsertRandomTenant Done! Search avg: %s, tp99:  %s", avg, MathUtil.calculateTP99(costTimeTotal, 0.99f));
+    }
+
     public static void main(String[] args) {
-        String s = "{\"abnormalNum\":0,\"resultList\":[{\"ReleaseCollection_0\":{\"releaseResultList\":[[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}]]}},{\"Wait1\":{\"waitMinutes\":[5,5,5,5,5,5,5,5,5,5],\"commonResult\":{\"result\":[\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\"]}}},{\"LoadCollection_2\":{\"loadResultList\":[[{\"costTimes\":28.34,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":26.885,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":32.827,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":28.326,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":26.791,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":26.262,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":28.391,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":24.325,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":29.272,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":26.231,\"collectionName\":\"Collection_jPaOhXFuCm\",\"commonResult\":{\"result\":\"success\"}}]]}},{\"Wait3\":{\"waitMinutes\":[5,5,5,5,5,5,5,5,5,5],\"commonResult\":{\"result\":[\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\"]}}}],\"runningNum\":10}\n";
+        String s = "{\"abnormalNum\":0,\"resultList\":[{\"ReleaseCollection_0\":{\"releaseResultList\":[[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}]]}},{\"Wait1\":{\"waitMinutes\":[10,10,10,10,10,10,10,10,10,10],\"commonResult\":{\"result\":[\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\"]}}},{\"LoadCollection_2\":{\"loadResultList\":[[{\"costTimes\":74.495,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":68.545,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":65.017,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":68.436,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":71.07,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":65.434,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":67.53,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":65.921,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":66.924,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}],[{\"costTimes\":70.458,\"collectionName\":\"Collection_PPJkvvrfkt\",\"commonResult\":{\"result\":\"success\"}}]]}},{\"Wait3\":{\"waitMinutes\":[10,10,10,10,10,10,10,10,10,10],\"commonResult\":{\"result\":[\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\",\"success\"]}}}],\"runningNum\":10}";
         JSONObject jsonObject = JSONObject.parseObject(s);
         JSONObject resultList = jsonObject.getJSONArray("resultList").getJSONObject(2);
         JSONArray jsonArray = resultList.getJSONObject("LoadCollection_2").getJSONArray("loadResultList");
