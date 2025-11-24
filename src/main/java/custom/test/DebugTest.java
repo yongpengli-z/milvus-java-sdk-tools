@@ -200,7 +200,7 @@ public class DebugTest {
         // 1. 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
         rateLimiter = RateLimiter.create(1);
-        LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(5);
+        LocalDateTime endRunningTime = LocalDateTime.now().plusHours(6);
         while (LocalDateTime.now().isBefore(endRunningTime)) {
             String user = "user_" + (random.nextInt(127982) + 17);
             QueryResp queryResp = milvusClientV2.query(QueryReq.builder()
