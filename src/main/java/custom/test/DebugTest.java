@@ -197,7 +197,10 @@ public class DebugTest {
         Random random = new Random();
         Gson gson = new Gson();
         List<Float> costTimeTotal = new ArrayList<>();
-        LocalDateTime endRunningTime = LocalDateTime.now().plusHours(4);
+        // 1. 创建RateLimiter实例（根据配置的QPS）
+        RateLimiter rateLimiter = null;
+        rateLimiter = RateLimiter.create(1);
+        LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(5);
         while (LocalDateTime.now().isBefore(endRunningTime)) {
             String user = "user_" + (random.nextInt(127982) + 17);
             QueryResp queryResp = milvusClientV2.query(QueryReq.builder()
@@ -214,6 +217,9 @@ public class DebugTest {
                 row.add("FloatVector_1", gson.toJsonTree(CommonFunction.generateFloatVector(768)));
                 row.add("tenant", gson.toJsonTree(user));
                 jsonList.add(row);
+            }
+            if (rateLimiter != null) {
+                rateLimiter.acquire(); // 阻塞直到获得令牌
             }
             long startTimeUpsert = System.currentTimeMillis();
             UpsertResp upsert = milvusClientV2.upsert(UpsertReq.builder()
