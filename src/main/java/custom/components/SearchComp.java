@@ -146,7 +146,16 @@ public class SearchComp {
                                     .annsField(searchParams.getAnnsField())
                                     .build();
                             long startItemTime = System.currentTimeMillis();
-                            SearchResp search = milvusClientV2.search(searchReq);
+                            SearchResp search = null;
+                            try {
+                                search = milvusClientV2.search(searchReq);
+                            } catch (Exception e) {
+                                log.error("线程[" + finalC + "]  search error :" + e.getMessage());
+                                if (searchParams.isIgnoreError()) {
+                                    log.error("线程[" + finalC + "] Ignore error, continue search...... ");
+                                    continue;
+                                }
+                            }
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                             log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，result size：" + search.getSearchResults().size() + ",");

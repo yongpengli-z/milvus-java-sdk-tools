@@ -20,4 +20,5 @@ public class SearchParams {
     private String annsField;
     private double targetQps;
     private List<GeneralDataRole> generalFilterRoleList;
+    private boolean ignoreError;
 }

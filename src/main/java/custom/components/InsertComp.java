@@ -64,7 +64,7 @@ public class InsertComp {
         String collectionName = (insertParams.getCollectionName() == null ||
                 insertParams.getCollectionName().equalsIgnoreCase(""))
                 ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
-        log.info("Insert collection [" + collectionName + "]  from id:" + insertParams.getStartId() +"total insert "+ insertParams.getNumEntries() + " entities... ");
+        log.info("Insert collection [" + collectionName + "]  from id:" + insertParams.getStartId() + "total insert " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
         ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
@@ -93,7 +93,7 @@ public class InsertComp {
                             }
                             long genDataStartTime = System.currentTimeMillis();
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(),
-                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(),insertParams.getNumEntries(),insertParams.getStartId());
+                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId());
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
@@ -111,6 +111,10 @@ public class InsertComp {
                                     retryCount = 0;
                                 }
                             } catch (Exception e) {
+                                if (insertParams.isIgnoreError()) {
+                                    log.error("线程[" + finalC + "]" + "Ignore error，continue insert......");
+                                    continue;
+                                }
                                 log.error("线程[" + finalC + "]" + "insert error,reason:" + e.getMessage());
                                 // 禁写后重试判断
                                 if ((!insertParams.isRetryAfterDeny()) || (retryCount == 10)) {

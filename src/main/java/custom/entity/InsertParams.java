@@ -16,5 +16,6 @@ public class InsertParams {
     private String dataset;
     private long runningMinutes;
     private boolean retryAfterDeny;
+    private boolean ignoreError;
     private List<GeneralDataRole> generalDataRoleList;
 }
