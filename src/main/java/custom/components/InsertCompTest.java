@@ -11,6 +11,9 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
+import io.milvus.v2.service.collection.request.CreateCollectionReq;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.InsertReq;
 import io.milvus.v2.service.vector.response.InsertResp;
 import lombok.Data;
@@ -32,7 +35,7 @@ public class InsertCompTest {
         List<String> fileNames = new ArrayList<>();
         List<Long> fileSizeList = new ArrayList<>();
         //先处理insert里数据生成的规则，先进行排序处理
-        if (insertParams.getGeneralDataRoleList().size()> 0){
+        if (insertParams.getGeneralDataRoleList().size() > 0) {
             for (GeneralDataRole generalDataRole : insertParams.getGeneralDataRoleList()) {
                 List<RandomRangeParams> randomRangeParamsList = generalDataRole.getRandomRangeParamsList();
                 randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
@@ -79,6 +82,8 @@ public class InsertCompTest {
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
         ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
+        // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         // insert data with multiple threads
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             int finalC = c;
@@ -104,7 +109,7 @@ public class InsertCompTest {
                             }
                             long genDataStartTime = System.currentTimeMillis();
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(),
-                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(),insertParams.getStartId());
+                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp);
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");

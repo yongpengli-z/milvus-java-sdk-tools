@@ -153,6 +153,7 @@ public class SearchComp {
                                 log.error("线程[" + finalC + "]  search error :" + e.getMessage());
                                 if (searchParams.isIgnoreError()) {
                                     log.error("线程[" + finalC + "] Ignore error, continue search...... ");
+                                    returnNum.add(0);
                                     continue;
                                 }
                             }
