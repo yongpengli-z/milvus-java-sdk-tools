@@ -12,4 +12,5 @@ public class EnvConfig {
     String cloudOpsServiceToken;
     String infraHost;
     String infraToken;
+    String cloudUserServiceHost;
 }

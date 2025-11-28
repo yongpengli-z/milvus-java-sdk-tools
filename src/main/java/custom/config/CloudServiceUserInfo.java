@@ -11,4 +11,5 @@ public class CloudServiceUserInfo {
     String userId;
     List<String> orgIdList;
     String defaultProjectId;
+    String proxyUserId;
 }

@@ -18,6 +18,7 @@ public class ConfigUtils {
         String regionId = envJO.getJSONObject(envEnum.envNodeName).getString("region_id");
         String cloudOpsServiceHost = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_ops_service_host");
         String cloudOpsServiceToken = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_ops_service_token");
+        String cloudUserServiceToken = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_user_service_host");
         String infraHost = envJO.getJSONObject(envEnum.envNodeName).getString("infra_host");
         String infraToken = envJO.getJSONObject(envEnum.envNodeName).getString("infra_token");
         envConfig.setRegionId(regionId);
@@ -28,6 +29,7 @@ public class ConfigUtils {
         envConfig.setCloudOpsServiceToken(cloudOpsServiceToken);
         envConfig.setInfraHost(infraHost);
         envConfig.setInfraToken(infraToken);
+        envConfig.setCloudUserServiceHost(cloudUserServiceToken);
         return envConfig;
     }
 }
