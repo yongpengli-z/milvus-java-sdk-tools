@@ -10,7 +10,6 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
-import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -31,8 +30,25 @@ import static custom.BaseTest.*;
 public class SearchComp {
     public static SearchResultA searchCollection(SearchParams searchParams) {
         // 先search collection
-        String collection = (searchParams.getCollectionName() == null ||
-                searchParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
+        // 判断collection获取规则
+        Random random = new Random();
+        String collection ;
+        if (searchParams.getCollectionRole() == null || searchParams.getCollectionRole().equalsIgnoreCase("")) {
+            collection = (searchParams.getCollectionName() == null ||
+                    searchParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
+        } else if (searchParams.getCollectionRole().equalsIgnoreCase("random")) {
+            collection = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
+        } else if (searchParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+            collection = globalCollectionNames.get(searchCollectionIndex);
+            searchCollectionIndex += 1;
+            searchCollectionIndex = searchCollectionIndex % globalCollectionNames.size();
+        } else {
+            collection = (searchParams.getCollectionName() == null ||
+                    searchParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
+        }
+
         // 判定是不是sparse向量，并且是由Function BM25生成
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
@@ -100,6 +116,7 @@ public class SearchComp {
             List<String> finalOutputs = outputs;
             RateLimiter finalRateLimiter = rateLimiter;
             List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
+            String finalCollection = collection;
             Callable<SearchResult> callable =
                     () -> {
                         List<BaseVector> randomBaseVectors = baseVectors;
@@ -139,7 +156,7 @@ public class SearchComp {
                                     .topK(searchParams.getTopK())
                                     .outputFields(finalOutputs)
                                     .consistencyLevel(ConsistencyLevel.BOUNDED)
-                                    .collectionName(collection)
+                                    .collectionName(finalCollection)
                                     .searchParams(searchLevel)
                                     .filter(filter)
                                     .data(randomBaseVectors)

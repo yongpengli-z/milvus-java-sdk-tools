@@ -43,6 +43,11 @@ public class BaseTest {
 
     public static EnvEnum envEnum;
 
+    public static int insertCollectionIndex = 0;
+    public static int searchCollectionIndex = 0;
+    public static int queryCollectionIndex = 0;
+    public static int upsertCollectionIndex = 0;
+
     public static void main(String[] args) {
 
         taskId = Integer.parseInt(System.getProperty("taskId") == null

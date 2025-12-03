@@ -18,4 +18,5 @@ public class InsertParams {
     private boolean retryAfterDeny;
     private boolean ignoreError;
     private List<GeneralDataRole> generalDataRoleList;
+    private String collectionRole;
 }

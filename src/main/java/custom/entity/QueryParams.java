@@ -18,4 +18,5 @@ public class QueryParams {
     private long offset;
     private List<GeneralDataRole> generalFilterRoleList;
     private double targetQps;
+    private String collectionRole;
 }

@@ -21,4 +21,5 @@ public class SearchParams {
     private double targetQps;
     private List<GeneralDataRole> generalFilterRoleList;
     private boolean ignoreError;
+    private String collectionRole;
 }

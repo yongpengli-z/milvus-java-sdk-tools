@@ -18,4 +18,5 @@ public class UpsertParams {
     private boolean retryAfterDeny;
     private List<GeneralDataRole> generalDataRoleList;
     private int targetQps;
+    private String collectionRole;
 }

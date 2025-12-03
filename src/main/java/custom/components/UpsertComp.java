@@ -11,7 +11,6 @@ import custom.entity.result.UpsertResult;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
-import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.UpsertReq;
@@ -23,17 +22,35 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.*;
 
-import static custom.BaseTest.globalCollectionNames;
-import static custom.BaseTest.milvusClientV2;
+import static custom.BaseTest.*;
+import static custom.BaseTest.queryCollectionIndex;
 
 @Slf4j
 public class UpsertComp {
     public static UpsertResult upsertCollection(UpsertParams upsertParams) {
         // 先search collection
-        String collectionName = (upsertParams.getCollectionName() == null ||
-                upsertParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : upsertParams.getCollectionName();
+        // 判断collection获取规则
+        String collectionName = "";
+        Random random = new Random();
+        if (upsertParams.getCollectionRole() == null || upsertParams.getCollectionRole().equalsIgnoreCase("")) {
+            collectionName = (upsertParams.getCollectionName() == null ||
+                    upsertParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : upsertParams.getCollectionName();
+        } else if (upsertParams.getCollectionRole().equalsIgnoreCase("random")) {
+            collectionName = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
+        } else if (upsertParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+            collectionName = globalCollectionNames.get(upsertCollectionIndex);
+            upsertCollectionIndex += 1;
+            upsertCollectionIndex = upsertCollectionIndex % globalCollectionNames.size();
+        } else {
+            collectionName = (upsertParams.getCollectionName() == null ||
+                    upsertParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : upsertParams.getCollectionName();
+        }
+
 
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();
@@ -113,6 +130,7 @@ public class UpsertComp {
             int finalC = c;
             List<String> finalFileNames = fileNames;
             List<Long> finalFileSizeList = fileSizeList;
+            String finalCollectionName = collectionName;
             Callable callable =
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
@@ -136,7 +154,7 @@ public class UpsertComp {
                                 return upsertResultItem;
                             }
 
-                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, upsertParams.getBatchSize(),
+                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(finalCollectionName, upsertParams.getBatchSize(),
                                     (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList, upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp);
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             UpsertResp upsertResp = null;
@@ -144,7 +162,7 @@ public class UpsertComp {
                             try {
                                 upsertResp = milvusClientV2.upsert(UpsertReq.builder()
                                         .data(jsonObjects)
-                                        .collectionName(collectionName)
+                                        .collectionName(finalCollectionName)
                                         .build());
                                 if (upsertResp.getUpsertCnt() > 0) {
                                     retryCount = 0;

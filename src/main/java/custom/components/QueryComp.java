@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -27,12 +28,30 @@ import static custom.BaseTest.*;
 @Slf4j
 public class QueryComp {
     public static QueryResult queryCollection(QueryParams queryParams) {
-        String collectionName = (queryParams.getCollectionName() == null ||
-                queryParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : queryParams.getCollectionName();
+        // 判断collection获取规则
+        String collectionName = "";
+        Random random=new Random();
+        if (queryParams.getCollectionRole() == null || queryParams.getCollectionRole().equalsIgnoreCase("")) {
+            collectionName = (queryParams.getCollectionName() == null ||
+                    queryParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : queryParams.getCollectionName();
+        } else if (queryParams.getCollectionRole().equalsIgnoreCase("random")) {
+            collectionName = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
+        } else if (queryParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+            collectionName = globalCollectionNames.get(queryCollectionIndex);
+            queryCollectionIndex += 1;
+            queryCollectionIndex = queryCollectionIndex % globalCollectionNames.size();
+        } else {
+            collectionName = (queryParams.getCollectionName() == null ||
+                    queryParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : queryParams.getCollectionName();
+        }
+
         ArrayList<Future<QueryItemResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(queryParams.getNumConcurrency());
         float queryTotalTime;
         long startTimeTotal = System.currentTimeMillis();
+        log.info("query collection：" + collectionName);
         log.info("query参数：" + queryParams);
         //先处理query里数据生成的规则，先进行排序处理
         List<GeneralDataRole> generalDataRoleList = null;
@@ -55,6 +74,7 @@ public class QueryComp {
             int finalI = i;
             RateLimiter finalRateLimiter = rateLimiter;
             List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
+            String finalCollectionName = collectionName;
             Callable<QueryItemResult> callable = () -> {
                 log.info("线程[" + finalI + "]启动...");
                 QueryItemResult queryItemResult = new QueryItemResult();
@@ -81,7 +101,7 @@ public class QueryComp {
                     }
                     try {
                         QueryReq queryReq = QueryReq.builder()
-                                .collectionName(collectionName)
+                                .collectionName(finalCollectionName)
                                 .outputFields(queryParams.getOutputs())
                                 .ids(queryParams.getIds().size() == 0 ? null : queryParams.getIds())
                                 .filter(filterParams.equalsIgnoreCase("") ? null : filterParams)

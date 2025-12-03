@@ -9,7 +9,6 @@ import custom.entity.result.InsertResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
-import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.InsertReq;
@@ -20,10 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.*;
 
-import static custom.BaseTest.globalCollectionNames;
-import static custom.BaseTest.milvusClientV2;
+import static custom.BaseTest.*;
 
 @Slf4j
 public class InsertComp {
@@ -31,6 +30,7 @@ public class InsertComp {
         DatasetEnum datasetEnum;
         List<String> fileNames = new ArrayList<>();
         List<Long> fileSizeList = new ArrayList<>();
+        Random random = new Random();
         // 先检查dataset
         switch (insertParams.getDataset().toLowerCase()) {
             case "gist":
@@ -64,9 +64,23 @@ public class InsertComp {
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
         float insertTotalTime;
-        String collectionName = (insertParams.getCollectionName() == null ||
-                insertParams.getCollectionName().equalsIgnoreCase(""))
-                ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
+        // 判断collection获取规则
+        String collectionName = "";
+        if (insertParams.getCollectionRole() == null || insertParams.getCollectionRole().equalsIgnoreCase("")) {
+            collectionName = (insertParams.getCollectionName() == null ||
+                    insertParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
+        } else if (insertParams.getCollectionRole().equalsIgnoreCase("random")) {
+            collectionName = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
+        } else if (insertParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+            collectionName = globalCollectionNames.get(insertCollectionIndex);
+            insertCollectionIndex += 1;
+            insertCollectionIndex = insertCollectionIndex % globalCollectionNames.size();
+        } else {
+            collectionName = (insertParams.getCollectionName() == null ||
+                    insertParams.getCollectionName().equalsIgnoreCase(""))
+                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
+        }
         log.info("Insert collection [" + collectionName + "]  from id:" + insertParams.getStartId() + "total insert " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
@@ -79,6 +93,7 @@ public class InsertComp {
             int finalC = c;
             List<String> finalFileNames = fileNames;
             List<Long> finalFileSizeList = fileSizeList;
+            String finalCollectionName = collectionName;
             Callable callable =
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
@@ -98,7 +113,7 @@ public class InsertComp {
                                 return insertResultItem;
                             }
                             long genDataStartTime = System.currentTimeMillis();
-                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(collectionName, insertParams.getBatchSize(),
+                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(finalCollectionName, insertParams.getBatchSize(),
                                     (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp);
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
@@ -109,7 +124,7 @@ public class InsertComp {
                             try {
                                 insert = milvusClientV2.insert(InsertReq.builder()
                                         .data(jsonObjects)
-                                        .collectionName(collectionName)
+                                        .collectionName(finalCollectionName)
                                         .build());
                                 endTime = System.currentTimeMillis();
                                 costTime.add((float) ((endTime - startTime) / 1000.00));
