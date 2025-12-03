@@ -31,13 +31,13 @@ public class QueryComp {
         // 判断collection获取规则
         String collectionName = "";
         Random random=new Random();
-        if (queryParams.getCollectionRole() == null || queryParams.getCollectionRole().equalsIgnoreCase("")) {
+        if (queryParams.getCollectionRule() == null || queryParams.getCollectionRule().equalsIgnoreCase("")) {
             collectionName = (queryParams.getCollectionName() == null ||
                     queryParams.getCollectionName().equalsIgnoreCase(""))
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : queryParams.getCollectionName();
-        } else if (queryParams.getCollectionRole().equalsIgnoreCase("random")) {
+        } else if (queryParams.getCollectionRule().equalsIgnoreCase("random")) {
             collectionName = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
-        } else if (queryParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+        } else if (queryParams.getCollectionRule().equalsIgnoreCase("sequence")) {
             collectionName = globalCollectionNames.get(queryCollectionIndex);
             queryCollectionIndex += 1;
             queryCollectionIndex = queryCollectionIndex % globalCollectionNames.size();

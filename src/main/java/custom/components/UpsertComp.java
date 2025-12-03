@@ -35,13 +35,13 @@ public class UpsertComp {
         // 判断collection获取规则
         String collectionName = "";
         Random random = new Random();
-        if (upsertParams.getCollectionRole() == null || upsertParams.getCollectionRole().equalsIgnoreCase("")) {
+        if (upsertParams.getCollectionRule() == null || upsertParams.getCollectionRule().equalsIgnoreCase("")) {
             collectionName = (upsertParams.getCollectionName() == null ||
                     upsertParams.getCollectionName().equalsIgnoreCase(""))
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : upsertParams.getCollectionName();
-        } else if (upsertParams.getCollectionRole().equalsIgnoreCase("random")) {
+        } else if (upsertParams.getCollectionRule().equalsIgnoreCase("random")) {
             collectionName = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
-        } else if (upsertParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+        } else if (upsertParams.getCollectionRule().equalsIgnoreCase("sequence")) {
             collectionName = globalCollectionNames.get(upsertCollectionIndex);
             upsertCollectionIndex += 1;
             upsertCollectionIndex = upsertCollectionIndex % globalCollectionNames.size();

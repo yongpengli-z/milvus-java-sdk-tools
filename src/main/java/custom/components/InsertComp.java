@@ -66,13 +66,13 @@ public class InsertComp {
         float insertTotalTime;
         // 判断collection获取规则
         String collectionName = "";
-        if (insertParams.getCollectionRole() == null || insertParams.getCollectionRole().equalsIgnoreCase("")) {
+        if (insertParams.getCollectionRule() == null || insertParams.getCollectionRule().equalsIgnoreCase("")) {
             collectionName = (insertParams.getCollectionName() == null ||
                     insertParams.getCollectionName().equalsIgnoreCase(""))
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
-        } else if (insertParams.getCollectionRole().equalsIgnoreCase("random")) {
+        } else if (insertParams.getCollectionRule().equalsIgnoreCase("random")) {
             collectionName = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
-        } else if (insertParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+        } else if (insertParams.getCollectionRule().equalsIgnoreCase("sequence")) {
             collectionName = globalCollectionNames.get(insertCollectionIndex);
             insertCollectionIndex += 1;
             insertCollectionIndex = insertCollectionIndex % globalCollectionNames.size();

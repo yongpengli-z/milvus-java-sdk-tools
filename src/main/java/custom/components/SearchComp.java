@@ -33,13 +33,13 @@ public class SearchComp {
         // 判断collection获取规则
         Random random = new Random();
         String collection ;
-        if (searchParams.getCollectionRole() == null || searchParams.getCollectionRole().equalsIgnoreCase("")) {
+        if (searchParams.getCollectionRule() == null || searchParams.getCollectionRule().equalsIgnoreCase("")) {
             collection = (searchParams.getCollectionName() == null ||
                     searchParams.getCollectionName().equalsIgnoreCase(""))
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
-        } else if (searchParams.getCollectionRole().equalsIgnoreCase("random")) {
+        } else if (searchParams.getCollectionRule().equalsIgnoreCase("random")) {
             collection = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
-        } else if (searchParams.getCollectionRole().equalsIgnoreCase("sequence")) {
+        } else if (searchParams.getCollectionRule().equalsIgnoreCase("sequence")) {
             collection = globalCollectionNames.get(searchCollectionIndex);
             searchCollectionIndex += 1;
             searchCollectionIndex = searchCollectionIndex % globalCollectionNames.size();
