@@ -1,6 +1,6 @@
 package custom.utils;
 
-import com.github.javafaker.Faker;
+import net.datafaker.Faker;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -119,7 +119,7 @@ public class GenerateUtil {
             for (int i = 0; i < dim; i++) {
                 BigDecimal bigDecimal = BigDecimal.valueOf(Math.random());
                 BigDecimal bigDecimal1 = bigDecimal.setScale(length, RoundingMode.HALF_UP);
-                itemFloat.add( bigDecimal1.floatValue());
+                itemFloat.add(bigDecimal1.floatValue());
             }
             floats.add(itemFloat);
         }
@@ -127,11 +127,11 @@ public class GenerateUtil {
     }
 
     public static List<int[]> generateBinaryVectors(int num, int dim) {
-        Random random=new Random();
+        Random random = new Random();
         List<int[]> intList = new ArrayList<>(num);
         for (int j = 0; j < num; j++) {
-            int[] intvalue = new int[dim/8];
-            for (int i = 0; i < dim/8; i++) {
+            int[] intvalue = new int[dim / 8];
+            for (int i = 0; i < dim / 8; i++) {
 
                 intvalue[i] = random.nextInt(100);
             }
@@ -190,10 +190,10 @@ public class GenerateUtil {
         return result;
     }
 
-    public static String genRandomStringAndChinese(int length){
+    public static String genRandomStringAndChinese(int length) {
         String str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        String chinese="富强民主文明和谐自由平等公正法治爱国敬业诚信友善";
-        String strChinese=str+chinese;
+        String chinese = "富强民主文明和谐自由平等公正法治爱国敬业诚信友善";
+        String strChinese = str + chinese;
         Random random = new Random();
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < length; i++) {
@@ -203,23 +203,37 @@ public class GenerateUtil {
         return sb.toString();
     }
 
-    public static float generalRandomLargeThanFloat(float floatNum){
-        Random random=new Random();
-        return random.nextInt(10)+floatNum+1;
+    public static float generalRandomLargeThanFloat(float floatNum) {
+        Random random = new Random();
+        return random.nextInt(10) + floatNum + 1;
     }
 
-    public static float generalRandomLessThanFloat(float floatNum){
-        Random random=new Random();
-        return floatNum-random.nextInt(5)-1;
+    public static float generalRandomLessThanFloat(float floatNum) {
+        Random random = new Random();
+        return floatNum - random.nextInt(5) - 1;
     }
-    private static final Faker FAKER = new Faker();
+
+    private static final Faker FAKER_CN = new Faker(new Locale("zh-CN"));
+    private static final Faker FAKER_EN = new Faker();
+
     public static String generateRandomLengthSentence(int maxLength) {
-        StringBuilder sb = new StringBuilder();
-        do {
-            sb.append(FAKER.lorem().word()).append(" ");
-        } while (sb.length() < maxLength/2);
-        String result = sb.toString();
-        return result.substring(0, Math.min(result.length(), maxLength));
+
+        StringBuilder sentence = new StringBuilder();
+        while (sentence.length() < maxLength) {
+            // 使用领域数据生成有意义的句子片段
+            String person = FAKER_EN.name().fullName();
+            String company = FAKER_EN.company().name();
+            String job = FAKER_EN.job().title();
+            String city = FAKER_EN.address().city();
+
+            String part = person + " works as a " + job + " at " + company + " in " + city + ". ";
+
+            if (sentence.length() + part.length() > maxLength) {
+                break;  // 如果添加后超过最大长度，则停止
+            }
+            sentence.append(part);
+        }
+        return sentence.toString();
     }
 
 }
