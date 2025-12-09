@@ -1,5 +1,7 @@
 package custom.utils;
 
+import com.github.javafaker.Faker;
+
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -209,6 +211,15 @@ public class GenerateUtil {
     public static float generalRandomLessThanFloat(float floatNum){
         Random random=new Random();
         return floatNum-random.nextInt(5)-1;
+    }
+    private static final Faker FAKER = new Faker();
+    public static String generateRandomLengthSentence(int maxLength) {
+        StringBuilder sb = new StringBuilder();
+        do {
+            sb.append(FAKER.lorem().word()).append(" ");
+        } while (sb.length() < maxLength/2);
+        String result = sb.toString();
+        return result.substring(0, Math.min(result.length(), maxLength));
     }
 
 }

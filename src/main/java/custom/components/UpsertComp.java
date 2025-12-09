@@ -26,7 +26,6 @@ import java.util.Random;
 import java.util.concurrent.*;
 
 import static custom.BaseTest.*;
-import static custom.BaseTest.queryCollectionIndex;
 
 @Slf4j
 public class UpsertComp {
@@ -154,7 +153,7 @@ public class UpsertComp {
                                 return upsertResultItem;
                             }
 
-                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(finalCollectionName, upsertParams.getBatchSize(),
+                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(upsertParams.getBatchSize(),
                                     (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList, upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp);
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             UpsertResp upsertResp = null;

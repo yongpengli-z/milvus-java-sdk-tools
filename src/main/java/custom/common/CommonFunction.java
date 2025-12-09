@@ -3,7 +3,6 @@ package custom.common;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.type.DateTime;
 import custom.entity.*;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
@@ -12,8 +11,6 @@ import custom.utils.GenerateUtil;
 import custom.utils.JsonObjectUtil;
 import custom.utils.MathUtil;
 import io.milvus.common.utils.Float16Utils;
-import io.milvus.v2.client.ConnectConfig;
-import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.common.IndexBuildState;
 import io.milvus.v2.common.IndexParam;
@@ -24,25 +21,20 @@ import io.milvus.v2.service.index.request.CreateIndexReq;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
 import io.milvus.v2.service.vector.request.QueryReq;
-import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.*;
 import io.milvus.v2.service.vector.response.QueryResp;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.geom.impl.PackedCoordinateSequence;
 
 import javax.annotation.Nullable;
-import java.awt.*;
 import java.nio.ByteBuffer;
-import java.text.DateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -317,11 +309,10 @@ public class CommonFunction {
     /**
      * 生成通用的数据
      *
-     * @param collectionName 向量名称
-     * @param count          生成的数量
+     * @param count 生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(String collectionName, long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp) {
+    public static List<JsonObject> genCommonData(long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp) {
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
@@ -357,6 +348,7 @@ public class CommonFunction {
                 Integer maxLength = fieldSchema.getMaxLength();
                 DataType elementType = fieldSchema.getElementType();
                 boolean isNullable = fieldSchema.getIsNullable();
+                Boolean isEnableMatch = fieldSchema.getEnableMatch();
                 // primary key auto id
                 if (fieldSchema.getIsPrimaryKey() && fieldSchema.getAutoID()) {
                     continue;
@@ -369,7 +361,7 @@ public class CommonFunction {
                 Gson gson = new Gson();
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     if (dataset.equalsIgnoreCase("random")) {
-                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, realStartId);
+                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                     }
                     if (dataset.equalsIgnoreCase("gist")) {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
@@ -384,25 +376,25 @@ public class CommonFunction {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 100, i, null, 0, generalDataRoleList, totalNum, realStartId);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, 100, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0, generalDataRoleList, totalNum, realStartId);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength, generalDataRoleList, totalNum, realStartId);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0, generalDataRoleList, totalNum, realStartId);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
             // 判断是否有动态列
             if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
-                JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0, generalDataRoleList, totalNum, realStartId);
+                JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0, generalDataRoleList, totalNum, realStartId, false);
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
             jsonList.add(row);
@@ -419,7 +411,7 @@ public class CommonFunction {
      * @param countIndex  索引i，避免多次创建时数据内容一样
      * @return JsonObject
      */
-    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType, int lengthForCapacity, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId) {
+    public static JsonObject generalJsonObjectByDataType(String fieldName, DataType dataType, int dimOrLength, long countIndex, DataType elementType, int lengthForCapacity, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, boolean isEnableMatch) {
         JsonObject row = new JsonObject();
         Gson gson = new Gson();
         Random random = new Random();
@@ -466,7 +458,7 @@ public class CommonFunction {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
             } else {
-                row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
+                row.add(fieldName, gson.toJsonTree(isEnableMatch ? GenerateUtil.generateRandomLengthSentence(dimOrLength) : MathUtil.genRandomString(dimOrLength)));
             }
         }
         if (dataType == DataType.String) {
@@ -477,7 +469,8 @@ public class CommonFunction {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
             } else {
-                row.add(fieldName, gson.toJsonTree(MathUtil.genRandomString(dimOrLength)));
+                row.add(fieldName, gson.toJsonTree(isEnableMatch ? GenerateUtil.generateRandomLengthSentence(dimOrLength) : MathUtil.genRandomString(dimOrLength)));
+
             }
         }
         if (dataType == DataType.Float) {

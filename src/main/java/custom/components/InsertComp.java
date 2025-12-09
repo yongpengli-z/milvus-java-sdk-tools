@@ -113,7 +113,7 @@ public class InsertComp {
                                 return insertResultItem;
                             }
                             long genDataStartTime = System.currentTimeMillis();
-                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(finalCollectionName, insertParams.getBatchSize(),
+                            List<JsonObject> jsonObjects = CommonFunction.genCommonData(insertParams.getBatchSize(),
                                     (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp);
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
