@@ -230,7 +230,7 @@ public class GenerateUtil {
 
             if (sentence.length() + part.length() > maxLength) {
                 if (sentence.length() == 0){
-                    sentence.append(part.substring(maxLength));
+                    sentence.append(part, 0, maxLength);
                 }
                 break;  // 如果添加后超过最大长度，则停止
             }
@@ -238,5 +238,4 @@ public class GenerateUtil {
         }
         return sentence.toString();
     }
-
 }
