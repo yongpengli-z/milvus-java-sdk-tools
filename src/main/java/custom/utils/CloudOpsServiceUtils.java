@@ -3,8 +3,8 @@ package custom.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
 import custom.entity.AlterInstanceIndexClusterParams;
+import custom.entity.RestoreBackupParams;
 import custom.pojo.IndexPoolInfo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -172,5 +172,48 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
+    public static String restoreBackup(RestoreBackupParams restoreBackupParams) {
+        String instanceId = restoreBackupParams.getToInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : restoreBackupParams.getToInstanceId();
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/restore/restore_backup";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, Object> body = new HashMap<>();
+        body.put("backupId", restoreBackupParams.getBackupId());
+        body.put("fromInstanceId", restoreBackupParams.getFromInstanceId());
+        body.put("notChangeStatus", restoreBackupParams.isNotChangeStatus());
+        body.put("restorePolicy", restoreBackupParams.getRestorePolicy());
+        body.put("skipCreateCollection", restoreBackupParams.isSkipCreateCollection());
+        body.put("toInstanceId", instanceId);
+        body.put("truncateBinlogByTs", restoreBackupParams.isTruncateBinlogByTs());
+        body.put("withRBAC", restoreBackupParams.isWithRBAC());
+        String s = HttpClientUtils.doPostJson(url, header, JSON.toJSONString(body));
+        log.info("restore backup:" + s);
+        return s;
+    }
 
+    public static String queryInstanceIdByBackupId(String backupId) {
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/backup/total_page";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> body = new HashMap<>();
+        body.put("currentPage", "1");
+        body.put("pageSize", "20");
+        body.put("backupId", backupId);
+        String s = HttpClientUtils.doGet(url, header, body);
+        log.info("query backup info:" + s);
+        return s;
+    }
+
+    public static String queryRestoreBackupStatus(String jobId) {
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/restore/total_page";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> body = new HashMap<>();
+        body.put("currentPage", "1");
+        body.put("pageSize", "20");
+        body.put("jobId", jobId);
+        String s = HttpClientUtils.doGet(url, header, body);
+        log.info("query restore info:" + s);
+        return s;
+    }
 }
