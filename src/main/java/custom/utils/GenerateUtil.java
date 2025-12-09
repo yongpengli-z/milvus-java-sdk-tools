@@ -229,6 +229,10 @@ public class GenerateUtil {
             String part = person + " works as a " + job + " at " + company + " in " + city + ". ";
 
             if (sentence.length() + part.length() > maxLength) {
+                if (sentence.length() == 0){
+                    sentence.append(part);
+                    sentence = new StringBuilder(sentence.substring(maxLength));
+                }
                 break;  // 如果添加后超过最大长度，则停止
             }
             sentence.append(part);
