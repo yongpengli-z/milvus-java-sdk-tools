@@ -1,6 +1,6 @@
 package custom.utils;
 
-import net.datafaker.Faker;
+import com.github.javafaker.Faker;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -213,7 +213,7 @@ public class GenerateUtil {
         return floatNum - random.nextInt(5) - 1;
     }
 
-    private static final Faker FAKER_CN = new Faker(new Locale("zh-CN"));
+    private static final Faker FAKER_CN = new Faker (new Locale("zh-CN"));
     private static final Faker FAKER_EN = new Faker();
 
     public static String generateRandomLengthSentence(int maxLength) {
