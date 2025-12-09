@@ -45,10 +45,10 @@ public class RestoreBackupComp {
         JSONObject jsonObject = JSON.parseObject(s);
         int code = jsonObject.getInteger("code");
         if (code == 0) {
-            String jobId = jsonObject.getString("jobId");
+            String jobId = jsonObject.getString("data");
             // 添加轮询
             int restoreState = -1; // -1 未知， 0 restoring，1 success , 2 deleted , 3 failed
-            LocalDateTime endTime = LocalDateTime.now().plusMinutes(60);
+            LocalDateTime endTime = LocalDateTime.now().plusMinutes(60*3);
             while (LocalDateTime.now().isBefore(endTime)) {
                 String s2 = CloudOpsServiceUtils.queryRestoreBackupStatus(jobId);
                 JSONObject jsonObject2 = JSONObject.parseObject(s2);

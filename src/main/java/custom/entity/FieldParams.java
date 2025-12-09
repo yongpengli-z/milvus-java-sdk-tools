@@ -3,6 +3,8 @@ package custom.entity;
 import io.milvus.v2.common.DataType;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class FieldParams {
     String fieldName;
@@ -17,5 +19,11 @@ public class FieldParams {
     boolean isAutoId;
     boolean enableMatch;
     boolean enableAnalyzer;
+    List<AnalyzerParams> analyzerParamsList;
 
+    @Data
+    public static class AnalyzerParams{
+        String paramsKey;
+        Object paramsValue;
+    }
 }

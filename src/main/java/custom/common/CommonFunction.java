@@ -136,6 +136,14 @@ public class CommonFunction {
                     fieldSchema.setMaxLength(fieldParams.getMaxLength());
                 }
             }
+            // isEnableAnalyzer 参数解析
+            if (fieldParams.isEnableAnalyzer()){
+                Map<String,Object> analyzerParams=new HashMap<>();
+                for (FieldParams.AnalyzerParams analyzerParam : fieldParams.getAnalyzerParamsList()) {
+                    analyzerParams.put(analyzerParam.getParamsKey(),analyzerParam.getParamsValue());
+                }
+                fieldSchema.setAnalyzerParams(analyzerParams);
+            }
             fieldSchemaList.add(fieldSchema);
         }
 
