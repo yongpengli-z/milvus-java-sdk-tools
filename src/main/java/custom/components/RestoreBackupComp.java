@@ -8,9 +8,14 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.RestoreBackupResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.CloudOpsServiceUtils;
+import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import static custom.BaseTest.globalCollectionNames;
+import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class RestoreBackupComp {
@@ -48,7 +53,7 @@ public class RestoreBackupComp {
             String jobId = jsonObject.getString("data");
             // 添加轮询
             int restoreState = -1; // -1 未知， 0 restoring，1 success , 2 deleted , 3 failed
-            LocalDateTime endTime = LocalDateTime.now().plusMinutes(60*3);
+            LocalDateTime endTime = LocalDateTime.now().plusMinutes(60 * 3);
             while (LocalDateTime.now().isBefore(endTime)) {
                 String s2 = CloudOpsServiceUtils.queryRestoreBackupStatus(jobId);
                 JSONObject jsonObject2 = JSONObject.parseObject(s2);
@@ -67,6 +72,13 @@ public class RestoreBackupComp {
                     if (restoreState == 1) {
                         CommonResult commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result)
                                 .message("Restore success").build();
+                        // 重新刷新collectionList
+                        globalCollectionNames.clear();
+                        ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
+                        List<String> collectionNames =
+                                listCollectionsResp.getCollectionNames();
+                        log.info("List collection: " + collectionNames);
+                        globalCollectionNames.addAll(collectionNames);
                         return RestoreBackupResult.builder().commonResult(commonResult).build();
                     }
                     if (restoreState == 2) {
