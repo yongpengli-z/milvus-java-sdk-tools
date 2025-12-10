@@ -137,10 +137,10 @@ public class CommonFunction {
                 }
             }
             // isEnableAnalyzer 参数解析
-            if (fieldParams.isEnableAnalyzer()){
-                Map<String,Object> analyzerParams=new HashMap<>();
+            if (fieldParams.isEnableAnalyzer()) {
+                Map<String, Object> analyzerParams = new HashMap<>();
                 for (FieldParams.AnalyzerParams analyzerParam : fieldParams.getAnalyzerParamsList()) {
-                    analyzerParams.put(analyzerParam.getParamsKey(),analyzerParam.getParamsValue());
+                    analyzerParams.put(analyzerParam.getParamsKey(), analyzerParam.getParamsValue());
                 }
                 fieldSchema.setAnalyzerParams(analyzerParams);
             }
@@ -388,7 +388,7 @@ public class CommonFunction {
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength > 256 ? maxLength / 10 : maxLength, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
