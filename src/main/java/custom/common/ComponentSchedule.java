@@ -267,6 +267,12 @@ public class ComponentSchedule {
             jsonObject.put("AddCollectionField_" + index, addCollectionFieldResult);
             reportStepResult(AddCollectionFieldParams.class.getSimpleName() + "_" + index, JSON.toJSONString(addCollectionFieldResult));
         }
+        if (object instanceof RestoreBackupParams) {
+            log.info("*********** < Restore Backup > ***********");
+            RestoreBackupResult restoreBackupResult = RestoreBackupComp.restoreBackup((RestoreBackupParams) object);
+            jsonObject.put("RestoreBackup_" + index, restoreBackupResult);
+            reportStepResult(RestoreBackupParams.class.getSimpleName() + "_" + index, JSON.toJSONString(restoreBackupResult));
+        }
         if (object instanceof DebugTestParams) {
             log.info("*********** < DebugTest > ***********");
             String s = DebugTestComp.debugTest((DebugTestParams) object);
