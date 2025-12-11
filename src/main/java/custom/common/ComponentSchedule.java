@@ -3,7 +3,9 @@ package custom.common;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import custom.components.*;
+import custom.config.EnvEnum;
 import custom.entity.*;
 import custom.entity.result.*;
 import custom.utils.HttpClientUtils;
@@ -283,6 +285,9 @@ public class ComponentSchedule {
     }
 
     public static int queryTaskRedisValue() {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            return 1;
+        }
         String uri = "http://qtp-server.zilliz.cc/customize-task/query/status?redisKey=" + redisKey;
         String s = HttpClientUtils.doGet(uri);
 //        log.info("request qtp:" + s);
@@ -291,18 +296,27 @@ public class ComponentSchedule {
     }
 
     public static void updateArgoStatus(int status) {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            return;
+        }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
         String s = HttpClientUtils.doPost(uri);
 //        log.info("Update case status:" + s);
     }
 
     public static void updateCaseStatus(int status) {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            return;
+        }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
         String s = HttpClientUtils.doPost(uri);
 //        log.info("Update case status:" + s);
     }
 
     public static void reportStepResult(String nodeName, String result) {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            return;
+        }
         String uri = "http://qtp-server.zilliz.cc/customize-task-details/result/insert";
         JSONObject params = new JSONObject();
         params.put("taskId", taskId);
@@ -316,18 +330,27 @@ public class ComponentSchedule {
     }
 
     public static void initInstanceStatus(String instanceId, String instanceUri, String image, int status) {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            return;
+        }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
         String s = HttpClientUtils.doPost(uri);
         log.info("add instanceId:" + s);
     }
 
     public static void updateInstanceStatus(String instanceId, String instanceUri, String image, int status) {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            return;
+        }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
         String s = HttpClientUtils.doPost(uri);
         log.info("add instanceId:" + s);
     }
 
     public static List<String> queryReleaseImage() {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            return Lists.newArrayList("v2.6.7-hotfix3-8d95e4417-2971(2.6.7-hotfix3-20251211-8d95e4417-78bee5c)"); //适配访问不通qtp环境
+        }
         String uri = "http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/release";
         String s = HttpClientUtils.doGet(uri);
         // 所得结果为倒序

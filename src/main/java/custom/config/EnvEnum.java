@@ -9,7 +9,8 @@ public enum EnvEnum {
     GCP_WEST("gcpwest", "/test/qtp/config/vdcConfig.json", "UAT3-GCP","gcp-vdc-dev-test"),
     AZURE_WEST("azurewest", "/test/qtp/config/vdcConfig.json", "UAT3-AZURE","uat-az-milvus-westus3-1"),
     ALI_HZ("alihz", "/test/qtp/config/vdcConfig.json", "UAT",""),
-    TC_NJ("tcnj", "/test/qtp/config/vdcConfig.json", "UAT","");
+    TC_NJ("tcnj", "/test/qtp/config/vdcConfig.json", "UAT",""),
+    HWC("hwc", "/test/qtp/config/vdcConfig.json", "UAT","");
 
     public final String region;
     public final String vdcConfigPath;
