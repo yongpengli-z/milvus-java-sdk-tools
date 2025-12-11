@@ -286,6 +286,7 @@ public class ComponentSchedule {
 
     public static int queryTaskRedisValue() {
         if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            log.info("current env:" + envEnum);
             return 1;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/query/status?redisKey=" + redisKey;
@@ -297,6 +298,7 @@ public class ComponentSchedule {
 
     public static void updateArgoStatus(int status) {
         if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            log.info("current env:" + envEnum);
             return;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
@@ -306,6 +308,8 @@ public class ComponentSchedule {
 
     public static void updateCaseStatus(int status) {
         if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            log.info("current env:" + envEnum);
+
             return;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
@@ -315,6 +319,7 @@ public class ComponentSchedule {
 
     public static void reportStepResult(String nodeName, String result) {
         if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            log.info("current env:" + envEnum);
             return;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task-details/result/insert";
@@ -362,5 +367,4 @@ public class ComponentSchedule {
         }
         return dbVersion;
     }
-
 }

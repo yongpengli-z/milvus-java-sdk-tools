@@ -53,8 +53,6 @@ public class BaseTest {
         taskId = Integer.parseInt(System.getProperty("taskId") == null
                 ? ""
                 : System.getProperty("taskId"));
-        //先更新argo任务状态
-        ComponentSchedule.updateArgoStatus(1);
         String env = System.getProperty("env") == null
                 ? ""
                 : System.getProperty("env");
@@ -92,6 +90,8 @@ public class BaseTest {
         }
         newInstanceInfo.setToken(token);
         envEnum = EnvEnum.getEnvByName(env);
+        //先更新argo任务状态
+        ComponentSchedule.updateArgoStatus(1);
 //        log.info("EnvEnum:"+envByName);
         if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
             envConfig = ConfigUtils.providerEnvConfig(envEnum);
