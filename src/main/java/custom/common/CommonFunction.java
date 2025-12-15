@@ -321,6 +321,7 @@ public class CommonFunction {
      * @return List<JsonObject>
      */
     public static List<JsonObject> genCommonData(long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp) {
+        Random random= new Random();
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
@@ -384,15 +385,15 @@ public class CommonFunction {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, 100, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, random.nextInt(100), i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxLength > 256 ? maxLength / 10 : maxLength, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxLength), i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, maxCapacity, i, elementType, maxLength, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxLength), i, elementType, maxLength, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
