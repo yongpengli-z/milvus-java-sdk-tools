@@ -18,6 +18,7 @@ public class CreateCollectionParams {
     private List<FieldParams> fieldParamsList;
     private FunctionParams functionParams;
     private List<PropertyM> properties;
+    private String databaseName;
 
     @Data
     public static class PropertyM {

@@ -49,7 +49,7 @@ public class CommonFunction {
      * @param fieldParamsList 其他字段
      * @return collection name
      */
-    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList, FunctionParams functionParams, List<CreateCollectionParams.PropertyM> properties) {
+    public static String genCommonCollection(@Nullable String collectionName, boolean enableDynamic, int shardNum, int numPartitions, List<FieldParams> fieldParamsList, FunctionParams functionParams, List<CreateCollectionParams.PropertyM> properties, String databaseName) {
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
@@ -94,6 +94,9 @@ public class CommonFunction {
                 .numPartitions(numPartitions)
                 .properties(propertyList)
                 .build();
+        if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+            createCollectionReq.setDatabaseName(databaseName);
+        }
         milvusClientV2.createCollection(createCollectionReq);
         return collectionName;
     }
