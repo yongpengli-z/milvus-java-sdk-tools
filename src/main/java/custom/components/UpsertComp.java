@@ -143,16 +143,15 @@ public class UpsertComp {
                              r++) {
                             // 时间和数据量谁先到都结束
                             if (upsertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {
-                                // 3. QPS控制点（如果需要）
-                                if (finalRateLimiter != null) {
-                                    finalRateLimiter.acquire(); // 阻塞直到获得令牌
-                                }
                                 log.info("线程[" + finalC + "] Upsert已到设定时长，停止插入...");
                                 upsertResultItem.setUpsertCnt(insertCnt);
                                 upsertResultItem.setCostTime(costTime);
                                 return upsertResultItem;
                             }
-
+                            // 3. QPS控制点（如果需要）
+                            if (finalRateLimiter != null) {
+                                finalRateLimiter.acquire(); // 阻塞直到获得令牌
+                            }
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(upsertParams.getBatchSize(),
                                     (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList, upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp);
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
