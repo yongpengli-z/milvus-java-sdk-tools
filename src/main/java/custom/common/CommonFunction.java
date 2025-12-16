@@ -321,7 +321,7 @@ public class CommonFunction {
      * @return List<JsonObject>
      */
     public static List<JsonObject> genCommonData(long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp) {
-        Random random= new Random();
+        Random random = new Random();
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
@@ -357,7 +357,7 @@ public class CommonFunction {
                 Integer maxLength = fieldSchema.getMaxLength();
                 DataType elementType = fieldSchema.getElementType();
                 boolean isNullable = fieldSchema.getIsNullable();
-                Boolean isEnableMatch = fieldSchema.getEnableMatch();
+                boolean isEnableMatch = fieldSchema.getEnableMatch() != null && fieldSchema.getEnableMatch();
                 // primary key auto id
                 if (fieldSchema.getIsPrimaryKey() && fieldSchema.getAutoID()) {
                     continue;
