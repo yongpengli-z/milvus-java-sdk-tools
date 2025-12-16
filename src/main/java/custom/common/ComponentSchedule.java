@@ -275,6 +275,24 @@ public class ComponentSchedule {
             jsonObject.put("RestoreBackup_" + index, restoreBackupResult);
             reportStepResult(RestoreBackupParams.class.getSimpleName() + "_" + index, JSON.toJSONString(restoreBackupResult));
         }
+        if (object instanceof RenameCollectionParams) {
+            log.info("*********** < Rename collection params > ***********");
+            RenameCollectionResult renameCollectionResult = RenameCollectionComp.renameCollection((RenameCollectionParams) object);
+            jsonObject.put("RenameCollection_" + index, renameCollectionResult);
+            reportStepResult(RenameCollectionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(renameCollectionResult));
+        }
+        if (object instanceof DescribeCollectionParams) {
+            log.info("*********** < Describe collection params > ***********");
+            DescribeCollectionResult describeCollectionResult = DescribeCollectionComp.describeCollection((DescribeCollectionParams) object);
+            jsonObject.put("DescribeCollection_" + index, describeCollectionResult);
+            reportStepResult(DescribeCollectionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(describeCollectionResult));
+        }
+        if (object instanceof CreateDatabaseParams) {
+            log.info("*********** < Create database params > ***********");
+            CreateDatabaseResult createDatabaseResult = CreateDatabaseComp.createDatabase((CreateDatabaseParams) object);
+            jsonObject.put("CreateDatabase_" + index, createDatabaseResult);
+            reportStepResult(CreateDatabaseParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createDatabaseResult));
+        }
         if (object instanceof DebugTestParams) {
             log.info("*********** < DebugTest > ***********");
             String s = DebugTestComp.debugTest((DebugTestParams) object);
