@@ -388,15 +388,15 @@ public class CommonFunction {
                         jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
                     }
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, random.nextInt(100), i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = generalJsonObjectByDataType(name, dataType, random.nextInt(768) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxLength), i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxLength - 1) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxLength), i, elementType, maxLength, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxCapacity - 1) + 1, i, elementType, random.nextInt(maxLength - 1) + 1, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
