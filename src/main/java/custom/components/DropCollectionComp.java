@@ -24,8 +24,12 @@ public class DropCollectionComp {
             log.info("Drop all collections: " + collectionNames);
             for (String collectionName : collectionNames) {
                 try {
-                    milvusClientV2.dropCollection(DropCollectionReq.builder()
-                            .collectionName(collectionName).build());
+                    DropCollectionReq dropCollectionReq = DropCollectionReq.builder()
+                            .collectionName(collectionName).build();
+                    if (dropCollectionParams.getDatabaseName() != null && !dropCollectionParams.getDatabaseName().equalsIgnoreCase("")) {
+                        dropCollectionReq.setDatabaseName(dropCollectionParams.getDatabaseName());
+                    }
+                    milvusClientV2.dropCollection(dropCollectionReq);
                     // 清空globalCollectionNames
                     globalCollectionNames.clear();
                     dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
@@ -46,11 +50,15 @@ public class DropCollectionComp {
             }
         } else {
             String collectionName = (dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase("")) ?
-                    globalCollectionNames.get(globalCollectionNames.size()-1) : dropCollectionParams.getCollectionName();
+                    globalCollectionNames.get(globalCollectionNames.size() - 1) : dropCollectionParams.getCollectionName();
             try {
                 log.info("Drop collection: " + dropCollectionParams.getCollectionName());
-                milvusClientV2.dropCollection(DropCollectionReq.builder()
-                        .collectionName(collectionName).build());
+                DropCollectionReq dropCollectionReq = DropCollectionReq.builder()
+                        .collectionName(collectionName).build();
+                if (dropCollectionParams.getDatabaseName() != null && !dropCollectionParams.getDatabaseName().equalsIgnoreCase("")) {
+                    dropCollectionReq.setDatabaseName(dropCollectionParams.getDatabaseName());
+                }
+                milvusClientV2.dropCollection(dropCollectionReq);
                 globalCollectionNames.remove(collectionName);
                 dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
                         .collectionName(collectionName)

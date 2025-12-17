@@ -233,7 +233,7 @@ public class CommonFunction {
             for (int i = 0; i < indexParamList.size(); i++) {
                 DescribeIndexResp describeIndexResp = milvusClientV2.describeIndex(DescribeIndexReq.builder()
                         .fieldName(indexParamList.get(i).getFieldName())
-                        .collectionName(collectionName)
+                        .collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName)
                         .build());
                 log.info(indexParamList.get(i).getFieldName() + "--" + describeIndexResp.getIndexDescriptions());
                 if (describeIndexResp.getIndexDescByFieldName(indexParamList.get(i).getFieldName()).getIndexState() == IndexBuildState.Finished) {

@@ -6,4 +6,5 @@ import lombok.Data;
 public class DropCollectionParams {
     private boolean dropAll;
     private String collectionName;
+    private String databaseName;
 }
