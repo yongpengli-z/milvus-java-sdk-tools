@@ -16,9 +16,13 @@ public class CreateIndexComp {
         String collectionName = (createIndexParams.getCollectionName() == null || createIndexParams.getCollectionName().equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : createIndexParams.getCollectionName();
         CommonResult commonResult;
         CreateIndexResult createIndexResult = CreateIndexResult.builder().build();
+        String databaseName = "";
+        if (createIndexParams.getDatabaseName() != null && !createIndexParams.getDatabaseName().equalsIgnoreCase("")) {
+            databaseName = createIndexParams.getDatabaseName();
+        }
         try {
             long startTimeTotal = System.currentTimeMillis();
-            CommonFunction.createCommonIndex(collectionName, createIndexParams.getIndexParams());
+            CommonFunction.createCommonIndex(collectionName, createIndexParams.getIndexParams(), databaseName);
             long endTimeTotal = System.currentTimeMillis();
             float indexCost = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
