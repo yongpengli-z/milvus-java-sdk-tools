@@ -112,7 +112,7 @@ public class NpyLoader {
             }
 
             DType dtype = DType.parse(header.descr);
-            if (dtype.kind != 'f' || (dtype.itemSize != 4 && dtype.itemSize != 8)) {
+            if (dtype.kind != 'f' || (dtype.itemSize != 2 && dtype.itemSize != 4 && dtype.itemSize != 8)) {
                 throw new IOException("Unsupported dtype for float vectors: " + header.descr + " (file: " + npyFile.getAbsolutePath() + ")");
             }
 
@@ -159,7 +159,16 @@ public class NpyLoader {
             }
 
             buf.flip();
-            if (itemSize == 4) {
+            if (itemSize == 2) {
+                // float16 (IEEE 754 half)
+                while (buf.remaining() >= 2) {
+                    short h = buf.getShort();
+                    out[outOffset++] = halfToFloat(h);
+                }
+                if (buf.hasRemaining()) {
+                    throw new EOFException("Misaligned float16 chunk: remainingBytes=" + buf.remaining());
+                }
+            } else if (itemSize == 4) {
                 FloatBuffer fb = buf.asFloatBuffer();
                 int n = fb.remaining();
                 fb.get(out, outOffset, n);
@@ -175,6 +184,38 @@ public class NpyLoader {
 
             remaining -= want;
         }
+    }
+
+    /**
+     * Convert IEEE 754 half-precision float (binary16) to Java float (binary32).
+     */
+    private static float halfToFloat(short halfBits) {
+        int h = halfBits & 0xFFFF;
+        int sign = (h & 0x8000) << 16;
+        int exp = (h >>> 10) & 0x1F;
+        int mant = h & 0x03FF;
+
+        if (exp == 0) {
+            if (mant == 0) {
+                // +/- 0
+                return Float.intBitsToFloat(sign);
+            }
+            // subnormal -> normalize
+            while ((mant & 0x0400) == 0) {
+                mant <<= 1;
+                exp--;
+            }
+            exp++;
+            mant &= 0x03FF;
+        } else if (exp == 0x1F) {
+            // Inf/NaN
+            int f = sign | 0x7F800000 | (mant << 13);
+            return Float.intBitsToFloat(f);
+        }
+
+        int exp32 = exp + (127 - 15);
+        int f = sign | (exp32 << 23) | (mant << 13);
+        return Float.intBitsToFloat(f);
     }
 
     private static String matchRequired(String text, String regex, String fieldName) throws IOException {

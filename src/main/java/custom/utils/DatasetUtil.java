@@ -126,7 +126,8 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
                 }
                 vectors.addAll(splitArray(slice.data, slice.cols));
             } catch (IOException e) {
-                throw new RuntimeException("读取npy文件失败: " + npyDataPath, e);
+                log.error("读取npy文件失败: {} (localStart={}, rowsToRead={})", npyDataPath, localStart, rowsToRead, e);
+                throw new RuntimeException("读取npy文件失败: " + npyDataPath + ", cause: " + e.getMessage(), e);
             }
 
             remaining -= rowsToRead;
