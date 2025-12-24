@@ -79,7 +79,7 @@ public class BaseTest {
         redisKey = "customize_task_" + taskId;
         if (!uri.equalsIgnoreCase("")) {
             newInstanceInfo.setUri(uri);
-            if (uri.contains("ali") || uri.contains("tc") || uri.contains("aws") || uri.contains("gcp") || uri.contains("az")) {
+            if (uri.contains("ali") || uri.contains("tc") || uri.contains("aws") || uri.contains("gcp") || uri.contains("az") || uri.contains("hwc")) {
                 String substring = uri.substring(uri.indexOf("https://") + 8, 28);
                 newInstanceInfo.setInstanceId(substring);
             }

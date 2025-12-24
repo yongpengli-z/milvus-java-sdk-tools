@@ -20,7 +20,7 @@ public class MilvusConnect {
         // 获取root密码
         String token = "";
         String urlPWD = null;
-        if (uri.contains("ali") || uri.contains("tc")) {
+        if (uri.contains("ali") || uri.contains("tc") || uri.contains("hwc")) {
             String substring = uri.substring(uri.indexOf("https://") + 8, 28);
             urlPWD =
                     "https://cloud-test.cloud-uat.zilliz.cn/cloud/v1/test/getRootPwd?instanceId="
