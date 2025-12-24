@@ -27,6 +27,7 @@ public class MilvusConnect {
                             + substring
                             + "";
             String pwdString = HttpClientUtils.doGet(urlPWD);
+            log.info("getRootPwd resp:" + pwdString);
             token = "root:" + JSON.parseObject(pwdString).getString("Data");
         } else if (uri.contains("aws") || uri.contains("gcp") || uri.contains("az")) {
             String substring = uri.substring(uri.indexOf("https://") + 8, 28);

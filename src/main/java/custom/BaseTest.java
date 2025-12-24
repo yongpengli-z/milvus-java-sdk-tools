@@ -81,6 +81,7 @@ public class BaseTest {
             newInstanceInfo.setUri(uri);
             if (uri.contains("ali") || uri.contains("tc") || uri.contains("aws") || uri.contains("gcp") || uri.contains("az") || uri.contains("hwc")) {
                 String substring = uri.substring(uri.indexOf("https://") + 8, 28);
+                log.info("instance-id:" + substring);
                 newInstanceInfo.setInstanceId(substring);
             }
         }
