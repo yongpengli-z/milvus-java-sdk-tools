@@ -2,8 +2,6 @@ package custom.utils;
 
 import custom.common.DatasetEnum;
 import lombok.extern.slf4j.Slf4j;
-import org.openlca.npy.Npy;
-import org.openlca.npy.arrays.NpyArray;
 
 import java.io.*;
 import java.util.*;
@@ -68,44 +66,77 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
 }
 
     public static List<List<Float>> providerFloatVectorByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum, List<Long> fileSizeList) {
-        List<List<Float>> floatList = new ArrayList<>();
-       /* long countIndex = 0;
-        long countIndexTemp = countIndex;
-        int i = 0;
-        while (i < fileNames.size()) {
-            String npyDataPath = datasetEnum.path + fileNames.get(i);
-            File file = new File(npyDataPath);
-            NpyArray<?> npyArray = Npy.read(file);
-            countIndex += npyArray.shape()[0];
-            if (countIndex > index) {
-                System.out.println("查到数据，from " + fileNames.get(i));
-                float[] floatData = (float[]) npyArray.data();
-                List<List<Float>> floats = splitArray(floatData, npyArray.shape()[1]);
-                floatList = floats.subList((int) (index - countIndexTemp), (int) (index - countIndexTemp + count));
-                break;
-            }
-            countIndexTemp = countIndex;
-            i++;
-        }*/
-        int fileIndex = findIndex(index, fileSizeList);
-        log.info("使用文件："+fileNames.get(fileIndex));
-        String npyDataPath = datasetEnum.path + fileNames.get(fileIndex);
-        File file = new File(npyDataPath);
-        NpyArray<?> npyArray = Npy.read(file);
-        float[] floatData = (float[]) npyArray.data();
-//        List<List<Float>> floats = splitArray(floatData, npyArray.shape()[1]);
-        long tempIndex = 0;
-        if (fileIndex > 0) {
-            tempIndex = fileSizeList.stream().limit(fileIndex)
-                    .mapToLong(Long::longValue)
-                    .sum();
+        if (count <= 0) {
+            return Collections.emptyList();
         }
-        // 截取需要的一段
-        float[] subArray= Arrays.copyOfRange(floatData, (int) ((index - tempIndex ) * npyArray.shape()[1]), (int) ((index - tempIndex + count) * npyArray.shape()[1]));
-        floatList=splitArray(subArray,npyArray.shape()[1]);
-        log.info("读取文件，可以使用的数据长度："+floatList.size());
-//        floatList = floats.subList((int) (index - tempIndex), (int) (index - tempIndex + count));
-        return floatList;
+        if (count > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("count is too large for List: " + count);
+        }
+        if (index < 0) {
+            throw new IllegalArgumentException("index must be >= 0");
+        }
+        if (fileNames == null || fileNames.isEmpty()) {
+            log.warn("Dataset fileNames is empty");
+            return Collections.emptyList();
+        }
+        if (fileSizeList == null || fileSizeList.isEmpty()) {
+            log.warn("Dataset fileSizeList is empty");
+            return Collections.emptyList();
+        }
+
+        List<List<Float>> vectors = new ArrayList<>((int) count);
+
+        long remaining = count;
+        long globalPos = index;
+
+        int fileIndex = findIndex(globalPos, fileSizeList);
+        if (fileIndex < 0 || fileIndex >= fileNames.size() || fileIndex >= fileSizeList.size()) {
+            log.warn("index {} out of dataset range (files={}, sizes={})", index, fileNames.size(), fileSizeList.size());
+            return Collections.emptyList();
+        }
+
+        // global start row of current file
+        long fileStartGlobal = 0;
+        for (int i = 0; i < fileIndex; i++) {
+            fileStartGlobal += fileSizeList.get(i);
+        }
+
+        while (remaining > 0 && fileIndex < fileNames.size() && fileIndex < fileSizeList.size()) {
+            long rowsInFile = fileSizeList.get(fileIndex);
+            long localStart = globalPos - fileStartGlobal;
+            if (localStart < 0) {
+                localStart = 0;
+            }
+            if (localStart >= rowsInFile) {
+                fileStartGlobal += rowsInFile;
+                fileIndex++;
+                continue;
+            }
+
+            long available = rowsInFile - localStart;
+            int rowsToRead = (int) Math.min(remaining, available);
+
+            String npyDataPath = datasetEnum.path + fileNames.get(fileIndex);
+            log.info("使用文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+
+            try {
+                NpyLoader.FloatMatrixSlice slice = NpyLoader.readFloatMatrixSlice(new File(npyDataPath), localStart, rowsToRead);
+                if (slice.rows != rowsToRead) {
+                    log.warn("Unexpected slice rows. expected={}, actual={}", rowsToRead, slice.rows);
+                }
+                vectors.addAll(splitArray(slice.data, slice.cols));
+            } catch (IOException e) {
+                throw new RuntimeException("读取npy文件失败: " + npyDataPath, e);
+            }
+
+            remaining -= rowsToRead;
+            globalPos += rowsToRead;
+            fileStartGlobal += rowsInFile;
+            fileIndex++;
+        }
+
+        log.info("读取文件(可能跨多个文件)，可以使用的数据长度：{}", vectors.size());
+        return vectors;
     }
 
     public static int findIndex(long startId, List<Long> fileSizeList) {
@@ -122,18 +153,49 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
     }
 
     public static List<List<Float>> splitArray(float[] array, int chunkSize) {
-        List<List<Float>> chunks = new ArrayList<>();
-        List<Float> chunk;
-
-        for (int i = 0; i < array.length; i += chunkSize) {
-            chunk = new ArrayList<>();
-            for (int j = i; j < i + chunkSize && j < array.length; j++) {
-                chunk.add(array[j]);
-            }
-            chunks.add(chunk);
+        if (array == null || array.length == 0) {
+            return Collections.emptyList();
+        }
+        if (chunkSize <= 0) {
+            throw new IllegalArgumentException("chunkSize must be > 0");
         }
 
+        int chunkCount = (array.length + chunkSize - 1) / chunkSize;
+        List<List<Float>> chunks = new ArrayList<>(chunkCount);
+        for (int offset = 0; offset < array.length; offset += chunkSize) {
+            int size = Math.min(chunkSize, array.length - offset);
+            chunks.add(new FloatArrayVectorView(array, offset, size));
+        }
         return chunks;
+    }
+
+    /**
+     * A lightweight {@code List<Float>} view backed by a {@code float[]} slice.
+     * It avoids allocating millions of boxed {@link Float} objects.
+     */
+    private static final class FloatArrayVectorView extends AbstractList<Float> implements RandomAccess {
+        private final float[] data;
+        private final int offset;
+        private final int size;
+
+        private FloatArrayVectorView(float[] data, int offset, int size) {
+            this.data = Objects.requireNonNull(data, "data");
+            this.offset = offset;
+            this.size = size;
+        }
+
+        @Override
+        public Float get(int index) {
+            if (index < 0 || index >= size) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+            }
+            return data[offset + index];
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
     }
 
     public static String providerConfigFile(String vdcConfigPath){
