@@ -493,7 +493,7 @@
 
 - **`CreateInstanceParams`**（`createInstanceEdit.vue`）
   - 必填：`instanceName`/`dbVersion`/`replica`/`rootPassword`/`roleUse`/`useHours`
-  - 默认：`cuType=class-1-enterprise`，`architecture=2`，`replica=1`，`rootPassword=Milvus123`，`roleUse=root`，`useHours=0`，`instanceType=1`，`bizCritical=false`，`monopolized=false`
+  - 默认：`cuType=class-1-enterprise`，`architecture=2`，`replica=1`，`rootPassword=Milvus123`，`roleUse=root`，`useHours=10`，`instanceType=1`，`bizCritical=false`，`monopolized=false`，`dbVersion=latest-release`
   - `streamingNodeParams` 默认：`{replicaNum:"", cpu:"", memory:"", disk:""}`（占位；建议按后端类型传值）
 - **`DeleteInstanceParams`**（`deleteInstanceEdit.vue`）
   - 必填：`useCloudTestApi`（注意后端字段名是 `useOPSTestApi`，需要映射/改 key）
