@@ -1,6 +1,5 @@
 package custom.entity.result;
 
-import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import lombok.Builder;
 import lombok.Data;

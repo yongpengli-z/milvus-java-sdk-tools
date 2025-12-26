@@ -4,11 +4,53 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3e78e400-1f91-4ac0-9bca-1b37d2e2daf6" name="Changes" comment="support query segment comp2">
+    <list default="true" id="3e78e400-1f91-4ac0-9bca-1b37d2e2daf6" name="Changes" comment="optimize">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/common/CommonFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/common/CommonFunction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/components/QuerySegmentInfoComp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/components/QuerySegmentInfoComp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/result/QuerySegmentInfoResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/result/QuerySegmentInfoResult.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/AddCollectionFieldParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/AddCollectionFieldParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/AlterAliasParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/AlterAliasParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/AlterInstanceIndexClusterParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/AlterInstanceIndexClusterParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/BulkImportParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/BulkImportParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CompactParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CompactParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ConcurrentParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ConcurrentParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateAliasParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateAliasParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateCollectionParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateDatabaseParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateDatabaseParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateIndexParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateIndexParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateInstanceParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DebugTestParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DebugTestParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteInstanceParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DescribeCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DescribeCollectionParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DropCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DropCollectionParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DropIndexParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DropIndexParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/FieldParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/FieldParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/FlushParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/FlushParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/FunctionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/FunctionParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/IndexParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/IndexParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/InitialParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/InitialParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/InsertParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/InsertParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/LoadParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/LoadParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/LoopParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/LoopParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ModifyParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ModifyParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/PersistentSegmentInfoParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/PersistentSegmentInfoParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/QueryParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/QueryParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/QuerySegmentInfoParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/QuerySegmentInfoParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RecallParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RecallParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ReleaseParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ReleaseParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RenameCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RenameCollectionParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RestartInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RestartInstanceParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RestoreBackupParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RestoreBackupParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ResumeInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ResumeInstanceParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RollingUpgradeParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RollingUpgradeParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/SearchIteratorParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/SearchIteratorParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/SearchParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/SearchParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/StopInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/StopInstanceParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/StreamingNodeParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/StreamingNodeParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/UpdateIndexPoolParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/UpdateIndexPoolParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/UpsertParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/UpsertParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/UseDatabaseParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/UseDatabaseParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/WaitParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/WaitParams.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/result/DescribeCollectionResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/result/DescribeCollectionResult.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,17 +81,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "/Users/yongpengli/Documents/GitHub/milvus-java-sdk-toos/src/main/java",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/yongpengli/Documents/GitHub/milvus-java-sdk-toos/src/main/java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/main/java" />
@@ -430,5 +472,10 @@
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/milvus_java_sdk_toos$CommonFunction.ic" NAME="CommonFunction Coverage Results" MODIFIED="1756721056913" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
+      <FILTER>custom.common.*</FILTER>
+    </SUITE>
   </component>
 </project>
