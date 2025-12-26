@@ -196,11 +196,57 @@
 - **`fieldName`**（string）：要建索引的字段名（注意不是 `filedName`）
 - **`indextype`**（enum 字符串）：`io.milvus.v2.common.IndexParam.IndexType`
   - 注意：前端 `createIndexEdit.vue` 的 key 是 `indexType`，但后端字段名是 `indextype`；**请确保最终 JSON 使用 `indextype`**（或在你的参数生成/映射层做转换），否则会导致索引类型为空。
+  - **重要约束**：索引类型与向量类型有强约束关系（见下文"向量类型与索引类型/MetricType 约束"）。
 - **`metricType`**（enum 字符串，可空）：`io.milvus.v2.common.IndexParam.MetricType`
-- **`jsonPath/jsonCastType`**（string，可空）：用于 JSON index
+  - **重要约束**：MetricType 与向量类型有强约束关系（见下文"向量类型与索引类型/MetricType 约束"）。
+- **`jsonPath/jsonCastType`**（string，可空）：用于 JSON 字段或 dynamic field 的标量字段索引
+  - `jsonPath`：JSON 路径，例如 `field["key1"]["key2"]`、`field["key1"][0]["key2"]`
+  - `jsonCastType`：目标类型，例如 `varchar`、`int64`、`double`、`bool`
+  - **使用场景**：对 JSON 字段或 dynamic field 中的标量字段建索引时，必须同时设置这两个字段
+  - **索引类型**：通常使用 `STL_SORT` 或 `AUTOINDEX`（不需要 MetricType）
 - **`buildLevel`**（string，可空）：例如 HNSW build level（仅部分向量类型使用）
+  - **支持范围**：仅 `FloatVector`、`Float16Vector`、`BFloat16Vector` 支持 `buildLevel` 参数
+  - 常用值：`"1"`（Balanced，默认）、`"2"`（Performance）、`"0"`（Memory）
 
-> 重要：如果你想“让系统自动给所有向量字段建索引”，请传 `indexParams: []`（不要省略该字段）。
+> 重要：如果你想"让系统自动给所有向量字段建索引"，请传 `indexParams: []`（不要省略该字段）。系统会根据向量类型自动选择对应的索引类型和 MetricType。
+
+**向量类型与索引类型/MetricType 约束**（LLM 生成 JSON 时必须遵循）：
+
+- **`FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector`**：
+  - 推荐索引类型：`AUTOINDEX` 或 `HNSW`
+  - 支持的 MetricType：`L2`（默认）、`COSINE`、`IP`
+  - 支持 `buildLevel`：仅 `FloatVector` / `Float16Vector` / `BFloat16Vector`
+
+- **`BinaryVector`**：
+  - 推荐索引类型：`AUTOINDEX` 或 `BIN_IVF_FLAT`
+  - **必须使用的 MetricType**：`HAMMING` 或 `JACCARD`（**不能使用 L2/IP/COSINE**）
+  - 不支持 `buildLevel`
+
+- **`SparseFloatVector`**：
+  - 推荐索引类型：`AUTOINDEX` 或 `SPARSE_WAND`
+  - **MetricType 选择规则**（**特殊情况**）：
+    - 如果 `SparseFloatVector` 字段是由 **BM25 function** 生成的（即该字段在 `CreateCollectionParams.functionParams.outputFieldNames` 中），**必须使用 `BM25`**
+    - 否则，使用 `IP`
+    - **不能使用**：`L2`、`COSINE`、`HAMMING`
+  - 不支持 `buildLevel`
+  - **示例**：
+    - BM25 function 生成的稀疏向量：`{"fieldName": "sparse_embedding", "indextype": "AUTOINDEX", "metricType": "BM25"}`
+    - 普通稀疏向量：`{"fieldName": "sparse_vec", "indextype": "AUTOINDEX", "metricType": "IP"}`
+
+**标量字段索引类型**（LLM 生成 JSON 时必须遵循）：
+
+- **`VarChar` / `String` / `Int64` / `Int32` / `Int16` / `Int8` / `Float` / `Double` / `Bool`**：
+  - 推荐索引类型：`STL_SORT` 或 `AUTOINDEX`
+  - **不需要 MetricType**（MetricType 仅用于向量字段）
+  - 用途：加速标量字段的查询、排序和过滤
+
+- **`JSON` / Dynamic Field**：
+  - 推荐索引类型：`STL_SORT` 或 `AUTOINDEX`
+  - **必须设置**：`jsonPath`（JSON 路径）和 `jsonCastType`（目标类型）
+  - **不需要 MetricType**
+  - 示例：`{"fieldName": "json_field", "indextype": "STL_SORT", "jsonPath": "field[\"key1\"]", "jsonCastType": "varchar"}`
+
+详细约束表见下文"6.4.2 IndexType / MetricType"章节。
 
 ##### 5.1.3 Load：`LoadParams`
 
@@ -307,10 +353,17 @@
 
 对应组件：`custom.components.FlushComp`
 
+**用途**：Flush 操作用于将 **growing segment** 刷成 **sealed segment**，通常在 Insert 完成后执行，确保数据落盘并触发后续的索引构建。
+
 字段：
 
-- **`flushAll`**（boolean，前端必填）：前端默认 `false`。
-- **`collectionName`**（string，可空）：前端默认 `""`。
+- **`flushAll`**（boolean，前端必填）：true 则 flush 实例内所有 collection。前端默认 `false`。
+- **`collectionName`**（string，可空）：`flushAll=false` 时使用。前端默认 `""`。
+
+**使用场景**：
+- Insert 完成后立即 Flush，确保数据落盘
+- 在并发读写测试中，Flush 应该在 Insert 之后、Search/Query 之前执行（或与 Search/Query 并行）
+- 如果只是测试写入性能，可以在 Insert 后立即 Flush
 
 ##### 5.1.10 Release：`ReleaseParams`
 
@@ -530,14 +583,19 @@
 
 来自 `custom.config.EnvEnum` 的 `region` 字段，可选值（大小写不敏感）：
 
+**本地环境**（支持所有索引类型）：
 - `devops`
 - `fouram`
-- `awswest`
-- `gcpwest`
-- `azurewest`
-- `alihz`
-- `tcnj`
-- `hwc`
+
+**云上环境**（**必须使用 `AUTOINDEX`**）：
+- `awswest`（AWS 云）
+- `gcpwest`（GCP 云）
+- `azurewest`（Azure 云）
+- `alihz`（阿里云）
+- `tcnj`（腾讯云）
+- `hwc`（华为云）
+
+> **重要约束**：云上环境（除 `devops` 和 `fouram` 外的所有环境）**必须使用 `AUTOINDEX` 作为索引类型**，不能使用 `HNSW`、`BIN_IVF_FLAT`、`SPARSE_WAND` 等显式索引类型。如果 LLM 生成 JSON 时指定了云上环境，应自动将索引类型设置为 `AUTOINDEX`。
 
 #### 6.2 `dataset`（Insert/Upsert）
 
@@ -576,10 +634,95 @@
 - `io.milvus.v2.common.IndexParam.IndexType`
 - `io.milvus.v2.common.IndexParam.MetricType`
 
-推荐默认（最省配置）：
+**重要：索引类型和 MetricType 与字段类型有强约束关系**，LLM 生成 JSON 时必须遵循：
 
-- `indextype`: `AUTOINDEX`
-- `metricType`: `L2`（或 `COSINE`/`IP`）
+#### 向量字段索引类型
+
+| 向量类型（DataType） | 推荐索引类型（IndexType） | 支持的 MetricType | 说明 |
+|---------------------|------------------------|------------------|------|
+| `FloatVector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 最常用的浮点向量，支持所有 MetricType |
+| `Float16Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 16位浮点向量，支持 `buildLevel` 参数 |
+| `BFloat16Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | BFloat16 向量，支持 `buildLevel` 参数 |
+| `Int8Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 8位整数向量 |
+| `BinaryVector` | `BIN_IVF_FLAT` / `AUTOINDEX` | `HAMMING` / `JACCARD` | 二进制向量，**必须使用 HAMMING 或 JACCARD**，不能使用 L2/IP/COSINE |
+| `SparseFloatVector` | `SPARSE_WAND` / `AUTOINDEX` | `IP` / `BM25` | 稀疏向量，**特殊情况**：如果是由 BM25 function 生成的，必须使用 `BM25`；否则使用 `IP`。不能使用 L2/COSINE/HAMMING |
+
+#### 标量字段索引类型
+
+| 标量类型（DataType） | 推荐索引类型（IndexType） | MetricType | 说明 |
+|---------------------|------------------------|-----------|------|
+| `VarChar` / `String` | `STL_SORT` / `AUTOINDEX` | 不需要（标量字段不使用 MetricType） | 字符串字段索引，用于加速字符串查询和排序 |
+| `Int64` / `Int32` / `Int16` / `Int8` | `STL_SORT` / `AUTOINDEX` | 不需要 | 整数字段索引，用于加速数值查询和排序 |
+| `Float` / `Double` | `STL_SORT` / `AUTOINDEX` | 不需要 | 浮点数字段索引，用于加速数值查询和排序 |
+| `Bool` | `STL_SORT` / `AUTOINDEX` | 不需要 | 布尔字段索引 |
+| `JSON` / Dynamic Field | `STL_SORT` / `AUTOINDEX` | 不需要 | JSON 字段索引，需要配合 `jsonPath` 和 `jsonCastType` 使用 |
+
+**标量字段索引说明**：
+
+- **`STL_SORT`**：标量字段的标准索引类型，用于加速标量字段的查询、排序和过滤
+- **`AUTOINDEX`**：系统自动选择索引类型（对于标量字段，通常也会选择 `STL_SORT`）
+- **`MetricType`**：标量字段**不需要** MetricType（MetricType 仅用于向量字段的距离计算）
+- **JSON 字段索引**：如果对 JSON 字段或 dynamic field 中的标量字段建索引，需要：
+  - 设置 `jsonPath`：指定 JSON 路径，例如 `field["key1"]["key2"]`
+  - 设置 `jsonCastType`：指定目标类型，例如 `varchar`、`int64`、`double`、`bool`
+  - 索引类型：`STL_SORT` 或 `AUTOINDEX`
+
+**代码中的默认映射**（当使用 `AUTOINDEX` 时，系统会根据字段类型自动选择）：
+
+**向量字段**：
+- `FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` → `HNSW` + `L2`
+- `BinaryVector` → `BIN_IVF_FLAT` + `HAMMING`
+- `SparseFloatVector` → `SPARSE_WAND` + `IP`（如果是由 BM25 function 生成的，则使用 `BM25`）
+
+**标量字段**：
+- `VarChar` / `String` / `Int64` / `Int32` / `Int16` / `Int8` / `Float` / `Double` / `Bool` → `STL_SORT`（不需要 MetricType）
+- `JSON` / Dynamic Field → `STL_SORT`（需要配合 `jsonPath` 和 `jsonCastType`）
+
+**`buildLevel` 参数**（仅部分向量类型支持）：
+
+- 支持：`FloatVector`、`Float16Vector`、`BFloat16Vector`
+- 不支持：`BinaryVector`、`Int8Vector`、`SparseFloatVector`
+- 常用值：`"1"`（Balanced，默认）、`"2"`（Performance）、`"0"`（Memory）
+
+**环境与索引类型的约束**：
+
+- **本地环境**（`devops`、`fouram`）：可以使用所有索引类型（`HNSW`、`BIN_IVF_FLAT`、`SPARSE_WAND`、`AUTOINDEX` 等）
+- **云上环境**（`awswest`、`gcpwest`、`azurewest`、`alihz`、`tcnj`、`hwc`）：**必须使用 `AUTOINDEX`**，不能使用其他显式索引类型
+
+**LLM 生成 JSON 时的建议**：
+
+1. **根据环境选择索引类型**：
+   - 如果用户指定了云上环境（通过 `-Denv` 参数或上下文推断）→ **强制使用 `AUTOINDEX`**
+   - 如果用户指定了本地环境（`devops`、`fouram`）→ 可以使用 `HNSW`、`BIN_IVF_FLAT`、`SPARSE_WAND`、`STL_SORT` 等
+   - 如果用户没指定环境 → 默认使用 `AUTOINDEX`（最安全的选择）
+
+2. **向量字段索引类型选择**：
+   - 如果用户指定了向量类型但没指定索引类型：
+     - `FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` → 使用 `AUTOINDEX` + `L2`
+     - `BinaryVector` → 使用 `AUTOINDEX` + `HAMMING`（**不能使用 L2**）
+     - `SparseFloatVector` → 使用 `AUTOINDEX` + `IP`（**特殊情况**：如果是由 BM25 function 生成的，则使用 `BM25`；**不能使用 L2**）
+   - 如果用户指定了向量类型但没指定 MetricType：
+     - 根据上表自动选择对应的 MetricType
+     - **特殊情况**：对于 `SparseFloatVector`，需要检查 `CreateCollectionParams.functionParams`：
+       - 如果 `functionParams.functionType == "BM25"` 且该 `SparseFloatVector` 字段名在 `functionParams.outputFieldNames` 中 → 使用 `BM25`
+       - 否则 → 使用 `IP`
+
+3. **标量字段索引类型选择**：
+   - 如果用户需要对标量字段建索引（用于加速查询/排序）：
+     - `VarChar` / `String` / `Int64` / `Int32` / `Int16` / `Int8` / `Float` / `Double` / `Bool` → 使用 `STL_SORT` 或 `AUTOINDEX`
+     - **注意**：标量字段**不需要 MetricType**（MetricType 仅用于向量字段）
+   - JSON 字段索引：
+     - 如果对 JSON 字段或 dynamic field 中的标量字段建索引，必须设置 `jsonPath` 和 `jsonCastType`
+     - 示例：`{"fieldName": "json_field", "indextype": "STL_SORT", "jsonPath": "field[\"key1\"]", "jsonCastType": "varchar"}`
+
+4. **常见错误**：
+   - ❌ 云上环境使用 `HNSW` → 应该用 `AUTOINDEX`
+   - ❌ `BinaryVector` 使用 `L2` → 应该用 `HAMMING`
+   - ❌ `SparseFloatVector` 使用 `L2` → 应该用 `IP`（或 `BM25`，如果是由 BM25 function 生成的）
+   - ❌ BM25 function 生成的 `SparseFloatVector` 使用 `IP` → 应该用 `BM25`
+   - ❌ `BinaryVector` 使用 `HNSW` → 应该用 `BIN_IVF_FLAT`（或 `AUTOINDEX`）
+   - ❌ 标量字段设置 `MetricType` → 标量字段不需要 MetricType
+   - ❌ JSON 字段索引缺少 `jsonPath` 或 `jsonCastType` → JSON 字段索引必须指定路径和类型
 
 ##### 6.4.3 `FunctionType`（用于 FunctionParams）
 
@@ -625,6 +768,7 @@ filter 占位符规则（Search/Query）：
 - 所有 Milvus enum 字段必须输出 **正确的枚举常量名**（例如 `VarChar`、`FloatVector`、`AUTOINDEX`、`L2`）。
 - **`FieldParams` 中的 boolean 字段建议显式给值**：`autoId`、`partitionKey`、`nullable`、`enableMatch`、`enableAnalyzer` 即使为 `false` 也建议显式写出，避免反序列化歧义。
 - **`CreateCollectionParams` 的 `numPartitions` 与 `partitionKey` 约束**：如果 `numPartitions > 0`，必须至少有一个字段的 `partitionKey` 为 `true`；如果 `numPartitions = 0`，所有字段的 `partitionKey` 都应为 `false`。
+- **索引类型与环境约束**：如果用户指定了云上环境（`awswest`、`gcpwest`、`azurewest`、`alihz`、`tcnj`、`hwc`），**必须使用 `AUTOINDEX`**；本地环境（`devops`、`fouram`）可以使用所有索引类型。
 - 未指定 collection 时，`collectionName` 设为 `""`（空字符串），并尽量不要同时填 `collectionRule`。
 
 你也可以让 LLM 一并产出：
@@ -634,7 +778,381 @@ filter 占位符规则（Search/Query）：
 
 ---
 
-### 9. 一个“最小可用”示例（建议让 LLM 从它改）
+### 9. 根据简短需求自动生成完整流程（LLM 智能补全）
+
+当用户给出简短需求（例如："我想跑一个collection的插入和搜索测试"）时，LLM 应该**自动补充必要的前置步骤**，生成完整的 `customize_params`。
+
+#### 9.1 前置步骤依赖关系
+
+Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
+
+1. **CreateCollection**（创建 collection）
+   - 必须先创建 collection，才能进行后续操作
+   - 如果用户没有指定 collection schema，LLM 应该生成一个**最小可用 schema**（至少包含主键 + 向量字段）
+
+2. **CreateIndex**（创建索引）
+   - 向量字段必须建索引后才能被搜索
+   - 如果用户提到"搜索"但没提到索引，LLM 应该自动添加 `CreateIndexParams`
+   - 如果用户没有指定索引类型，使用默认：`AUTOINDEX` + `L2`
+
+3. **Load**（加载 collection）
+   - collection 必须加载到内存后才能进行 Insert/Search/Query/Upsert
+   - 如果用户提到"插入"或"搜索"但没提到 Load，LLM 应该自动添加 `LoadParams`
+
+4. **Flush**（可选，但建议在 Insert 后添加）
+   - Flush 操作用于将 **growing segment** 刷成 **sealed segment**
+   - Insert 后建议 Flush，确保数据落盘并触发后续的索引构建
+   - 在并发读写测试中，Flush 应该在 Insert 之后执行（或与 Search/Query 并行）
+
+5. **Insert/Search/Query/Upsert**（用户实际需求）
+   - 这些操作必须在 Load 之后执行
+
+#### 9.2 常见场景模板
+
+##### 场景 1：插入和搜索测试（最常见）
+
+**用户需求**："我想跑一个collection的插入和搜索测试"
+
+**LLM 应该生成的完整流程**：
+
+```json
+{
+  "CreateCollectionParams_0": {
+    "collectionName": "",
+    "shardNum": 1,
+    "numPartitions": 0,
+    "enableDynamic": false,
+    "fieldParamsList": [
+      {
+        "dataType": "Int64",
+        "fieldName": "id_pk",
+        "primaryKey": true,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      },
+      {
+        "dataType": "FloatVector",
+        "fieldName": "vec",
+        "dim": 128,
+        "primaryKey": false,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      }
+    ],
+    "functionParams": null,
+    "properties": [],
+    "databaseName": ""
+  },
+  "CreateIndexParams_1": {
+    "collectionName": "",
+    "databaseName": "",
+    "indexParams": [
+      {"fieldName": "vec", "indextype": "AUTOINDEX", "metricType": "L2"}
+    ]
+  },
+  "LoadParams_2": {
+    "loadAll": false,
+    "collectionName": "",
+    "loadFields": [],
+    "skipLoadDynamicField": false
+  },
+  "InsertParams_3": {
+    "collectionName": "",
+    "collectionRule": "",
+    "partitionName": "",
+    "startId": 0,
+    "numEntries": 10000,
+    "batchSize": 1000,
+    "numConcurrency": 5,
+    "dataset": "random",
+    "runningMinutes": 0,
+    "retryAfterDeny": false,
+    "ignoreError": false,
+    "generalDataRoleList": []
+  },
+  "FlushParams_4": {
+    "flushAll": false,
+    "collectionName": ""
+  },
+  "SearchParams_5": {
+    "collectionName": "",
+    "collectionRule": "",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 5,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 10,
+    "runningMinutes": 1,
+    "randomVector": true,
+    "searchLevel": 1,
+    "indexAlgo": "",
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  }
+}
+```
+
+**关键点**：
+- 自动补充了 `CreateCollectionParams_0`（最小 schema）
+- 自动补充了 `CreateIndexParams_1`（向量字段索引）
+- 自动补充了 `LoadParams_2`（加载 collection）
+- 自动补充了 `FlushParams_4`（Insert 后 Flush）
+- 用户实际需求：`InsertParams_3` 和 `SearchParams_5`
+
+##### 场景 2：仅搜索测试（假设 collection 已存在）
+
+**用户需求**："我想搜索一个collection"
+
+**LLM 应该生成的完整流程**：
+
+```json
+{
+  "LoadParams_0": {
+    "loadAll": false,
+    "collectionName": "",
+    "loadFields": [],
+    "skipLoadDynamicField": false
+  },
+  "SearchParams_1": {
+    "collectionName": "",
+    "collectionRule": "",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 5,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 10,
+    "runningMinutes": 1,
+    "randomVector": true,
+    "searchLevel": 1,
+    "indexAlgo": "",
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  }
+}
+```
+
+**关键点**：
+- 如果用户明确说"已有 collection"或"collection 已存在"，则**不需要** `CreateCollectionParams` 和 `CreateIndexParams`
+- 但仍需要 `LoadParams`（因为搜索前必须 Load）
+
+##### 场景 3：创建 collection 并插入数据
+
+**用户需求**："创建一个collection并插入10万条数据"
+
+**LLM 应该生成的完整流程**：
+
+```json
+{
+  "CreateCollectionParams_0": {
+    "collectionName": "",
+    "shardNum": 1,
+    "numPartitions": 0,
+    "enableDynamic": false,
+    "fieldParamsList": [
+      {
+        "dataType": "Int64",
+        "fieldName": "id_pk",
+        "primaryKey": true,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      },
+      {
+        "dataType": "FloatVector",
+        "fieldName": "vec",
+        "dim": 128,
+        "primaryKey": false,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      }
+    ],
+    "functionParams": null,
+    "properties": [],
+    "databaseName": ""
+  },
+  "LoadParams_1": {
+    "loadAll": false,
+    "collectionName": "",
+    "loadFields": [],
+    "skipLoadDynamicField": false
+  },
+  "InsertParams_2": {
+    "collectionName": "",
+    "collectionRule": "",
+    "partitionName": "",
+    "startId": 0,
+    "numEntries": 100000,
+    "batchSize": 1000,
+    "numConcurrency": 5,
+    "dataset": "random",
+    "runningMinutes": 0,
+    "retryAfterDeny": false,
+    "ignoreError": false,
+    "generalDataRoleList": []
+  },
+  "FlushParams_3": {
+    "flushAll": false,
+    "collectionName": ""
+  }
+}
+```
+
+**关键点**：
+- 自动补充了 `CreateCollectionParams_0`
+- 自动补充了 `LoadParams_1`（Insert 前必须 Load）
+- 用户指定了 `numEntries: 100000`，LLM 应该使用该值
+- 自动补充了 `FlushParams_3`（Insert 后 Flush）
+
+#### 9.3 LLM 智能补全规则（给 LLM 的 Prompt 建议）
+
+当用户给出简短需求时，LLM 应该遵循以下规则：
+
+1. **识别用户意图**：
+   - "插入" → 需要 `InsertParams`
+   - "搜索" → 需要 `SearchParams` + `CreateIndexParams`（如果 collection 未建索引）
+   - "查询" → 需要 `QueryParams`
+   - "创建 collection" → 需要 `CreateCollectionParams`
+
+2. **自动补充前置步骤**：
+   - 如果提到"搜索"但没提到"索引"或"collection 已存在" → 自动添加 `CreateIndexParams`
+   - 如果提到"插入/搜索/查询"但没提到"Load"或"collection 已加载" → 自动添加 `LoadParams`
+   - 如果提到"插入/搜索/查询"但没提到 collection schema → 自动添加 `CreateCollectionParams`（最小 schema）
+
+3. **最小可用 schema 模板**：
+   - 主键字段：`Int64`，`fieldName: "id_pk"`，`primaryKey: true`，`autoId: false`
+   - 向量字段：`FloatVector`，`fieldName: "vec"`，`dim: 128`（如果用户没指定维度）
+   - 所有 boolean 字段显式给 `false`
+
+4. **序号分配**：
+   - 从 `_0` 开始递增
+   - 前置步骤的序号应该小于用户实际需求的序号
+
+5. **字段推断**：
+   - 如果用户没指定 `annsField`，使用 schema 中的第一个向量字段名（通常是 `vec`）
+   - 如果用户没指定 `numEntries`，使用默认值 `10000`
+   - 如果用户没指定 `runningMinutes`，Insert 用 `0`（按数据量），Search/Query 用 `1`（按时间）
+
+#### 9.4 示例：从简短需求到完整 JSON
+
+**用户输入**："我想跑一个collection的插入和搜索测试，插入5万条数据，搜索运行2分钟"
+
+**LLM 应该输出**：
+
+```json
+{
+  "CreateCollectionParams_0": {
+    "collectionName": "",
+    "shardNum": 1,
+    "numPartitions": 0,
+    "enableDynamic": false,
+    "fieldParamsList": [
+      {
+        "dataType": "Int64",
+        "fieldName": "id_pk",
+        "primaryKey": true,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      },
+      {
+        "dataType": "FloatVector",
+        "fieldName": "vec",
+        "dim": 128,
+        "primaryKey": false,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      }
+    ],
+    "functionParams": null,
+    "properties": [],
+    "databaseName": ""
+  },
+  "CreateIndexParams_1": {
+    "collectionName": "",
+    "databaseName": "",
+    "indexParams": [
+      {"fieldName": "vec", "indextype": "AUTOINDEX", "metricType": "L2"}
+    ]
+  },
+  "LoadParams_2": {
+    "loadAll": false,
+    "collectionName": "",
+    "loadFields": [],
+    "skipLoadDynamicField": false
+  },
+  "InsertParams_3": {
+    "collectionName": "",
+    "collectionRule": "",
+    "partitionName": "",
+    "startId": 0,
+    "numEntries": 50000,
+    "batchSize": 1000,
+    "numConcurrency": 5,
+    "dataset": "random",
+    "runningMinutes": 0,
+    "retryAfterDeny": false,
+    "ignoreError": false,
+    "generalDataRoleList": []
+  },
+  "FlushParams_4": {
+    "flushAll": false,
+    "collectionName": ""
+  },
+  "SearchParams_5": {
+    "collectionName": "",
+    "collectionRule": "",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 5,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 10,
+    "runningMinutes": 2,
+    "randomVector": true,
+    "searchLevel": 1,
+    "indexAlgo": "",
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  }
+}
+```
+
+**关键点**：
+- ✅ 自动补充了前置步骤（CreateCollection、CreateIndex、Load、Flush）
+- ✅ 使用了用户指定的 `numEntries: 50000`
+- ✅ 使用了用户指定的 `runningMinutes: 2`（Search）
+- ✅ 保持了正确的执行顺序（序号递增）
+
+---
+
+### 10. 一个“最小可用”示例（建议让 LLM 从它改）
 
 > 注意：仓库内 `src/main/resources/example/base.json` 等示例文件会随代码演进调整；如果你要喂给 LLM，请优先以本文给出的字段名/必填字段/枚举取值为准。
 
