@@ -105,6 +105,10 @@
   - **数字字段**：不要传 `""`，请传 `0` / `null` / 或直接不传（取决于字段是否必填）。
   - **枚举字段**（Milvus SDK enum）：不要传 `""`，请传正确的枚举常量名或 `null`/不传。
   - **List 字段**：不要传 `""`/`{}`，请传 `[]` 或 `["a","b"]`。
+- **`CreateCollectionParams` 的 `numPartitions` 与 `partitionKey` 约束**：
+  - 当 `numPartitions > 0` 时，`fieldParamsList` 中**必须至少有一个字段的 `partitionKey` 为 `true`**。
+  - 当 `numPartitions = 0` 时，所有字段的 `partitionKey` 都应为 `false`。
+  - 违反此约束会导致 Milvus 报错：`num_partitions should only be specified with partition key field enabled`。
 
 #### 4.2.1 “前端默认值/必填”如何理解（LLM 生成 JSON 的关键）
 
@@ -149,6 +153,8 @@
 - **`collectionName`**（string，可空）：不传/空则自动生成随机名。前端默认：`""`。
 - **`shardNum`**（int，前端必填）：前端默认：`1`。
 - **`numPartitions`**（int，前端必填）：前端默认：`0`。
+  - **重要约束**：当 `numPartitions > 0` 时，`fieldParamsList` 中**必须至少有一个字段的 `partitionKey` 为 `true`**，否则 Milvus 会报错：`num_partitions should only be specified with partition key field enabled`。
+  - 如果不需要分区，请设置 `numPartitions: 0`，且所有字段的 `partitionKey: false`。
 - **`enableDynamic`**（boolean，前端必填）：是否开启动态列。前端默认：`false`。
 - **`fieldParamsList`**（list，前端必填）：字段定义（见 `FieldParams`）。前端默认：2 个字段（`Int64_0` 作为 PK + `FloatVector_1` 向量字段）。
 - **`functionParams`**（object，可空）：function（例如 BM25）配置（见 `FunctionParams`）。前端默认：`{functionType:"", name:"", inputFieldNames:[], outputFieldNames:[]}`（注意 `functionType=""` 是占位，建议用 `null`/不传）。
@@ -159,17 +165,21 @@
 
 - **`fieldName`**（string）：前端默认模板里是 `Int64_0` / `FloatVector_1`；新增行默认 `""`。
 - **`dataType`**（enum 字符串，见下文“DataType 枚举”）：前端默认模板里是 `Int64` / `FloatVector`；新增行默认 `""`（占位，建议不要传空串）。
-- **`primaryKey`**（boolean）：注意：Java 字段名是 `isPrimaryKey`，但示例/fastjson 常用 key 为 `primaryKey`。前端默认模板里首字段为 `true`。
-- **`autoId`**（boolean）：仅主键字段可用。前端默认：`false`。
+- **`primaryKey`**（boolean）：注意：Java 字段名是 `isPrimaryKey`，但示例/fastjson 常用 key 为 `primaryKey`。前端默认模板里首字段为 `true`。**建议显式给值**（非主键字段给 `false`）。
+- **`autoId`**（boolean）：仅主键字段可用。前端默认：`false`。**建议显式给 `false`**（即使不启用 AutoID）。
 - **`dim`**（int）：向量维度（vector 类型必填）。前端默认模板里向量字段为 `768`。
 - **`maxLength`**（int）：VarChar 必填。前端新增行默认 `null`（占位）；生成 JSON 时请传数字或不传（不要传 `""`）。
 - **`maxCapacity`**（int）：Array 必填。前端新增行默认 `null`（占位）；生成 JSON 时请传数字或不传（不要传 `""`）。
 - **`elementType`**（enum）：Array 元素类型。前端新增行默认 `null`（占位）；生成 JSON 时请传枚举名或 `null`/不传（不要传 `""`/`0` 占位）。
-- **`partitionKey`**（boolean）：前端默认：`false`。
-- **`nullable`**（boolean）：前端默认：`false`（且主键/向量字段会禁用 nullable=true）。
-- **`enableMatch`**（boolean）：前端默认：`false`。
-- **`enableAnalyzer`**（boolean）：前端默认：`false`。
+- **`partitionKey`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不是分区键）。
+  - **重要约束**：如果 `CreateCollectionParams.numPartitions > 0`，则**必须至少有一个字段的 `partitionKey` 为 `true`**，否则创建 collection 会失败。
+  - 如果 `numPartitions = 0`，则所有字段的 `partitionKey` 都应为 `false`。
+- **`nullable`**（boolean）：前端默认：`false`（且主键/向量字段会禁用 nullable=true）。**建议显式给 `false`**（除非确实需要可空）。
+- **`enableMatch`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不启用匹配功能）。
+- **`enableAnalyzer`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不启用分析器）。
 - **`analyzerParamsList`**（list，可空）：前端新增行默认 `[{paramsKey:"", paramsValue:""}]`（占位；不需要可传 `[]`）。
+
+> **重要提示**：虽然这些 boolean 字段（`autoId`、`partitionKey`、`nullable`、`enableMatch`、`enableAnalyzer`）的前端默认值都是 `false`，但**建议在生成 JSON 时显式给出 `false`**，以避免后端反序列化时因字段缺失导致的不确定性。特别是当 LLM 生成 JSON 时，明确写出这些字段有助于提高可读性和避免歧义。
 
 ##### 5.1.2 建索引：`CreateIndexParams`
 
@@ -613,6 +623,8 @@ filter 占位符规则（Search/Query）：
 - 顶层 key 必须为：`<ParamsClassName>_<序号>`，序号从 0 递增即可。
 - **所有 List 字段必须显式给出**（哪怕是 `[]`），避免组件里 NPE。
 - 所有 Milvus enum 字段必须输出 **正确的枚举常量名**（例如 `VarChar`、`FloatVector`、`AUTOINDEX`、`L2`）。
+- **`FieldParams` 中的 boolean 字段建议显式给值**：`autoId`、`partitionKey`、`nullable`、`enableMatch`、`enableAnalyzer` 即使为 `false` 也建议显式写出，避免反序列化歧义。
+- **`CreateCollectionParams` 的 `numPartitions` 与 `partitionKey` 约束**：如果 `numPartitions > 0`，必须至少有一个字段的 `partitionKey` 为 `true`；如果 `numPartitions = 0`，所有字段的 `partitionKey` 都应为 `false`。
 - 未指定 collection 时，`collectionName` 设为 `""`（空字符串），并尽量不要同时填 `collectionRule`。
 
 你也可以让 LLM 一并产出：
@@ -634,9 +646,41 @@ filter 占位符规则（Search/Query）：
     "numPartitions": 0,
     "enableDynamic": false,
     "fieldParamsList": [
-      {"dataType": "Int64", "fieldName": "id_pk", "primaryKey": true, "autoId": false},
-      {"dataType": "VarChar", "fieldName": "varchar_1", "maxLength": 256},
-      {"dataType": "FloatVector", "fieldName": "vec", "dim": 128}
+      {
+        "dataType": "Int64",
+        "fieldName": "id_pk",
+        "primaryKey": true,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      },
+      {
+        "dataType": "VarChar",
+        "fieldName": "varchar_1",
+        "maxLength": 256,
+        "primaryKey": false,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      },
+      {
+        "dataType": "FloatVector",
+        "fieldName": "vec",
+        "dim": 128,
+        "primaryKey": false,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      }
     ]
   },
   "CreateIndexParams_1": {
