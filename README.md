@@ -531,6 +531,12 @@
 - **`runningMinutes`**（int）：循环总时长上限（0 表示无限/很大）。前端默认 `0`。
 - **`cycleNum`**（int）：循环次数上限（0 表示无限/很大）。前端默认 `1`。
 
+**使用场景**：
+- **批量创建多个 collection 并插入数据**：当需要创建多个 collection（如 50 个），每个 collection 插入一定数量的数据时，**应该使用 `LoopParams` 组件来循环执行**，而不是生成多个重复的 `CreateCollectionParams` 和 `InsertParams` 组件。
+- **重复执行某个操作序列**：当需要重复执行一系列操作（如创建 collection → 建索引 → 加载 → 插入 → 搜索）多次时，使用 `LoopParams` 可以简化配置并提高可维护性。
+
+> **重要提示**：`LoopParams` 的 `paramComb` 内部 key 也必须是 `ClassName_index`（因为内部也会按 `_数字` 排序）。
+
 ##### 5.5.3 Concurrent：`ConcurrentParams`
 
 对应组件：`custom.components.ConcurrentComp`
@@ -1134,6 +1140,144 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
 - **错误处理**：性能测试时建议设置 `ignoreError: true`，避免单个错误中断整个测试流程
 - **数据准备**：确保 collection 中已有足够的数据量，避免因数据不足影响性能测试结果
 
+##### 场景 5：批量创建多个 collection 并插入数据
+
+**用户需求**："创建 50 个 collection，每个 collection 插入 1000 条数据"
+
+**重要提示**：当需要批量创建多个 collection 并插入数据时，**必须使用 `LoopParams` 组件来循环执行**，而不是生成多个重复的 `CreateCollectionParams` 和 `InsertParams` 组件。
+
+**LLM 应该生成的完整流程**：
+
+```json
+{
+  "LoopParams_0": {
+    "paramComb": {
+      "CreateCollectionParams_0": {
+        "collectionName": "",
+        "shardNum": 1,
+        "numPartitions": 0,
+        "enableDynamic": false,
+        "fieldParamsList": [
+          {
+            "dataType": "Int64",
+            "fieldName": "id_pk",
+            "primaryKey": true,
+            "autoId": false,
+            "partitionKey": false,
+            "nullable": false,
+            "enableMatch": false,
+            "enableAnalyzer": false,
+            "analyzerParamsList": []
+          },
+          {
+            "dataType": "FloatVector",
+            "fieldName": "vec",
+            "dim": 128,
+            "primaryKey": false,
+            "autoId": false,
+            "partitionKey": false,
+            "nullable": false,
+            "enableMatch": false,
+            "enableAnalyzer": false,
+            "analyzerParamsList": []
+          }
+        ],
+        "functionParams": null,
+        "properties": [],
+        "databaseName": ""
+      },
+      "CreateIndexParams_1": {
+        "collectionName": "",
+        "databaseName": "",
+        "indexParams": [
+          {"fieldName": "vec", "indextype": "AUTOINDEX", "metricType": "L2"}
+        ]
+      },
+      "LoadParams_2": {
+        "loadAll": false,
+        "collectionName": "",
+        "loadFields": [],
+        "skipLoadDynamicField": false
+      },
+      "InsertParams_3": {
+        "collectionName": "",
+        "collectionRule": "",
+        "partitionName": "",
+        "startId": 0,
+        "numEntries": 1000,
+        "batchSize": 1000,
+        "numConcurrency": 1,
+        "dataset": "random",
+        "runningMinutes": 0,
+        "retryAfterDeny": false,
+        "ignoreError": false,
+        "generalDataRoleList": []
+      },
+      "FlushParams_4": {
+        "flushAll": false,
+        "collectionName": ""
+      }
+    },
+    "runningMinutes": 0,
+    "cycleNum": 50
+  }
+}
+```
+
+**关键点**：
+- 使用 `LoopParams_0` 作为外层组件，设置 `cycleNum: 50` 来循环执行 50 次
+- `paramComb` 内部包含完整的操作序列：`CreateCollectionParams_0` → `CreateIndexParams_1` → `LoadParams_2` → `InsertParams_3` → `FlushParams_4`
+- **Collection 名称管理**：
+  - `CreateCollectionParams` 的 `collectionName: ""`（空字符串）表示**自动生成随机名称**，每次循环都会创建一个新的 collection
+  - 所有创建的 collection 名称会被记录到 `globalCollectionNames` 列表中
+- **后续组件使用 collectionRule 选择 collection**：
+  - 在 Loop 内部的 `InsertParams`、`SearchParams`、`QueryParams` 等组件中，可以设置 `collectionName: ""` 和 `collectionRule: "sequence"` 或 `collectionRule: "random"` 来选择 collection
+  - `collectionRule: "sequence"`：按顺序轮转选择 `globalCollectionNames` 中的 collection（使用 `insertCollectionIndex`、`searchCollectionIndex` 等索引）
+  - `collectionRule: "random"`：从 `globalCollectionNames` 中随机选择一个 collection
+  - `collectionRule: ""`（空字符串）：默认使用 `globalCollectionNames` 的最后一个 collection
+- **不要**生成 50 个 `CreateCollectionParams_0`、`CreateCollectionParams_1`...`CreateCollectionParams_49` 这样的重复组件
+
+**使用 Loop 的优势**：
+- **配置简洁**：只需要一个 `LoopParams` 组件，而不是大量重复的组件
+- **易于维护**：修改操作序列时只需要修改 `paramComb` 内部的内容
+- **自动管理 collection 名称**：每次循环会自动生成新的 collection 名称（通过 `globalCollectionNames` 机制）
+- **灵活选择 collection**：后续组件可以通过 `collectionRule` 灵活选择已创建的 collection（顺序或随机）
+- **资源高效**：避免生成大量重复的 JSON 配置
+
+**示例：Loop 外部使用 collectionRule 选择 collection**
+
+如果需要在 Loop 外部对已创建的 collection 进行操作，可以使用 `collectionRule`：
+
+```json
+{
+  "LoopParams_0": {
+    "paramComb": {
+      "CreateCollectionParams_0": { ... },
+      "InsertParams_1": { ... }
+    },
+    "cycleNum": 50
+  },
+  "SearchParams_1": {
+    "collectionName": "",
+    "collectionRule": "sequence",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 10,
+    ...
+  },
+  "SearchParams_2": {
+    "collectionName": "",
+    "collectionRule": "random",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 10,
+    ...
+  }
+}
+```
+
+这样，`SearchParams_1` 会按顺序轮转选择 50 个 collection，`SearchParams_2` 会随机选择其中一个 collection。
+
 #### 9.3 LLM 智能补全规则（给 LLM 的 Prompt 建议）
 
 当用户给出简短需求时，LLM 应该遵循以下规则：
@@ -1149,12 +1293,18 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
    - 如果提到"插入/搜索/查询"但没提到"Load"或"collection 已加载" → 自动添加 `LoadParams`
    - 如果提到"插入/搜索/查询"但没提到 collection schema → 自动添加 `CreateCollectionParams`（最小 schema）
 
-3. **最小可用 schema 模板**：
+3. **识别批量操作需求，使用 Loop 组件**：
+   - 如果用户提到"创建 N 个 collection"（N > 1）或"批量创建" → **必须使用 `LoopParams` 组件**，设置 `cycleNum: N`，而不是生成 N 个重复的 `CreateCollectionParams` 组件
+   - 如果用户提到"每个 collection 插入 X 条数据"且涉及多个 collection → 将 `CreateCollectionParams`、`CreateIndexParams`、`LoadParams`、`InsertParams` 等操作放在 `LoopParams` 的 `paramComb` 内部
+   - **错误示例**：生成 `CreateCollectionParams_0`、`CreateCollectionParams_1`...`CreateCollectionParams_49`（50 个重复组件）
+   - **正确示例**：使用 `LoopParams_0`，设置 `cycleNum: 50`，`paramComb` 内部包含 `CreateCollectionParams_0`、`InsertParams_1` 等
+
+4. **最小可用 schema 模板**：
    - 主键字段：`Int64`，`fieldName: "id_pk"`，`primaryKey: true`，`autoId: false`
    - 向量字段：`FloatVector`，`fieldName: "vec"`，`dim: 128`（如果用户没指定维度）
    - 所有 boolean 字段显式给 `false`
 
-4. **序号分配**：
+5. **序号分配**：
    - 从 `_0` 开始递增
    - 前置步骤的序号应该小于用户实际需求的序号
 
