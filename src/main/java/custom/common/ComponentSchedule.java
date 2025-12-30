@@ -311,6 +311,12 @@ public class ComponentSchedule {
             jsonObject.put("DebugTest_" + index, s);
             reportStepResult(DebugTestParams.class.getSimpleName() + "_" + index, s);
         }
+        if (object instanceof HybridSearchParams) {
+            log.info("*********** < HybridSearch > ***********");
+            HybridSearchResult hybridSearchResult = HybridSearchComp.hybridSearchCollection((HybridSearchParams) object);
+            jsonObject.put("HybridSearch_" + index, hybridSearchResult);
+            reportStepResult(HybridSearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(hybridSearchResult));
+        }
         return jsonObject;
     }
 

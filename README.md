@@ -140,7 +140,7 @@
 
 ### 5. 支持的组件（= 可用的 `*Params` 列表）
 
-最终能跑的 step 以 `ComponentSchedule.callComponentSchedule()` 的 `instanceof` 分发为准。当前支持 **38 种**：
+最终能跑的 step 以 `ComponentSchedule.callComponentSchedule()` 的 `instanceof` 分发为准。当前支持 **39 种**：
 
 #### 5.1 Milvus 核心链路（最常用）
 
@@ -432,7 +432,79 @@
 - **`randomVector`**（boolean）
 - **`useV1`**（boolean）：当前实现未使用该字段（保留）
 
-##### 5.2.2 Recall：`RecallParams`
+##### 5.2.2 HybridSearch：`HybridSearchParams`
+
+对应组件：`custom.components.HybridSearchComp`
+
+**用途**：HybridSearch（混合搜索）支持在同一个 collection 中对多个向量字段进行搜索，并使用融合策略（RRF 或 WeightedRanker）合并结果。这是 Milvus 2.4+ 版本引入的功能。
+
+字段：
+
+- **`collectionName`**（string，可空）：前端默认 `""`。
+- **`collectionRule`**（string，前端必填但可为空）：`random/sequence`。前端默认 `""`（None）。
+- **`searchRequests`**（list，前端必填）：混合搜索请求列表，每个元素代表一个向量字段的搜索请求。
+  - **`annsField`**（string）：向量字段名
+  - **`topK`**（int）：该字段的 topK
+  - **`metricType`**（string）：距离度量类型（L2/IP/COSINE/HAMMING/JACCARD/BM25），默认 `L2`
+  - **`searchParams`**（object，可空）：搜索参数 Map，例如 `{"level": 1}`
+- **`ranker`**（string，前端必填）：融合策略类型，可选值：
+  - `"RRF"`：Reciprocal Rank Fusion（倒数排名融合），默认值
+  - `"WeightedRanker"`：加权排序
+- **`rankerParams`**（object，可空）：融合策略参数 Map
+  - RRF：`{"k": 60}`（k 为常数，默认 60）
+  - WeightedRanker：`{"weights": [0.5, 0.5]}`（权重列表，长度需与 searchRequests 数量一致）
+- **`topK`**（int，前端必填）：最终返回的候选数量。前端默认 `10`。
+- **`nq`**（int，前端必填）：query 向量数量。前端默认 `1`。
+- **`randomVector`**（boolean，前端必填）：是否每次请求随机选择 query 向量。前端默认 `true`。
+- **`outputs`**（list，建议必填）：输出字段。前端默认 `[]`。
+- **`filter`**（string，可空）：Milvus expr（可包含 `$fieldName` 占位符）。前端默认 `""`。
+- **`numConcurrency`**（int，前端必填）：并发线程数。前端默认 `10`。
+- **`runningMinutes`**（long，前端必填）：运行时长（分钟）。前端默认 `10`。
+- **`targetQps`**（double，可空）：目标 QPS。前端默认 `0`（0=不限制）。
+- **`generalFilterRoleList`**（list，可空）：filter 占位符替换规则列表。前端默认是“带 1 条空规则”的占位数组；不使用建议传 `[]`。
+- **`ignoreError`**（boolean，可空）：是否忽略错误继续搜索。前端默认 `false`。
+
+**使用场景**：
+- 多模态搜索：例如使用 ResNet 和 CLIP 分别提取图片和文本特征，存储为不同向量列，然后进行混合搜索
+- 多向量列融合：当同一个 collection 中有多个向量字段时，可以使用 HybridSearch 进行融合搜索
+
+**示例 JSON**：
+```json
+{
+  "HybridSearchParams_0": {
+    "collectionName": "",
+    "collectionRule": "",
+    "searchRequests": [
+      {
+        "annsField": "image_vector",
+        "topK": 10,
+        "metricType": "L2",
+        "searchParams": {"level": 1}
+      },
+      {
+        "annsField": "text_vector",
+        "topK": 10,
+        "metricType": "COSINE",
+        "searchParams": {"level": 1}
+      }
+    ],
+    "ranker": "RRF",
+    "rankerParams": {"k": 60},
+    "topK": 10,
+    "nq": 1,
+    "randomVector": true,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 10,
+    "runningMinutes": 1,
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  }
+}
+```
+
+##### 5.2.3 Recall：`RecallParams`
 
 对应组件：`custom.components.RecallComp`
 
@@ -444,7 +516,7 @@
 
 说明：Recall 使用 `CommonFunction.providerSearchVectorDataset` 采样向量并记录 base id，再以 `topK=1` 搜索并比较命中率。
 
-##### 5.2.3 Segment Info（V1）：`QuerySegmentInfoParams` / `PersistentSegmentInfoParams`
+##### 5.2.4 Segment Info（V1）：`QuerySegmentInfoParams` / `PersistentSegmentInfoParams`
 
 对应组件：
 
