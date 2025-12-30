@@ -14,7 +14,11 @@ public class CreateInstanceParams {
      * <p>
      * 前端：`createInstanceEdit.vue` -> "DB Version"
      * <p>
-     * 支持特殊值：`latest-release`
+     * 支持特殊值：
+     * - `latest-release`：获取最新的 release 版本镜像
+     * - `nightly`：后端会自动查找最新的 nightly 版本镜像（通过 `CloudOpsServiceUtils.getLatestImageByKeywords()` 查询）
+     * <p>
+     * 其他值：后端会通过关键字查询匹配的镜像，并返回最新的一个。
      * <p>
      * 前端必填：是
      * <p>

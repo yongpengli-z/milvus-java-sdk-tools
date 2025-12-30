@@ -272,6 +272,7 @@
 - **`numEntries`**（long，前端必填）：总写入量（内部会按 `batchSize` 切批）。前端默认 `1500000`。
 - **`batchSize`**（long，前端必填）：前端默认 `1000`。
 - **`numConcurrency`**（int，前端必填）：并发线程数。前端默认 `1`。
+  - **性能测试建议**：当需要测试 Insert 性能时，推荐添加多个 `InsertParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20），来递增压力，观察不同并发级别下的性能表现。
 - **`dataset`**（string，前端必填）：`random/gist/deep/sift/laion`。前端默认 `random`。
 - **`runningMinutes`**（long，前端必填）：Insert 中该字段>0 时会成为“时间上限”，否则以数据量批次数为准。前端默认 `0`。
 - **`retryAfterDeny`**（boolean，可空）：禁写后是否等待重试。前端默认 `false`。
@@ -292,6 +293,7 @@
 - **`outputs`**（list，建议必填）：输出字段。前端默认 `[]`；不需要输出请传 `[]`。
 - **`filter`**（string，可空）：Milvus expr（可包含 `$fieldName` 占位符，见下文）。前端默认 `""`。
 - **`numConcurrency`**（int，前端必填）：前端默认 `10`。
+  - **性能测试建议**：当需要测试 Search 性能时，推荐添加多个 `SearchParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20、50），来递增压力，观察不同并发级别下的性能表现。
 - **`runningMinutes`**（long，前端必填）：Search 是纯按时间循环。前端默认 `10`。
 - **`randomVector`**（boolean，前端必填）：前端默认 `true`。
 - **`searchLevel`**（int，可空）：前端默认 `1`。
@@ -315,6 +317,7 @@
 - **`limit`**（long，可空）：前端初始模板里是 `""`（占位）；**建议生成 JSON 时传数字或不传**。
 - **`offset`**（long，前端必填）：前端默认 `0`。
 - **`numConcurrency`**（int，前端必填）：前端默认 `10`。
+  - **性能测试建议**：当需要测试 Query 性能时，推荐添加多个 `QueryParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20、50），来递增压力，观察不同并发级别下的性能表现。
 - **`runningMinutes`**（long，前端必填）：前端默认 `10`。
 - **`targetQps`**（double，可空）：前端默认 `0`。
 - **`generalFilterRoleList`**（list，可空）：前端默认是“带 1 条空规则”的占位数组；不使用建议传 `[]`。
@@ -332,6 +335,7 @@
 - **`numEntries`**（long，前端必填）：前端默认 `1500000`。
 - **`batchSize`**（long，前端必填）：前端默认 `1000`。
 - **`numConcurrency`**（int，前端必填）：前端默认 `1`。
+  - **性能测试建议**：当需要测试 Upsert 性能时，推荐添加多个 `UpsertParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20），来递增压力，观察不同并发级别下的性能表现。
 - **`dataset`**（string，前端必填）：前端默认 `random`。
 - **`runningMinutes`**（long，可空）：>0 时作为时间上限。前端模板里存在该字段且默认 `0`（UI 未展示该输入项）。
 - **`retryAfterDeny`**（boolean，可空）：前端默认 `false`。
@@ -557,6 +561,10 @@
 - **`CreateInstanceParams`**（`createInstanceEdit.vue`）
   - 必填：`instanceName`/`dbVersion`/`replica`/`rootPassword`/`roleUse`/`useHours`
   - 默认：`cuType=class-1-enterprise`，`architecture=2`，`replica=1`，`rootPassword=Milvus123`，`roleUse=root`，`useHours=10`，`instanceType=1`，`bizCritical=false`，`monopolized=false`，`dbVersion=latest-release`
+  - **`dbVersion` 特殊值说明**：
+    - `latest-release`：后端会获取最新的 release 版本镜像
+    - `nightly`：后端会自动查找最新的 nightly 版本镜像（通过关键字查询匹配的镜像，返回最新的一个）
+    - 其他值：后端会通过关键字查询匹配的镜像，并返回最新的一个
   - `streamingNodeParams` 默认：`{replicaNum:"", cpu:"", memory:"", disk:""}`（占位；建议按后端类型传值）
 - **`DeleteInstanceParams`**（`deleteInstanceEdit.vue`）
   - 必填：`useCloudTestApi`（注意后端字段名是 `useOPSTestApi`，需要映射/改 key）
@@ -1021,6 +1029,110 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
 - 自动补充了 `LoadParams_1`（Insert 前必须 Load）
 - 用户指定了 `numEntries: 100000`，LLM 应该使用该值
 - 自动补充了 `FlushParams_3`（Insert 后 Flush）
+
+##### 场景 4：性能测试（递增压力测试）
+
+**用户需求**："我想测试 search/insert/query 的性能"
+
+**性能测试最佳实践**：
+
+当需要测试 search/insert/query 等操作的性能时，**推荐添加多个相同类型的组件，设置不同的并发数（`numConcurrency`），来递增压力**。这样可以：
+- 观察不同并发级别下的性能表现
+- 找到系统的性能瓶颈和最优并发数
+- 评估系统的扩展性和稳定性
+
+**LLM 应该生成的完整流程示例（Search 性能测试）**：
+
+```json
+{
+  "LoadParams_0": {
+    "loadAll": false,
+    "collectionName": "",
+    "loadFields": [],
+    "skipLoadDynamicField": false
+  },
+  "SearchParams_1": {
+    "collectionName": "",
+    "collectionRule": "",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 10,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 1,
+    "runningMinutes": 5,
+    "randomVector": true,
+    "searchLevel": 1,
+    "indexAlgo": "",
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  },
+  "SearchParams_2": {
+    "collectionName": "",
+    "collectionRule": "",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 10,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 5,
+    "runningMinutes": 5,
+    "randomVector": true,
+    "searchLevel": 1,
+    "indexAlgo": "",
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  },
+  "SearchParams_3": {
+    "collectionName": "",
+    "collectionRule": "",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 10,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 10,
+    "runningMinutes": 5,
+    "randomVector": true,
+    "searchLevel": 1,
+    "indexAlgo": "",
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  },
+  "SearchParams_4": {
+    "collectionName": "",
+    "collectionRule": "",
+    "annsField": "vec",
+    "nq": 1,
+    "topK": 10,
+    "outputs": ["*"],
+    "filter": "",
+    "numConcurrency": 20,
+    "runningMinutes": 5,
+    "randomVector": true,
+    "searchLevel": 1,
+    "indexAlgo": "",
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": true
+  }
+}
+```
+
+**关键点**：
+- 添加了多个 `SearchParams` 组件（`SearchParams_1`、`SearchParams_2`、`SearchParams_3`、`SearchParams_4`）
+- 每个组件的 `numConcurrency` 递增（1 → 5 → 10 → 20），实现递增压力测试
+- 其他参数（`nq`、`topK`、`runningMinutes` 等）保持一致，确保测试结果可比较
+- 同样的方法也适用于 `InsertParams`、`QueryParams` 和 `UpsertParams` 的性能测试
+
+**性能测试建议**：
+- **并发数递增策略**：建议从较小的并发数开始（如 1、5），逐步增加到较大的值（如 10、20、50、100），观察性能变化
+- **测试时长**：每个并发级别的 `runningMinutes` 建议设置为相同值（如 5-10 分钟），确保测试结果可比较
+- **错误处理**：性能测试时建议设置 `ignoreError: true`，避免单个错误中断整个测试流程
+- **数据准备**：确保 collection 中已有足够的数据量，避免因数据不足影响性能测试结果
 
 #### 9.3 LLM 智能补全规则（给 LLM 的 Prompt 建议）
 
