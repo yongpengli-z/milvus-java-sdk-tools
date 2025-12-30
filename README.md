@@ -514,6 +514,12 @@
   - 前端必填：是
   - 前端默认值：""（空字符串）
 
+**重要约束**：
+- **一个 collection 只能有一个别名**（Milvus 的限制）
+- **`CreateAliasParams`**：用于给 collection 创建第一个别名
+- **`AlterAliasParams`**：用于修改 collection 的别名（如果 collection 已有别名，要使用新别名时，必须使用 `AlterAliasParams` 来修改，而不能使用 `CreateAliasParams` 创建新别名）
+- 如果尝试给已有别名的 collection 创建新别名，会导致错误
+
 ---
 
 #### 5.5 Workflow 组件：Wait / Loop / Concurrent
