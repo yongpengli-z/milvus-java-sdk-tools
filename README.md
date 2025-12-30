@@ -571,7 +571,7 @@
     - `latest-release`：后端会获取最新的 release 版本镜像
     - `nightly`：后端会自动查找最新的 nightly 版本镜像（通过关键字查询匹配的镜像，返回最新的一个）
     - 其他值：后端会通过关键字查询匹配的镜像，并返回最新的一个
-  - `streamingNodeParams` 默认：`{replicaNum:"", cpu:"", memory:"", disk:""}`（占位；建议按后端类型传值）
+  - **`streamingNodeParams`**（已废弃，不再需要）：创建实例时不再需要配置 streaming node 参数，可以省略该字段或传 `null`
 - **`DeleteInstanceParams`**（`deleteInstanceEdit.vue`）
   - 必填：`useCloudTestApi`（注意后端字段名是 `useOPSTestApi`，需要映射/改 key）
   - 默认：`useCloudTestApi=false`，`instanceId/accountEmail/accountPassword=""`
