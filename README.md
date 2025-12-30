@@ -447,6 +447,7 @@
   - **`topK`**（int）：该字段的 topK
   - **`metricType`**（string）：距离度量类型（L2/IP/COSINE/HAMMING/JACCARD/BM25），默认 `L2`
   - **`searchParams`**（object，可空）：搜索参数 Map，例如 `{"level": 1}`
+  - **`filter`**（string，可空）：该字段的 Milvus expr 过滤表达式（可包含 `$fieldName` 占位符）。每个搜索请求可以有自己的 filter。前端默认 `""`（表示不过滤）
 - **`ranker`**（string，前端必填）：融合策略类型，可选值：
   - `"RRF"`：Reciprocal Rank Fusion（倒数排名融合），默认值
   - `"WeightedRanker"`：加权排序
@@ -457,7 +458,6 @@
 - **`nq`**（int，前端必填）：query 向量数量。前端默认 `1`。
 - **`randomVector`**（boolean，前端必填）：是否每次请求随机选择 query 向量。前端默认 `true`。
 - **`outputs`**（list，建议必填）：输出字段。前端默认 `[]`。
-- **`filter`**（string，可空）：Milvus expr（可包含 `$fieldName` 占位符）。前端默认 `""`。
 - **`numConcurrency`**（int，前端必填）：并发线程数。前端默认 `10`。
 - **`runningMinutes`**（long，前端必填）：运行时长（分钟）。前端默认 `10`。
 - **`targetQps`**（double，可空）：目标 QPS。前端默认 `0`（0=不限制）。

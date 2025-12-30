@@ -181,26 +181,8 @@ public class HybridSearchComp {
                         }
                     }
 
-                    // 配置filter
-                    String filter = hybridSearchParams.getFilter();
-                    if (finalGeneralDataRoleList != null && finalGeneralDataRoleList.size() > 0) {
-                        for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
-                            int replaceFilterParams;
-                            if (generalFilterRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                                replaceFilterParams = CommonFunction.advanceSequenceForSearch(
-                                        generalFilterRole.getRandomRangeParamsList(),
-                                        hybridSearchParams.getNumConcurrency(),
-                                        finalC,
-                                        returnNum.size());
-                            } else {
-                                replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
-                            }
-                            filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
-                        }
-                        log.info("线程[{}] hybridSearch filter:{}", finalC, filter);
-                    }
-
                     // 构建多个 AnnSearchReq
+                    // 注意：filter 需要在每个 AnnSearchReq 中配置，而不是在 HybridSearchReq 中
                     List<AnnSearchReq> annSearchReqList = new ArrayList<>();
                     for (HybridSearchParams.HybridSearchRequest request : hybridSearchParams.getSearchRequests()) {
                         String annsField = request.getAnnsField();
@@ -238,7 +220,7 @@ public class HybridSearchComp {
                                 break;
                         }
 
-                        // 准备 searchParams
+                        // 准备 searchParams - 转换为 JSON 字符串格式
                         Map<String, Object> searchParams = request.getSearchParams();
                         if (searchParams == null) {
                             searchParams = new HashMap<>();
@@ -246,35 +228,47 @@ public class HybridSearchComp {
                         } else if (!searchParams.containsKey("level")) {
                             searchParams.put("level", 1);
                         }
+                        
+                        // 将 searchParams Map 转换为 JSON 字符串
+                        String paramsJson = com.alibaba.fastjson.JSON.toJSONString(searchParams);
 
-                        // 构建 AnnSearchReq
-                        // 注意：根据 Milvus SDK 2.6.6 的实际 API，可能需要调整方法名
-                        // 如果编译错误，请根据实际 SDK 文档调整（可能是 data/vectors/annsField/vectorFieldName 等）
-                        AnnSearchReq.AnnSearchReqBuilder<?, ?> annSearchReqBuilder = AnnSearchReq.builder()
-                                .topK(request.getTopK())
-                                .metricType(metricType);
-                        
-                        // 设置 searchParams（如果 API 支持）
-                        try {
-                            annSearchReqBuilder.getClass().getMethod("searchParams", Map.class).invoke(annSearchReqBuilder, searchParams);
-                        } catch (Exception e) {
-                            log.debug("AnnSearchReq 不支持 searchParams 方法，跳过: {}", e.getMessage());
-                        }
-                        
-                        // 设置向量数据和字段名（根据实际 API 调整）
-                        try {
-                            // 尝试使用 data() 和 annsField() 方法
-                            annSearchReqBuilder.getClass().getMethod("data", List.class).invoke(annSearchReqBuilder, vectors);
-                            annSearchReqBuilder.getClass().getMethod("annsField", String.class).invoke(annSearchReqBuilder, annsField);
-                        } catch (Exception e1) {
-                            try {
-                                // 尝试使用 vectors() 和 vectorFieldName() 方法
-                                annSearchReqBuilder.getClass().getMethod("vectors", List.class).invoke(annSearchReqBuilder, vectors);
-                                annSearchReqBuilder.getClass().getMethod("vectorFieldName", String.class).invoke(annSearchReqBuilder, annsField);
-                            } catch (Exception e2) {
-                                log.error("无法设置 AnnSearchReq 的向量数据，请检查 Milvus SDK API。错误: {}", e2.getMessage());
-                                continue;
+                        // 处理 filter - 从每个 HybridSearchRequest 中获取 filter
+                        // 每个 AnnSearchReq 都需要配置自己的 filter
+                        String filter = request.getFilter();
+                        if (filter != null && !filter.equalsIgnoreCase("")) {
+                            // 处理 filter 占位符替换（使用全局的 generalFilterRoleList）
+                            if (finalGeneralDataRoleList != null && finalGeneralDataRoleList.size() > 0) {
+                                String processedFilter = filter;
+                                for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
+                                    int replaceFilterParams;
+                                    if (generalFilterRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
+                                        replaceFilterParams = CommonFunction.advanceSequenceForSearch(
+                                                generalFilterRole.getRandomRangeParamsList(),
+                                                hybridSearchParams.getNumConcurrency(),
+                                                finalC,
+                                                returnNum.size());
+                                    } else {
+                                        replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
+                                    }
+                                    processedFilter = processedFilter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                                }
+                                filter = processedFilter;
+                                log.info("线程[{}] 字段[{}] hybridSearch filter:{}", finalC, annsField, filter);
                             }
+                        }
+
+                        // 构建 AnnSearchReq - 使用正确的 API（milvus-sdk-java 2.6.11）
+                        // filter 必须在每个 AnnSearchReq 中配置
+                        AnnSearchReq.AnnSearchReqBuilder annSearchReqBuilder = AnnSearchReq.builder()
+                                .vectorFieldName(annsField)
+                                .vectors(vectors)
+                                .metricType(metricType)
+                                .limit(request.getTopK())  // 使用 limit() 替代已弃用的 topK()
+                                .params(paramsJson);  // 使用 params(String) 方法
+                        
+                        // 设置 filter 到当前 AnnSearchReq 中
+                        if (filter != null && !filter.equalsIgnoreCase("")) {
+                            annSearchReqBuilder.filter(filter);
                         }
                         
                         AnnSearchReq annSearchReq = annSearchReqBuilder.build();
@@ -287,46 +281,33 @@ public class HybridSearchComp {
                         continue;
                     }
 
-                    // 构建 HybridSearchReq
-                    // 注意：根据 Milvus SDK 2.6.6 的实际 API，方法名可能不同
-                    HybridSearchReq.HybridSearchReqBuilder<?, ?> hybridSearchReqBuilder = HybridSearchReq.builder()
+                    // 构建 HybridSearchReq - 使用正确的 API（milvus-sdk-java 2.6.11）
+                    HybridSearchReq.HybridSearchReqBuilder hybridSearchReqBuilder = HybridSearchReq.builder()
                             .collectionName(finalCollection)
                             .searchRequests(annSearchReqList)
-                            .topK(hybridSearchParams.getTopK())
+                            .limit(hybridSearchParams.getTopK())  // 使用 limit() 替代已弃用的 topK()
                             .consistencyLevel(ConsistencyLevel.BOUNDED);
                     
-                    // 尝试设置 outputFields 和 filter（根据实际 API 调整）
-                    try {
-                        if (finalOutputs != null && !finalOutputs.isEmpty()) {
-                            hybridSearchReqBuilder.getClass().getMethod("outputFields", List.class).invoke(hybridSearchReqBuilder, finalOutputs);
-                        }
-                        if (filter != null && !filter.equalsIgnoreCase("")) {
-                            // 尝试使用 filter() 或 expr() 方法
-                            try {
-                                hybridSearchReqBuilder.getClass().getMethod("filter", String.class).invoke(hybridSearchReqBuilder, filter);
-                            } catch (Exception e) {
-                                hybridSearchReqBuilder.getClass().getMethod("expr", String.class).invoke(hybridSearchReqBuilder, filter);
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.warn("设置 HybridSearchReq 的 outputFields 或 filter 失败: {}", e.getMessage());
+                    // 设置输出字段 - 使用 outFields() 方法
+                    if (!finalOutputs.isEmpty()) {
+                        hybridSearchReqBuilder.outFields(finalOutputs);
                     }
+                    
+                    // 注意：filter 应该在 AnnSearchReq 中设置，而不是在 HybridSearchReq 中
+                    // HybridSearchReq 本身不支持 filter，每个 AnnSearchReq 可以有自己的 filter
 
-                    // 设置融合策略
-                    // 注意：根据 Milvus SDK 2.6.6 的实际 API，ranker 和 rankerParams 方法可能不同
-                    // 如果编译错误，请根据实际 SDK 文档调整
+                    // 设置融合策略（ranker）
+                    // 注意：milvus-sdk-java 2.6.11 中，ranker 需要 Function 对象
+                    // 如果未设置 ranker，Milvus 会使用默认的 RRF 策略
+                    // 目前先不设置 ranker，使用默认策略
+                    // 如果需要自定义 ranker，需要创建相应的 Function 对象
                     String rankerType = hybridSearchParams.getRanker();
                     if (rankerType == null || rankerType.equalsIgnoreCase("")) {
                         rankerType = "RRF";
                     }
-                    try {
-                        if (finalRankerParams != null && !finalRankerParams.isEmpty()) {
-                            // 尝试设置 rankerParams
-                            hybridSearchReqBuilder.getClass().getMethod("rankerParams", Map.class).invoke(hybridSearchReqBuilder, finalRankerParams);
-                        }
-                    } catch (Exception e) {
-                        log.debug("HybridSearchReq 不支持 rankerParams 方法或参数设置失败，使用默认配置: {}", e.getMessage());
-                    }
+                    // TODO: 如果需要支持自定义 ranker，需要根据 rankerType 和 finalRankerParams 创建 Function 对象
+                    // 目前使用默认的 RRF 策略
+                    log.debug("使用默认融合策略: {} (参数: {})", rankerType, finalRankerParams);
 
                     HybridSearchReq hybridSearchReq = hybridSearchReqBuilder.build();
 
@@ -361,6 +342,7 @@ public class HybridSearchComp {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - lastLogTime > 5000) { // 每5秒打印一次QPS
                         double actualQps = requestCount / ((currentTime - lastLogTime) / 1000.0);
+                        log.debug("线程[{}] 当前QPS: {}", finalC, actualQps);
                         requestCount = 0;
                         lastLogTime = currentTime;
                     }
@@ -427,7 +409,18 @@ public class HybridSearchComp {
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .commonResult(commonResult)
                 .build();
+        
+        // 优雅关闭线程池
         executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        
         return hybridSearchResult;
     }
 

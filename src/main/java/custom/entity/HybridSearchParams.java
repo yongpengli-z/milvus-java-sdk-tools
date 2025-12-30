@@ -117,15 +117,6 @@ public class HybridSearchParams {
     private List<String> outputs;
 
     /**
-     * 标量过滤表达式（Milvus expr / filter）。
-     * <p>
-     * 支持占位符：`$fieldName`（配合 {@link #generalFilterRoleList} 运行时替换）。
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    private String filter;
-
-    /**
      * 并发线程数。
      * <p>
      * 前端必填：是
@@ -208,6 +199,17 @@ public class HybridSearchParams {
          * 前端默认值：{}（空对象）
          */
         private Map<String, Object> searchParams;
+
+        /**
+         * 标量过滤表达式（Milvus expr / filter）。
+         * <p>
+         * 支持占位符：`$fieldName`（配合 {@link HybridSearchParams#generalFilterRoleList} 运行时替换）。
+         * <p>
+         * 每个 HybridSearchRequest 可以有自己的 filter，用于对该字段的搜索结果进行过滤。
+         * <p>
+         * 前端默认值：""（空字符串，表示不过滤）
+         */
+        private String filter;
     }
 }
 
