@@ -93,7 +93,7 @@ public class HybridSearchComp {
             fieldVectorsMap.put(annsField, searchBaseVectors);
         }
 
-        // 准备初始查询向量
+        // 准备初始查询向量--先提供不随机时候的向量
         Map<String, List<BaseVector>> initialVectorsMap = new HashMap<>();
         for (Map.Entry<String, List<BaseVector>> entry : fieldVectorsMap.entrySet()) {
             List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(entry.getValue(), hybridSearchParams.getNq());
@@ -262,7 +262,7 @@ public class HybridSearchComp {
                         AnnSearchReq.AnnSearchReqBuilder annSearchReqBuilder = AnnSearchReq.builder()
                                 .vectorFieldName(annsField)
                                 .vectors(vectors)
-                                .metricType(metricType)
+//                                .metricType(metricType)
                                 .limit(request.getTopK())  // 使用 limit() 替代已弃用的 topK()
                                 .params(paramsJson);  // 使用 params(String) 方法
                         
