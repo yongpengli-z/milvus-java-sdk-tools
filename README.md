@@ -204,8 +204,9 @@
   - `jsonCastType`：目标类型，例如 `varchar`、`int64`、`double`、`bool`
   - **使用场景**：对 JSON 字段或 dynamic field 中的标量字段建索引时，必须同时设置这两个字段
   - **索引类型**：通常使用 `STL_SORT` 或 `AUTOINDEX`（不需要 MetricType）
-- **`buildLevel`**（string，可空）：例如 HNSW build level（仅部分向量类型使用）
+- **`buildLevel`**（string，可空）：例如 HNSW build level（仅部分向量类型和环境使用）
   - **支持范围**：仅 `FloatVector`、`Float16Vector`、`BFloat16Vector` 支持 `buildLevel` 参数
+  - **环境约束**：**仅在云上环境**（`awswest`、`gcpwest`、`azurewest`、`alihz`、`tcnj`、`hwc`）支持 `buildLevel` 参数；本地环境（`devops`、`fouram`）不支持
   - 常用值：`"1"`（Balanced，默认）、`"2"`（Performance）、`"0"`（Memory）
 
 > 重要：如果你想"让系统自动给所有向量字段建索引"，请传 `indexParams: []`（不要省略该字段）。系统会根据向量类型自动选择对应的索引类型和 MetricType。
@@ -215,7 +216,7 @@
 - **`FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector`**：
   - 推荐索引类型：`AUTOINDEX` 或 `HNSW`
   - 支持的 MetricType：`L2`（默认）、`COSINE`、`IP`
-  - 支持 `buildLevel`：仅 `FloatVector` / `Float16Vector` / `BFloat16Vector`
+  - 支持 `buildLevel`：仅 `FloatVector` / `Float16Vector` / `BFloat16Vector`，且**仅在云上环境**（`awswest`、`gcpwest`、`azurewest`、`alihz`、`tcnj`、`hwc`）支持；本地环境不支持
 
 - **`BinaryVector`**：
   - 推荐索引类型：`AUTOINDEX` 或 `BIN_IVF_FLAT`
@@ -445,9 +446,9 @@
 - **`searchRequests`**（list，前端必填）：混合搜索请求列表，每个元素代表一个向量字段的搜索请求。
   - **`annsField`**（string）：向量字段名
   - **`topK`**（int）：该字段的 topK
-  - **`metricType`**（string）：距离度量类型（L2/IP/COSINE/HAMMING/JACCARD/BM25），默认 `L2`
   - **`searchParams`**（object，可空）：搜索参数 Map，例如 `{"level": 1}`
   - **`filter`**（string，可空）：该字段的 Milvus expr 过滤表达式（可包含 `$fieldName` 占位符）。每个搜索请求可以有自己的 filter。前端默认 `""`（表示不过滤）
+  - **注意**：`metricType` 字段已不再使用，`AnnSearchReq` 构建时不会设置 MetricType，Milvus 会根据索引配置自动使用对应的 MetricType。
 - **`ranker`**（string，前端必填）：融合策略类型，可选值：
   - `"RRF"`：Reciprocal Rank Fusion（倒数排名融合），默认值
   - `"WeightedRanker"`：加权排序
@@ -478,14 +479,14 @@
       {
         "annsField": "image_vector",
         "topK": 10,
-        "metricType": "L2",
-        "searchParams": {"level": 1}
+        "searchParams": {"level": 1},
+        "filter": ""
       },
       {
         "annsField": "text_vector",
         "topK": 10,
-        "metricType": "COSINE",
-        "searchParams": {"level": 1}
+        "searchParams": {"level": 1},
+        "filter": ""
       }
     ],
     "ranker": "RRF",
@@ -732,9 +733,9 @@
 
 | 向量类型（DataType） | 推荐索引类型（IndexType） | 支持的 MetricType | 说明 |
 |---------------------|------------------------|------------------|------|
-| `FloatVector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 最常用的浮点向量，支持所有 MetricType |
-| `Float16Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 16位浮点向量，支持 `buildLevel` 参数 |
-| `BFloat16Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | BFloat16 向量，支持 `buildLevel` 参数 |
+| `FloatVector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 最常用的浮点向量，支持所有 MetricType；**仅在云上环境支持 `buildLevel`** |
+| `Float16Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 16位浮点向量，**仅在云上环境支持 `buildLevel`** |
+| `BFloat16Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | BFloat16 向量，**仅在云上环境支持 `buildLevel`** |
 | `Int8Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 8位整数向量 |
 | `BinaryVector` | `BIN_IVF_FLAT` / `AUTOINDEX` | `HAMMING` / `JACCARD` | 二进制向量，**必须使用 HAMMING 或 JACCARD**，不能使用 L2/IP/COSINE |
 | `SparseFloatVector` | `SPARSE_WAND` / `AUTOINDEX` | `IP` / `BM25` | 稀疏向量，**特殊情况**：如果是由 BM25 function 生成的，必须使用 `BM25`；否则使用 `IP`。不能使用 L2/COSINE/HAMMING |
@@ -770,10 +771,11 @@
 - `VarChar` / `String` / `Int64` / `Int32` / `Int16` / `Int8` / `Float` / `Double` / `Bool` → `STL_SORT`（不需要 MetricType）
 - `JSON` / Dynamic Field → `STL_SORT`（需要配合 `jsonPath` 和 `jsonCastType`）
 
-**`buildLevel` 参数**（仅部分向量类型支持）：
+**`buildLevel` 参数**（仅部分向量类型和环境支持）：
 
-- 支持：`FloatVector`、`Float16Vector`、`BFloat16Vector`
-- 不支持：`BinaryVector`、`Int8Vector`、`SparseFloatVector`
+- **支持的向量类型**：`FloatVector`、`Float16Vector`、`BFloat16Vector`（仅 float 类型向量）
+- **环境约束**：**仅在云上环境**（`awswest`、`gcpwest`、`azurewest`、`alihz`、`tcnj`、`hwc`）支持；本地环境（`devops`、`fouram`）不支持
+- **不支持的向量类型**：`BinaryVector`、`Int8Vector`、`SparseFloatVector`
 - 常用值：`"1"`（Balanced，默认）、`"2"`（Performance）、`"0"`（Memory）
 
 **环境与索引类型的约束**：
@@ -812,6 +814,8 @@
    - ❌ `BinaryVector` 使用 `L2` → 应该用 `HAMMING`
    - ❌ `SparseFloatVector` 使用 `L2` → 应该用 `IP`（或 `BM25`，如果是由 BM25 function 生成的）
    - ❌ BM25 function 生成的 `SparseFloatVector` 使用 `IP` → 应该用 `BM25`
+   - ❌ 本地环境使用 `buildLevel` → `buildLevel` 仅在云上环境支持
+   - ❌ `BinaryVector` 或 `SparseFloatVector` 使用 `buildLevel` → `buildLevel` 仅支持 `FloatVector`、`Float16Vector`、`BFloat16Vector`
    - ❌ `BinaryVector` 使用 `HNSW` → 应该用 `BIN_IVF_FLAT`（或 `AUTOINDEX`）
    - ❌ 标量字段设置 `MetricType` → 标量字段不需要 MetricType
    - ❌ JSON 字段索引缺少 `jsonPath` 或 `jsonCastType` → JSON 字段索引必须指定路径和类型

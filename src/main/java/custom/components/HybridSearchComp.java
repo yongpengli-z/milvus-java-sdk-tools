@@ -10,7 +10,6 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
-import io.milvus.v2.common.IndexParam;
 import io.milvus.v2.service.vector.request.AnnSearchReq;
 import io.milvus.v2.service.vector.request.HybridSearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
@@ -192,34 +191,6 @@ public class HybridSearchComp {
                             continue;
                         }
 
-                        // 确定 MetricType
-                        IndexParam.MetricType metricType;
-                        String metricTypeStr = request.getMetricType();
-                        if (metricTypeStr == null || metricTypeStr.equalsIgnoreCase("")) {
-                            metricTypeStr = "L2";
-                        }
-                        switch (metricTypeStr.toUpperCase()) {
-                            case "IP":
-                                metricType = IndexParam.MetricType.IP;
-                                break;
-                            case "COSINE":
-                                metricType = IndexParam.MetricType.COSINE;
-                                break;
-                            case "HAMMING":
-                                metricType = IndexParam.MetricType.HAMMING;
-                                break;
-                            case "JACCARD":
-                                metricType = IndexParam.MetricType.JACCARD;
-                                break;
-                            case "BM25":
-                                metricType = IndexParam.MetricType.BM25;
-                                break;
-                            case "L2":
-                            default:
-                                metricType = IndexParam.MetricType.L2;
-                                break;
-                        }
-
                         // 准备 searchParams - 转换为 JSON 字符串格式
                         Map<String, Object> searchParams = request.getSearchParams();
                         if (searchParams == null) {
@@ -262,7 +233,6 @@ public class HybridSearchComp {
                         AnnSearchReq.AnnSearchReqBuilder annSearchReqBuilder = AnnSearchReq.builder()
                                 .vectorFieldName(annsField)
                                 .vectors(vectors)
-//                                .metricType(metricType)
                                 .limit(request.getTopK())  // 使用 limit() 替代已弃用的 topK()
                                 .params(paramsJson);  // 使用 params(String) 方法
                         
