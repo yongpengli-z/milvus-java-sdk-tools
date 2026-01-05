@@ -272,7 +272,9 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 
 **Array of Struct 索引创建**：
 
-为 Struct 中的向量字段创建索引时，需要使用 `fieldName[subFieldName]` 格式：
+**重要**：Array of Struct 中的向量字段**必须建索引**，否则无法进行搜索操作。
+
+为 Struct 中的向量字段创建索引时，需要使用 `fieldName[subFieldName]` 格式（按照 Array 的规则）：
 
 ```json
 {
@@ -296,8 +298,11 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 ```
 
 **注意**：
+- **Struct 中的向量字段必须建索引**：如果 Array of Struct 中包含向量字段，必须为这些向量字段创建索引，否则无法进行搜索
 - Struct 中的向量字段使用特殊的索引类型和 MetricType（如 `MAX_SIM_L2`、`MAX_SIM_IP`、`MAX_SIM_COSINE`）
-- 字段名格式：`<structFieldName>[<subFieldName>]`
+- **字段名格式**：`<structFieldName>[<subFieldName>]`（按照 Array 的规则，使用方括号 `[]` 而不是点号 `.`）
+  - ✅ 正确：`clips[clip_embedding]`
+  - ❌ 错误：`clips.clip_embedding` 或 `clips_clip_embedding`
 
 ##### 5.1.2 建索引：`CreateIndexParams`
 
@@ -353,7 +358,10 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
     - 普通稀疏向量：`{"fieldName": "sparse_vec", "indextype": "AUTOINDEX", "metricType": "IP"}`
 
 - **Array of Struct 中的向量字段**（**特殊索引类型**）：
-  - **字段名格式**：`<structFieldName>[<subFieldName>]`，例如 `clips[clip_embedding]`
+  - **必须建索引**：Array of Struct 中的向量字段**必须建索引**，否则无法进行搜索操作
+  - **字段名格式**：`<structFieldName>[<subFieldName>]`（按照 Array 规则使用方括号 `[]`），例如 `clips[clip_embedding]`
+    - ✅ 正确：`clips[clip_embedding]`
+    - ❌ 错误：`clips.clip_embedding` 或 `clips_clip_embedding`
   - **索引类型**：`HNSW`（当前支持）
   - **MetricType**：`MAX_SIM_L2`、`MAX_SIM_IP`、`MAX_SIM_COSINE`（**必须使用 MAX_SIM 系列**，不能使用普通的 L2/IP/COSINE）
   - **说明**：Array of Struct 中的向量字段使用 Embedding List Index（嵌入列表索引），用于搜索包含多个向量的记录
@@ -431,7 +439,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`collectionName`**（string，可空）：前端默认 `""`。
 - **`collectionRule`**（string，前端必填但可为空）：`random/sequence`。前端默认 `""`（None）。
 - **`annsField`**（string，前端必填 & 强烈建议显式指定）：向量字段名。前端默认 `vectorField_1`（注意：`createCollectionEdit.vue` 默认向量字段名是 `FloatVector_1`，两者模板不强绑定，实际以你的向量字段名为准）。
-  - **Array of Struct 中的向量字段**：如果搜索 Struct 中的向量字段，字段名格式为 `<structFieldName>[<subFieldName>]`，例如 `clips[clip_embedding]`
+  - **Array of Struct 中的向量字段**：如果搜索 Struct 中的向量字段，字段名格式为 `<structFieldName>[<subFieldName>]`（按照 Array 规则使用方括号），例如 `clips[clip_embedding]`。**注意**：该向量字段必须已建索引，否则搜索会失败。
 - **`nq`**（int，前端必填）：query vectors 数量。前端默认 `1`。
 - **`topK`**（int，前端必填）：前端默认 `1`。
 - **`outputs`**（list，建议必填）：输出字段。前端默认 `[]`；不需要输出请传 `[]`。
@@ -884,7 +892,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 | `Int8Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 8位整数向量 |
 | `BinaryVector` | `BIN_IVF_FLAT` / `AUTOINDEX` | `HAMMING` / `JACCARD` | 二进制向量，**必须使用 HAMMING 或 JACCARD**，不能使用 L2/IP/COSINE |
 | `SparseFloatVector` | `SPARSE_WAND` / `AUTOINDEX` | `IP` / `BM25` | 稀疏向量，**特殊情况**：如果是由 BM25 function 生成的，必须使用 `BM25`；否则使用 `IP`。不能使用 L2/COSINE/HAMMING |
-| Array of Struct 中的向量字段 | `HNSW` | `MAX_SIM_L2` / `MAX_SIM_IP` / `MAX_SIM_COSINE` | Struct 中的向量字段，字段名格式：`<structFieldName>[<subFieldName]>`，例如 `clips[clip_embedding]`。**必须使用 MAX_SIM 系列 MetricType**，不能使用普通的 L2/IP/COSINE |
+| Array of Struct 中的向量字段 | `HNSW` | `MAX_SIM_L2` / `MAX_SIM_IP` / `MAX_SIM_COSINE` | **必须建索引**。Struct 中的向量字段，字段名格式：`<structFieldName>[<subFieldName]>`（按照 Array 规则使用方括号），例如 `clips[clip_embedding]`。**必须使用 MAX_SIM 系列 MetricType**，不能使用普通的 L2/IP/COSINE |
 
 #### 标量字段索引类型
 
@@ -912,7 +920,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - `FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` → `HNSW` + `L2`
 - `BinaryVector` → `BIN_IVF_FLAT` + `HAMMING`
 - `SparseFloatVector` → `SPARSE_WAND` + `IP`（如果是由 BM25 function 生成的，则使用 `BM25`）
-- Array of Struct 中的向量字段 → `HNSW` + `MAX_SIM_L2`（字段名格式：`<structFieldName>[<subFieldName>]`）
+- Array of Struct 中的向量字段 → `HNSW` + `MAX_SIM_L2`（**必须建索引**，字段名格式：`<structFieldName>[<subFieldName>]`，按照 Array 规则使用方括号）
 
 **标量字段**：
 - `VarChar` / `String` / `Int64` / `Int32` / `Int16` / `Int8` / `Float` / `Double` / `Bool` → `STL_SORT`（不需要 MetricType）
@@ -942,13 +950,16 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
      - `FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` → 使用 `AUTOINDEX` + `L2`
      - `BinaryVector` → 使用 `AUTOINDEX` + `HAMMING`（**不能使用 L2**）
      - `SparseFloatVector` → 使用 `AUTOINDEX` + `IP`（**特殊情况**：如果是由 BM25 function 生成的，则使用 `BM25`；**不能使用 L2**）
-     - Array of Struct 中的向量字段 → 使用 `HNSW` + `MAX_SIM_L2`（字段名格式：`<structFieldName>[<subFieldName>]`）
+     - Array of Struct 中的向量字段 → 使用 `HNSW` + `MAX_SIM_L2`（**必须建索引**，字段名格式：`<structFieldName>[<subFieldName>]`，按照 Array 规则使用方括号）
    - 如果用户指定了向量类型但没指定 MetricType：
      - 根据上表自动选择对应的 MetricType
      - **特殊情况**：对于 `SparseFloatVector`，需要检查 `CreateCollectionParams.functionParams`：
        - 如果 `functionParams.functionType == "BM25"` 且该 `SparseFloatVector` 字段名在 `functionParams.outputFieldNames` 中 → 使用 `BM25`
        - 否则 → 使用 `IP`
-     - **Array of Struct 中的向量字段**：必须使用 `MAX_SIM_L2`、`MAX_SIM_IP` 或 `MAX_SIM_COSINE`（**不能使用普通的 L2/IP/COSINE**）
+     - **Array of Struct 中的向量字段**：
+       - **必须建索引**：Array of Struct 中的向量字段必须建索引，否则无法进行搜索
+       - 字段名格式：`<structFieldName>[<subFieldName>]`（按照 Array 规则使用方括号），例如 `clips[clip_embedding]`
+       - MetricType：必须使用 `MAX_SIM_L2`、`MAX_SIM_IP` 或 `MAX_SIM_COSINE`（**不能使用普通的 L2/IP/COSINE**）
 
 3. **标量字段索引类型选择**：
    - 如果用户需要对标量字段建索引（用于加速查询/排序）：
@@ -969,7 +980,8 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
    - ❌ 标量字段设置 `MetricType` → 标量字段不需要 MetricType
    - ❌ JSON 字段索引缺少 `jsonPath` 或 `jsonCastType` → JSON 字段索引必须指定路径和类型
    - ❌ Array of Struct 中的向量字段使用普通 `L2`/`IP`/`COSINE` → 应该用 `MAX_SIM_L2`/`MAX_SIM_IP`/`MAX_SIM_COSINE`
-   - ❌ Array of Struct 字段名格式错误 → 应该用 `clips[clip_embedding]` 格式，而不是 `clips.clip_embedding` 或 `clips_clip_embedding`
+   - ❌ Array of Struct 字段名格式错误 → 应该用 `clips[clip_embedding]` 格式（按照 Array 规则使用方括号），而不是 `clips.clip_embedding` 或 `clips_clip_embedding`
+   - ❌ Array of Struct 中的向量字段未建索引 → **必须建索引**，否则无法进行搜索
 
 ##### 6.4.3 `FunctionType`（用于 FunctionParams）
 
