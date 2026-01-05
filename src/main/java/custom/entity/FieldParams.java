@@ -86,8 +86,26 @@ public class FieldParams {
      * 前端默认值：null（新增字段行）；模板里可能为 0（占位）。
      * <p>
      * 建议：生成 JSON 时 elementType 应为 DataType 枚举名或 null。
+     * <p>
+     * 注意：当 elementType 为 DataType.STRUCT 时，需要同时设置 {@link #structSchema}。
      */
     DataType elementType;
+
+    /**
+     * Struct Schema（仅当 `dataType=DataType.Array` 且 `elementType=DataType.STRUCT` 时生效）。
+     * <p>
+     * 前端：`createCollectionEdit.vue` -> "StructSchema"
+     * <p>
+     * 用于定义 Array of Struct 中 Struct 的子字段列表。
+     * <p>
+     * 前端默认值：null 或空列表
+     * <p>
+     * 注意：
+     * - Struct 只能作为 Array 的元素类型使用
+     * - Struct 子字段不能是 Struct、Array、Json
+     * - Struct 可以包含向量字段，从而实现 Array of Vector
+     */
+    List<StructFieldParams> structSchema;
 
     /**
      * 是否 Partition Key。

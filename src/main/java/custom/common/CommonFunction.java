@@ -14,6 +14,7 @@ import io.milvus.common.utils.Float16Utils;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.common.IndexBuildState;
 import io.milvus.v2.common.IndexParam;
+import io.milvus.v2.service.collection.request.AddFieldReq;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -53,22 +54,13 @@ public class CommonFunction {
         if (collectionName == null || collectionName.equals("")) {
             collectionName = "Collection_" + GenerateUtil.getRandomString(10);
         }
-        List<CreateCollectionReq.FieldSchema> fieldSchemaList = parseDataType(fieldParamsList);
-        CreateCollectionReq.CollectionSchema collectionSchema = CreateCollectionReq.CollectionSchema.builder()
-                .fieldSchemaList(fieldSchemaList)
-                .enableDynamicField(enableDynamic)
-                .build();
+        // 使用 parseDataType 直接生成 CollectionSchema（支持 Struct 类型）
+        CreateCollectionReq.CollectionSchema collectionSchema = parseDataType(fieldParamsList, enableDynamic);
         // schema add function
         if (functionParams != null
                 && functionParams.getFunctionType() != null
                 && functionParams.getInputFieldNames().size() > 0
                 && functionParams.getOutputFieldNames().size() > 0) {
-            // enableAnalyzer input fields
-            for (String inputFieldName : functionParams.getInputFieldNames()) {
-                fieldSchemaList.stream().filter(x -> x.getName().equals(inputFieldName)).findFirst().ifPresent(y -> {
-                    y.setEnableAnalyzer(true);
-                });
-            }
             collectionSchema.addFunction(CreateCollectionReq.Function.builder()
                     .functionType(functionParams.getFunctionType())
                     .name(functionParams.getName())
@@ -102,55 +94,120 @@ public class CommonFunction {
     }
 
     /**
-     * 遍历fieldParamList生成对应的schema
+     * 遍历fieldParamList生成对应的CollectionSchema
      *
      * @param fieldParamsList field字段集合
-     * @return List<CreateCollectionReq.FieldSchema> 给创建collection提供
+     * @param enableDynamic   是否启用动态字段
+     * @return CreateCollectionReq.CollectionSchema 给创建collection提供
      */
-    public static List<CreateCollectionReq.FieldSchema> parseDataType(List<FieldParams> fieldParamsList) {
-        List<CreateCollectionReq.FieldSchema> fieldSchemaList = new ArrayList<>();
+    public static CreateCollectionReq.CollectionSchema parseDataType(List<FieldParams> fieldParamsList, boolean enableDynamic) {
+        CreateCollectionReq.CollectionSchema collectionSchema = CreateCollectionReq.CollectionSchema.builder()
+                .enableDynamicField(enableDynamic)
+                .build();
+
         for (int i = 0; i < fieldParamsList.size(); i++) {
             FieldParams fieldParams = fieldParamsList.get(i);
-            //按照_分组
             DataType dataType = fieldParams.getDataType();
-            CreateCollectionReq.FieldSchema fieldSchema = CreateCollectionReq.FieldSchema.builder()
-                    .dataType(dataType)
-                    .name(fieldParams.getFieldName() == null ? dataType + "_" + i : fieldParams.getFieldName())
-                    .enableMatch(fieldParams.isEnableMatch())
-                    .enableAnalyzer(fieldParams.isEnableAnalyzer())
-                    .isPrimaryKey(fieldParams.isPrimaryKey())
-                    .isPartitionKey(fieldParams.isPartitionKey())
-                    .isNullable(fieldParams.isNullable())
-                    .build();
-            // 判断主键是否autoid
-            if (fieldParams.isPrimaryKey()) {
-                fieldSchema.setAutoID(fieldParams.isAutoId());
-            }
-            if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
-                fieldSchema.setDimension(fieldParams.getDim());
-            }
-            if (dataType == DataType.String || dataType == DataType.VarChar) {
-                fieldSchema.setMaxLength(fieldParams.getMaxLength());
-            }
-            if (dataType == DataType.Array) {
-                fieldSchema.setMaxCapacity(fieldParams.getMaxCapacity());
-                fieldSchema.setElementType(fieldParams.getElementType());
-                if (fieldParams.getElementType() == DataType.VarChar) {
-                    fieldSchema.setMaxLength(fieldParams.getMaxLength());
+            String fieldName = fieldParams.getFieldName() == null ? dataType + "_" + i : fieldParams.getFieldName();
+
+            // 处理 Array of Struct：使用 AddFieldReq 和 addStructField 方法
+            if (dataType == DataType.Array && fieldParams.getElementType() != null &&
+                    fieldParams.getElementType().name().equals("Struct") &&
+                    fieldParams.getStructSchema() != null && !fieldParams.getStructSchema().isEmpty()) {
+                // 使用 AddFieldReq 创建 Array of Struct 字段
+                AddFieldReq.AddFieldReqBuilder addFieldBuilder = AddFieldReq.builder()
+                        .fieldName(fieldName)
+                        .dataType(DataType.Array)
+                        .elementType(DataType.Struct)
+                        .maxCapacity(fieldParams.getMaxCapacity())
+                        .isNullable(fieldParams.isNullable())
+                        .isPrimaryKey(fieldParams.isPrimaryKey())
+                        .isPartitionKey(fieldParams.isPartitionKey())
+                        .enableMatch(fieldParams.isEnableMatch())
+                        .enableAnalyzer(fieldParams.isEnableAnalyzer());
+
+                // 添加 Struct 子字段
+                for (StructFieldParams structFieldParam : fieldParams.getStructSchema()) {
+                    AddFieldReq.AddFieldReqBuilder structFieldBuilder = AddFieldReq.builder()
+                            .fieldName(structFieldParam.getFieldName())
+                            .dataType(structFieldParam.getDataType())
+                            .isNullable(structFieldParam.isNullable());
+
+                    // 设置向量维度
+                    if (structFieldParam.getDataType() == DataType.FloatVector ||
+                            structFieldParam.getDataType() == DataType.BFloat16Vector ||
+                            structFieldParam.getDataType() == DataType.Float16Vector ||
+                            structFieldParam.getDataType() == DataType.BinaryVector ||
+                            structFieldParam.getDataType() == DataType.Int8Vector) {
+                        structFieldBuilder.dimension(structFieldParam.getDim());
+                    }
+                    // 设置 VarChar/String 最大长度
+                    if (structFieldParam.getDataType() == DataType.String || structFieldParam.getDataType() == DataType.VarChar) {
+                        structFieldBuilder.maxLength(structFieldParam.getMaxLength());
+                    }
+
+                    addFieldBuilder.addStructField(structFieldBuilder.build());
                 }
-            }
-            // isEnableAnalyzer 参数解析
-            if (fieldParams.isEnableAnalyzer()) {
-                Map<String, Object> analyzerParams = new HashMap<>();
-                for (FieldParams.AnalyzerParams analyzerParam : fieldParams.getAnalyzerParamsList()) {
-                    analyzerParams.put(analyzerParam.getParamsKey(), analyzerParam.getParamsValue());
+
+                // 设置主键 AutoID
+                if (fieldParams.isPrimaryKey()) {
+                    addFieldBuilder.autoID(fieldParams.isAutoId());
                 }
-                fieldSchema.setAnalyzerParams(analyzerParams);
+
+                // 设置 Analyzer 参数
+                if (fieldParams.isEnableAnalyzer() && fieldParams.getAnalyzerParamsList() != null) {
+                    Map<String, Object> analyzerParams = new HashMap<>();
+                    for (FieldParams.AnalyzerParams analyzerParam : fieldParams.getAnalyzerParamsList()) {
+                        analyzerParams.put(analyzerParam.getParamsKey(), analyzerParam.getParamsValue());
+                    }
+                    addFieldBuilder.analyzerParams(analyzerParams);
+                }
+
+                // 添加到 collection schema
+                collectionSchema.addField(addFieldBuilder.build());
+            } else {
+                // 普通字段：使用 AddFieldReq（与 Struct 字段保持一致）
+                AddFieldReq.AddFieldReqBuilder addFieldBuilder = AddFieldReq.builder()
+                        .fieldName(fieldName)
+                        .dataType(dataType)
+                        .enableMatch(fieldParams.isEnableMatch())
+                        .enableAnalyzer(fieldParams.isEnableAnalyzer())
+                        .isPrimaryKey(fieldParams.isPrimaryKey())
+                        .isPartitionKey(fieldParams.isPartitionKey())
+                        .isNullable(fieldParams.isNullable());
+
+                // 判断主键是否autoid
+                if (fieldParams.isPrimaryKey()) {
+                    addFieldBuilder.autoID(fieldParams.isAutoId());
+                }
+                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
+                    addFieldBuilder.dimension(fieldParams.getDim());
+                }
+                if (dataType == DataType.String || dataType == DataType.VarChar) {
+                    addFieldBuilder.maxLength(fieldParams.getMaxLength());
+                }
+                if (dataType == DataType.Array) {
+                    addFieldBuilder.maxCapacity(fieldParams.getMaxCapacity());
+                    addFieldBuilder.elementType(fieldParams.getElementType());
+                    if (fieldParams.getElementType() == DataType.VarChar) {
+                        addFieldBuilder.maxLength(fieldParams.getMaxLength());
+                    }
+                }
+                // isEnableAnalyzer 参数解析
+                if (fieldParams.isEnableAnalyzer() && fieldParams.getAnalyzerParamsList() != null) {
+                    Map<String, Object> analyzerParams = new HashMap<>();
+                    for (FieldParams.AnalyzerParams analyzerParam : fieldParams.getAnalyzerParamsList()) {
+                        analyzerParams.put(analyzerParam.getParamsKey(), analyzerParam.getParamsValue());
+                    }
+                    addFieldBuilder.analyzerParams(analyzerParams);
+                }
+
+                // 添加到 collection schema
+                collectionSchema.addField(addFieldBuilder.build());
             }
-            fieldSchemaList.add(fieldSchema);
         }
 
-        return fieldSchemaList;
+        return collectionSchema;
     }
 
 
@@ -337,7 +394,10 @@ public class CommonFunction {
             List<String> outputFieldNames1 = function.getOutputFieldNames();
             tempOutputFieldNames.addAll(outputFieldNames1);
         }
+        // 分别获取普通字段和 Struct 字段
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
+        List<CreateCollectionReq.StructFieldSchema> structFieldSchemaList = collectionSchema.getStructFields();
+
         List<JsonObject> jsonList = new ArrayList<>();
         //提供给floatVector用
         List<List<Float>> floatVectorList = new ArrayList<>();
@@ -356,13 +416,14 @@ public class CommonFunction {
         }
         for (long i = startId; i < (startId + count); i++) {
             JsonObject row = new JsonObject();
+            // 处理普通字段（Array of Struct 不会出现在这里）
             for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
                 String name = fieldSchema.getName();
                 DataType dataType = fieldSchema.getDataType();
+                DataType elementType = fieldSchema.getElementType();
                 Integer dimension = fieldSchema.getDimension();
                 Integer maxCapacity = fieldSchema.getMaxCapacity();
                 Integer maxLength = fieldSchema.getMaxLength();
-                DataType elementType = fieldSchema.getElementType();
                 boolean isNullable = fieldSchema.getIsNullable();
                 boolean isEnableMatch = fieldSchema.getEnableMatch() != null && fieldSchema.getEnableMatch();
                 // primary key auto id
@@ -398,6 +459,7 @@ public class CommonFunction {
                     jsonObjectItem.add(name, null);
                     jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxLength - 1) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
+                    // 普通 Array 类型（不包括 Array of Struct）
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
                     jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxCapacity - 1) + 1, i, elementType, random.nextInt(maxLength - 1) + 1, generalDataRoleList, totalNum, realStartId, isEnableMatch);
@@ -408,6 +470,88 @@ public class CommonFunction {
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
+
+            // 单独处理 Array of Struct 字段（从 getStructFields() 获取）
+            for (CreateCollectionReq.StructFieldSchema structFieldSchema : structFieldSchemaList) {
+                String structFieldName = structFieldSchema.getName();
+                Integer structFieldMaxCapacity = structFieldSchema.getMaxCapacity();
+                // StructFieldSchema 可能没有 getIsNullable() 方法，使用默认值 false
+                boolean structFieldIsNullable = false;
+
+                // 跳过 function 自动生成的字段
+                if (tempOutputFieldNames.contains(structFieldName)) {
+                    continue;
+                }
+
+                // 获取 Struct 子字段列表
+                List<CreateCollectionReq.FieldSchema> structSubFields = structFieldSchema.getFields();
+                if (structSubFields == null || structSubFields.isEmpty()) {
+                    log.warn("字段 {} 的 Struct 子字段为空，跳过数据生成", structFieldName);
+                    continue;
+                }
+
+                // 生成 Array of Struct 数据
+                JsonObject jsonObject = new JsonObject();
+                Gson gson = new Gson();
+                JsonObject jsonObjectItem = new JsonObject();
+                jsonObjectItem.add(structFieldName, null);
+
+                if (structFieldIsNullable && i % 2 == 0) {
+                    jsonObject = jsonObjectItem;
+                } else {
+                    int arrayLength = random.nextInt(Math.max(1, structFieldMaxCapacity - 1)) + 1;
+                    List<com.google.gson.JsonObject> structArray = new ArrayList<>();
+                    for (int structIdx = 0; structIdx < arrayLength; structIdx++) {
+                        com.google.gson.JsonObject structObj = new com.google.gson.JsonObject();
+                        for (CreateCollectionReq.FieldSchema subFieldSchema : structSubFields) {
+                            String subFieldName = subFieldSchema.getName();
+                            DataType subFieldType = subFieldSchema.getDataType();
+                            Integer subFieldDim = subFieldSchema.getDimension();
+                            Integer subFieldMaxLength = subFieldSchema.getMaxLength();
+                            boolean subFieldIsEnableMatch = subFieldSchema.getEnableMatch() != null && subFieldSchema.getEnableMatch();
+
+                            // 生成 struct 子字段的数据
+                            if (subFieldType == DataType.FloatVector) {
+                                List<Float> vector = generateFloatVector(subFieldDim);
+                                structObj.add(subFieldName, gson.toJsonTree(vector));
+                            } else if (subFieldType == DataType.BFloat16Vector) {
+                                ByteBuffer bf16Buffer = generateBF16Vector(subFieldDim);
+                                structObj.add(subFieldName, gson.toJsonTree(bf16Buffer.array()));
+                            } else if (subFieldType == DataType.Float16Vector) {
+                                ByteBuffer f16Buffer = generateFloat16Vector(subFieldDim);
+                                structObj.add(subFieldName, gson.toJsonTree(f16Buffer.array()));
+                            } else if (subFieldType == DataType.BinaryVector) {
+                                ByteBuffer binaryBuffer = generateBinaryVector(subFieldDim);
+                                structObj.add(subFieldName, gson.toJsonTree(binaryBuffer.array()));
+                            } else if (subFieldType == DataType.Int8Vector) {
+                                ByteBuffer int8Buffer = generateInt8Vector(subFieldDim);
+                                structObj.add(subFieldName, gson.toJsonTree(int8Buffer.array()));
+                            } else if (subFieldType == DataType.VarChar || subFieldType == DataType.String) {
+                                String strValue = subFieldIsEnableMatch ?
+                                        GenerateUtil.generateRandomLengthSentence(subFieldMaxLength) :
+                                        MathUtil.genRandomString(subFieldMaxLength);
+                                structObj.add(subFieldName, gson.toJsonTree(strValue));
+                            } else if (subFieldType == DataType.Int64) {
+                                structObj.add(subFieldName, gson.toJsonTree(i * 1000L + structIdx));
+                            } else if (subFieldType == DataType.Int32) {
+                                structObj.add(subFieldName, gson.toJsonTree((int) (i * 1000 + structIdx) % 32767));
+                            } else if (subFieldType == DataType.Float) {
+                                structObj.add(subFieldName, gson.toJsonTree((float) (i * 0.1 + structIdx * 0.01)));
+                            } else if (subFieldType == DataType.Double) {
+                                structObj.add(subFieldName, gson.toJsonTree((double) (i * 0.1 + structIdx * 0.01)));
+                            } else if (subFieldType == DataType.Bool) {
+                                structObj.add(subFieldName, gson.toJsonTree(structIdx % 2 == 0));
+                            } else {
+                                structObj.add(subFieldName, gson.toJsonTree(structIdx));
+                            }
+                        }
+                        structArray.add(structObj);
+                    }
+                    jsonObject.add(structFieldName, gson.toJsonTree(structArray));
+                }
+                row = JsonObjectUtil.jsonMerge(row, jsonObject);
+            }
+
             // 判断是否有动态列
             if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
                 JsonObject jsonObject = generalJsonObjectByDataType(CommonData.dynamicField, DataType.JSON, 0, i, null, 0, generalDataRoleList, totalNum, realStartId, false);
