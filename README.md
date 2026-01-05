@@ -171,6 +171,19 @@
 - **`maxLength`**（int）：VarChar 必填。前端新增行默认 `null`（占位）；生成 JSON 时请传数字或不传（不要传 `""`）。
 - **`maxCapacity`**（int）：Array 必填。前端新增行默认 `null`（占位）；生成 JSON 时请传数字或不传（不要传 `""`）。
 - **`elementType`**（enum）：Array 元素类型。前端新增行默认 `null`（占位）；生成 JSON 时请传枚举名或 `null`/不传（不要传 `""`/`0` 占位）。
+  - **重要**：当 `dataType=Array` 且 `elementType=Struct` 时，需要同时设置 `structSchema` 字段。
+- **`structSchema`**（list，可空）：Struct Schema（仅当 `dataType=Array` 且 `elementType=Struct` 时生效）。用于定义 Array of Struct 中 Struct 的子字段列表。前端默认：`null` 或 `[]`。
+  - **Struct 子字段类型**：`custom.entity.StructFieldParams`
+    - **`fieldName`**（string）：Struct 子字段名
+    - **`dataType`**（enum）：Struct 子字段类型（**不能是 Struct、Array、Json**）
+    - **`dim`**（int）：向量维度（仅 Vector 类型生效）
+    - **`maxLength`**（int）：VarChar/String 最大长度（仅 VarChar/String 生效）
+    - **`isNullable`**（boolean）：是否允许为 NULL（前端默认：`false`）
+  - **限制**：
+    - Struct 只能作为 Array 的元素类型使用（`dataType=Array`，`elementType=Struct`）
+    - Struct 子字段不能是 Struct、Array、Json
+    - Struct 可以包含向量字段，从而实现 Array of Vector
+    - Struct 暂不支持 nullable 字段（但字段中保留该属性以备将来使用）
 - **`partitionKey`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不是分区键）。
   - **重要约束**：如果 `CreateCollectionParams.numPartitions > 0`，则**必须至少有一个字段的 `partitionKey` 为 `true`**，否则创建 collection 会失败。
   - 如果 `numPartitions = 0`，则所有字段的 `partitionKey` 都应为 `false`。
@@ -180,6 +193,111 @@
 - **`analyzerParamsList`**（list，可空）：前端新增行默认 `[{paramsKey:"", paramsValue:""}]`（占位；不需要可传 `[]`）。
 
 > **重要提示**：虽然这些 boolean 字段（`autoId`、`partitionKey`、`nullable`、`enableMatch`、`enableAnalyzer`）的前端默认值都是 `false`，但**建议在生成 JSON 时显式给出 `false`**，以避免后端反序列化时因字段缺失导致的不确定性。特别是当 LLM 生成 JSON 时，明确写出这些字段有助于提高可读性和避免歧义。
+
+**Array of Struct 使用示例**：
+
+Array of Struct 允许在一个字段中存储多个结构体元素，每个结构体可以包含多个子字段（包括向量字段），从而实现 Array of Vector 的功能。
+
+```json
+{
+  "CreateCollectionParams_0": {
+    "collectionName": "",
+    "shardNum": 1,
+    "numPartitions": 0,
+    "enableDynamic": false,
+    "fieldParamsList": [
+      {
+        "dataType": "Int64",
+        "fieldName": "id_pk",
+        "primaryKey": true,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      },
+      {
+        "dataType": "Array",
+        "fieldName": "clips",
+        "elementType": "Struct",
+        "maxCapacity": 100,
+        "structSchema": [
+          {
+            "fieldName": "frame_number",
+            "dataType": "Int32",
+            "isNullable": false
+          },
+          {
+            "fieldName": "clip_embedding",
+            "dataType": "FloatVector",
+            "dim": 128,
+            "isNullable": false
+          },
+          {
+            "fieldName": "clip_desc",
+            "dataType": "VarChar",
+            "maxLength": 1024,
+            "isNullable": false
+          },
+          {
+            "fieldName": "description_embedding",
+            "dataType": "FloatVector",
+            "dim": 128,
+            "isNullable": false
+          }
+        ],
+        "primaryKey": false,
+        "autoId": false,
+        "partitionKey": false,
+        "nullable": false,
+        "enableMatch": false,
+        "enableAnalyzer": false,
+        "analyzerParamsList": []
+      }
+    ],
+    "functionParams": null,
+    "properties": [],
+    "databaseName": ""
+  }
+}
+```
+
+**关键点**：
+- `dataType` 必须为 `Array`
+- `elementType` 必须为 `Struct`
+- `structSchema` 必须提供，包含 Struct 的子字段定义
+- Struct 子字段可以包含向量类型（如 `FloatVector`），从而实现 Array of Vector
+- 数据生成时，`genCommonData` 方法会自动从 `collectionSchema.getStructFields()` 获取 Struct 字段信息并生成对应的数据
+
+**Array of Struct 索引创建**：
+
+为 Struct 中的向量字段创建索引时，需要使用 `fieldName[subFieldName]` 格式：
+
+```json
+{
+  "CreateIndexParams_1": {
+    "collectionName": "",
+    "databaseName": "",
+    "indexParams": [
+      {
+        "fieldName": "clips[clip_embedding]",
+        "indextype": "HNSW",
+        "metricType": "MAX_SIM_L2"
+      },
+      {
+        "fieldName": "clips[description_embedding]",
+        "indextype": "HNSW",
+        "metricType": "MAX_SIM_IP"
+      }
+    ]
+  }
+}
+```
+
+**注意**：
+- Struct 中的向量字段使用特殊的索引类型和 MetricType（如 `MAX_SIM_L2`、`MAX_SIM_IP`、`MAX_SIM_COSINE`）
+- 字段名格式：`<structFieldName>[<subFieldName>]`
 
 ##### 5.1.2 建索引：`CreateIndexParams`
 
@@ -234,6 +352,20 @@
     - BM25 function 生成的稀疏向量：`{"fieldName": "sparse_embedding", "indextype": "AUTOINDEX", "metricType": "BM25"}`
     - 普通稀疏向量：`{"fieldName": "sparse_vec", "indextype": "AUTOINDEX", "metricType": "IP"}`
 
+- **Array of Struct 中的向量字段**（**特殊索引类型**）：
+  - **字段名格式**：`<structFieldName>[<subFieldName>]`，例如 `clips[clip_embedding]`
+  - **索引类型**：`HNSW`（当前支持）
+  - **MetricType**：`MAX_SIM_L2`、`MAX_SIM_IP`、`MAX_SIM_COSINE`（**必须使用 MAX_SIM 系列**，不能使用普通的 L2/IP/COSINE）
+  - **说明**：Array of Struct 中的向量字段使用 Embedding List Index（嵌入列表索引），用于搜索包含多个向量的记录
+  - **示例**：
+    ```json
+    {
+      "fieldName": "clips[clip_embedding]",
+      "indextype": "HNSW",
+      "metricType": "MAX_SIM_L2"
+    }
+    ```
+
 **标量字段索引类型**（LLM 生成 JSON 时必须遵循）：
 
 - **`VarChar` / `String` / `Int64` / `Int32` / `Int16` / `Int8` / `Float` / `Double` / `Bool`**：
@@ -280,6 +412,16 @@
 - **`ignoreError`**（boolean，可空）：出错是否忽略继续。前端默认 `false`。
 - **`generalDataRoleList`**（list，可空）：数据生成规则（见 `GeneralDataRole`）。前端默认是“带 1 条空规则”的占位数组；**如果你不使用该能力，建议直接传 `[]`**。
 
+**Array of Struct 数据生成说明**：
+- Insert/Upsert 组件会自动识别 collection 中的 Array of Struct 字段
+- 数据生成时，`genCommonData` 方法会从 `collectionSchema.getStructFields()` 获取 Struct 字段信息
+- 每个 Array of Struct 字段会生成随机数量的结构体元素（数量在 1 到 `maxCapacity` 之间）
+- Struct 子字段的数据会根据其类型自动生成：
+  - 向量字段：生成随机向量
+  - 字符串字段：生成随机字符串
+  - 数值字段：生成递增或随机数值
+- **注意**：Array of Struct 字段不会出现在 `fieldSchemaList` 中，只会出现在 `structFieldSchemaList` 中
+
 ##### 5.1.5 Search：`SearchParams`
 
 对应组件：`custom.components.SearchComp`
@@ -289,6 +431,7 @@
 - **`collectionName`**（string，可空）：前端默认 `""`。
 - **`collectionRule`**（string，前端必填但可为空）：`random/sequence`。前端默认 `""`（None）。
 - **`annsField`**（string，前端必填 & 强烈建议显式指定）：向量字段名。前端默认 `vectorField_1`（注意：`createCollectionEdit.vue` 默认向量字段名是 `FloatVector_1`，两者模板不强绑定，实际以你的向量字段名为准）。
+  - **Array of Struct 中的向量字段**：如果搜索 Struct 中的向量字段，字段名格式为 `<structFieldName>[<subFieldName>]`，例如 `clips[clip_embedding]`
 - **`nq`**（int，前端必填）：query vectors 数量。前端默认 `1`。
 - **`topK`**（int，前端必填）：前端默认 `1`。
 - **`outputs`**（list，建议必填）：输出字段。前端默认 `[]`；不需要输出请传 `[]`。
@@ -715,10 +858,12 @@
 
 - 标量：`Int64` / `Int32` / `Int16` / `Int8` / `Bool` / `Float` / `Double`
 - 字符串：`VarChar` / `String`
-- 复杂：`Array` / `JSON` / `Geometry`
+- 复杂：`Array` / `JSON` / `Geometry` / `Struct`
 - 向量：`FloatVector` / `BinaryVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` / `SparseFloatVector`
 
-> 注意：是 **`VarChar`** 不是 `Varchar`。
+> 注意：
+> - 是 **`VarChar`** 不是 `Varchar`。
+> - **`Struct`** 只能作为 `Array` 的 `elementType` 使用（即 `dataType=Array`，`elementType=Struct`），不能单独作为字段类型。
 
 ##### 6.4.2 `IndexType` / `MetricType`（用于 IndexParams）
 
@@ -739,6 +884,7 @@
 | `Int8Vector` | `HNSW` / `AUTOINDEX` | `L2` / `COSINE` / `IP` | 8位整数向量 |
 | `BinaryVector` | `BIN_IVF_FLAT` / `AUTOINDEX` | `HAMMING` / `JACCARD` | 二进制向量，**必须使用 HAMMING 或 JACCARD**，不能使用 L2/IP/COSINE |
 | `SparseFloatVector` | `SPARSE_WAND` / `AUTOINDEX` | `IP` / `BM25` | 稀疏向量，**特殊情况**：如果是由 BM25 function 生成的，必须使用 `BM25`；否则使用 `IP`。不能使用 L2/COSINE/HAMMING |
+| Array of Struct 中的向量字段 | `HNSW` | `MAX_SIM_L2` / `MAX_SIM_IP` / `MAX_SIM_COSINE` | Struct 中的向量字段，字段名格式：`<structFieldName>[<subFieldName]>`，例如 `clips[clip_embedding]`。**必须使用 MAX_SIM 系列 MetricType**，不能使用普通的 L2/IP/COSINE |
 
 #### 标量字段索引类型
 
@@ -766,6 +912,7 @@
 - `FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` → `HNSW` + `L2`
 - `BinaryVector` → `BIN_IVF_FLAT` + `HAMMING`
 - `SparseFloatVector` → `SPARSE_WAND` + `IP`（如果是由 BM25 function 生成的，则使用 `BM25`）
+- Array of Struct 中的向量字段 → `HNSW` + `MAX_SIM_L2`（字段名格式：`<structFieldName>[<subFieldName>]`）
 
 **标量字段**：
 - `VarChar` / `String` / `Int64` / `Int32` / `Int16` / `Int8` / `Float` / `Double` / `Bool` → `STL_SORT`（不需要 MetricType）
@@ -795,11 +942,13 @@
      - `FloatVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` → 使用 `AUTOINDEX` + `L2`
      - `BinaryVector` → 使用 `AUTOINDEX` + `HAMMING`（**不能使用 L2**）
      - `SparseFloatVector` → 使用 `AUTOINDEX` + `IP`（**特殊情况**：如果是由 BM25 function 生成的，则使用 `BM25`；**不能使用 L2**）
+     - Array of Struct 中的向量字段 → 使用 `HNSW` + `MAX_SIM_L2`（字段名格式：`<structFieldName>[<subFieldName>]`）
    - 如果用户指定了向量类型但没指定 MetricType：
      - 根据上表自动选择对应的 MetricType
      - **特殊情况**：对于 `SparseFloatVector`，需要检查 `CreateCollectionParams.functionParams`：
        - 如果 `functionParams.functionType == "BM25"` 且该 `SparseFloatVector` 字段名在 `functionParams.outputFieldNames` 中 → 使用 `BM25`
        - 否则 → 使用 `IP`
+     - **Array of Struct 中的向量字段**：必须使用 `MAX_SIM_L2`、`MAX_SIM_IP` 或 `MAX_SIM_COSINE`（**不能使用普通的 L2/IP/COSINE**）
 
 3. **标量字段索引类型选择**：
    - 如果用户需要对标量字段建索引（用于加速查询/排序）：
@@ -819,6 +968,8 @@
    - ❌ `BinaryVector` 使用 `HNSW` → 应该用 `BIN_IVF_FLAT`（或 `AUTOINDEX`）
    - ❌ 标量字段设置 `MetricType` → 标量字段不需要 MetricType
    - ❌ JSON 字段索引缺少 `jsonPath` 或 `jsonCastType` → JSON 字段索引必须指定路径和类型
+   - ❌ Array of Struct 中的向量字段使用普通 `L2`/`IP`/`COSINE` → 应该用 `MAX_SIM_L2`/`MAX_SIM_IP`/`MAX_SIM_COSINE`
+   - ❌ Array of Struct 字段名格式错误 → 应该用 `clips[clip_embedding]` 格式，而不是 `clips.clip_embedding` 或 `clips_clip_embedding`
 
 ##### 6.4.3 `FunctionType`（用于 FunctionParams）
 
