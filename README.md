@@ -157,6 +157,10 @@
   - 如果不需要分区，请设置 `numPartitions: 0`，且所有字段的 `partitionKey: false`。
 - **`enableDynamic`**（boolean，前端必填）：是否开启动态列。前端默认：`false`。
 - **`fieldParamsList`**（list，前端必填）：字段定义（见 `FieldParams`）。前端默认：2 个字段（`Int64_0` 作为 PK + `FloatVector_1` 向量字段）。
+  - **向量字段约束**：一个 collection **必须至少包含一个向量字段**。向量字段可以是：
+    - 正常的顶层向量字段（如 `FloatVector`、`BinaryVector` 等）
+    - 或者 Array of Struct 中的向量子字段
+  - **示例建议**：在生成示例/demo 时，建议提供一个正常的顶层向量字段（如 `FloatVector`），这样更直观易懂
 - **`functionParams`**（object，可空）：function（例如 BM25）配置（见 `FunctionParams`）。前端默认：`{functionType:"", name:"", inputFieldNames:[], outputFieldNames:[]}`（注意 `functionType=""` 是占位，建议用 `null`/不传）。
 - **`properties`**（list，前端必填）：collection properties（key/value）。前端默认：`[{propertyKey:"", propertyValue:""}]`（占位；不需要可传 `[]`）。
 - **`databaseName`**（string，可空）：前端默认：`""`。
@@ -197,6 +201,8 @@
 **Array of Struct 使用示例**：
 
 Array of Struct 允许在一个字段中存储多个结构体元素，每个结构体可以包含多个子字段（包括向量字段），从而实现 Array of Vector 的功能。
+
+**注意**：虽然一个 collection 必须至少包含一个向量字段，且这个向量字段可以是 Array of Struct 中的向量子字段，但在示例中建议同时提供一个正常的顶层向量字段（如下面的 `embedding` 字段），这样更直观易懂。
 
 ```json
 {
@@ -1048,6 +1054,7 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
 1. **CreateCollection**（创建 collection）
    - 必须先创建 collection，才能进行后续操作
    - 如果用户没有指定 collection schema，LLM 应该生成一个**最小可用 schema**（至少包含主键 + 向量字段）
+   - **向量字段约束**：一个 collection 必须至少包含一个向量字段（可以是 Array of Struct 中的向量子字段），但在示例中建议提供一个正常的顶层向量字段（如 `FloatVector`）
 
 2. **CreateIndex**（创建索引）
    - 向量字段必须建索引后才能被搜索
