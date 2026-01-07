@@ -40,15 +40,34 @@ public class QueryParams {
      * 支持占位符：`$fieldName`（配合 {@link #generalFilterRoleList} 运行时替换）。
      * <p>
      * 前端默认值：""（空字符串）
+     * <p>
+     * <b>重要约束：</b>
+     * <ul>
+     *   <li><b>filter 和 ids 必须至少传一个</b>（不能同时为空）。</li>
+     *   <li>如果传了 {@link #ids}（非空数组），可以不传 filter。</li>
+     *   <li>如果传了 filter（非空字符串），可以不传 ids。</li>
+     *   <li><b>推荐写法：</b>使用主键字段的条件表达式，例如：
+     *     <ul>
+     *       <li>主键为 Int64：<code>"id_pk >= 0"</code> 或 <code>"id_pk > 0"</code></li>
+     *       <li>主键为 VarChar：<code>"id_pk >= \"0\""</code> 或 <code>"id_pk > \"\""</code></li>
+     *     </ul>
+     *   </li>
+     *   <li>如果 collection 的主键字段名不是 `id_pk`，请替换为实际的主键字段名。</li>
+     * </ul>
      */
     private String filter;
 
     /**
-     * 指定要查询的主键 ID 列表（可选）。
+     * 指定要查询的主键 ID 列表。
      * <p>
      * 前端：`queryEdit.vue` -> "IDs"（逗号分隔输入）
      * <p>
-     * 空数组表示不按 ids 查询（仅使用 filter/limit/offset 等）。
+     * <b>重要约束：</b>
+     * <ul>
+     *   <li><b>filter 和 ids 必须至少传一个</b>（不能同时为空）。</li>
+     *   <li>如果传了 {@link #filter}（非空字符串），可以不传 ids（传空数组 []）。</li>
+     *   <li>如果传了 ids（非空数组），可以不传 filter（传空字符串 ""）。</li>
+     * </ul>
      * <p>
      * 前端默认值：[]（空数组）
      */
