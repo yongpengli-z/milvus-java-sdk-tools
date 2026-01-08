@@ -172,7 +172,11 @@
 - **`primaryKey`**（boolean）：注意：Java 字段名是 `isPrimaryKey`，但示例/fastjson 常用 key 为 `primaryKey`。前端默认模板里首字段为 `true`。**建议显式给值**（非主键字段给 `false`）。
 - **`autoId`**（boolean）：仅主键字段可用。前端默认：`false`。**建议显式给 `false`**（即使不启用 AutoID）。
 - **`dim`**（int）：向量维度（vector 类型必填）。前端默认模板里向量字段为 `768`。
-- **`maxLength`**（int）：VarChar 必填。前端新增行默认 `null`（占位）；生成 JSON 时请传数字或不传（不要传 `""`）。
+- **`maxLength`**（int）：字符串最大长度（取值范围建议：`1 ~ 65535`），以下场景必填（否则 Milvus 会报 length/max_length 相关错误）：
+  - `dataType=VarChar` 或 `dataType=String`
+  - `dataType=Array` 且 `elementType=VarChar/String`
+  - `dataType=Array` 且 `elementType=Struct`：`structSchema` 中任意 `dataType=VarChar/String` 的子字段也必须填写该子字段的 `maxLength`
+  - 前端新增行默认 `null`（占位）；生成 JSON 时请传数字或不传（不要传 `""`）。
 - **`maxCapacity`**（int）：Array 必填。前端新增行默认 `null`（占位）；生成 JSON 时请传数字或不传（不要传 `""`）。
 - **`elementType`**（enum）：Array 元素类型。前端新增行默认 `null`（占位）；生成 JSON 时请传枚举名或 `null`/不传（不要传 `""`/`0` 占位）。
   - **重要**：当 `dataType=Array` 且 `elementType=Struct` 时，需要同时设置 `structSchema` 字段。
