@@ -152,11 +152,46 @@ public class KubernetesUtils {
                         }
                     }
 
+                    // 获取 Pod IP 和 Host IP
+                    String podIp = "";
+                    String hostIp = "";
+                    V1PodStatus podStatus = pod.getStatus();
+                    if (podStatus != null) {
+                        podIp = podStatus.getPodIP() != null ? podStatus.getPodIP() : "";
+                        hostIp = podStatus.getHostIP() != null ? podStatus.getHostIP() : "";
+                    }
+
+                    // 获取容器端口
+                    StringBuilder portsBuilder = new StringBuilder();
+                    V1PodSpec podSpec = pod.getSpec();
+                    if (podSpec != null && podSpec.getContainers() != null) {
+                        for (V1Container container : podSpec.getContainers()) {
+                            List<V1ContainerPort> containerPorts = container.getPorts();
+                            if (containerPorts != null && !containerPorts.isEmpty()) {
+                                List<String> portList = new ArrayList<>();
+                                for (V1ContainerPort port : containerPorts) {
+                                    if (port.getContainerPort() != null) {
+                                        portList.add(String.valueOf(port.getContainerPort()));
+                                    }
+                                }
+                                if (!portList.isEmpty()) {
+                                    if (portsBuilder.length() > 0) {
+                                        portsBuilder.append("; ");
+                                    }
+                                    portsBuilder.append(container.getName()).append(":").append(String.join(",", portList));
+                                }
+                            }
+                        }
+                    }
+
                     podStatuses.add(PodStatus.builder()
                             .name(podName)
                             .phase(phase)
                             .ready(isReady)
                             .message(message)
+                            .podIp(podIp)
+                            .hostIp(hostIp)
+                            .ports(portsBuilder.toString())
                             .build());
                 }
 
@@ -654,5 +689,17 @@ public class KubernetesUtils {
         String phase;
         boolean ready;
         String message;
+        /**
+         * Pod IP 地址
+         */
+        String podIp;
+        /**
+         * Pod 所在节点 IP
+         */
+        String hostIp;
+        /**
+         * 容器端口列表（格式：containerName:port1,port2）
+         */
+        String ports;
     }
 }
