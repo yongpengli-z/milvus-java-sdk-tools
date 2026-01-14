@@ -327,6 +327,15 @@ public class HelmCreateInstanceComp {
             String deployArchitecture = params.getDeployArchitecture();
             boolean isStreamingArch = "streaming".equalsIgnoreCase(deployArchitecture);
 
+            // 默认启用 mixCoordinator，禁用单独的 Coordinator
+            // 这样只会部署一个 mixCoordinator Pod，而不是 4 个独立的 Coordinator Pod
+            values.put("mixCoordinator.enabled", "true");
+            values.put("rootCoordinator.enabled", "false");
+            values.put("queryCoordinator.enabled", "false");
+            values.put("indexCoordinator.enabled", "false");
+            values.put("dataCoordinator.enabled", "false");
+            log.info("Using mixCoordinator mode (single coordinator pod)");
+
             // Proxy 配置
             HelmComponentConfig proxyConfig = params.getProxyConfig();
             if (proxyConfig != null) {
@@ -345,7 +354,7 @@ public class HelmCreateInstanceComp {
                 applyComponentConfig(values, "dataNode", dataNodeConfig);
             }
 
-            // Mix Coordinator 配置
+            // Mix Coordinator 配置（如果用户有自定义配置）
             HelmComponentConfig mixCoordinatorConfig = params.getMixCoordinatorConfig();
             if (mixCoordinatorConfig != null) {
                 applyComponentConfig(values, "mixCoordinator", mixCoordinatorConfig);
