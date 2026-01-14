@@ -56,20 +56,12 @@ public class HelmCreateInstanceComp {
             }
             log.info("Using namespace: " + namespace);
 
-            // 3. 添加/更新 Helm 仓库
-            log.info("Step 3: Adding/updating Helm repository...");
-            String helmRepoName = "milvus-io";
-            String helmRepoUrl = "https://github.com/milvus-io/milvus-helm";
-
-            HelmUtils.CommandResult addRepoResult = HelmUtils.addRepo(helmRepoName, helmRepoUrl);
-            if (!addRepoResult.isSuccess()) {
-                log.warn("Failed to add helm repo, will try to continue: " + addRepoResult.getStderr());
+            // 3. 获取本地 Helm Chart 路径
+            String helmChartPath = envEnum != null ? envEnum.helmChartPath : null;
+            if (helmChartPath == null || helmChartPath.isEmpty()) {
+                return buildFailResult("Helm chart path is not configured in EnvEnum", startTime);
             }
-
-            HelmUtils.CommandResult updateRepoResult = HelmUtils.updateRepo();
-            if (!updateRepoResult.isSuccess()) {
-                log.warn("Failed to update helm repo: " + updateRepoResult.getStderr());
-            }
+            log.info("Using local Helm chart: " + helmChartPath);
 
             // 4. 构建 Helm Values (--set 参数)
             log.info("Step 4: Building Helm values...");
@@ -82,20 +74,19 @@ public class HelmCreateInstanceComp {
                 return buildFailResult("Helm release already exists: " + releaseName, startTime);
             }
 
-            // 6. 执行 Helm Install（使用远程仓库）
+            // 6. 执行 Helm Install（使用本地 Chart）
             log.info("Step 5: Executing Helm install...");
             int timeout = params.getWaitTimeoutMinutes();
             if (timeout <= 0) {
                 timeout = 30;
             }
 
-            String chartName = helmRepoName + "/milvus";
             HelmUtils.CommandResult installResult = HelmUtils.install(
                     releaseName,
-                    chartName,  // 使用远程仓库 Chart
+                    helmChartPath,  // 使用本地 Chart 路径
                     namespace,
                     false,  // 命名空间已预先创建，不需要自动创建
-                    null,   // 使用最新版本
+                    null,   // 本地 Chart 不需要版本
                     setValues,
                     kubeconfigPath,
                     timeout

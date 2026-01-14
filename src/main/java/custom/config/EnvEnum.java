@@ -3,14 +3,14 @@ package custom.config;
 import java.util.Arrays;
 
 public enum EnvEnum {
-    DEVOPS("devops", "/test/fouram/config/vdc_config.json", "","","/root/.kube/config"),
-    FOURAM("fouram", "/test/fouram/config/vdc_config.json", "","","/root/.kube/config"),
-    AWS_WEST("awswest", "/test/qtp/config/vdcConfig.json", "UAT3","uat-milvus-us-west-2","/root/.kube/config"),
-    GCP_WEST("gcpwest", "/test/qtp/config/vdcConfig.json", "UAT3-GCP","gcp-vdc-dev-test","/root/.kube/config"),
-    AZURE_WEST("azurewest", "/test/qtp/config/vdcConfig.json", "UAT3-AZURE","uat-az-milvus-westus3-1","/root/.kube/config"),
-    ALI_HZ("alihz", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config"),
-    TC_NJ("tcnj", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config"),
-    HWC("hwc", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config");
+    DEVOPS("devops", "/test/fouram/config/vdc_config.json", "","","/root/.kube/config","/src/helm/charts/milvus"),
+    FOURAM("fouram", "/test/fouram/config/vdc_config.json", "","","/root/.kube/config","/src/helm/charts/milvus"),
+    AWS_WEST("awswest", "/test/qtp/config/vdcConfig.json", "UAT3","uat-milvus-us-west-2","/root/.kube/config","/src/helm/charts/milvus"),
+    GCP_WEST("gcpwest", "/test/qtp/config/vdcConfig.json", "UAT3-GCP","gcp-vdc-dev-test","/root/.kube/config","/src/helm/charts/milvus"),
+    AZURE_WEST("azurewest", "/test/qtp/config/vdcConfig.json", "UAT3-AZURE","uat-az-milvus-westus3-1","/root/.kube/config","/src/helm/charts/milvus"),
+    ALI_HZ("alihz", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config","/src/helm/charts/milvus"),
+    TC_NJ("tcnj", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config","/src/helm/charts/milvus"),
+    HWC("hwc", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config","/src/helm/charts/milvus");
 
     public final String region;
     public final String vdcConfigPath;
@@ -18,13 +18,15 @@ public enum EnvEnum {
 
     public final String cluster;
     public final String kubeConfig;
+    public final String helmChartPath;
 
-    EnvEnum(String region, String vdcConfigPath, String envNodeName, String cluster, String kubeConfig) {
+    EnvEnum(String region, String vdcConfigPath, String envNodeName, String cluster, String kubeConfig, String helmChartPath) {
         this.region = region;
         this.vdcConfigPath = vdcConfigPath;
         this.envNodeName = envNodeName;
         this.cluster = cluster;
         this.kubeConfig = kubeConfig;
+        this.helmChartPath = helmChartPath;
     }
 
     public static EnvEnum getEnvByName(String name) {
