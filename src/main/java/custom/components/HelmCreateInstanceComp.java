@@ -58,8 +58,8 @@ public class HelmCreateInstanceComp {
 
             // 3. 添加/更新 Helm 仓库
             log.info("Step 3: Adding/updating Helm repository...");
-            String helmRepoName = "zilliztech";
-            String helmRepoUrl = "https://zilliztech.github.io/milvus-helm";
+            String helmRepoName = "milvus-io";
+            String helmRepoUrl = "https://github.com/milvus-io/milvus-helm";
 
             HelmUtils.CommandResult addRepoResult = HelmUtils.addRepo(helmRepoName, helmRepoUrl);
             if (!addRepoResult.isSuccess()) {
