@@ -115,7 +115,7 @@ public class CommonFunction {
                     fieldParams.getElementType().name().equals("Struct") &&
                     fieldParams.getStructSchema() != null && !fieldParams.getStructSchema().isEmpty()) {
                 // 使用 AddFieldReq 创建 Array of Struct 字段
-                AddFieldReq.AddFieldReqBuilder addFieldBuilder = AddFieldReq.builder()
+                AddFieldReq.AddFieldReqBuilder<?> addFieldBuilder = AddFieldReq.builder()
                         .fieldName(fieldName)
                         .dataType(DataType.Array)
                         .elementType(DataType.Struct)
@@ -128,7 +128,7 @@ public class CommonFunction {
 
                 // 添加 Struct 子字段
                 for (StructFieldParams structFieldParam : fieldParams.getStructSchema()) {
-                    AddFieldReq.AddFieldReqBuilder structFieldBuilder = AddFieldReq.builder()
+                    AddFieldReq.AddFieldReqBuilder<?> structFieldBuilder = AddFieldReq.builder()
                             .fieldName(structFieldParam.getFieldName())
                             .dataType(structFieldParam.getDataType())
                             .isNullable(structFieldParam.isNullable());
@@ -167,7 +167,7 @@ public class CommonFunction {
                 collectionSchema.addField(addFieldBuilder.build());
             } else {
                 // 普通字段：使用 AddFieldReq（与 Struct 字段保持一致）
-                AddFieldReq.AddFieldReqBuilder addFieldBuilder = AddFieldReq.builder()
+                AddFieldReq.AddFieldReqBuilder<?> addFieldBuilder = AddFieldReq.builder()
                         .fieldName(fieldName)
                         .dataType(dataType)
                         .enableMatch(fieldParams.isEnableMatch())
@@ -281,10 +281,7 @@ public class CommonFunction {
         }
         milvusClientV2.createIndex(createIndexReq);
         // 查询索引是否建完
-        List<Boolean> indexStateList = new ArrayList<>();
-        for (IndexParam indexParam : indexParamList) {
-            indexStateList.add(false);
-        }
+        List<Boolean> indexStateList = new ArrayList<>(Collections.nCopies(indexParamList.size(), false));
         long startTimeTotal = System.currentTimeMillis();
         while (!(indexStateList.size() == indexStateList.stream().filter(x -> x).count())) {
             for (int i = 0; i < indexParamList.size(); i++) {
@@ -1097,7 +1094,19 @@ public class CommonFunction {
                 for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
                 Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
                 if (vectorDataType == DataType.FloatVector) {
-                    List<Float> floatList = (List<Float>) o;
+                    if (!(o instanceof List)) {
+                        throw new IllegalArgumentException("Expected List for FloatVector field: " + collectionVectorInfo.getFieldName()
+                                + ", but got: " + (o == null ? "null" : o.getClass().getName()));
+                    }
+                    List<?> rawList = (List<?>) o;
+                    List<Float> floatList = new ArrayList<>(rawList.size());
+                    for (Object item : rawList) {
+                        if (!(item instanceof Number)) {
+                            throw new IllegalArgumentException("Expected numeric elements for FloatVector field: " + collectionVectorInfo.getFieldName()
+                                    + ", but got element: " + (item == null ? "null" : item.getClass().getName()));
+                        }
+                        floatList.add(((Number) item).floatValue());
+                    }
                     baseVectorDataset.add(new FloatVec(floatList));
                 }
                 if (vectorDataType == DataType.BinaryVector) {
@@ -1113,7 +1122,25 @@ public class CommonFunction {
                     baseVectorDataset.add(new BFloat16Vec(byteBuffer));
                 }
                 if (vectorDataType == DataType.SparseFloatVector) {
-                    SortedMap<Long, Float> sortedMap = (SortedMap<Long, Float>) o;
+                    if (!(o instanceof Map)) {
+                        throw new IllegalArgumentException("Expected Map for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
+                                + ", but got: " + (o == null ? "null" : o.getClass().getName()));
+                    }
+                    Map<?, ?> rawMap = (Map<?, ?>) o;
+                    SortedMap<Long, Float> sortedMap = new TreeMap<>();
+                    for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                        Object k = entry.getKey();
+                        Object v = entry.getValue();
+                        if (!(k instanceof Number)) {
+                            throw new IllegalArgumentException("Expected numeric key for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
+                                    + ", but got key: " + (k == null ? "null" : k.getClass().getName()));
+                        }
+                        if (!(v instanceof Number)) {
+                            throw new IllegalArgumentException("Expected numeric value for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
+                                    + ", but got value: " + (v == null ? "null" : v.getClass().getName()));
+                        }
+                        sortedMap.put(((Number) k).longValue(), ((Number) v).floatValue());
+                    }
                     baseVectorDataset.add(new SparseFloatVec(sortedMap));
                 }
                 if (vectorDataType == DataType.Int8Vector) {

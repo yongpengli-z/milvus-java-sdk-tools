@@ -8,6 +8,8 @@ import custom.components.*;
 import custom.config.EnvEnum;
 import custom.entity.*;
 import custom.entity.result.*;
+import custom.entity.result.HelmCreateInstanceResult;
+import custom.entity.result.HelmDeleteInstanceResult;
 import custom.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -316,6 +318,18 @@ public class ComponentSchedule {
             HybridSearchResult hybridSearchResult = HybridSearchComp.hybridSearchCollection((HybridSearchParams) object);
             jsonObject.put("HybridSearch_" + index, hybridSearchResult);
             reportStepResult(HybridSearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(hybridSearchResult));
+        }
+        if (object instanceof HelmCreateInstanceParams) {
+            log.info("*********** < Helm create instance > ***********");
+            HelmCreateInstanceResult helmCreateInstanceResult = HelmCreateInstanceComp.createInstance((HelmCreateInstanceParams) object);
+            jsonObject.put("HelmCreateInstance_" + index, helmCreateInstanceResult);
+            reportStepResult(HelmCreateInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(helmCreateInstanceResult));
+        }
+        if (object instanceof HelmDeleteInstanceParams) {
+            log.info("*********** < Helm delete instance > ***********");
+            HelmDeleteInstanceResult helmDeleteInstanceResult = HelmDeleteInstanceComp.deleteInstance((HelmDeleteInstanceParams) object);
+            jsonObject.put("HelmDeleteInstance_" + index, helmDeleteInstanceResult);
+            reportStepResult(HelmDeleteInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(helmDeleteInstanceResult));
         }
         return jsonObject;
     }
