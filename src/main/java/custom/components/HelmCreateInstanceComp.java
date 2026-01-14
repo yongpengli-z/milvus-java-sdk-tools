@@ -117,9 +117,10 @@ public class HelmCreateInstanceComp {
             // 8. 获取连接地址（LoadBalancer）
             log.info("Step 7: Getting connection address...");
             String uri = "";
-            String serviceName = releaseName + "-milvus";
 
-            String lbIp = KubernetesUtils.getLoadBalancerIp(coreApi, namespace, serviceName, 10);
+            // 通过标签选择器和 releaseName 查找服务
+            // 优先级：releaseName-milvus > releaseName > 任何带 19530 端口的服务
+            String lbIp = KubernetesUtils.getLoadBalancerIpByLabel(coreApi, namespace, releaseName, labelSelector, 10);
             if (!lbIp.isEmpty()) {
                 uri = "http://" + lbIp + ":19530";
             }
@@ -197,37 +198,80 @@ public class HelmCreateInstanceComp {
         // Service 配置（默认 LoadBalancer）
         values.put("service.type", "LoadBalancer");
 
-        // etcd 使用 Chart 内置默认配置
-
         // MinIO 配置
         HelmDependencyConfig minioConfig = params.getMinioConfig();
         if (minioConfig != null) {
             if (minioConfig.isUseExternal()) {
                 values.put("minio.enabled", "false");
                 values.put("externalS3.enabled", "true");
-                if (minioConfig.getExternalEndpoints() != null) {
+                if (minioConfig.getExternalEndpoints() != null && !minioConfig.getExternalEndpoints().isEmpty()) {
                     values.put("externalS3.host", minioConfig.getExternalEndpoints());
                 }
-                if (minioConfig.getAccessKey() != null) {
+                if (minioConfig.getAccessKey() != null && !minioConfig.getAccessKey().isEmpty()) {
                     values.put("externalS3.accessKey", minioConfig.getAccessKey());
                 }
-                if (minioConfig.getSecretKey() != null) {
+                if (minioConfig.getSecretKey() != null && !minioConfig.getSecretKey().isEmpty()) {
                     values.put("externalS3.secretKey", minioConfig.getSecretKey());
                 }
-                if (minioConfig.getBucketName() != null) {
+                if (minioConfig.getBucketName() != null && !minioConfig.getBucketName().isEmpty()) {
                     values.put("externalS3.bucketName", minioConfig.getBucketName());
                 }
-                if (minioConfig.getRootPath() != null) {
+                if (minioConfig.getRootPath() != null && !minioConfig.getRootPath().isEmpty()) {
                     values.put("externalS3.rootPath", minioConfig.getRootPath());
                 }
             } else {
                 values.put("minio.enabled", String.valueOf(minioConfig.isEnabled()));
+                // MinIO 副本数和模式
+                int minioReplicas = minioConfig.getReplicaCount();
+                if (minioReplicas <= 0) {
+                    minioReplicas = 1;
+                }
+                if (minioReplicas == 1) {
+                    values.put("minio.mode", "standalone");
+                } else {
+                    values.put("minio.mode", "distributed");
+                    values.put("minio.replicas", String.valueOf(minioReplicas));
+                }
                 if (minioConfig.getStorageSize() != null && !minioConfig.getStorageSize().isEmpty()) {
                     values.put("minio.persistence.size", minioConfig.getStorageSize());
                 }
                 if (minioConfig.getStorageClassName() != null && !minioConfig.getStorageClassName().isEmpty()) {
                     values.put("minio.persistence.storageClass", minioConfig.getStorageClassName());
                 }
+            }
+        } else {
+            // 默认单副本 MinIO
+            values.put("minio.mode", "standalone");
+        }
+
+        // etcd 配置
+        // 注意：etcd 副本数通常为奇数（1, 3, 5）以满足 Raft 协议
+        HelmDependencyConfig etcdConfig = params.getEtcdConfig();
+        if (etcdConfig != null) {
+            if (etcdConfig.isUseExternal()) {
+                values.put("etcd.enabled", "false");
+                values.put("externalEtcd.enabled", "true");
+                if (etcdConfig.getExternalEndpoints() != null && !etcdConfig.getExternalEndpoints().isEmpty()) {
+                    values.put("externalEtcd.endpoints", etcdConfig.getExternalEndpoints());
+                }
+            } else {
+                values.put("etcd.enabled", String.valueOf(etcdConfig.isEnabled()));
+                int etcdReplicas = etcdConfig.getReplicaCount();
+                if (etcdReplicas <= 0) {
+                    etcdReplicas = "standalone".equalsIgnoreCase(milvusMode) ? 1 : 3;
+                }
+                values.put("etcd.replicaCount", String.valueOf(etcdReplicas));
+                if (etcdConfig.getStorageSize() != null && !etcdConfig.getStorageSize().isEmpty()) {
+                    values.put("etcd.persistence.size", etcdConfig.getStorageSize());
+                }
+                if (etcdConfig.getStorageClassName() != null && !etcdConfig.getStorageClassName().isEmpty()) {
+                    values.put("etcd.persistence.storageClass", etcdConfig.getStorageClassName());
+                }
+            }
+        } else {
+            // 默认配置：Standalone 1 副本，Cluster 3 副本
+            if ("standalone".equalsIgnoreCase(milvusMode)) {
+                values.put("etcd.replicaCount", "1");
             }
         }
 

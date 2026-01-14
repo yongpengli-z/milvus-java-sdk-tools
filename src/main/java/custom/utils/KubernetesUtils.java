@@ -504,6 +504,147 @@ public class KubernetesUtils {
     }
 
     /**
+     * 通过 releaseName 查找 Milvus Service 并获取 LoadBalancer IP
+     * <p>
+     * 查找逻辑：
+     * 1. 先查找 Pod，确定部署模式（standalone 或 cluster）
+     * 2. Standalone 模式：查找 releaseName-milvus 服务
+     * 3. Cluster 模式：查找 releaseName-milvus 服务（proxy 入口）
+     * <p>
+     * Pod 名称规则：
+     * - Standalone: releaseName-milvus-standalone-xxx
+     * - Cluster: releaseName-milvus-proxy-xxx, releaseName-milvus-querynode-xxx 等
+     *
+     * @param coreApi        CoreV1Api 实例
+     * @param namespace      命名空间
+     * @param releaseName    Helm Release 名称
+     * @param labelSelector  标签选择器（如 app.kubernetes.io/instance=my-milvus）
+     * @param timeoutMinutes 超时时间
+     * @return LoadBalancer IP（未获取到返回空字符串）
+     */
+    public static String getLoadBalancerIpByLabel(
+            CoreV1Api coreApi,
+            String namespace,
+            String releaseName,
+            String labelSelector,
+            int timeoutMinutes) {
+
+        LocalDateTime endTime = LocalDateTime.now().plusMinutes(timeoutMinutes);
+
+        log.info("Waiting for LoadBalancer IP, releaseName: " + releaseName);
+
+        while (LocalDateTime.now().isBefore(endTime)) {
+            try {
+                // 1. 先通过 Pod 名称前缀确定部署模式和服务名
+                String targetServiceName = findMilvusServiceName(coreApi, namespace, releaseName, labelSelector);
+
+                if (targetServiceName != null && !targetServiceName.isEmpty()) {
+                    log.info("Found target service name from pods: " + targetServiceName);
+
+                    // 2. 直接获取该服务的 LoadBalancer IP
+                    try {
+                        V1Service service = coreApi.readNamespacedService(targetServiceName, namespace, null);
+                        String ip = extractLoadBalancerAddress(service);
+                        if (ip != null && !ip.isEmpty()) {
+                            log.info("Found LoadBalancer IP from service " + targetServiceName + ": " + ip);
+                            return ip;
+                        }
+                    } catch (ApiException e) {
+                        log.warn("Service not found: " + targetServiceName + ", will retry...");
+                    }
+                }
+
+                log.info("Waiting for LoadBalancer IP...");
+                Thread.sleep(10 * 1000);
+
+            } catch (ApiException e) {
+                log.error("Failed to find service", e);
+            } catch (InterruptedException e) {
+                log.warn("Wait interrupted");
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        log.warn("Timeout waiting for LoadBalancer IP");
+        return "";
+    }
+
+    /**
+     * 通过 Pod 名称前缀查找 Milvus 服务名
+     * <p>
+     * Pod 命名规则：
+     * - Standalone: {releaseName}-milvus-standalone-xxx  -> 服务名: {releaseName}-milvus
+     * - Cluster proxy: {releaseName}-milvus-proxy-xxx    -> 服务名: {releaseName}-milvus
+     *
+     * @return 服务名，未找到返回 null
+     */
+    private static String findMilvusServiceName(
+            CoreV1Api coreApi,
+            String namespace,
+            String releaseName,
+            String labelSelector) throws ApiException {
+
+        V1PodList podList = coreApi.listNamespacedPod(
+                namespace,
+                null, null, null, null, labelSelector,
+                null, null, null, null, null
+        );
+
+        String standalonePrefix = releaseName + "-milvus-standalone";
+        String proxyPrefix = releaseName + "-milvus-proxy";
+        // 也支持旧版命名格式
+        String legacyStandalonePrefix = releaseName + "-standalone";
+        String legacyProxyPrefix = releaseName + "-proxy";
+
+        for (V1Pod pod : podList.getItems()) {
+            String podName = pod.getMetadata() != null ? pod.getMetadata().getName() : "";
+
+            if (podName.startsWith(standalonePrefix) || podName.startsWith(proxyPrefix)) {
+                // 新版 Helm Chart: 服务名为 releaseName-milvus
+                log.info("Found pod: " + podName + ", service name: " + releaseName + "-milvus");
+                return releaseName + "-milvus";
+            }
+
+            if (podName.startsWith(legacyStandalonePrefix) || podName.startsWith(legacyProxyPrefix)) {
+                // 旧版 Helm Chart: 服务名可能就是 releaseName
+                log.info("Found legacy pod: " + podName + ", trying service name: " + releaseName);
+                return releaseName;
+            }
+        }
+
+        // 如果没找到特定前缀的 Pod，尝试返回默认服务名
+        if (!podList.getItems().isEmpty()) {
+            log.info("No standalone/proxy pod found, using default service name: " + releaseName + "-milvus");
+            return releaseName + "-milvus";
+        }
+
+        return null;
+    }
+
+    /**
+     * 从服务中提取 LoadBalancer 地址（IP 或 hostname）
+     */
+    private static String extractLoadBalancerAddress(V1Service service) {
+        if (service.getStatus() != null &&
+                service.getStatus().getLoadBalancer() != null &&
+                service.getStatus().getLoadBalancer().getIngress() != null &&
+                !service.getStatus().getLoadBalancer().getIngress().isEmpty()) {
+
+            V1LoadBalancerIngress ingress = service.getStatus().getLoadBalancer().getIngress().get(0);
+            String ip = ingress.getIp();
+            if (ip != null && !ip.isEmpty()) {
+                return ip;
+            }
+            String hostname = ingress.getHostname();
+            if (hostname != null && !hostname.isEmpty()) {
+                return hostname;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Pod 状态封装
      */
     @Data

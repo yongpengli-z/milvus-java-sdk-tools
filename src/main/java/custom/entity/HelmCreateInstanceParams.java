@@ -73,7 +73,15 @@ public class HelmCreateInstanceParams {
     String milvusImageTag;
 
     // ==================== 依赖组件配置 ====================
-    // etcd 使用 Chart 内置默认配置，无需参数
+
+    /**
+     * etcd 配置。
+     * <p>
+     * 如果为 null，使用 Chart 内置 etcd（默认配置）。
+     * <p>
+     * Standalone 模式默认 1 副本，Cluster 模式默认 3 副本。
+     */
+    HelmDependencyConfig etcdConfig;
 
     /**
      * MinIO 配置。
