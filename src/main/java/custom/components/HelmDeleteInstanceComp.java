@@ -39,9 +39,14 @@ public class HelmDeleteInstanceComp {
         boolean namespaceDeleted = false;
 
         try {
-            // 参数校验
+            // 如果没有填写 releaseName，尝试从全局 newInstanceInfo.instanceName 获取
             if (releaseName == null || releaseName.isEmpty()) {
-                return buildFailResult("Release name is required", startTime, releaseName, false, false);
+                if (newInstanceInfo != null && newInstanceInfo.getInstanceName() != null && !newInstanceInfo.getInstanceName().isEmpty()) {
+                    releaseName = newInstanceInfo.getInstanceName();
+                    log.info("Using releaseName from newInstanceInfo.instanceName: " + releaseName);
+                } else {
+                    return buildFailResult("Release name is required and not found in newInstanceInfo", startTime, releaseName, false, false);
+                }
             }
             if (namespace == null || namespace.isEmpty()) {
                 namespace = "chaos-testing";
