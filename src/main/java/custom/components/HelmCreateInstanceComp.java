@@ -52,7 +52,7 @@ public class HelmCreateInstanceComp {
             // 2. 获取命名空间（默认使用 qa）
             String namespace = params.getNamespace();
             if (namespace == null || namespace.isEmpty()) {
-                namespace = "qa";
+                namespace = "chaos-testing";
             }
             log.info("Using namespace: " + namespace);
 

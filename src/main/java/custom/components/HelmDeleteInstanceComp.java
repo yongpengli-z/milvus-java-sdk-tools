@@ -44,7 +44,7 @@ public class HelmDeleteInstanceComp {
                 return buildFailResult("Release name is required", startTime, releaseName, false, false);
             }
             if (namespace == null || namespace.isEmpty()) {
-                namespace = "qa";
+                namespace = "chaos-testing";
             }
 
             // kubeconfig 路径由 EnvEnum 控制
