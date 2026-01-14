@@ -167,7 +167,29 @@ public class HelmCreateInstanceParams {
      */
     HelmComponentConfig mixCoordinatorConfig;
 
+    /**
+     * Streaming Node 组件配置（Cluster 模式，Milvus 2.6+ streaming 架构）。
+     * <p>
+     * Streaming Node 负责 WAL（Write-Ahead Log）管理。
+     * <p>
+     * 仅在 deployArchitecture 为 "streaming" 时有效。
+     * <p>
+     * 前端默认值：null（使用 Chart 默认配置）
+     */
+    HelmComponentConfig streamingNodeConfig;
+
     // ==================== 部署控制 ====================
+
+    /**
+     * 部署架构模式（Cluster 模式）。
+     * <p>
+     * 可选值：
+     * - `default`：默认架构（≤v2.5），包含 indexNode
+     * - `streaming`：流式架构（≥v2.6），包含 streamingNode，无 indexNode
+     * <p>
+     * 前端默认值：`default`
+     */
+    String deployArchitecture;
 
     /**
      * 等待 Pod Ready 的超时时间（分钟）。

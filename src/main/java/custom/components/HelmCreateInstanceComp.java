@@ -159,7 +159,7 @@ public class HelmCreateInstanceComp {
                     .milvusMode(milvusMode != null ? milvusMode : "standalone")
                     .milvusVersion(params.getMilvusImageTag() != null ? params.getMilvusImageTag() : "default")
                     .deploymentCostSeconds(costSeconds)
-                    .podStatus(JSON.toJSONString(podStatuses))
+                    .podStatus(podStatuses)
                     .build();
 
         } catch (Exception e) {
@@ -323,6 +323,10 @@ public class HelmCreateInstanceComp {
 
         // Cluster 模式组件配置
         if ("cluster".equalsIgnoreCase(milvusMode)) {
+            // 获取部署架构模式
+            String deployArchitecture = params.getDeployArchitecture();
+            boolean isStreamingArch = "streaming".equalsIgnoreCase(deployArchitecture);
+
             // Proxy 配置
             HelmComponentConfig proxyConfig = params.getProxyConfig();
             if (proxyConfig != null) {
@@ -341,16 +345,36 @@ public class HelmCreateInstanceComp {
                 applyComponentConfig(values, "dataNode", dataNodeConfig);
             }
 
-            // Index Node 配置
-            HelmComponentConfig indexNodeConfig = params.getIndexNodeConfig();
-            if (indexNodeConfig != null) {
-                applyComponentConfig(values, "indexNode", indexNodeConfig);
-            }
-
             // Mix Coordinator 配置
             HelmComponentConfig mixCoordinatorConfig = params.getMixCoordinatorConfig();
             if (mixCoordinatorConfig != null) {
                 applyComponentConfig(values, "mixCoordinator", mixCoordinatorConfig);
+            }
+
+            if (isStreamingArch) {
+                // Streaming 架构（Milvus 2.6+）：启用 streamingNode，禁用 indexNode
+                log.info("Using streaming architecture (Milvus 2.6+)");
+
+                // 禁用 indexNode
+                values.put("indexNode.enabled", "false");
+
+                // Streaming Node 配置
+                HelmComponentConfig streamingNodeConfig = params.getStreamingNodeConfig();
+                if (streamingNodeConfig != null) {
+                    applyComponentConfig(values, "streamingNode", streamingNodeConfig);
+                }
+            } else {
+                // 默认架构（Milvus ≤2.5）：启用 indexNode，禁用 streamingNode
+                log.info("Using default architecture (Milvus ≤2.5)");
+
+                // Index Node 配置
+                HelmComponentConfig indexNodeConfig = params.getIndexNodeConfig();
+                if (indexNodeConfig != null) {
+                    applyComponentConfig(values, "indexNode", indexNodeConfig);
+                }
+
+                // 禁用 streamingNode
+                values.put("streamingNode.enabled", "false");
             }
         }
 

@@ -1,7 +1,10 @@
 package custom.entity.result;
 
+import custom.utils.KubernetesUtils;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * Helm 方式创建 Milvus 实例的结果。
@@ -48,7 +51,7 @@ public class HelmCreateInstanceResult {
     int deploymentCostSeconds;
 
     /**
-     * Pod 状态信息（JSON 格式）。
+     * Pod 状态信息列表。
      */
-    String podStatus;
+    List<KubernetesUtils.PodStatus> podStatus;
 }
