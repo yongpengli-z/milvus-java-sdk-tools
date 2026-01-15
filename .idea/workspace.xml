@@ -4,53 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3e78e400-1f91-4ac0-9bca-1b37d2e2daf6" name="Changes" comment="optimize">
+    <list default="true" id="3e78e400-1f91-4ac0-9bca-1b37d2e2daf6" name="Changes" comment="add helm install milvus13">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/AddCollectionFieldParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/AddCollectionFieldParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/AlterAliasParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/AlterAliasParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/AlterInstanceIndexClusterParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/AlterInstanceIndexClusterParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/BulkImportParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/BulkImportParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CompactParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CompactParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ConcurrentParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ConcurrentParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateAliasParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateAliasParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateCollectionParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateDatabaseParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateDatabaseParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateIndexParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateIndexParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/CreateInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/CreateInstanceParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DebugTestParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DebugTestParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteInstanceParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DeleteParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DescribeCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DescribeCollectionParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DropCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DropCollectionParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/DropIndexParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/DropIndexParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/FieldParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/FieldParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/FlushParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/FlushParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/FunctionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/FunctionParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/IndexParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/IndexParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/InitialParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/InitialParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/InsertParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/InsertParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/LoadParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/LoadParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/LoopParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/LoopParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ModifyParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ModifyParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/PersistentSegmentInfoParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/PersistentSegmentInfoParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/QueryParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/QueryParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/QuerySegmentInfoParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/QuerySegmentInfoParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RecallParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RecallParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ReleaseParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ReleaseParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RenameCollectionParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RenameCollectionParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RestartInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RestartInstanceParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RestoreBackupParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RestoreBackupParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/ResumeInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/ResumeInstanceParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/RollingUpgradeParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/RollingUpgradeParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/SearchIteratorParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/SearchIteratorParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/SearchParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/SearchParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/StopInstanceParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/StopInstanceParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/StreamingNodeParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/StreamingNodeParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/UpdateIndexPoolParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/UpdateIndexPoolParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/UpsertParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/UpsertParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/UseDatabaseParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/UseDatabaseParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/WaitParams.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/WaitParams.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/custom/entity/result/DescribeCollectionResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/custom/entity/result/DescribeCollectionResult.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -194,48 +149,6 @@
       <option name="presentableId" value="Default" />
       <updated>1724900356731</updated>
     </task>
-    <task id="LOCAL-00001" summary="modify repositories">
-      <created>1741144940363</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1741144940363</updated>
-    </task>
-    <task id="LOCAL-00002" summary="modify repositories2">
-      <created>1741145407009</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1741145407009</updated>
-    </task>
-    <task id="LOCAL-00003" summary="modify query params">
-      <created>1741162989911</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1741162989911</updated>
-    </task>
-    <task id="LOCAL-00004" summary="modify basetest">
-      <created>1741163825983</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1741163825983</updated>
-    </task>
-    <task id="LOCAL-00005" summary="add query response">
-      <created>1741164840903</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1741164840903</updated>
-    </task>
-    <task id="LOCAL-00006" summary="temp modify bool value">
-      <created>1741243538153</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
-      <option name="project" value="LOCAL" />
-      <updated>1741243538153</updated>
-    </task>
     <task id="LOCAL-00007" summary="add create instance alone check">
       <created>1741578523396</created>
       <option name="number" value="00007" />
@@ -348,7 +261,238 @@
       <option name="project" value="LOCAL" />
       <updated>1743473066676</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="optimize params and add readme for LLM">
+      <created>1766730545367</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1766730545367</updated>
+    </task>
+    <task id="LOCAL-00024" summary="optimize params and add readme for LLM">
+      <created>1766730554486</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1766730554486</updated>
+    </task>
+    <task id="LOCAL-00025" summary="optimize params and add readme for LLM2">
+      <created>1766734928072</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1766734928072</updated>
+    </task>
+    <task id="LOCAL-00026" summary="optimize params and add readme for LLM3">
+      <created>1766738973475</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1766738973475</updated>
+    </task>
+    <task id="LOCAL-00027" summary="optimize params and add readme for LLM4">
+      <created>1766740690433</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1766740690433</updated>
+    </task>
+    <task id="LOCAL-00028" summary="optimize params and add readme for LLM5">
+      <created>1767063612444</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1767063612444</updated>
+    </task>
+    <task id="LOCAL-00029" summary="optimize params and add readme for LLM6">
+      <created>1767064582512</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1767064582512</updated>
+    </task>
+    <task id="LOCAL-00030" summary="optimize params and add readme for LLM7">
+      <created>1767066033008</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1767066033008</updated>
+    </task>
+    <task id="LOCAL-00031" summary="optimize params and add readme for LLM8">
+      <created>1767066845118</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1767066845118</updated>
+    </task>
+    <task id="LOCAL-00032" summary="add hybridSearch component">
+      <created>1767076932174</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1767076932174</updated>
+    </task>
+    <task id="LOCAL-00033" summary="add hybridSearch component2">
+      <created>1767089407676</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1767089407676</updated>
+    </task>
+    <task id="LOCAL-00034" summary="test hybridSearch component2 without metricType">
+      <created>1767496954334</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1767496954334</updated>
+    </task>
+    <task id="LOCAL-00035" summary="modify readme and remove metricType from HybridSearchComp">
+      <created>1767498373436</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1767498373436</updated>
+    </task>
+    <task id="LOCAL-00036" summary="support array of struct">
+      <created>1767600637608</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1767600637608</updated>
+    </task>
+    <task id="LOCAL-00037" summary="support array of struct2">
+      <created>1767602765617</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1767602765617</updated>
+    </task>
+    <task id="LOCAL-00038" summary="support array of struct3">
+      <created>1767603756139</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1767603756139</updated>
+    </task>
+    <task id="LOCAL-00039" summary="support array of struct4">
+      <created>1767604528605</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1767604528605</updated>
+    </task>
+    <task id="LOCAL-00040" summary="support query array of struct">
+      <created>1767608053940</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1767608053940</updated>
+    </task>
+    <task id="LOCAL-00041" summary="update readme.md">
+      <created>1767779476931</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1767779476931</updated>
+    </task>
+    <task id="LOCAL-00042" summary="update readme.md">
+      <created>1767855394862</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1767855394862</updated>
+    </task>
+    <task id="LOCAL-00043" summary="add helm install milvus">
+      <created>1768354739838</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1768354739838</updated>
+    </task>
+    <task id="LOCAL-00044" summary="add helm install milvus2">
+      <created>1768355579205</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1768355579205</updated>
+    </task>
+    <task id="LOCAL-00045" summary="add helm install milvus3">
+      <created>1768356660465</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1768356660465</updated>
+    </task>
+    <task id="LOCAL-00046" summary="add helm install milvus4">
+      <created>1768357335795</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1768357335795</updated>
+    </task>
+    <task id="LOCAL-00047" summary="add helm install milvus5">
+      <created>1768357658601</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1768357658601</updated>
+    </task>
+    <task id="LOCAL-00048" summary="add helm install milvus6">
+      <created>1768361038684</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1768361038684</updated>
+    </task>
+    <task id="LOCAL-00049" summary="add helm install milvus7">
+      <created>1768362757971</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1768362757971</updated>
+    </task>
+    <task id="LOCAL-00050" summary="add helm install milvus8">
+      <created>1768371278696</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1768371278696</updated>
+    </task>
+    <task id="LOCAL-00051" summary="add helm install milvus9">
+      <created>1768375652092</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1768375652092</updated>
+    </task>
+    <task id="LOCAL-00052" summary="add helm install milvus10">
+      <created>1768378367521</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1768378367521</updated>
+    </task>
+    <task id="LOCAL-00053" summary="add helm install milvus11">
+      <created>1768380913401</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1768380913401</updated>
+    </task>
+    <task id="LOCAL-00054" summary="add helm install milvus12">
+      <created>1768381380190</created>
+      <option name="number" value="00054" />
+      <option name="presentableId" value="LOCAL-00054" />
+      <option name="project" value="LOCAL" />
+      <updated>1768381380190</updated>
+    </task>
+    <task id="LOCAL-00055" summary="add helm install milvus13">
+      <created>1768458059695</created>
+      <option name="number" value="00055" />
+      <option name="presentableId" value="LOCAL-00055" />
+      <option name="project" value="LOCAL" />
+      <updated>1768458059695</updated>
+    </task>
+    <option name="localTasksCounter" value="56" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -363,29 +507,32 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="modify repositories" />
-    <MESSAGE value="modify repositories2" />
-    <MESSAGE value="modify query params" />
-    <MESSAGE value="modify basetest" />
-    <MESSAGE value="add query response" />
-    <MESSAGE value="temp modify bool value" />
-    <MESSAGE value="add create instance alone check" />
-    <MESSAGE value="modify generate data method" />
-    <MESSAGE value="modify generate data method2" />
-    <MESSAGE value="close request qtp-server" />
-    <MESSAGE value="modify pom" />
-    <MESSAGE value="support nullable" />
-    <MESSAGE value="modify java-sdk version" />
-    <MESSAGE value="support UpdateIndexPoolComp" />
-    <MESSAGE value="support UpdateIndexPoolComp2" />
-    <MESSAGE value="support UpdateIndexPoolComp3" />
-    <MESSAGE value="support UpdateIndexPoolComp4" />
-    <MESSAGE value="support UpdateIndexPoolComp5" />
-    <MESSAGE value="support UpdateIndexPoolComp6" />
-    <MESSAGE value="support UpdateIndexPoolComp7" />
-    <MESSAGE value="support query segment comp" />
-    <MESSAGE value="support query segment comp2" />
-    <option name="LAST_COMMIT_MESSAGE" value="support query segment comp2" />
+    <MESSAGE value="optimize params and add readme for LLM7" />
+    <MESSAGE value="optimize params and add readme for LLM8" />
+    <MESSAGE value="add hybridSearch component" />
+    <MESSAGE value="add hybridSearch component2" />
+    <MESSAGE value="test hybridSearch component2 without metricType" />
+    <MESSAGE value="modify readme and remove metricType from HybridSearchComp" />
+    <MESSAGE value="support array of struct" />
+    <MESSAGE value="support array of struct2" />
+    <MESSAGE value="support array of struct3" />
+    <MESSAGE value="support array of struct4" />
+    <MESSAGE value="support query array of struct" />
+    <MESSAGE value="update readme.md" />
+    <MESSAGE value="add helm install milvus" />
+    <MESSAGE value="add helm install milvus2" />
+    <MESSAGE value="add helm install milvus3" />
+    <MESSAGE value="add helm install milvus4" />
+    <MESSAGE value="add helm install milvus5" />
+    <MESSAGE value="add helm install milvus6" />
+    <MESSAGE value="add helm install milvus7" />
+    <MESSAGE value="add helm install milvus8" />
+    <MESSAGE value="add helm install milvus9" />
+    <MESSAGE value="add helm install milvus10" />
+    <MESSAGE value="add helm install milvus11" />
+    <MESSAGE value="add helm install milvus12" />
+    <MESSAGE value="add helm install milvus13" />
+    <option name="LAST_COMMIT_MESSAGE" value="add helm install milvus13" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -417,7 +564,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/custom/common/CommonFunction.java</url>
-          <line>118</line>
+          <line>113</line>
           <option name="timeStamp" value="35" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -467,7 +614,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/custom/common/CommonFunction.java</url>
-          <line>341</line>
+          <line>401</line>
           <option name="timeStamp" value="53" />
         </line-breakpoint>
       </breakpoints>
