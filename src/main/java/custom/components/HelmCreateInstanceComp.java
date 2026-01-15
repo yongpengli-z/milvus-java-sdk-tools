@@ -183,8 +183,10 @@ public class HelmCreateInstanceComp {
         if ("standalone".equalsIgnoreCase(milvusMode)) {
             values.put("cluster.enabled", "false");
             values.put("standalone.enabled", "true");
-            // Standalone 模式禁用 Pulsar
+            // Standalone 模式禁用 Pulsar 和 Kafka
             values.put("pulsar.enabled", "false");
+            values.put("pulsarv3.enabled", "false");
+            values.put("kafka.enabled", "false");
         } else if ("cluster".equalsIgnoreCase(milvusMode)) {
             values.put("cluster.enabled", "true");
             values.put("standalone.enabled", "false");
