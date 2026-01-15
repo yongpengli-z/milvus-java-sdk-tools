@@ -278,17 +278,17 @@ public class HelmCreateInstanceComp {
         }
 
         // 消息队列配置（仅 Cluster 模式）
-        // 注意：使用旧版 pulsar，pulsarv3 有 RBAC 权限问题
+        // 使用 pulsarv3 替代旧版 pulsar
         if ("cluster".equalsIgnoreCase(milvusMode)) {
             HelmDependencyConfig pulsarConfig = params.getPulsarConfig();
             HelmDependencyConfig kafkaConfig = params.getKafkaConfig();
 
-            // 禁用 pulsarv3（有 RBAC 权限问题），使用旧版 pulsar
-            values.put("pulsarv3.enabled", "false");
+            // 禁用旧版 pulsar，使用 pulsarv3
+            values.put("pulsar.enabled", "false");
 
             // 如果配置了 Kafka，使用 Kafka 替代 Pulsar
             if (kafkaConfig != null && (kafkaConfig.isUseExternal() || kafkaConfig.isEnabled())) {
-                values.put("pulsar.enabled", "false");
+                values.put("pulsarv3.enabled", "false");
                 values.put("kafka.enabled", "true");
                 if (kafkaConfig.isUseExternal()) {
                     values.put("kafka.enabled", "false");
@@ -298,20 +298,20 @@ public class HelmCreateInstanceComp {
                     }
                 }
             } else if (pulsarConfig != null) {
-                // 使用旧版 pulsar
+                // 使用 pulsarv3
                 values.put("kafka.enabled", "false");
                 if (pulsarConfig.isUseExternal()) {
-                    values.put("pulsar.enabled", "false");
+                    values.put("pulsarv3.enabled", "false");
                     values.put("externalPulsar.enabled", "true");
                     if (pulsarConfig.getExternalEndpoints() != null) {
                         values.put("externalPulsar.host", pulsarConfig.getExternalEndpoints());
                     }
                 } else {
-                    values.put("pulsar.enabled", String.valueOf(pulsarConfig.isEnabled()));
+                    values.put("pulsarv3.enabled", String.valueOf(pulsarConfig.isEnabled()));
                 }
             } else {
-                // 默认启用旧版 pulsar，禁用 kafka
-                values.put("pulsar.enabled", "true");
+                // 默认启用 pulsarv3，禁用 kafka
+                values.put("pulsarv3.enabled", "true");
                 values.put("kafka.enabled", "false");
             }
         }
