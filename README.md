@@ -183,15 +183,21 @@
 - **`structSchema`**（list，可空）：Struct Schema（仅当 `dataType=Array` 且 `elementType=Struct` 时生效）。用于定义 Array of Struct 中 Struct 的子字段列表。前端默认：`null` 或 `[]`。
   - **Struct 子字段类型**：`custom.entity.StructFieldParams`
     - **`fieldName`**（string）：Struct 子字段名
-    - **`dataType`**（enum）：Struct 子字段类型（**不能是 Struct、Array、Json**）
-    - **`dim`**（int）：向量维度（仅 Vector 类型生效）
+    - **`dataType`**（enum）：Struct 子字段类型，仅支持以下类型：
+      - 整数：`Int8` / `Int16` / `Int32` / `Int64`
+      - 浮点：`Float` / `Double`
+      - 布尔：`Bool`
+      - 字符串：`VarChar` / `String`
+      - 向量：`FloatVector`
+    - **`dim`**（int）：向量维度（仅 FloatVector 类型生效）
     - **`maxLength`**（int）：VarChar/String 最大长度（仅 VarChar/String 生效）
     - **`isNullable`**（boolean）：是否允许为 NULL（前端默认：`false`）
   - **限制**：
     - Struct 只能作为 Array 的元素类型使用（`dataType=Array`，`elementType=Struct`）
-    - Struct 子字段不能是 Struct、Array、Json
-    - Struct 可以包含向量字段，从而实现 Array of Vector
+    - Struct 子字段仅支持：Int8/Int16/Int32/Int64、Float/Double、Bool、VarChar/String、FloatVector
+    - Struct 可以包含 FloatVector 字段，从而实现 Array of Vector
     - Struct 暂不支持 nullable 字段（但字段中保留该属性以备将来使用）
+    - **一个 collection 最多只能有 4 个向量列**（包含 Struct 里的向量列）
 - **`partitionKey`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不是分区键）。
   - **重要约束**：如果 `CreateCollectionParams.numPartitions > 0`，则**必须至少有一个字段的 `partitionKey` 为 `true`**，否则创建 collection 会失败。
   - 如果 `numPartitions = 0`，则所有字段的 `partitionKey` 都应为 `false`。
