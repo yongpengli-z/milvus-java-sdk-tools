@@ -314,6 +314,10 @@ public class HelmCreateInstanceComp {
                 values.put("pulsarv3.enabled", "true");
                 values.put("kafka.enabled", "false");
             }
+
+            // 尝试禁用 pulsarv3 的 RBAC 创建（避免权限问题）
+            // pulsarv3 Chart 中的 RBAC Role 定义有问题，包含无效的 apiGroup/resource 组合
+            values.put("pulsarv3.rbac.create", "false");
         }
 
         // 资源配置（Standalone 模式）
