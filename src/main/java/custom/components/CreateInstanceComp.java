@@ -16,6 +16,7 @@ import custom.utils.ResourceManagerServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import static custom.BaseTest.*;
 @Slf4j
 public class CreateInstanceComp {
     public static CreateInstanceResult createInstance(CreateInstanceParams createInstanceParams) {
+        LocalDateTime startTime = LocalDateTime.now();
         // 登录cloudService获取账户信息 // 检查账号
         if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
             if (createInstanceParams.getAccountEmail() == null || createInstanceParams.getAccountEmail().equalsIgnoreCase("")) {
@@ -43,9 +45,11 @@ public class CreateInstanceComp {
             }
         }
         if (isExist) {
+            int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message("The specified instance name already exists.")
-                    .result(ResultEnum.EXCEPTION.result).build()).build();
+                    .result(ResultEnum.EXCEPTION.result).build())
+                    .createCostSeconds(costSeconds).build();
         }
         // image重新获取
         String latestImageByKeywords;
@@ -65,9 +69,11 @@ public class CreateInstanceComp {
         if (code != 0) {
             log.info("create instance failed: " + jsonObject.getString("Message"));
             ComponentSchedule.initInstanceStatus("--", "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
+            int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message(jsonObject.getString("Message"))
-                    .result(ResultEnum.EXCEPTION.result).build()).build();
+                    .result(ResultEnum.EXCEPTION.result).build())
+                    .createCostSeconds(costSeconds).build();
         }
         String instanceId = jsonObject.getJSONObject("Data").getString("InstanceId");
         log.info("Submit create instance success!");
@@ -134,12 +140,16 @@ public class CreateInstanceComp {
             log.info("轮询超时！未监测到实例创建成功！");
             // 上报结果
             ComponentSchedule.updateInstanceStatus(instanceId, "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
+            int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message("轮询超时！未监测到实例创建成功！")
-                    .result(ResultEnum.EXCEPTION.result).build()).build();
+                    .result(ResultEnum.EXCEPTION.result).build())
+                    .createCostSeconds(costSeconds).build();
         }
 
-        CreateInstanceResult createInstanceResult = CreateInstanceResult.builder().build();
+        int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
+        CreateInstanceResult createInstanceResult = CreateInstanceResult.builder()
+                .createCostSeconds(costSeconds).build();
         // 创建成功，检查是否是重保
         createInstanceResult.setBizCritical(createInstanceParams.isBizCritical());
         // 创建成功，检查是否是独占

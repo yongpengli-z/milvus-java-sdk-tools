@@ -163,6 +163,7 @@ public class KubernetesUtils {
 
                     // 获取容器端口
                     StringBuilder portsBuilder = new StringBuilder();
+                    Integer primaryPort = null; // 用于构建 endpoint，优先选择 19530 端口
                     V1PodSpec podSpec = pod.getSpec();
                     if (podSpec != null && podSpec.getContainers() != null) {
                         for (V1Container container : podSpec.getContainers()) {
@@ -171,7 +172,14 @@ public class KubernetesUtils {
                                 List<String> portList = new ArrayList<>();
                                 for (V1ContainerPort port : containerPorts) {
                                     if (port.getContainerPort() != null) {
-                                        portList.add(String.valueOf(port.getContainerPort()));
+                                        int containerPort = port.getContainerPort();
+                                        portList.add(String.valueOf(containerPort));
+                                        // 优先选择 19530 端口作为主端口
+                                        if (containerPort == 19530) {
+                                            primaryPort = containerPort;
+                                        } else if (primaryPort == null) {
+                                            primaryPort = containerPort;
+                                        }
                                     }
                                 }
                                 if (!portList.isEmpty()) {
@@ -184,6 +192,12 @@ public class KubernetesUtils {
                         }
                     }
 
+                    // 构建 endpoint（格式：hostIp:port）
+                    String endpoint = "";
+                    if (hostIp != null && !hostIp.isEmpty() && primaryPort != null) {
+                        endpoint = hostIp + ":" + primaryPort;
+                    }
+
                     podStatuses.add(PodStatus.builder()
                             .name(podName)
                             .phase(phase)
@@ -192,6 +206,7 @@ public class KubernetesUtils {
                             .podIp(podIp)
                             .hostIp(hostIp)
                             .ports(portsBuilder.toString())
+                            .endpoint(endpoint)
                             .build());
                 }
 
@@ -701,5 +716,11 @@ public class KubernetesUtils {
          * 容器端口列表（格式：containerName:port1,port2）
          */
         String ports;
+        /**
+         * 服务端点地址（格式：hostIp:port）。
+         * <p>
+         * 例如：127.0.0.1:19530
+         */
+        String endpoint;
     }
 }

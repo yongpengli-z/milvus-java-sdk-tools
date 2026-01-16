@@ -236,4 +236,12 @@ public class HelmCreateInstanceParams {
      * 前端默认值：30
      */
     int waitTimeoutMinutes;
+
+    /**
+     * 预计使用时长（小时），用于实例生命周期管理。
+     * <p>
+     * 设置后，后端会计算预计到期时间，用于后续自动销毁实例。
+     * 前端默认值：0（不限制）
+     */
+    int useHours;
 }

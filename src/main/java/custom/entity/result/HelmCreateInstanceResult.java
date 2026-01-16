@@ -4,6 +4,7 @@ import custom.utils.KubernetesUtils;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -54,4 +55,23 @@ public class HelmCreateInstanceResult {
      * Pod 状态信息列表。
      */
     List<KubernetesUtils.PodStatus> podStatus;
+
+    /**
+     * 创建时间。
+     */
+    LocalDateTime createTime;
+
+    /**
+     * 预计使用时长（小时）。
+     * <p>
+     * 0 表示不限制。
+     */
+    int useHours;
+
+    /**
+     * 预计到期时间。
+     * <p>
+     * 如果 useHours 为 0，则该字段为 null（表示永久）。
+     */
+    LocalDateTime expireTime;
 }

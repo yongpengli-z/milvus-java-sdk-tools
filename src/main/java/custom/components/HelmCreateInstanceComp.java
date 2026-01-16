@@ -1,5 +1,7 @@
 package custom.components;
 
+import custom.common.ComponentSchedule;
+import custom.common.InstanceStatusEnum;
 import custom.entity.HelmComponentConfig;
 import custom.entity.HelmConfigItem;
 import custom.entity.HelmCreateInstanceParams;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 import static custom.BaseTest.envEnum;
@@ -41,6 +44,9 @@ public class HelmCreateInstanceComp {
         LocalDateTime startTime = LocalDateTime.now();
         log.info("Starting Helm create instance...");
 
+        String releaseName = params.getReleaseName();
+        String imageTag = params.getMilvusImageTag() != null ? params.getMilvusImageTag() : "default";
+
         try {
             // 1. 初始化 K8s 客户端
             log.info("Step 1: Initializing Kubernetes client...");
@@ -59,7 +65,8 @@ public class HelmCreateInstanceComp {
             // 3. 获取本地 Helm Chart 路径
             String helmChartPath = envEnum != null ? envEnum.helmChartPath : null;
             if (helmChartPath == null || helmChartPath.isEmpty()) {
-                return buildFailResult("Helm chart path is not configured in EnvEnum", startTime);
+                ComponentSchedule.initInstanceStatus(releaseName, "--", imageTag, InstanceStatusEnum.CREATE_FAILED.code);
+                return buildFailResult("Helm chart path is not configured in EnvEnum", startTime, releaseName);
             }
             log.info("Using local Helm chart: " + helmChartPath);
 
@@ -69,10 +76,13 @@ public class HelmCreateInstanceComp {
             log.info("Helm values: " + setValues);
 
             // 5. 检查是否已存在同名 Release
-            String releaseName = params.getReleaseName();
             if (HelmUtils.releaseExists(releaseName, namespace, kubeconfigPath)) {
-                return buildFailResult("Helm release already exists: " + releaseName, startTime);
+                ComponentSchedule.initInstanceStatus(releaseName, "--", imageTag, InstanceStatusEnum.CREATE_FAILED.code);
+                return buildFailResult("Helm release already exists: " + releaseName, startTime, releaseName);
             }
+
+            // 上报实例创建中状态
+            ComponentSchedule.initInstanceStatus(releaseName, "", imageTag, InstanceStatusEnum.CREATING.code);
 
             // 6. 执行 Helm Install（使用本地 Chart）
             log.info("Step 5: Executing Helm install...");
@@ -94,7 +104,8 @@ public class HelmCreateInstanceComp {
 
             if (!installResult.isSuccess()) {
                 log.error("Helm install failed: " + installResult.getStderr());
-                return buildFailResult("Helm install failed: " + installResult.getStderr(), startTime);
+                ComponentSchedule.updateInstanceStatus(releaseName, "--", imageTag, InstanceStatusEnum.CREATE_FAILED.code);
+                return buildFailResult("Helm install failed: " + installResult.getStderr(), startTime, releaseName);
             }
             log.info("Helm install completed successfully");
 
@@ -144,9 +155,23 @@ public class HelmCreateInstanceComp {
                 }
             }
 
-            // 10. 构建返回结果
+            // 10. 构建 Pod 信息字符串（格式：podName1:endpoint1,podName2:endpoint2,...）
+            String instanceUri = buildInstanceUri(podStatuses, uri);
+            log.info("Instance URI with pods: " + instanceUri);
+
+            // 11. 上报实例创建成功状态
+            ComponentSchedule.updateInstanceStatus(releaseName, instanceUri, imageTag, InstanceStatusEnum.RUNNING.code);
+            log.info("Instance status reported successfully");
+
+            // 12. 构建返回结果
             int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
             String milvusMode = params.getMilvusMode();
+            LocalDateTime createTime = LocalDateTime.now();
+            int useHours = params.getUseHours();
+            LocalDateTime expireTime = null;
+            if (useHours > 0) {
+                expireTime = createTime.plusHours(useHours);
+            }
 
             return HelmCreateInstanceResult.builder()
                     .commonResult(CommonResult.builder()
@@ -157,15 +182,56 @@ public class HelmCreateInstanceComp {
                     .releaseName(releaseName)
                     .namespace(namespace)
                     .milvusMode(milvusMode != null ? milvusMode : "standalone")
-                    .milvusVersion(params.getMilvusImageTag() != null ? params.getMilvusImageTag() : "default")
+                    .milvusVersion(imageTag)
                     .deploymentCostSeconds(costSeconds)
                     .podStatus(podStatuses)
+                    .createTime(createTime)
+                    .useHours(useHours)
+                    .expireTime(expireTime)
                     .build();
 
         } catch (Exception e) {
             log.error("Failed to create Milvus instance", e);
-            return buildFailResult("Exception: " + e.getMessage(), startTime);
+            ComponentSchedule.updateInstanceStatus(releaseName, "--", imageTag, InstanceStatusEnum.CREATE_FAILED.code);
+            return buildFailResult("Exception: " + e.getMessage(), startTime, releaseName);
         }
+    }
+
+    /**
+     * 构建实例 URI 字符串，包含 Pod 名称和端点信息
+     * <p>
+     * 格式：uri|podName1:endpoint1,podName2:endpoint2,...
+     * 示例：http://10.0.0.1:19530|my-milvus-standalone-0:10.0.0.2:19530,my-milvus-etcd-0:10.0.0.3:2379
+     *
+     * @param podStatuses Pod 状态列表
+     * @param uri         Milvus 连接 URI
+     * @return 格式化后的实例 URI 字符串
+     */
+    private static String buildInstanceUri(List<KubernetesUtils.PodStatus> podStatuses, String uri) {
+        if (podStatuses == null || podStatuses.isEmpty()) {
+            return uri;
+        }
+
+        // 构建 Pod 信息：podName:endpoint
+        String podInfoStr = podStatuses.stream()
+                .map(pod -> {
+                    String podName = pod.getName();
+                    String endpoint = pod.getEndpoint();
+                    if (endpoint != null && !endpoint.isEmpty()) {
+                        return podName + ":" + endpoint;
+                    } else if (pod.getPodIp() != null && !pod.getPodIp().isEmpty()) {
+                        // 如果没有 endpoint，使用 podIp:19530 作为默认
+                        return podName + ":" + pod.getPodIp() + ":19530";
+                    }
+                    return podName;
+                })
+                .collect(Collectors.joining(","));
+
+        // 格式：uri|podInfo
+        if (uri != null && !uri.isEmpty()) {
+            return uri + "|" + podInfoStr;
+        }
+        return podInfoStr;
     }
 
     /**
@@ -499,13 +565,14 @@ public class HelmCreateInstanceComp {
     /**
      * 构建失败结果
      */
-    private static HelmCreateInstanceResult buildFailResult(String message, LocalDateTime startTime) {
+    private static HelmCreateInstanceResult buildFailResult(String message, LocalDateTime startTime, String releaseName) {
         int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
         return HelmCreateInstanceResult.builder()
                 .commonResult(CommonResult.builder()
                         .result(ResultEnum.EXCEPTION.result)
                         .message(message)
                         .build())
+                .releaseName(releaseName)
                 .deploymentCostSeconds(costSeconds)
                 .build();
     }

@@ -11,4 +11,8 @@ public class CreateInstanceResult {
     String instanceId;
     boolean bizCritical;
     boolean monopolized;
+    /**
+     * 创建耗时（秒）
+     */
+    int createCostSeconds;
 }
