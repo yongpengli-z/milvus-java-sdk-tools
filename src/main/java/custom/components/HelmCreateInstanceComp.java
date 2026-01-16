@@ -81,8 +81,8 @@ public class HelmCreateInstanceComp {
                 return buildFailResult("Helm release already exists: " + releaseName, startTime, releaseName);
             }
 
-            // 上报实例创建中状态
-            ComponentSchedule.initInstanceStatus(releaseName, "", imageTag, InstanceStatusEnum.CREATING.code);
+            // 上报实例创建中状态（使用 "creating..." 作为占位符，避免前端因空字符串不展示）
+            ComponentSchedule.initInstanceStatus(releaseName, "creating...", imageTag, InstanceStatusEnum.CREATING.code);
 
             // 6. 执行 Helm Install（使用本地 Chart）
             log.info("Step 5: Executing Helm install...");

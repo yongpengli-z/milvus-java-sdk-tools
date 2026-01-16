@@ -13,6 +13,8 @@ import custom.entity.result.HelmDeleteInstanceResult;
 import custom.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -388,18 +390,30 @@ public class ComponentSchedule {
         if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
             return;
         }
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
-        String s = HttpClientUtils.doPost(uri);
-        log.info("add instanceId:" + s);
+        try {
+            String encodedInstanceUri = URLEncoder.encode(instanceUri, StandardCharsets.UTF_8.toString());
+            String encodedImage = URLEncoder.encode(image, StandardCharsets.UTF_8.toString());
+            String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/add?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + encodedInstanceUri + "&image=" + encodedImage + "&status=" + status;
+            String s = HttpClientUtils.doPost(uri);
+            log.info("add instanceId:" + s);
+        } catch (Exception e) {
+            log.error("Failed to init instance status: " + e.getMessage(), e);
+        }
     }
 
     public static void updateInstanceStatus(String instanceId, String instanceUri, String image, int status) {
         if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
             return;
         }
-        String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + instanceUri + "&image=" + image + "&status=" + status;
-        String s = HttpClientUtils.doPost(uri);
-        log.info("add instanceId:" + s);
+        try {
+            String encodedInstanceUri = URLEncoder.encode(instanceUri, StandardCharsets.UTF_8.toString());
+            String encodedImage = URLEncoder.encode(image, StandardCharsets.UTF_8.toString());
+            String uri = "http://qtp-server.zilliz.cc/customize-task/task/instance/update?id=" + taskId + "&instanceId=" + instanceId + "&instanceUri=" + encodedInstanceUri + "&image=" + encodedImage + "&status=" + status;
+            String s = HttpClientUtils.doPost(uri);
+            log.info("update instanceId:" + s);
+        } catch (Exception e) {
+            log.error("Failed to update instance status: " + e.getMessage(), e);
+        }
     }
 
     public static List<String> queryReleaseImage() {
