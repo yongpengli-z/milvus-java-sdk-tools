@@ -2,6 +2,8 @@ package custom.entity;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * Helm 方式创建 Milvus 实例参数。
  * <p>
@@ -36,15 +38,52 @@ public class HelmCreateInstanceParams {
     String releaseName;
 
     /**
-     * 自定义 values.yaml 内容（JSON 格式字符串）。
+     * 自定义 Helm Chart values（Key-Value 列表）。
+     * <p>
+     * 用于覆盖 Helm Chart 的部署配置（K8s 资源层面）。
      * <p>
      * 会被转换为 Helm --set 参数。
      * <p>
-     * 示例：`{"log":{"level":"debug"}}`
+     * 常用配置示例：
+     * - key: `proxy.replicas`, value: `2` - 设置 Proxy 副本数
+     * - key: `service.type`, value: `NodePort` - 设置 Service 类型
+     * - key: `image.repository`, value: `my-registry/milvus` - 设置镜像仓库
+     * - key: `standalone.resources.limits.memory`, value: `8Gi` - 设置内存限制
      * <p>
-     * 前端默认值：""（空字符串）
+     * JSON 示例：
+     * <pre>
+     * [
+     *   {"key": "proxy.replicas", "value": "2"},
+     *   {"key": "service.type", "value": "NodePort"}
+     * ]
+     * </pre>
+     * <p>
+     * 前端默认值：null 或空列表
      */
-    String customValues;
+    List<HelmConfigItem> customHelmValues;
+
+    /**
+     * Milvus 运行时配置（Key-Value 列表）。
+     * <p>
+     * 用于配置 Milvus 应用层面的参数，会被注入到 extraConfigFiles.user.yaml。
+     * <p>
+     * 常用配置示例：
+     * - key: `common.security.authorizationEnabled`, value: `true` - 启用 RBAC
+     * - key: `log.level`, value: `debug` - 设置日志级别
+     * - key: `proxy.maxTaskNum`, value: `1024` - 设置最大并发任务数
+     * - key: `quotaAndLimits.dml.insertRate.max`, value: `-1` - 取消插入速率限制
+     * <p>
+     * JSON 示例：
+     * <pre>
+     * [
+     *   {"key": "log.level", "value": "debug"},
+     *   {"key": "common.security.authorizationEnabled", "value": "true"}
+     * ]
+     * </pre>
+     * <p>
+     * 前端默认值：null 或空列表
+     */
+    List<HelmConfigItem> milvusConfigItems;
 
     // ==================== Milvus 配置 ====================
 

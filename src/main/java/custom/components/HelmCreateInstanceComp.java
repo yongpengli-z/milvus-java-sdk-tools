@@ -1,8 +1,7 @@
 package custom.components;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import custom.entity.HelmComponentConfig;
+import custom.entity.HelmConfigItem;
 import custom.entity.HelmCreateInstanceParams;
 import custom.entity.HelmDependencyConfig;
 import custom.entity.HelmResourceConfig;
@@ -17,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -193,8 +193,9 @@ public class HelmCreateInstanceComp {
         }
 
         // 镜像配置
+        // 注意：Milvus Helm Chart 使用 image.all.tag 而不是 image.tag
         if (params.getMilvusImageTag() != null && !params.getMilvusImageTag().isEmpty()) {
-            values.put("image.tag", params.getMilvusImageTag());
+            values.put("image.all.tag", params.getMilvusImageTag());
         }
 
         // Service 配置（默认 LoadBalancer）
@@ -399,18 +400,76 @@ public class HelmCreateInstanceComp {
             }
         }
 
-        // 自定义 Values（JSON 格式）
-        String customValues = params.getCustomValues();
-        if (customValues != null && !customValues.isEmpty()) {
-            try {
-                JSONObject customJson = JSON.parseObject(customValues);
-                flattenJson("", customJson, values);
-            } catch (Exception e) {
-                log.warn("Failed to parse custom values: " + e.getMessage());
+        // 自定义 Helm Values（Key-Value 列表）- 用于 K8s 资源层面的配置
+        List<HelmConfigItem> customHelmValues = params.getCustomHelmValues();
+        if (customHelmValues != null && !customHelmValues.isEmpty()) {
+            for (HelmConfigItem item : customHelmValues) {
+                if (item.getKey() != null && !item.getKey().isEmpty()) {
+                    values.put(item.getKey(), item.getValue() != null ? item.getValue() : "");
+                    log.info("Custom Helm value: " + item.getKey() + "=" + item.getValue());
+                }
             }
         }
 
+        // Milvus 运行时配置（Key-Value 列表）- 用于 Milvus 应用层面的配置
+        // 会被转换为 extraConfigFiles.user.yaml 的内容
+        List<HelmConfigItem> milvusConfigItems = params.getMilvusConfigItems();
+        if (milvusConfigItems != null && !milvusConfigItems.isEmpty()) {
+            // 将 Key-Value 列表转换为 YAML 格式
+            String yamlContent = configItemsToYaml(milvusConfigItems);
+            // 设置到 extraConfigFiles.user\.yaml（需要转义点号）
+            values.put("extraConfigFiles.user\\.yaml", yamlContent);
+            log.info("Milvus config (user.yaml):\n" + yamlContent);
+        }
+
         return values;
+    }
+
+    /**
+     * 将 Key-Value 配置列表转换为 YAML 格式字符串
+     * <p>
+     * 例如：
+     * - key: "log.level", value: "debug" -> "log:\n  level: debug\n"
+     * - key: "common.security.authorizationEnabled", value: "true" -> "common:\n  security:\n    authorizationEnabled: true\n"
+     */
+    private static String configItemsToYaml(List<HelmConfigItem> items) {
+        // 构建树形结构
+        Map<String, Object> tree = new LinkedHashMap<>();
+
+        for (HelmConfigItem item : items) {
+            if (item.getKey() == null || item.getKey().isEmpty()) {
+                continue;
+            }
+            String[] parts = item.getKey().split("\\.");
+            Map<String, Object> current = tree;
+
+            for (int i = 0; i < parts.length - 1; i++) {
+                current = (Map<String, Object>) current.computeIfAbsent(parts[i], k -> new LinkedHashMap<>());
+            }
+            current.put(parts[parts.length - 1], item.getValue());
+        }
+
+        // 将树形结构转换为 YAML
+        return treeToYaml(tree, 0);
+    }
+
+    /**
+     * 将树形结构转换为 YAML 格式字符串
+     */
+    @SuppressWarnings("unchecked")
+    private static String treeToYaml(Map<String, Object> tree, int indent) {
+        StringBuilder sb = new StringBuilder();
+        String indentStr = "  ".repeat(indent);
+
+        for (Map.Entry<String, Object> entry : tree.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                sb.append(indentStr).append(entry.getKey()).append(":\n");
+                sb.append(treeToYaml((Map<String, Object>) entry.getValue(), indent + 1));
+            } else {
+                sb.append(indentStr).append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -434,21 +493,6 @@ public class HelmCreateInstanceComp {
         }
         if (config.getDiskSize() != null && !config.getDiskSize().isEmpty()) {
             values.put(componentName + ".disk.size", config.getDiskSize());
-        }
-    }
-
-    /**
-     * 将嵌套 JSON 展平为 dot-notation 键值对
-     */
-    private static void flattenJson(String prefix, JSONObject json, Map<String, String> result) {
-        for (String key : json.keySet()) {
-            String fullKey = prefix.isEmpty() ? key : prefix + "." + key;
-            Object value = json.get(key);
-            if (value instanceof JSONObject) {
-                flattenJson(fullKey, (JSONObject) value, result);
-            } else {
-                result.put(fullKey, String.valueOf(value));
-            }
         }
     }
 
