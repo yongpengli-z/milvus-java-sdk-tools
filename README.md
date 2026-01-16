@@ -859,7 +859,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 对应组件：`custom.components.HelmCreateInstanceComp`
 
 **Kubernetes 配置**：
-- **`namespace`**（string）：Kubernetes 命名空间。前端默认：`qa`
+- **`namespace`**（string）：Kubernetes 命名空间。前端默认：`milvus-qtp`
 
 **Helm 配置**：
 - **`releaseName`**（string，必填）：Helm Release 名称（唯一标识）。前端默认：`my-milvus`
@@ -955,7 +955,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 ```json
 {
   "HelmCreateInstanceParams_0": {
-    "namespace": "qa",
+    "namespace": "milvus-qtp",
     "releaseName": "my-milvus",
     "milvusMode": "standalone",
     "milvusImageTag": "v2.5.0",
@@ -1019,7 +1019,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 
 对应组件：`custom.components.HelmDeleteInstanceComp`
 
-- **`namespace`**（string）：Kubernetes 命名空间。前端默认：`qa`
+- **`namespace`**（string）：Kubernetes 命名空间。前端默认：`milvus-qtp`
 - **`releaseName`**（string，必填）：Helm Release 名称。如果为空，会尝试从全局 `newInstanceInfo.instanceName` 获取
 - **`deletePvcs`**（boolean）：是否删除 PVC（持久化存储卷）。
   - `true`：同时删除关联的 PVC，彻底清理数据
@@ -1033,7 +1033,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 ```json
 {
   "HelmDeleteInstanceParams_0": {
-    "namespace": "qa",
+    "namespace": "milvus-qtp",
     "releaseName": "my-milvus",
     "deletePvcs": true,
     "deleteNamespace": false,
@@ -1047,7 +1047,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 ```json
 {
   "HelmCreateInstanceParams_0": {
-    "namespace": "qa",
+    "namespace": "milvus-qtp",
     "releaseName": "test-milvus",
     "milvusMode": "standalone",
     "milvusImageTag": "v2.5.0",
