@@ -92,4 +92,39 @@ public class HelmDependencyConfig {
      * 前端默认值：""
      */
     String storageClassName;
+
+    /**
+     * 是否使用 IAM 认证（仅用于外部 S3 存储）。
+     * <p>
+     * true：使用云平台 IAM 角色认证（如 AWS IAM Role、GCP Workload Identity、Azure Managed Identity）
+     * false：使用 accessKey/secretKey 认证
+     * <p>
+     * 使用 IAM 时，accessKey 和 secretKey 可以为空。
+     * <p>
+     * 前端默认值：false
+     */
+    boolean useIAM;
+
+    /**
+     * IAM Endpoint（仅当 useIAM=true 时可选配置）。
+     * <p>
+     * 用于自定义 IAM 服务端点，通常在私有云或特殊网络环境下使用。
+     * 如果为空，使用云平台默认的 IAM 端点。
+     * <p>
+     * 前端默认值：""
+     */
+    String iamEndpoint;
+
+    /**
+     * 云存储区域（Region）。
+     * <p>
+     * 用于指定云存储的区域，某些云平台（如 AWS S3）需要此配置。
+     * <p>
+     * 示例值：
+     * - AWS: us-west-2, us-east-1
+     * - Aliyun: cn-hangzhou, cn-beijing
+     * <p>
+     * 前端默认值：""
+     */
+    String region;
 }

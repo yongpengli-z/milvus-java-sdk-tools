@@ -283,19 +283,36 @@ public class HelmCreateInstanceComp {
                 // 根据云平台设置通用配置
                 values.put("externalS3.port", "443");
                 values.put("externalS3.useSSL", "true");
-                values.put("externalS3.useIAM", "false");
                 
                 // Host 配置
                 if (minioConfig.getExternalEndpoints() != null && !minioConfig.getExternalEndpoints().isEmpty()) {
                     values.put("externalS3.host", minioConfig.getExternalEndpoints());
                 }
                 
-                // 认证配置
-                if (minioConfig.getAccessKey() != null && !minioConfig.getAccessKey().isEmpty()) {
-                    values.put("externalS3.accessKey", minioConfig.getAccessKey());
+                // 认证配置：IAM 或 AK/SK
+                if (minioConfig.isUseIAM()) {
+                    // 使用 IAM 认证（AWS IAM Role / GCP Workload Identity / Azure Managed Identity）
+                    values.put("externalS3.useIAM", "true");
+                    log.info("Using IAM authentication for externalS3");
+                    
+                    // IAM Endpoint（可选）
+                    if (minioConfig.getIamEndpoint() != null && !minioConfig.getIamEndpoint().isEmpty()) {
+                        values.put("externalS3.iamEndpoint", minioConfig.getIamEndpoint());
+                    }
+                } else {
+                    // 使用 AK/SK 认证
+                    values.put("externalS3.useIAM", "false");
+                    if (minioConfig.getAccessKey() != null && !minioConfig.getAccessKey().isEmpty()) {
+                        values.put("externalS3.accessKey", minioConfig.getAccessKey());
+                    }
+                    if (minioConfig.getSecretKey() != null && !minioConfig.getSecretKey().isEmpty()) {
+                        values.put("externalS3.secretKey", minioConfig.getSecretKey());
+                    }
                 }
-                if (minioConfig.getSecretKey() != null && !minioConfig.getSecretKey().isEmpty()) {
-                    values.put("externalS3.secretKey", minioConfig.getSecretKey());
+                
+                // Region 配置（某些云平台需要）
+                if (minioConfig.getRegion() != null && !minioConfig.getRegion().isEmpty()) {
+                    values.put("externalS3.region", minioConfig.getRegion());
                 }
                 
                 // Bucket 和 RootPath 配置
@@ -306,8 +323,8 @@ public class HelmCreateInstanceComp {
                     values.put("externalS3.rootPath", minioConfig.getRootPath());
                 }
                 
-                log.info("ExternalS3 config - host: {}, port: 443, useSSL: true, cloudProvider: {}, bucketName: {}, rootPath: {}",
-                        minioConfig.getExternalEndpoints(), cloudProvider, minioConfig.getBucketName(), minioConfig.getRootPath());
+                log.info("ExternalS3 config - host: {}, port: 443, useSSL: true, useIAM: {}, cloudProvider: {}, bucketName: {}, rootPath: {}",
+                        minioConfig.getExternalEndpoints(), minioConfig.isUseIAM(), cloudProvider, minioConfig.getBucketName(), minioConfig.getRootPath());
             } else {
                 values.put("minio.enabled", String.valueOf(minioConfig.isEnabled()));
                 // MinIO 副本数和模式
