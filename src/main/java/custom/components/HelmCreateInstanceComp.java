@@ -280,9 +280,11 @@ public class HelmCreateInstanceComp {
                 values.put("externalS3.cloudProvider", cloudProvider);
                 log.info("Using cloudProvider: " + cloudProvider + " based on envEnum: " + (envEnum != null ? envEnum.name() : "null"));
                 
-                // 根据云平台设置通用配置
-                values.put("externalS3.port", "443");
-                values.put("externalS3.useSSL", "true");
+                // 根据云平台自动设置 port 和 useSSL
+                int port = getDefaultPort(cloudProvider);
+                boolean useSSL = getDefaultUseSSL(cloudProvider);
+                values.put("externalS3.port", String.valueOf(port));
+                values.put("externalS3.useSSL", String.valueOf(useSSL));
                 
                 // Host 配置
                 if (minioConfig.getExternalEndpoints() != null && !minioConfig.getExternalEndpoints().isEmpty()) {
@@ -323,8 +325,8 @@ public class HelmCreateInstanceComp {
                     values.put("externalS3.rootPath", minioConfig.getRootPath());
                 }
                 
-                log.info("ExternalS3 config - host: {}, port: 443, useSSL: true, useIAM: {}, cloudProvider: {}, bucketName: {}, rootPath: {}",
-                        minioConfig.getExternalEndpoints(), minioConfig.isUseIAM(), cloudProvider, minioConfig.getBucketName(), minioConfig.getRootPath());
+                log.info("ExternalS3 config - host: {}, port: {}, useSSL: {}, useIAM: {}, cloudProvider: {}, bucketName: {}, rootPath: {}",
+                        minioConfig.getExternalEndpoints(), port, useSSL, minioConfig.isUseIAM(), cloudProvider, minioConfig.getBucketName(), minioConfig.getRootPath());
             } else {
                 values.put("minio.enabled", String.valueOf(minioConfig.isEnabled()));
                 // MinIO 副本数和模式
@@ -646,5 +648,39 @@ public class HelmCreateInstanceComp {
             default:
                 return "minio";
         }
+    }
+
+    /**
+     * 根据云平台获取默认端口
+     * <p>
+     * 端口规则：
+     * - 公有云（aws/azure/gcp/aliyun/tencent/huaweicloud）：443
+     * - 自建 MinIO：9000
+     *
+     * @param cloudProvider 云服务商
+     * @return 端口号
+     */
+    private static int getDefaultPort(String cloudProvider) {
+        if ("minio".equalsIgnoreCase(cloudProvider)) {
+            return 9000;
+        }
+        return 443;
+    }
+
+    /**
+     * 根据云平台获取默认 useSSL 配置
+     * <p>
+     * SSL 规则：
+     * - 公有云（aws/azure/gcp/aliyun/tencent/huaweicloud）：true
+     * - 自建 MinIO：false
+     *
+     * @param cloudProvider 云服务商
+     * @return 是否使用 SSL
+     */
+    private static boolean getDefaultUseSSL(String cloudProvider) {
+        if ("minio".equalsIgnoreCase(cloudProvider)) {
+            return false;
+        }
+        return true;
     }
 }
