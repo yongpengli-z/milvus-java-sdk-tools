@@ -271,23 +271,43 @@ public class HelmCreateInstanceComp {
         HelmDependencyConfig minioConfig = params.getMinioConfig();
         if (minioConfig != null) {
             if (minioConfig.isUseExternal()) {
+                // 禁用内置 MinIO，启用外部 S3 存储
                 values.put("minio.enabled", "false");
                 values.put("externalS3.enabled", "true");
+                
+                // 根据 envEnum 选择 cloudProvider
+                String cloudProvider = getCloudProviderFromEnv();
+                values.put("externalS3.cloudProvider", cloudProvider);
+                log.info("Using cloudProvider: " + cloudProvider + " based on envEnum: " + (envEnum != null ? envEnum.name() : "null"));
+                
+                // 根据云平台设置通用配置
+                values.put("externalS3.port", "443");
+                values.put("externalS3.useSSL", "true");
+                values.put("externalS3.useIAM", "false");
+                
+                // Host 配置
                 if (minioConfig.getExternalEndpoints() != null && !minioConfig.getExternalEndpoints().isEmpty()) {
                     values.put("externalS3.host", minioConfig.getExternalEndpoints());
                 }
+                
+                // 认证配置
                 if (minioConfig.getAccessKey() != null && !minioConfig.getAccessKey().isEmpty()) {
                     values.put("externalS3.accessKey", minioConfig.getAccessKey());
                 }
                 if (minioConfig.getSecretKey() != null && !minioConfig.getSecretKey().isEmpty()) {
                     values.put("externalS3.secretKey", minioConfig.getSecretKey());
                 }
+                
+                // Bucket 和 RootPath 配置
                 if (minioConfig.getBucketName() != null && !minioConfig.getBucketName().isEmpty()) {
                     values.put("externalS3.bucketName", minioConfig.getBucketName());
                 }
                 if (minioConfig.getRootPath() != null && !minioConfig.getRootPath().isEmpty()) {
                     values.put("externalS3.rootPath", minioConfig.getRootPath());
                 }
+                
+                log.info("ExternalS3 config - host: {}, port: 443, useSSL: true, cloudProvider: {}, bucketName: {}, rootPath: {}",
+                        minioConfig.getExternalEndpoints(), cloudProvider, minioConfig.getBucketName(), minioConfig.getRootPath());
             } else {
                 values.put("minio.enabled", String.valueOf(minioConfig.isEnabled()));
                 // MinIO 副本数和模式
@@ -575,5 +595,39 @@ public class HelmCreateInstanceComp {
                 .releaseName(releaseName)
                 .deploymentCostSeconds(costSeconds)
                 .build();
+    }
+
+    /**
+     * 根据 envEnum 获取对应的 cloudProvider
+     * <p>
+     * 映射关系：
+     * - AWS_WEST -> aws
+     * - GCP_WEST -> gcp
+     * - AZURE_WEST -> azure
+     * - ALI_HZ -> aliyun
+     * - TC_NJ -> tencent
+     * - HWC -> huaweicloud
+     * - 其他 -> minio (默认)
+     */
+    private static String getCloudProviderFromEnv() {
+        if (envEnum == null) {
+            return "minio";
+        }
+        switch (envEnum) {
+            case AWS_WEST:
+                return "aws";
+            case GCP_WEST:
+                return "gcp";
+            case AZURE_WEST:
+                return "azure";
+            case ALI_HZ:
+                return "aliyun";
+            case TC_NJ:
+                return "tencent";
+            case HWC:
+                return "huaweicloud";
+            default:
+                return "minio";
+        }
     }
 }
