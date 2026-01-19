@@ -147,6 +147,22 @@ public class HelmCreateInstanceParams {
      */
     HelmDependencyConfig kafkaConfig;
 
+    /**
+     * Woodpecker 配置（Milvus 2.6+ 流式存储组件）。
+     * <p>
+     * Woodpecker 是替代 Pulsar 的新流式存储组件。
+     * <p>
+     * 启用 Woodpecker 后会自动：
+     * <ul>
+     *   <li>启用 streaming 模式</li>
+     *   <li>禁用 Pulsar</li>
+     *   <li>禁用 indexNode</li>
+     * </ul>
+     * <p>
+     * 如果为 null 或 enabled=false，使用传统的 Pulsar/Kafka。
+     */
+    WoodpeckerConfig woodpeckerConfig;
+
     // ==================== 资源配置（Standalone 模式） ====================
 
     /**

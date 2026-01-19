@@ -7,6 +7,7 @@ import custom.entity.HelmConfigItem;
 import custom.entity.HelmCreateInstanceParams;
 import custom.entity.HelmDependencyConfig;
 import custom.entity.HelmResourceConfig;
+import custom.entity.WoodpeckerConfig;
 import custom.entity.result.CommonResult;
 import custom.entity.result.HelmCreateInstanceResult;
 import custom.entity.result.ResultEnum;
@@ -383,9 +384,73 @@ public class HelmCreateInstanceComp {
             }
         }
 
-        // 消息队列配置（仅 Cluster 模式）
-        // 使用 pulsarv3 替代旧版 pulsar
-        if ("cluster".equalsIgnoreCase(milvusMode)) {
+        // Woodpecker 配置（Milvus 2.6+ 流式存储组件，替代 Pulsar）
+        WoodpeckerConfig woodpeckerConfig = params.getWoodpeckerConfig();
+        boolean useWoodpecker = woodpeckerConfig != null && woodpeckerConfig.isEnabled();
+        
+        if (useWoodpecker) {
+            // 启用 Woodpecker 模式
+            log.info("Enabling Woodpecker mode (replacing Pulsar)");
+            
+            // 启用 streaming 模式
+            values.put("streaming.enabled", "true");
+            
+            // 禁用 Pulsar 和 Kafka
+            values.put("pulsar.enabled", "false");
+            values.put("pulsarv3.enabled", "false");
+            values.put("kafka.enabled", "false");
+            
+            // 禁用 indexNode（streaming 架构不需要）
+            values.put("indexNode.enabled", "false");
+            
+            // 启用 Woodpecker
+            values.put("woodpecker.enabled", "true");
+            values.put("woodpecker.image.repository", "harbor.milvus.io/milvus/woodpecker");
+            values.put("woodpecker.image.tag", "latest");
+
+            // Woodpecker 存储类型配置
+            String storageType = woodpeckerConfig.getStorageType();
+            if (storageType == null || storageType.isEmpty()) {
+                storageType = "minio"; // 默认使用 minio
+            }
+            
+            if ("local".equalsIgnoreCase(storageType)) {
+                // 本地存储模式
+                values.put("streaming.woodpecker.storage.type", "local");
+                log.info("Woodpecker storage type: local (requires shared filesystem for cluster mode)");
+            } else if ("service".equalsIgnoreCase(storageType)) {
+                // 独立服务模式
+                values.put("streaming.woodpecker.embedded", "false");
+                
+                // Woodpecker 副本数
+                int replicas = woodpeckerConfig.getReplicas();
+                if (replicas > 0) {
+                    values.put("woodpecker.replicaCount", String.valueOf(replicas));
+                }
+                
+                // Woodpecker 资源配置
+                if (woodpeckerConfig.getCpuRequest() != null && !woodpeckerConfig.getCpuRequest().isEmpty()) {
+                    values.put("woodpecker.resources.requests.cpu", woodpeckerConfig.getCpuRequest());
+                }
+                if (woodpeckerConfig.getCpuLimit() != null && !woodpeckerConfig.getCpuLimit().isEmpty()) {
+                    values.put("woodpecker.resources.limits.cpu", woodpeckerConfig.getCpuLimit());
+                }
+                if (woodpeckerConfig.getMemoryRequest() != null && !woodpeckerConfig.getMemoryRequest().isEmpty()) {
+                    values.put("woodpecker.resources.requests.memory", woodpeckerConfig.getMemoryRequest());
+                }
+                if (woodpeckerConfig.getMemoryLimit() != null && !woodpeckerConfig.getMemoryLimit().isEmpty()) {
+                    values.put("woodpecker.resources.limits.memory", woodpeckerConfig.getMemoryLimit());
+                }
+                
+                log.info("Woodpecker storage type: service (standalone service mode), replicas: {}", replicas > 0 ? replicas : "default(4)");
+            } else {
+                // minio 模式（默认），不需要额外配置
+                log.info("Woodpecker storage type: minio (default, recommended for production)");
+            }
+            
+        } else if ("cluster".equalsIgnoreCase(milvusMode)) {
+            // 传统消息队列配置（仅 Cluster 模式）
+            // 使用 pulsarv3 替代旧版 pulsar
             HelmDependencyConfig pulsarConfig = params.getPulsarConfig();
             HelmDependencyConfig kafkaConfig = params.getKafkaConfig();
 
