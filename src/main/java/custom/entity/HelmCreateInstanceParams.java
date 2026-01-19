@@ -16,12 +16,12 @@ public class HelmCreateInstanceParams {
 
     // ==================== Kubernetes 配置 ====================
     // 注意：kubeconfig 路径由 EnvEnum 内置控制，不需要在参数中指定
-    // 注意：命名空间已预先创建好，默认使用 qa
+    // 注意：命名空间已预先创建好，默认使用 milvus-qtp
 
     /**
      * Kubernetes 命名空间。
      * <p>
-     * 前端默认值：`qa`
+     * 前端默认值：`milvus-qtp`
      */
     String namespace;
 

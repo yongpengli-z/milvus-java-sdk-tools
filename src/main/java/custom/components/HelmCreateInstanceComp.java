@@ -59,7 +59,7 @@ public class HelmCreateInstanceComp {
             // 2. 获取命名空间（默认使用 qa）
             String namespace = params.getNamespace();
             if (namespace == null || namespace.isEmpty()) {
-                namespace = "chaos-testing";
+                namespace = "milvus-qtp";
             }
             log.info("Using namespace: " + namespace);
 
@@ -301,6 +301,14 @@ public class HelmCreateInstanceComp {
                     // IAM Endpoint（可选）
                     if (minioConfig.getIamEndpoint() != null && !minioConfig.getIamEndpoint().isEmpty()) {
                         values.put("externalS3.iamEndpoint", minioConfig.getIamEndpoint());
+                    }
+                    
+                    // Azure Workload Identity 默认配置
+                    if ("azure".equalsIgnoreCase(cloudProvider)) {
+                        values.put("serviceAccount.create", "true");
+                        values.put("serviceAccount.name", "workload-identity-sa");
+                        values.put("serviceAccount.annotations.azure\\.workload\\.identity/client-id", "2469e573-0c2a-4818-9eb4-ad20ccfffdfe");
+                        log.info("Azure Workload Identity configured with default settings");
                     }
                 } else {
                     // 使用 AK/SK 认证
