@@ -78,6 +78,24 @@ public class WoodpeckerConfig {
      */
     String storageType;
 
+    // ==================== 镜像配置 ====================
+
+    /**
+     * Woodpecker 镜像仓库。
+     * <p>
+     * 前端默认值：harbor.milvus.io/milvus/woodpecker
+     */
+    String imageRepository;
+
+    /**
+     * Woodpecker 镜像 Tag。
+     * <p>
+     * 示例值：feature_service_mode-78a3174-35-amd64
+     * <p>
+     * 前端默认值：latest
+     */
+    String imageTag;
+
     // ==================== Service 模式配置（storageType=service 时生效）====================
 
     /**

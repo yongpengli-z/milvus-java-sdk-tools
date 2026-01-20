@@ -414,8 +414,19 @@ public class HelmCreateInstanceComp {
             
             // 启用 Woodpecker
             values.put("woodpecker.enabled", "true");
-            values.put("woodpecker.image.repository", "harbor.milvus.io/milvus/woodpecker");
-            values.put("woodpecker.image.tag", "latest");
+            
+            // Woodpecker 镜像配置
+            String wpImageRepo = woodpeckerConfig.getImageRepository();
+            if (wpImageRepo == null || wpImageRepo.isEmpty()) {
+                wpImageRepo = "harbor.milvus.io/milvus/woodpecker";
+            }
+            values.put("woodpecker.image.repository", wpImageRepo);
+            
+            String wpImageTag = woodpeckerConfig.getImageTag();
+            if (wpImageTag == null || wpImageTag.isEmpty()) {
+                wpImageTag = "latest";
+            }
+            values.put("woodpecker.image.tag", wpImageTag);
 
             // Woodpecker 存储类型配置
             String storageType = woodpeckerConfig.getStorageType();
