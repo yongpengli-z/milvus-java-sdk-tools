@@ -310,6 +310,7 @@ public class HelmCreateInstanceComp {
                         values.put("serviceAccount.annotations.azure\\.workload\\.identity/client-id", "2469e573-0c2a-4818-9eb4-ad20ccfffdfe");
                         log.info("Azure Workload Identity configured with default settings");
                         values.put("externalS3.accessKey", "buckettestazure");
+                        values.put("labels.azure.workload.identity/use","true");
                     }
                 } else {
                     // 使用 AK/SK 认证
