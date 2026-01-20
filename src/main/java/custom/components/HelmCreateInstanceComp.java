@@ -260,6 +260,8 @@ public class HelmCreateInstanceComp {
         }
 
         // 镜像配置
+        // 使用 harbor.milvus.io 仓库
+        values.put("image.all.repository", "harbor.milvus.io/milvus/milvus");
         // 注意：Milvus Helm Chart 使用 image.all.tag 而不是 image.tag
         if (params.getMilvusImageTag() != null && !params.getMilvusImageTag().isEmpty()) {
             values.put("image.all.tag", params.getMilvusImageTag());
