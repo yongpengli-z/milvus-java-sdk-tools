@@ -96,7 +96,12 @@ public class HelmUtils {
 
         if (setValues != null && !setValues.isEmpty()) {
             for (Map.Entry<String, String> entry : setValues.entrySet()) {
-                command.add("--set");
+                // labels 的值必须是字符串，使用 --set-string 避免 "true" 被解析为 boolean
+                if (entry.getKey().startsWith("labels.")) {
+                    command.add("--set-string");
+                } else {
+                    command.add("--set");
+                }
                 command.add(entry.getKey() + "=" + entry.getValue());
             }
         }
