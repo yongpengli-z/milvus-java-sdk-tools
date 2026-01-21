@@ -260,8 +260,10 @@ public class HelmCreateInstanceComp {
         }
 
         // 镜像配置
-        // 使用 harbor.milvus.io 仓库
-        values.put("image.all.repository", "harbor.milvus.io/milvus/milvus");
+        // 根据环境选择镜像仓库：云上(AWS/GCP/Azure)使用 harbor-us-vdc，其他环境使用 harbor.milvus.io
+        String imageRepository = getImageRepositoryFromEnv();
+        values.put("image.all.repository", imageRepository);
+        log.info("Using image repository: " + imageRepository);
         // 注意：Milvus Helm Chart 使用 image.all.tag 而不是 image.tag
         if (params.getMilvusImageTag() != null && !params.getMilvusImageTag().isEmpty()) {
             values.put("image.all.tag", params.getMilvusImageTag());
@@ -702,6 +704,26 @@ public class HelmCreateInstanceComp {
                 .releaseName(releaseName)
                 .deploymentCostSeconds(costSeconds)
                 .build();
+    }
+
+    /**
+     * 根据 envEnum 获取镜像仓库
+     * <p>
+     * 云上环境（AWS/GCP/Azure）使用 harbor-us-vdc.zilliz.cc
+     * 其他环境使用 harbor.milvus.io
+     */
+    private static String getImageRepositoryFromEnv() {
+        if (envEnum == null) {
+            return "harbor.milvus.io/milvus/milvus";
+        }
+        switch (envEnum) {
+            case AWS_WEST:
+            case GCP_WEST:
+            case AZURE_WEST:
+                return "harbor-us-vdc.zilliz.cc/milvusdb/milvus";
+            default:
+                return "harbor.milvus.io/milvus/milvus";
+        }
     }
 
     /**
