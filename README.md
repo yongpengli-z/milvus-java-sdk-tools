@@ -6,13 +6,48 @@
 
 - **输入**：前端传入的 JSON（主要是 `customize_params`），以及少量启动参数（`uri/token/env/taskId/initial_params`）。
 - **执行**：程序把 JSON **按规则解析并反序列化为 `custom.entity.*Params` 对象**，再由 `custom.common.ComponentSchedule` 调度到 `custom.components.*Comp` 执行，从而完成对 Milvus 的功能/性能测试。
-- **Milvus SDK**：`pom.xml` 里固定使用 **`io.milvus:milvus-sdk-java:2.6.6`**，同时创建：
+- **Milvus SDK**：`pom.xml` 里使用 **`io.milvus:milvus-sdk-java`**（版本会随 Milvus 更新，详见 `pom.xml`），同时创建：
   - **V2 client**：`io.milvus.v2.client.MilvusClientV2`（大部分功能走它）
   - **V1 client**：`io.milvus.client.MilvusServiceClient`（segment info 等少数能力走它）
 
 > 关键入口文件：
 > - `custom/BaseTest.java`：主程序入口（`Main-Class`）
 > - `custom/common/ComponentSchedule.java`：`customize_params` 的解析与执行编排
+
+**项目目录结构**：
+
+```
+milvus-java-sdk-toos/
+├── pom.xml                          # Maven 项目配置
+├── README.md                        # 主要文档
+├── src/
+│   └── main/
+│       ├── java/custom/
+│       │   ├── BaseTest.java        # 主程序入口
+│       │   ├── common/              # 公共组件
+│       │   ├── components/          # 功能实现组件 (43个)
+│       │   ├── config/              # 配置管理
+│       │   ├── entity/              # 参数与结果实体 (48个 Params)
+│       │   ├── pojo/                # 数据结构
+│       │   └── utils/               # 工具类库
+│       └── resources/
+│           ├── log4j.properties     # 日志配置
+│           └── example/             # 示例配置文件
+├── ci/
+│   ├── Build.groovy                 # Jenkins CI 构建配置
+│   ├── docker/
+│   │   └── Dockerfile               # Docker 镜像配置
+│   └── pod/
+│       └── build.yaml               # Kubernetes Pod 构建配置
+├── azure-aks-helm/                  # 【新增】AKS Helm 部署方案
+│   ├── README.md
+│   ├── values.yaml
+│   └── setup-aks-workload-identity.sh
+└── azure-docker-compose/            # 【新增】Docker Compose 部署方案
+    ├── README.md
+    ├── docker-compose.yml
+    └── milvus.yaml
+```
 
 ---
 
@@ -140,7 +175,7 @@
 
 ### 5. 支持的组件（= 可用的 `*Params` 列表）
 
-最终能跑的 step 以 `ComponentSchedule.callComponentSchedule()` 的 `instanceof` 分发为准。当前支持 **39 种**：
+最终能跑的 step 以 `ComponentSchedule.callComponentSchedule()` 的 `instanceof` 分发为准。当前支持 **43 种**（含 Helm 部署组件和 Azure 部署方案）：
 
 #### 5.1 Milvus 核心链路（最常用）
 
@@ -707,6 +742,39 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 
 ---
 
+##### 5.2.5 BulkImport（批量导入）：`BulkImportParams`
+
+对应组件：`custom.components.BulkImportComp`
+
+**注意**：该组件当前处于**开发中状态**（代码已注释），暂时不可用。
+
+**用途**：批量导入 `.npy` 格式的数据文件到 Milvus。
+
+字段：
+
+- **`filePaths`**（list of list，建议必填）：文件路径二维数组，按 batch/组组织。前端默认：`[]`。
+- **`collectionName`**（string，可空）：为空时使用最近创建/记录的 collection。前端默认：`""`。
+- **`partitionName`**（string，可空）：前端默认：`""`。
+- **`dataset`**（string）：数据集类型标识。前端默认：`random`。
+
+**示例 JSON**：
+
+```json
+{
+  "BulkImportParams_0": {
+    "filePaths": [
+      ["data/batch1/vectors.npy", "data/batch1/ids.npy"],
+      ["data/batch2/vectors.npy", "data/batch2/ids.npy"]
+    ],
+    "collectionName": "",
+    "partitionName": "",
+    "dataset": "random"
+  }
+}
+```
+
+---
+
 #### 5.3 Collection 结构变更：AddField / Rename / Describe
 
 ##### 5.3.1 AddCollectionField：`AddCollectionFieldParams`
@@ -888,6 +956,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`minioConfig`**：MinIO 配置。为 null 时使用 Chart 内置 MinIO
 - **`pulsarConfig`**：Pulsar 配置（仅 Cluster 模式）。为 null 时使用 Chart 内置 Pulsar
 - **`kafkaConfig`**：Kafka 配置（可选，替代 Pulsar）。配置后不会使用 Pulsar
+- **`woodpeckerConfig`**（**Milvus 2.6+ 新增**）：Woodpecker 流式存储配置。见下文 `WoodpeckerConfig` 说明
 
 `HelmDependencyConfig` 字段说明：
 - **`useExternal`**（boolean）：是否使用外部服务。前端默认：`false`
@@ -949,6 +1018,63 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
   - `streaming`：流式架构（≥v2.6），包含 streamingNode，无 indexNode
   - 前端默认：`default`
 - **`waitTimeoutMinutes`**（int）：等待 Pod Ready 的超时时间（分钟）。前端默认：`30`
+- **`useHours`**（int）：预计使用时长（小时），用于实例生命周期管理。前端默认：`0`（不限制）
+
+**Woodpecker 配置（Milvus 2.6+ 新增）**：
+
+`WoodpeckerConfig` 是 Milvus 2.6+ 中替代 Pulsar 的新流式存储组件配置。
+
+字段说明：
+- **`enabled`**（boolean）：是否启用 Woodpecker。前端默认：`false`
+- **`storageType`**（string）：存储类型。可选值：
+  - `minio`（**推荐**）：使用 MinIO 对象存储，适用于多节点环境
+  - `local`：本地存储，仅适用于单节点或具备共享文件系统的环境
+  - `service`：独立服务模式，支持配置副本数和资源
+  - 前端默认：`minio`
+- **`imageRepository`**（string）：镜像仓库。前端默认：`harbor.milvus.io/milvus/woodpecker`
+- **`imageTag`**（string）：镜像 Tag。前端默认：`latest`
+- **`replicas`**（int）：副本数（仅 service 模式）。前端默认：`4`
+- **`cpuRequest`** / **`cpuLimit`**（string）：CPU 配置（仅 service 模式）
+- **`memoryRequest`** / **`memoryLimit`**（string）：内存配置（仅 service 模式）
+
+**注意**：启用 Woodpecker 后会自动：
+- 启用 streaming 模式（streaming.enabled=true）
+- 禁用 Pulsar（pulsarv3.enabled=false）
+- 禁用 indexNode（indexNode.enabled=false）
+
+**Woodpecker 示例 JSON**（minio 模式）：
+
+```json
+{
+  "HelmCreateInstanceParams_0": {
+    "namespace": "milvus-qtp",
+    "releaseName": "milvus-woodpecker",
+    "milvusMode": "cluster",
+    "milvusImageTag": "v2.6.0",
+    "woodpeckerConfig": {
+      "enabled": true,
+      "storageType": "minio"
+    },
+    "waitTimeoutMinutes": 30
+  }
+}
+```
+
+**Woodpecker service 模式示例**：
+
+```json
+{
+  "woodpeckerConfig": {
+    "enabled": true,
+    "storageType": "service",
+    "replicas": 4,
+    "cpuRequest": "500m",
+    "cpuLimit": "2",
+    "memoryRequest": "512Mi",
+    "memoryLimit": "2Gi"
+  }
+}
+```
 
 **示例 JSON**：
 
@@ -1079,6 +1205,66 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
   }
 }
 ```
+
+---
+
+### 5.8 Azure 部署方案（新增）
+
+本项目新增了 Azure 云平台的 Milvus 部署方案，位于项目根目录：
+
+#### 5.8.1 AKS + Workload Identity（生产推荐）
+
+**目录**：`azure-aks-helm/`
+
+**特点**：
+- 使用 Azure 托管标识（无静态密钥）
+- OIDC + Workload Identity 联合认证
+- Helm 自动化部署
+- 一键脚本部署
+
+**文件说明**：
+- `values.yaml` - Helm Chart 配置文件
+- `setup-aks-workload-identity.sh` - 自动化部署脚本
+- `README.md` - 详细部署指南
+
+**快速部署**：
+```bash
+cd azure-aks-helm
+chmod +x setup-aks-workload-identity.sh
+./setup-aks-workload-identity.sh
+```
+
+**架构特点**：
+- Milvus 集群配置（Proxy 2副本，QueryNode 2副本，DataNode 2副本，IndexNode 1副本）
+- 禁用 MinIO，使用 Azure Blob Storage
+- etcd 3副本持久化
+- 外部 S3 兼容存储配置
+
+#### 5.8.2 Docker Compose（本地开发/测试）
+
+**目录**：`azure-docker-compose/`
+
+**特点**：
+- 适合本地开发和测试
+- 快速启动
+- etcd + Milvus standalone
+- 支持 Azure Blob Storage
+
+**文件说明**：
+- `docker-compose.yml` - 完整编排文件
+- `milvus.yaml` - Milvus 配置文件
+- `README.md` - 使用指南
+
+**快速启动**：
+```bash
+cd azure-docker-compose
+# 编辑 milvus.yaml，配置 Azure Storage 信息
+docker-compose up -d
+```
+
+**注意事项**：
+- 生产环境建议使用 AKS + Workload Identity 方案
+- 不要将包含真实密钥的配置文件提交到版本控制
 
 ---
 
