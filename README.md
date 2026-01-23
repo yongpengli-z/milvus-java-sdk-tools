@@ -1278,7 +1278,7 @@ docker-compose up -d
 - `devops`
 - `fouram`
 
-**云上环境**（**必须使用 `AUTOINDEX`**）：
+**云上环境**：
 - `awswest`（AWS 云）
 - `gcpwest`（GCP 云）
 - `azurewest`（Azure 云）
@@ -1286,7 +1286,10 @@ docker-compose up -d
 - `tcnj`（腾讯云）
 - `hwc`（华为云）
 
-> **重要约束**：云上环境（除 `devops` 和 `fouram` 外的所有环境）**必须使用 `AUTOINDEX` 作为索引类型**，不能使用 `HNSW`、`BIN_IVF_FLAT`、`SPARSE_WAND` 等显式索引类型。如果 LLM 生成 JSON 时指定了云上环境，应自动将索引类型设置为 `AUTOINDEX`。
+> **重要约束 - 索引类型与部署方式**：
+> - **Cloud 托管实例**（通过 `CreateInstanceParams` 创建）：**必须使用 `AUTOINDEX`**，不能使用 `HNSW`、`BIN_IVF_FLAT`、`SPARSE_WAND` 等显式索引类型
+> - **Helm 部署实例**（通过 `HelmCreateInstanceParams` 创建，无论云上还是本地）：**不能使用 `AUTOINDEX`**，必须使用显式索引类型（如 `HNSW`、`IVF_FLAT`、`SPARSE_WAND` 等）
+> - **本地环境**（`devops`、`fouram`）：可以使用所有索引类型
 
 #### 6.2 `dataset`（Insert/Upsert）
 
@@ -1380,17 +1383,19 @@ docker-compose up -d
 - **不支持的向量类型**：`BinaryVector`、`Int8Vector`、`SparseFloatVector`
 - 常用值：`"1"`（Balanced，默认）、`"2"`（Performance）、`"0"`（Memory）
 
-**环境与索引类型的约束**：
+**部署方式与索引类型的约束**：
 
-- **本地环境**（`devops`、`fouram`）：可以使用所有索引类型（`HNSW`、`BIN_IVF_FLAT`、`SPARSE_WAND`、`AUTOINDEX` 等）
-- **云上环境**（`awswest`、`gcpwest`、`azurewest`、`alihz`、`tcnj`、`hwc`）：**必须使用 `AUTOINDEX`**，不能使用其他显式索引类型
+- **Cloud 托管实例**（通过 `CreateInstanceParams` 创建）：**必须使用 `AUTOINDEX`**，不能使用其他显式索引类型
+- **Helm 部署的实例**（通过 `HelmCreateInstanceParams` 创建，无论云上还是本地）：**不能使用 `AUTOINDEX`**，必须使用显式索引类型（如 `HNSW`、`IVF_FLAT`、`BIN_IVF_FLAT`、`SPARSE_WAND` 等）
+- **本地环境**（`devops`、`fouram`，非 Helm）：可以使用所有索引类型
 
 **LLM 生成 JSON 时的建议**：
 
-1. **根据环境选择索引类型**：
-   - 如果用户指定了云上环境（通过 `-Denv` 参数或上下文推断）→ **强制使用 `AUTOINDEX`**
-   - 如果用户指定了本地环境（`devops`、`fouram`）→ 可以使用 `HNSW`、`BIN_IVF_FLAT`、`SPARSE_WAND`、`STL_SORT` 等
-   - 如果用户没指定环境 → 默认使用 `AUTOINDEX`（最安全的选择）
+1. **根据部署方式选择索引类型**：
+   - 如果用户使用 **Cloud 托管实例**（通过 `CreateInstanceParams` 创建）→ **强制使用 `AUTOINDEX`**
+   - 如果用户使用 **Helm 部署的实例**（通过 `HelmCreateInstanceParams` 创建）→ **不能使用 `AUTOINDEX`**，必须使用显式索引类型（如 `HNSW`、`IVF_FLAT`、`SPARSE_WAND` 等）
+   - 如果用户使用本地环境（`devops`、`fouram`）且非 Helm → 可以使用所有索引类型
+   - 如果用户没指定部署方式 → 需要询问或根据上下文推断
 
 2. **向量字段索引类型选择**：
    - 如果用户指定了向量类型但没指定索引类型：
@@ -1417,13 +1422,14 @@ docker-compose up -d
      - 示例：`{"fieldName": "json_field", "indextype": "STL_SORT", "jsonPath": "field[\"key1\"]", "jsonCastType": "varchar"}`
 
 4. **常见错误**：
-   - ❌ 云上环境使用 `HNSW` → 应该用 `AUTOINDEX`
+   - ❌ **Cloud 托管实例使用 `HNSW`** → 应该用 `AUTOINDEX`
+   - ❌ **Helm 部署的实例使用 `AUTOINDEX`** → 应该用显式索引类型（如 `HNSW`、`IVF_FLAT`、`SPARSE_WAND` 等）
    - ❌ `BinaryVector` 使用 `L2` → 应该用 `HAMMING`
    - ❌ `SparseFloatVector` 使用 `L2` → 应该用 `IP`（或 `BM25`，如果是由 BM25 function 生成的）
    - ❌ BM25 function 生成的 `SparseFloatVector` 使用 `IP` → 应该用 `BM25`
    - ❌ 本地环境使用 `buildLevel` → `buildLevel` 仅在云上环境支持
    - ❌ `BinaryVector` 或 `SparseFloatVector` 使用 `buildLevel` → `buildLevel` 仅支持 `FloatVector`、`Float16Vector`、`BFloat16Vector`
-   - ❌ `BinaryVector` 使用 `HNSW` → 应该用 `BIN_IVF_FLAT`（或 `AUTOINDEX`）
+   - ❌ `BinaryVector` 使用 `HNSW` → 应该用 `BIN_IVF_FLAT`
    - ❌ 标量字段设置 `MetricType` → 标量字段不需要 MetricType
    - ❌ JSON 字段索引缺少 `jsonPath` 或 `jsonCastType` → JSON 字段索引必须指定路径和类型
    - ❌ Array of Struct 中的向量字段使用普通 `L2`/`IP`/`COSINE` → 应该用 `MAX_SIM_L2`/`MAX_SIM_IP`/`MAX_SIM_COSINE`

@@ -10,6 +10,9 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.service.collection.request.CreateCollectionReq;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.AnnSearchReq;
 import io.milvus.v2.service.vector.request.HybridSearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
@@ -77,6 +80,22 @@ public class HybridSearchComp {
                     .collect(Collectors.toList());
         }
 
+        // 判定是不是sparse向量，并且是由Function BM25生成
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
+        CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
+        List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
+
+        // 构建 annsField -> inputFieldName 的映射（用于BM25 Function字段）
+        Map<String, String> functionFieldMap = new HashMap<>();
+        for (CreateCollectionReq.Function function : functionList) {
+            for (int i = 0; i < function.getOutputFieldNames().size(); i++) {
+                String outputField = function.getOutputFieldNames().get(i);
+                String inputField = function.getInputFieldNames().get(i);
+                functionFieldMap.put(outputField, inputField);
+                log.info("检测到BM25 Function: outputField={}, inputField={}", outputField, inputField);
+            }
+        }
+
         // 为每个搜索请求准备向量数据
         Map<String, List<BaseVector>> fieldVectorsMap = new HashMap<>();
         for (HybridSearchParams.HybridSearchRequest request : hybridSearchParams.getSearchRequests()) {
@@ -85,11 +104,21 @@ public class HybridSearchComp {
                 log.error("HybridSearchRequest annsField 不能为空");
                 continue;
             }
-            // 从 collection 中采样向量
-            log.info("从collection里捞取向量字段 {} 的向量: {}", annsField, 1000);
-            List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, annsField);
-            log.info("提供给hybridSearch使用的随机向量数: {}", searchBaseVectors.size());
-            fieldVectorsMap.put(annsField, searchBaseVectors);
+
+            // 检查该字段是否由BM25 Function生成
+            if (functionFieldMap.containsKey(annsField)) {
+                String inputFieldName = functionFieldMap.get(annsField);
+                log.info("字段 {} 由BM25 Function生成，从collection里捞取input field {} 的文本数据: {}", annsField, inputFieldName, 1000);
+                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+                log.info("提供给hybridSearch使用的随机文本数量: {}", searchBaseVectors.size());
+                fieldVectorsMap.put(annsField, searchBaseVectors);
+            } else {
+                // 从 collection 中采样向量
+                log.info("从collection里捞取向量字段 {} 的向量: {}", annsField, 1000);
+                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, annsField);
+                log.info("提供给hybridSearch使用的随机向量数: {}", searchBaseVectors.size());
+                fieldVectorsMap.put(annsField, searchBaseVectors);
+            }
         }
 
         // 准备初始查询向量--先提供不随机时候的向量
