@@ -1475,6 +1475,27 @@ filter 占位符规则（Search/Query）：
 如果你希望 LLM 根据自然语言生成 `customize_params`，建议把下面规则直接作为 Prompt 的“输出规范”：
 
 - **只输出一个 JSON object**（不要输出解释文字）。
+- **简洁输出（节省输出 token）**：
+  - **不要输出任何解释、注释、说明文字**，只输出纯 JSON。
+  - **JSON 使用紧凑格式**：去掉不必要的换行和缩进，尽量压缩输出长度。如果 JSON 较短（< 2000 字符），可以使用单行或少量换行；如果 JSON 较长，允许适度换行以保证可读性，但不要每个字段都换行。
+  - **省略与默认值相同的非必要字段**：以下字段如果值等于默认值，可以省略不写（Java 反序列化会自动取默认值）：
+    - `collectionName:""`、`databaseName:""`、`partitionName:""`、`collectionRule:""`、`filter:""`、`indexAlgo:""` 等空字符串字段
+    - `startId:0`、`runningMinutes:0`、`targetQps:0`、`offset:0`、`searchLevel:1` 等零值/默认数字字段
+    - `retryAfterDeny:false`、`ignoreError:false`、`flushAll:false`、`releaseAll:false`、`dropAll:false`、`compactAll:false`、`skipLoadDynamicField:false` 等 false 值字段
+    - `functionParams:null`、`properties:[]` 等空值字段
+  - **不可省略的字段**（即使是默认值也必须显式写出）：
+    - `fieldParamsList` 中的 boolean 字段：`autoId`、`partitionKey`、`nullable`、`enableMatch`、`enableAnalyzer`（避免反序列化歧义）
+    - `fieldParamsList` 中的 `analyzerParamsList:[]`（避免 NPE）
+    - 所有 List 类型字段：`loadFields:[]`、`outputs:[]`、`ids:[]`、`generalDataRoleList:[]`、`generalFilterRoleList:[]`、`indexParams:[]` 等（避免 NPE）
+    - `numPartitions`（与 partitionKey 有约束关系）
+    - `shardNum`、`enableDynamic`（CreateCollection 核心字段）
+    - `numEntries`、`batchSize`、`numConcurrency`（Insert/Search/Query 核心字段）
+    - `dataset`（Insert/Upsert 必填）
+    - `annsField`（Search 必填）
+    - `nq`、`topK`（Search/Query 必填）
+    - `randomVector`（Search 必填）
+    - `loadAll`（Load 必填）
+  - **重复结构使用引用思路**：当多个组件参数高度相似（如递增并发的多个 SearchParams），只在第一个写完整字段，后续只写与第一个不同的字段（但注意 JSON 本身不支持引用，所以实际仍需完整输出，但应尽量减少不必要字段）。
 - 顶层 key 必须为：`<ParamsClassName>_<序号>`，序号从 0 递增即可。
 - **所有 List 字段必须显式给出**（哪怕是 `[]`），避免组件里 NPE。
 - 所有 Milvus enum 字段必须输出 **正确的枚举常量名**（例如 `VarChar`、`FloatVector`、`AUTOINDEX`、`L2`）。
