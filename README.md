@@ -197,6 +197,7 @@ milvus-java-sdk-toos/
     - 或者 Array of Struct 中的向量子字段
   - **示例建议**：在生成示例/demo 时，建议提供一个正常的顶层向量字段（如 `FloatVector`），这样更直观易懂
 - **`functionParams`**（object，可空）：function（例如 BM25）配置（见 `FunctionParams`）。前端默认：`{functionType:"", name:"", inputFieldNames:[], outputFieldNames:[]}`（注意 `functionType=""` 是占位，建议用 `null`/不传）。
+  - **BM25 约束**：当 `functionType: "BM25"` 时，`inputFieldNames` 中指定的字段**必须在 `fieldParamsList` 中设置 `enableAnalyzer: true`**，否则创建 collection 会失败（报错：`BM25 function input field must set enable_analyzer to true`）。
 - **`properties`**（list，前端必填）：collection properties（key/value）。前端默认：`[{propertyKey:"", propertyValue:""}]`（占位；不需要可传 `[]`）。
 - **`databaseName`**（string，可空）：前端默认：`""`。
 
@@ -239,6 +240,7 @@ milvus-java-sdk-toos/
 - **`nullable`**（boolean）：前端默认：`false`（且主键/向量字段会禁用 nullable=true）。**建议显式给 `false`**（除非确实需要可空）。
 - **`enableMatch`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不启用匹配功能）。
 - **`enableAnalyzer`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不启用分析器）。
+  - **BM25 约束**：如果该字段是 `functionParams` 中 BM25 function 的**输入字段**（即字段名出现在 `functionParams.inputFieldNames` 中），则**必须设置 `enableAnalyzer: true`**，否则 Milvus 会报错：`BM25 function input field must set enable_analyzer to true`。
 - **`analyzerParamsList`**（list，可空）：前端新增行默认 `[{paramsKey:"", paramsValue:""}]`（占位；不需要可传 `[]`）。
 
 > **重要提示**：虽然这些 boolean 字段（`autoId`、`partitionKey`、`nullable`、`enableMatch`、`enableAnalyzer`）的前端默认值都是 `false`，但**建议在生成 JSON 时显式给出 `false`**，以避免后端反序列化时因字段缺失导致的不确定性。特别是当 LLM 生成 JSON 时，明确写出这些字段有助于提高可读性和避免歧义。
