@@ -26,7 +26,7 @@ public class FunctionParams {
     FunctionType functionType;
 
     /**
-     * Function 名称（可选）。
+     * Function 名称（必填，不能为空字符串）。
      * <p>
      * 前端：`createCollectionEdit.vue` -> "Name"
      * <p>

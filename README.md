@@ -196,7 +196,7 @@ milvus-java-sdk-toos/
     - 正常的顶层向量字段（如 `FloatVector`、`BinaryVector` 等）
     - 或者 Array of Struct 中的向量子字段
   - **示例建议**：在生成示例/demo 时，建议提供一个正常的顶层向量字段（如 `FloatVector`），这样更直观易懂
-- **`functionParams`**（object，可空）：function（例如 BM25）配置（见 `FunctionParams`）。前端默认：`{functionType:"", name:"", inputFieldNames:[], outputFieldNames:[]}`（注意 `functionType=""` 是占位，建议用 `null`/不传）。
+- **`functionParams`**（object，可空）：function（例如 BM25）配置（见 `FunctionParams`）。前端默认：`{functionType:"", name:"", inputFieldNames:[], outputFieldNames:[]}`（注意 `functionType=""` 是占位，建议用 `null`/不传）。当 `functionParams` 非空时，**`name` 为必填字段**，不能为空字符串，否则创建 collection 会失败。
   - **BM25 约束**：当 `functionType: "BM25"` 时，`inputFieldNames` 中指定的字段**必须在 `fieldParamsList` 中设置 `enableAnalyzer: true`**，否则创建 collection 会失败（报错：`BM25 function input field must set enable_analyzer to true`）。
 - **`properties`**（list，前端必填）：collection properties（key/value）。前端默认：`[{propertyKey:"", propertyValue:""}]`（占位；不需要可传 `[]`）。
 - **`databaseName`**（string，可空）：前端默认：`""`。
@@ -467,6 +467,8 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`batchSize`**（long，前端必填）：前端默认 `1000`。
 - **`numConcurrency`**（int，前端必填）：并发线程数。前端默认 `1`。
   - **性能测试建议**：当需要测试 Insert 性能时，推荐添加多个 `InsertParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20），来递增压力，观察不同并发级别下的性能表现。
+  - **并发场景注意**：测试 Insert 并发时，如果使用多个 Insert 组件且设置了 `runningMinutes` 作为运行时长，需要将 `numEntries` 设置得足够大，否则数据可能在运行时长结束前就已经插入完毕，导致无法持续压测到预期时长。
+  - **避免重复数据**：使用多个 Insert 组件时，应为每个组件设置不同的 `startId`，确保各组件插入的数据 ID 范围不重叠，避免插入重复数据。例如：组件 A 设置 `startId: 0, numEntries: 5000000`，组件 B 设置 `startId: 5000000, numEntries: 5000000`。
 - **`dataset`**（string，前端必填）：`random/gist/deep/sift/laion`。前端默认 `random`。
 - **`runningMinutes`**（long，前端必填）：Insert 中该字段>0 时会成为“时间上限”，否则以数据量批次数为准。前端默认 `0`。
 - **`retryAfterDeny`**（boolean，可空）：禁写后是否等待重试。前端默认 `false`。
