@@ -1,5 +1,14 @@
 FROM openjdk:11
 
+# 安装 git 和 helm
+RUN apt-get update && apt-get install -y git && \
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 克隆 milvus-helm chart 到镜像中
+ARG MILVUS_HELM_BRANCH=master
+RUN git clone --depth 1 --branch ${MILVUS_HELM_BRANCH} https://github.com/zilliztech/milvus-helm.git /src/helm
+
 COPY target/milvus-java-sdk-toos-1.0.jar  app.jar
 
 ARG REVERSION=""
