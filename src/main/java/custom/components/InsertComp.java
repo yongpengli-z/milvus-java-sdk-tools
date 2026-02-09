@@ -7,6 +7,7 @@ import custom.entity.InsertParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.InsertResult;
 import custom.entity.result.ResultEnum;
+import custom.pojo.FieldDataSource;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -17,9 +18,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static custom.BaseTest.*;
@@ -27,40 +26,7 @@ import static custom.BaseTest.*;
 @Slf4j
 public class InsertComp {
     public static InsertResult insertCollection(InsertParams insertParams) {
-        DatasetEnum datasetEnum;
-        List<String> fileNames = new ArrayList<>();
-        List<Long> fileSizeList = new ArrayList<>();
         Random random = new Random();
-        // 先检查dataset
-        switch (insertParams.getDataset().toLowerCase()) {
-            case "gist":
-                datasetEnum = DatasetEnum.GIST;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.GIST);
-                break;
-            case "deep":
-                datasetEnum = DatasetEnum.DEEP;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.DEEP);
-                break;
-            case "sift":
-                datasetEnum = DatasetEnum.SIFT;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.SIFT);
-                break;
-            case "laion":
-                datasetEnum = DatasetEnum.LAION;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.LAION);
-                break;
-            case "random":
-                break;
-            default:
-                log.error("传入的数据集名称错误,请检查！");
-                return null;
-        }
-        log.info("文件名称:" + fileNames);
-        log.info("文件长度:" + fileSizeList);
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
         float insertTotalTime;
@@ -88,11 +54,33 @@ public class InsertComp {
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
 
+        // 预加载字段级数据集信息
+        Map<String, FieldDatasetInfo> fieldDatasetInfoMap = new HashMap<>();
+        if (insertParams.getFieldDataSourceList() != null) {
+            for (FieldDataSource fds : insertParams.getFieldDataSourceList()) {
+                if (fds.getFieldName() == null || fds.getFieldName().isEmpty()
+                        || fds.getDataset() == null || fds.getDataset().isEmpty()) {
+                    continue;
+                }
+                DatasetEnum fieldDatasetEnum = resolveDatasetEnum(fds.getDataset());
+                if (fieldDatasetEnum == null) {
+                    log.error("字段[{}]配置的数据集名称[{}]无效，跳过", fds.getFieldName(), fds.getDataset());
+                    continue;
+                }
+                List<String> fieldFileNames = DatasetUtil.providerFileNames(fieldDatasetEnum);
+                List<Long> fieldFileSizeList = DatasetUtil.providerFileSize(fieldFileNames, fieldDatasetEnum);
+                fieldDatasetInfoMap.put(fds.getFieldName(),
+                        new FieldDatasetInfo(fieldDatasetEnum, fieldFileNames, fieldFileSizeList));
+                log.info("字段[{}]使用数据集[{}]，文件数量：{}，总行数：{}",
+                        fds.getFieldName(), fds.getDataset(), fieldFileNames.size(),
+                        fieldFileSizeList.stream().mapToLong(Long::longValue).sum());
+            }
+        }
+
         // insert data with multiple threads
+        Map<String, FieldDatasetInfo> finalFieldDatasetInfoMap = fieldDatasetInfoMap;
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             int finalC = c;
-            List<String> finalFileNames = fileNames;
-            List<Long> finalFileSizeList = fileSizeList;
             String finalCollectionName = collectionName;
             Callable callable =
                     () -> {
@@ -114,7 +102,7 @@ public class InsertComp {
                             }
                             long genDataStartTime = System.currentTimeMillis();
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(insertParams.getBatchSize(),
-                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp);
+                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap);
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
@@ -233,6 +221,30 @@ public class InsertComp {
                 .build();
         executorService.shutdown();
         return insertResult;
+    }
+
+    private static DatasetEnum resolveDatasetEnum(String datasetName) {
+        switch (datasetName.toLowerCase()) {
+            case "gist": return DatasetEnum.GIST;
+            case "deep": return DatasetEnum.DEEP;
+            case "sift": return DatasetEnum.SIFT;
+            case "laion": return DatasetEnum.LAION;
+            case "custom_json": return DatasetEnum.CUSTOM_JSON;
+            default: return null;
+        }
+    }
+
+    @Data
+    public static class FieldDatasetInfo {
+        private final DatasetEnum datasetEnum;
+        private final List<String> fileNames;
+        private final List<Long> fileSizeList;
+
+        public FieldDatasetInfo(DatasetEnum datasetEnum, List<String> fileNames, List<Long> fileSizeList) {
+            this.datasetEnum = datasetEnum;
+            this.fileNames = fileNames;
+            this.fileSizeList = fileSizeList;
+        }
     }
 
     @Data

@@ -30,9 +30,6 @@ import static custom.BaseTest.milvusClientV2;
 @Slf4j
 public class InsertCompTest {
     public static InsertResult insertCollection(InsertParams insertParams) {
-        DatasetEnum datasetEnum;
-        List<String> fileNames = new ArrayList<>();
-        List<Long> fileSizeList = new ArrayList<>();
         //先处理insert里数据生成的规则，先进行排序处理
         if (insertParams.getGeneralDataRoleList().size() > 0) {
             for (GeneralDataRole generalDataRole : insertParams.getGeneralDataRoleList()) {
@@ -41,36 +38,6 @@ public class InsertCompTest {
             }
         }
 
-        // 先检查dataset
-        switch (insertParams.getDataset().toLowerCase()) {
-            case "gist":
-                datasetEnum = DatasetEnum.GIST;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.GIST);
-                break;
-            case "deep":
-                datasetEnum = DatasetEnum.DEEP;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.DEEP);
-                break;
-            case "sift":
-                datasetEnum = DatasetEnum.SIFT;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.SIFT);
-                break;
-            case "laion":
-                datasetEnum = DatasetEnum.LAION;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.LAION);
-                break;
-            case "random":
-                break;
-            default:
-                log.error("传入的数据集名称错误,请检查！");
-                return null;
-        }
-        log.info("文件名称:" + fileNames);
-        log.info("文件长度:" + fileSizeList);
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
         float insertTotalTime;
@@ -86,8 +53,6 @@ public class InsertCompTest {
         // insert data with multiple threads
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             int finalC = c;
-            List<String> finalFileNames = fileNames;
-            List<Long> finalFileSizeList = fileSizeList;
             Callable callable =
                     () -> {
                         log.info("线程[" + finalC + "]启动...");
@@ -108,7 +73,7 @@ public class InsertCompTest {
                             }
                             long genDataStartTime = System.currentTimeMillis();
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(insertParams.getBatchSize(),
-                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getDataset(), finalFileNames, finalFileSizeList, insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp);
+                                    (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp, null);
                             long genDataEndTime = System.currentTimeMillis();
                             log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");

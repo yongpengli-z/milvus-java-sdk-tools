@@ -8,6 +8,7 @@ import custom.entity.UpsertParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.UpsertResult;
+import custom.pojo.FieldDataSource;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
@@ -19,10 +20,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static custom.BaseTest.*;
@@ -51,9 +49,6 @@ public class UpsertComp {
         }
 
 
-        DatasetEnum datasetEnum;
-        List<String> fileNames = new ArrayList<>();
-        List<Long> fileSizeList = new ArrayList<>();
         //先处理upsert里数据生成的规则，先进行排序处理
         if (upsertParams.getGeneralDataRoleList() != null && upsertParams.getGeneralDataRoleList().size() > 0) {
             for (GeneralDataRole generalDataRole : upsertParams.getGeneralDataRoleList()) {
@@ -61,36 +56,6 @@ public class UpsertComp {
                 randomRangeParamsList.sort(Comparator.comparing(RandomRangeParams::getStart));
             }
         }
-        // 先检查dataset
-        switch (upsertParams.getDataset().toLowerCase()) {
-            case "gist":
-                datasetEnum = DatasetEnum.GIST;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.GIST);
-                break;
-            case "deep":
-                datasetEnum = DatasetEnum.DEEP;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.DEEP);
-                break;
-            case "sift":
-                datasetEnum = DatasetEnum.SIFT;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.SIFT);
-                break;
-            case "laion":
-                datasetEnum = DatasetEnum.LAION;
-                fileNames = DatasetUtil.providerFileNames(datasetEnum);
-                fileSizeList = DatasetUtil.providerFileSize(fileNames, DatasetEnum.LAION);
-                break;
-            case "random":
-                break;
-            default:
-                log.error("传入的数据集名称错误,请检查！");
-                return null;
-        }
-        log.info("文件名称:" + fileNames);
-        log.info("文件长度:" + fileSizeList);
         // 要循环upsert的次数--insertRounds
         long upsertRounds = upsertParams.getNumEntries() / upsertParams.getBatchSize();
         float upsertTotalTime = 0;
@@ -100,21 +65,29 @@ public class UpsertComp {
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
-/*        // 根据startId，剔除之前已经使用过的file
-        long tempFileSizeTotal = 0;
-        int fileIndex = 0;
-        for (int i = 0; i < fileSizeList.size(); i++) {
-            tempFileSizeTotal = +fileSizeList.get(0);
-            if (tempFileSizeTotal > upsertParams.getStartId()) {
-                fileIndex = i;
-                break;
+
+        // 预加载字段级数据集信息
+        Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap = new HashMap<>();
+        if (upsertParams.getFieldDataSourceList() != null) {
+            for (FieldDataSource fds : upsertParams.getFieldDataSourceList()) {
+                if (fds.getFieldName() == null || fds.getFieldName().isEmpty()
+                        || fds.getDataset() == null || fds.getDataset().isEmpty()) {
+                    continue;
+                }
+                DatasetEnum fieldDatasetEnum = resolveDatasetEnum(fds.getDataset());
+                if (fieldDatasetEnum == null) {
+                    log.error("字段[{}]配置的数据集名称[{}]无效，跳过", fds.getFieldName(), fds.getDataset());
+                    continue;
+                }
+                List<String> fieldFileNames = DatasetUtil.providerFileNames(fieldDatasetEnum);
+                List<Long> fieldFileSizeList = DatasetUtil.providerFileSize(fieldFileNames, fieldDatasetEnum);
+                fieldDatasetInfoMap.put(fds.getFieldName(),
+                        new InsertComp.FieldDatasetInfo(fieldDatasetEnum, fieldFileNames, fieldFileSizeList));
+                log.info("字段[{}]使用数据集[{}]，文件数量：{}，总行数：{}",
+                        fds.getFieldName(), fds.getDataset(), fieldFileNames.size(),
+                        fieldFileSizeList.stream().mapToLong(Long::longValue).sum());
             }
         }
-        int removeIndex = Math.min(fileIndex+1, fileSizeList.size());
-        fileNames.subList(0, removeIndex).clear();
-        fileSizeList.subList(0, removeIndex).clear();
-        log.info("根据startId，将使用的文件名称:" + fileNames);
-        log.info("根据startId，将使用的文件长度:" + fileSizeList);*/
 
         // 1. 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
@@ -124,11 +97,10 @@ public class UpsertComp {
         }
 
         // upsert data with multiple threads
+        Map<String, InsertComp.FieldDatasetInfo> finalFieldDatasetInfoMap = fieldDatasetInfoMap;
         for (int c = 0; c < upsertParams.getNumConcurrency(); c++) {
             RateLimiter finalRateLimiter = rateLimiter;
             int finalC = c;
-            List<String> finalFileNames = fileNames;
-            List<Long> finalFileSizeList = fileSizeList;
             String finalCollectionName = collectionName;
             Callable callable =
                     () -> {
@@ -153,7 +125,7 @@ public class UpsertComp {
                                 finalRateLimiter.acquire(); // 阻塞直到获得令牌
                             }
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(upsertParams.getBatchSize(),
-                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getDataset(), finalFileNames, finalFileSizeList, upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp);
+                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap);
                             log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             UpsertResp upsertResp = null;
                             long startTime = System.currentTimeMillis();
@@ -242,6 +214,17 @@ public class UpsertComp {
                 .build();
         executorService.shutdown();
         return upsertResult;
+    }
+
+    private static DatasetEnum resolveDatasetEnum(String datasetName) {
+        switch (datasetName.toLowerCase()) {
+            case "gist": return DatasetEnum.GIST;
+            case "deep": return DatasetEnum.DEEP;
+            case "sift": return DatasetEnum.SIFT;
+            case "laion": return DatasetEnum.LAION;
+            case "custom_json": return DatasetEnum.CUSTOM_JSON;
+            default: return null;
+        }
     }
 
     @Data

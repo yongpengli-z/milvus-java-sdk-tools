@@ -1,5 +1,6 @@
 package custom.entity;
 
+import custom.pojo.FieldDataSource;
 import custom.pojo.GeneralDataRole;
 import lombok.Data;
 
@@ -77,19 +78,6 @@ public class InsertParams {
     private int numConcurrency;
 
     /**
-     * 数据集类型。
-     * <p>
-     * 前端：`insertEdit.vue` -> "Dataset"
-     * <p>
-     * 前端必填：是
-     * <p>
-     * 前端默认值：`random`
-     * <p>
-     * 常用：`random`（随机生成）；`sift/gist/laion/deep`（依赖运行机本地数据集路径）。
-     */
-    private String dataset;
-
-    /**
      * 运行时长上限（分钟）。
      * <p>
      * 前端：`insertEdit.vue` -> "Running Minutes"
@@ -143,4 +131,15 @@ public class InsertParams {
      * 前端默认值：""（None）
      */
     private String collectionRule;
+
+    /**
+     * 字段级别数据源配置（可选）。
+     * <p>
+     * 为指定字段配置独立的数据集来源，未配置的字段默认使用 random 生成。
+     * <p>
+     * 示例：[{"fieldName": "json_col", "dataset": "custom_json"}]
+     * <p>
+     * 前端默认值：null 或空列表
+     */
+    private List<FieldDataSource> fieldDataSourceList;
 }

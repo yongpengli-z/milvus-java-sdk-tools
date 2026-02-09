@@ -3,6 +3,7 @@ package custom.common;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import custom.components.InsertComp;
 import custom.entity.*;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
@@ -381,7 +382,7 @@ public class CommonFunction {
      * @param count 生成的数量
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(long count, long startId, String dataset, List<String> fileNames, List<Long> fileSizeList, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp) {
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap) {
         Random random = new Random();
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -396,20 +397,22 @@ public class CommonFunction {
         List<CreateCollectionReq.StructFieldSchema> structFieldSchemaList = collectionSchema.getStructFields();
 
         List<JsonObject> jsonList = new ArrayList<>();
-        //提供给floatVector用
-        List<List<Float>> floatVectorList = new ArrayList<>();
-        // 先获取Dataset数据集
-        if (dataset.equalsIgnoreCase("gist")) {
-            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.GIST, fileSizeList);
-        }
-        if (dataset.equalsIgnoreCase("deep")) {
-            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.DEEP, fileSizeList);
-        }
-        if (dataset.equalsIgnoreCase("laion")) {
-            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.LAION, fileSizeList);
-        }
-        if (dataset.equalsIgnoreCase("sift")) {
-            floatVectorList = DatasetUtil.providerFloatVectorByDataset(startId, count, fileNames, DatasetEnum.SIFT, fileSizeList);
+
+        // 预加载字段级数据源的数据（按字段名缓存）
+        Map<String, Object> fieldDataCache = new HashMap<>();
+        if (fieldDatasetInfoMap != null) {
+            for (Map.Entry<String, InsertComp.FieldDatasetInfo> entry : fieldDatasetInfoMap.entrySet()) {
+                InsertComp.FieldDatasetInfo info = entry.getValue();
+                if ("json".equalsIgnoreCase(info.getDatasetEnum().fileFormat)) {
+                    List<JsonObject> fieldData = DatasetUtil.providerJsonLinesByDataset(
+                            startId, count, info.getFileNames(), info.getDatasetEnum(), info.getFileSizeList());
+                    fieldDataCache.put(entry.getKey(), fieldData);
+                } else if ("npy".equalsIgnoreCase(info.getDatasetEnum().fileFormat)) {
+                    List<List<Float>> floatVectors = DatasetUtil.providerFloatVectorByDataset(
+                            startId, count, info.getFileNames(), info.getDatasetEnum(), info.getFileSizeList());
+                    fieldDataCache.put(entry.getKey(), floatVectors);
+                }
+            }
         }
         for (long i = startId; i < (startId + count); i++) {
             JsonObject row = new JsonObject();
@@ -433,22 +436,32 @@ public class CommonFunction {
                 }
                 JsonObject jsonObject = new JsonObject();
                 Gson gson = new Gson();
-                if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
-                    if (dataset.equalsIgnoreCase("random")) {
-                        jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                if (fieldDataCache.containsKey(name)) {
+                    // 字段级数据源优先，数据来自文件，不使用 generalDataRoleList
+                    Object cachedData = fieldDataCache.get(name);
+                    int idx = (int) (i - startId);
+                    if (cachedData instanceof List && !((List<?>) cachedData).isEmpty()) {
+                        List<?> dataList = (List<?>) cachedData;
+                        if (idx < dataList.size()) {
+                            Object item = dataList.get(idx);
+                            if (item instanceof JsonObject) {
+                                // JSON 数据源
+                                jsonObject.add(name, (JsonObject) item);
+                            } else if (item instanceof List) {
+                                // NPY 向量数据源 (List<Float>)
+                                @SuppressWarnings("unchecked")
+                                List<Float> vector = (List<Float>) item;
+                                jsonObject.add(name, gson.toJsonTree(vector));
+                            }
+                        } else {
+                            jsonObject = generalJsonObjectByDataType(name, dataType, 0, i, null, 0, null, totalNum, realStartId, isEnableMatch);
+                        }
+                    } else {
+                        jsonObject = generalJsonObjectByDataType(name, dataType, 0, i, null, 0, null, totalNum, realStartId, isEnableMatch);
                     }
-                    if (dataset.equalsIgnoreCase("gist")) {
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
-                    }
-                    if (dataset.equalsIgnoreCase("deep")) {
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
-                    }
-                    if (dataset.equalsIgnoreCase("sift")) {
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
-                    }
-                    if (dataset.equalsIgnoreCase("laion")) {
-                        jsonObject.add(name, gson.toJsonTree(floatVectorList.get((int) (i - startId))));
-                    }
+                } else if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
+                    // 没有配置 fieldDataSourceList，走 random 生成，可以使用 generalDataRoleList
+                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.SparseFloatVector) {
                     jsonObject = generalJsonObjectByDataType(name, dataType, random.nextInt(768) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
