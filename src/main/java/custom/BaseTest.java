@@ -49,72 +49,82 @@ public class BaseTest {
     public static int upsertCollectionIndex = 0;
 
     public static void main(String[] args) {
+        try {
+            taskId = Integer.parseInt(System.getProperty("taskId") == null
+                    ? ""
+                    : System.getProperty("taskId"));
+            String env = System.getProperty("env") == null
+                    ? ""
+                    : System.getProperty("env");
+            String uri =
+                    System.getProperty("uri") == null || System.getProperty("uri").trim().equals("")
+                            ? ""
+                            : System.getProperty("uri");
+            String token =
+                    System.getProperty("token") == null || System.getProperty("token").trim().equals("")
+                            ? ""
+                            : System.getProperty("token");
+            String initialParams =
+                    System.getProperty("initial_params") == null
+                            || System.getProperty("initial_params").equals("")
+                            ? ""
+                            : System.getProperty("initial_params");
 
-        taskId = Integer.parseInt(System.getProperty("taskId") == null
-                ? ""
-                : System.getProperty("taskId"));
-        String env = System.getProperty("env") == null
-                ? ""
-                : System.getProperty("env");
-        String uri =
-                System.getProperty("uri") == null || System.getProperty("uri").trim().equals("")
-                        ? ""
-                        : System.getProperty("uri");
-        String token =
-                System.getProperty("token") == null || System.getProperty("token").trim().equals("")
-                        ? ""
-                        : System.getProperty("token");
-        String initialParams =
-                System.getProperty("initial_params") == null
-                        || System.getProperty("initial_params").equals("")
-                        ? ""
-                        : System.getProperty("initial_params");
-
-        String customizeParams =
-                System.getProperty("customize_params") == null
-                        || System.getProperty("customize_params").equals("")
-                        ? ""
-                        : System.getProperty("customize_params");
-//        log.info("***********customizeParams*********"+customizeParams);
-        redisKey = "customize_task_" + taskId;
-        if (!uri.equalsIgnoreCase("")) {
-            newInstanceInfo.setUri(uri);
-            if (uri.contains("ali") || uri.contains("tc") || uri.contains("aws") || uri.contains("gcp") || uri.contains("az") || uri.contains("hwc")) {
-                String substring = uri.substring(uri.indexOf("https://") + 8, 28);
-                log.info("instance-id:" + substring);
-                newInstanceInfo.setInstanceId(substring);
+            String customizeParams =
+                    System.getProperty("customize_params") == null
+                            || System.getProperty("customize_params").equals("")
+                            ? ""
+                            : System.getProperty("customize_params");
+//            log.info("***********customizeParams*********"+customizeParams);
+            redisKey = "customize_task_" + taskId;
+            if (!uri.equalsIgnoreCase("")) {
+                newInstanceInfo.setUri(uri);
+                if (uri.contains("ali") || uri.contains("tc") || uri.contains("aws") || uri.contains("gcp") || uri.contains("az") || uri.contains("hwc")) {
+                    String substring = uri.substring(uri.indexOf("https://") + 8, 28);
+                    log.info("instance-id:" + substring);
+                    newInstanceInfo.setInstanceId(substring);
+                }
             }
+            if (!uri.equalsIgnoreCase("") && token.equals("")) {
+                token = MilvusConnect.provideToken(uri);
+                log.info("查询到token:" + token);
+            }
+            newInstanceInfo.setToken(token);
+            envEnum = EnvEnum.getEnvByName(env);
+            //先更新argo任务状态
+            ComponentSchedule.updateArgoStatus(1);
+//            log.info("EnvEnum:"+envByName);
+            if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
+                envConfig = ConfigUtils.providerEnvConfig(envEnum);
+                log.info("当前环境信息:" + envConfig);
+            }
+            log.info("newInstanceInfo:" + newInstanceInfo.toString());
+            if (newInstanceInfo.getUri() != null) {
+                log.info("创建milvusClientV2，uri:" + newInstanceInfo.getUri());
+                milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
+                milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
+                importUrl = uri;
+                // 初始化环境
+                InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
+                InitialComp.initialRunning(initialParamsObj);
+            }
+//        // 自动调度
+            ComponentSchedule.runningSchedule(customizeParams);
+            ComponentSchedule.updateCaseStatus(10);
+        } catch (Exception e) {
+            log.error("Task execution failed", e);
+            try {
+                ComponentSchedule.updateCaseStatus(-1);
+            } catch (Exception ignored) {
+            }
+        } finally {
+            if (milvusClientV2 != null) {
+                try { milvusClientV2.close(); } catch (Exception ignored) {}
+            }
+            if (milvusClientV1 != null) {
+                try { milvusClientV1.close(); } catch (Exception ignored) {}
+            }
+            System.exit(0);
         }
-        if (!uri.equalsIgnoreCase("") && token.equals("")) {
-            token = MilvusConnect.provideToken(uri);
-            log.info("查询到token:" + token);
-        }
-        newInstanceInfo.setToken(token);
-        envEnum = EnvEnum.getEnvByName(env);
-        //先更新argo任务状态
-        ComponentSchedule.updateArgoStatus(1);
-//        log.info("EnvEnum:"+envByName);
-        if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
-            envConfig = ConfigUtils.providerEnvConfig(envEnum);
-            log.info("当前环境信息:" + envConfig);
-        }
-        log.info("newInstanceInfo:" + newInstanceInfo.toString());
-        if (newInstanceInfo.getUri() != null) {
-            log.info("创建milvusClientV2，uri:" + newInstanceInfo.getUri());
-            milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
-            milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
-            importUrl = uri;
-            // 初始化环境
-            InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
-            InitialComp.initialRunning(initialParamsObj);
-        }
-//    // 自动调度
-        ComponentSchedule.runningSchedule(customizeParams);
-        if (milvusClientV2 != null) {
-            milvusClientV2.close();
-            milvusClientV1.close();
-        }
-        ComponentSchedule.updateCaseStatus(10);
-        System.exit(0);
     }
 }
