@@ -131,7 +131,7 @@ public class UpsertParams {
      * <p>
      * 为指定字段配置独立的数据集来源，未配置的字段默认使用 random 生成。
      * <p>
-     * 示例：[{"fieldName": "json_col", "dataset": "custom_json"}]
+     * 示例：[{"fieldName": "json_col", "dataset": "bluesky"}]
      * <p>
      * 前端默认值：null 或空列表
      */

@@ -5,7 +5,7 @@ public enum DatasetEnum {
     LAION("laion","/test/milvus/raw_data/laion200M-en/","img_emb_",768,"npy"),
     DEEP("deep","/test/milvus/raw_data/deep1b/","binary_96d_",96,"npy"),
     SIFT("sift","/test/milvus/raw_data/sift1b/","binary_128d_",128,"npy"),
-    CUSTOM_JSON("bluesky","/test/milvus/raw_data/bluesky/","file_",0,"json");
+    BLUESKY("bluesky","/test/milvus/raw_data/bluesky/","file_",0,"json");
 
     public final String datasetName;
     public final String path;

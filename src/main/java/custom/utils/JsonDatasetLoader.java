@@ -20,6 +20,9 @@ public class JsonDatasetLoader {
 
     private static final Gson GSON = new Gson();
 
+    // 8MB buffer 加速大文件读取
+    private static final int BUFFER_SIZE = 8 * 1024 * 1024;
+
     /**
      * 从 JSON Lines 文件中读取指定范围的数据。
      *
@@ -38,32 +41,20 @@ public class JsonDatasetLoader {
 
         List<JsonObject> result = new ArrayList<>(rowCount);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            long currentRow = 0;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)), BUFFER_SIZE)) {
+            // 快速跳过 startRow 行（不做 trim，不做 JSON 解析）
+            for (long skip = 0; skip < startRow; skip++) {
+                if (reader.readLine() == null) {
+                    log.warn("JSON Lines 文件 {} 行数不足: startRow={}", file.getName(), startRow);
+                    return result;
+                }
+            }
+
+            // 读取目标行并解析
             String line;
-
-            // 跳过 startRow 之前的行
-            while ((line = reader.readLine()) != null && currentRow < startRow) {
-                currentRow++;
-            }
-
-            // 如果跳过后已经到了文件末尾
-            if (line == null) {
-                log.warn("JSON Lines 文件 {} 行数不足: startRow={}", file.getName(), startRow);
-                return result;
-            }
-
-            // 读取第一行（跳过循环结束时已读到的行）
-            String trimmed = line.trim();
-            if (!trimmed.isEmpty()) {
-                result.add(GSON.fromJson(trimmed, JsonObject.class));
-            }
-
-            // 继续读取剩余行
             while ((line = reader.readLine()) != null && result.size() < rowCount) {
-                trimmed = line.trim();
-                if (!trimmed.isEmpty()) {
-                    result.add(GSON.fromJson(trimmed, JsonObject.class));
+                if (!line.isEmpty()) {
+                    result.add(GSON.fromJson(line, JsonObject.class));
                 }
             }
         }
@@ -77,23 +68,34 @@ public class JsonDatasetLoader {
     }
 
     /**
-     * 快速统计 JSON Lines 文件中的行数（非空行）。
+     * 快速统计 JSON Lines 文件中的行数。
+     * 使用字节流计数换行符，比逐行读取+trim快很多。
      *
      * @param file JSON Lines 文件
      * @return 行数
      */
     public static long readRowCount(File file) throws IOException {
         long count = 0;
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.trim().isEmpty()) {
+        byte[] buf = new byte[8192];
+        try (FileInputStream fis = new FileInputStream(file)) {
+            int bytesRead;
+            while ((bytesRead = fis.read(buf)) != -1) {
+                for (int i = 0; i < bytesRead; i++) {
+                    if (buf[i] == '\n') {
+                        count++;
+                    }
+                }
+            }
+        }
+        // 如果文件非空且最后一行没有换行符，也算一行
+        if (file.length() > 0) {
+            try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+                raf.seek(file.length() - 1);
+                if (raf.readByte() != '\n') {
                     count++;
                 }
             }
         }
-
         return count;
     }
 }

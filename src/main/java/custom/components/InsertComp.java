@@ -229,7 +229,7 @@ public class InsertComp {
             case "deep": return DatasetEnum.DEEP;
             case "sift": return DatasetEnum.SIFT;
             case "laion": return DatasetEnum.LAION;
-            case "custom_json": return DatasetEnum.CUSTOM_JSON;
+            case "bluesky": return DatasetEnum.BLUESKY;
             default: return null;
         }
     }

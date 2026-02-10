@@ -11,7 +11,7 @@ import lombok.Data;
  * <pre>
  * {
  *   "fieldName": "json_field",
- *   "dataset": "custom_json"
+ *   "dataset": "bluesky"
  * }
  * </pre>
  * <p>
@@ -25,7 +25,7 @@ public class FieldDataSource {
     private String fieldName;
 
     /**
-     * 数据集名称，对应 DatasetEnum 中的名称（如 "custom_json", "gist", "sift" 等）。
+     * 数据集名称，对应 DatasetEnum 中的名称（如 "bluesky", "gist", "sift" 等）。
      */
     private String dataset;
 }
