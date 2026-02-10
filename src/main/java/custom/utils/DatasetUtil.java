@@ -55,22 +55,35 @@ public class DatasetUtil {
 public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum datasetEnum) {
     log.info("正在统计数据集各个文件大小...");
     List<Long> fileSizeList = new ArrayList<>(fileNames.size());
-    for (String fileName : fileNames) {
-        String path = datasetEnum.path + fileName;
+    if (fileNames.isEmpty()) {
+        return fileSizeList;
+    }
+
+    if ("json".equalsIgnoreCase(datasetEnum.fileFormat)) {
+        // JSON 数据集：统计第一个文件行数，其余复用（同一数据集每个文件行数相同）
+        String firstPath = datasetEnum.path + fileNames.get(0);
+        long firstFileRows = 0;
         try {
-            long rows;
-            if ("json".equalsIgnoreCase(datasetEnum.fileFormat)) {
-                rows = JsonDatasetLoader.readRowCount(new File(path));
-            } else {
-                try (FileInputStream fis = new FileInputStream(path)) {
-                    rows = NpyLoader.readFirstDimensionSize(fis);
-                }
-            }
-            fileSizeList.add(rows);
+            firstFileRows = JsonDatasetLoader.readRowCount(new File(firstPath));
         } catch (IOException e) {
-            log.error("读取文件行数失败: {}", path, e);
-            fileSizeList.add(0L);
+            log.error("读取文件行数失败: {}", firstPath, e);
         }
+        for (int i = 0; i < fileNames.size(); i++) {
+            fileSizeList.add(firstFileRows);
+        }
+        log.info("JSON数据集文件数量: {}，每个文件行数: {}，总行数: {}", fileNames.size(), firstFileRows, firstFileRows * fileNames.size());
+    } else {
+        // NPY 数据集：逐个读取 header（很快）
+        for (String fileName : fileNames) {
+            String path = datasetEnum.path + fileName;
+            try (FileInputStream fis = new FileInputStream(path)) {
+                fileSizeList.add(NpyLoader.readFirstDimensionSize(fis));
+            } catch (IOException e) {
+                log.error("读取文件行数失败: {}", path, e);
+                fileSizeList.add(0L);
+            }
+        }
+        log.info("NPY数据集文件数量: {}，总行数: {}", fileNames.size(), fileSizeList.stream().mapToLong(Long::longValue).sum());
     }
     return fileSizeList;
 }
