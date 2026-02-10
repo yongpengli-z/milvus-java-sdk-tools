@@ -1,5 +1,6 @@
 package custom.utils;
 
+import com.google.gson.JsonObject;
 import custom.common.DatasetEnum;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,8 +20,11 @@ public class DatasetUtil {
             File[] files = file.listFiles();
             // 遍历并打印包含指定关键字的文件名
             if (files != null) {
+                String expectedExt = "." + datasetEnum.fileFormat;
                 for (File fileItem : files) {
-                    if (fileItem.isFile() && fileItem.getName().contains(datasetEnum.prefixName)) {
+                    if (fileItem.isFile()
+                            && fileItem.getName().contains(datasetEnum.prefixName)
+                            && fileItem.getName().endsWith(expectedExt)) {
                         fileNameList.add(fileItem.getName());
                     }
                 }
@@ -51,16 +55,35 @@ public class DatasetUtil {
 public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum datasetEnum) {
     log.info("正在统计数据集各个文件大小...");
     List<Long> fileSizeList = new ArrayList<>(fileNames.size());
-    for (String fileName : fileNames) {
-        String path = datasetEnum.path + fileName;
-        try (FileInputStream fis = new FileInputStream(path)) {
-            // 仅读取文件头获取维度信息
-            long rows = NpyLoader.readFirstDimensionSize(fis);
-            fileSizeList.add(rows);
+    if (fileNames.isEmpty()) {
+        return fileSizeList;
+    }
+
+    if ("json".equalsIgnoreCase(datasetEnum.fileFormat)) {
+        // JSON 数据集：统计第一个文件行数，其余复用（同一数据集每个文件行数相同）
+        String firstPath = datasetEnum.path + fileNames.get(0);
+        long firstFileRows = 0;
+        try {
+            firstFileRows = JsonDatasetLoader.readRowCount(new File(firstPath));
         } catch (IOException e) {
-            log.error("读取文件维度失败: {}", path, e);
-            fileSizeList.add(0L); // 错误处理
+            log.error("读取文件行数失败: {}", firstPath, e);
         }
+        for (int i = 0; i < fileNames.size(); i++) {
+            fileSizeList.add(firstFileRows);
+        }
+        log.info("JSON数据集文件数量: {}，每个文件行数: {}，总行数: {}", fileNames.size(), firstFileRows, firstFileRows * fileNames.size());
+    } else {
+        // NPY 数据集：逐个读取 header（很快）
+        for (String fileName : fileNames) {
+            String path = datasetEnum.path + fileName;
+            try (FileInputStream fis = new FileInputStream(path)) {
+                fileSizeList.add(NpyLoader.readFirstDimensionSize(fis));
+            } catch (IOException e) {
+                log.error("读取文件行数失败: {}", path, e);
+                fileSizeList.add(0L);
+            }
+        }
+        log.info("NPY数据集文件数量: {}，总行数: {}", fileNames.size(), fileSizeList.stream().mapToLong(Long::longValue).sum());
     }
     return fileSizeList;
 }
@@ -138,6 +161,77 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
 
         log.info("读取文件(可能跨多个文件)，可以使用的数据长度：{}", vectors.size());
         return vectors;
+    }
+
+    public static List<JsonObject> providerJsonLinesByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum, List<Long> fileSizeList) {
+        if (count <= 0) {
+            return Collections.emptyList();
+        }
+        if (count > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("count is too large for List: " + count);
+        }
+        if (index < 0) {
+            throw new IllegalArgumentException("index must be >= 0");
+        }
+        if (fileNames == null || fileNames.isEmpty()) {
+            log.warn("Dataset fileNames is empty");
+            return Collections.emptyList();
+        }
+        if (fileSizeList == null || fileSizeList.isEmpty()) {
+            log.warn("Dataset fileSizeList is empty");
+            return Collections.emptyList();
+        }
+
+        List<JsonObject> result = new ArrayList<>((int) count);
+
+        long remaining = count;
+        long globalPos = index;
+
+        int fileIndex = findIndex(globalPos, fileSizeList);
+        if (fileIndex < 0 || fileIndex >= fileNames.size() || fileIndex >= fileSizeList.size()) {
+            log.warn("index {} out of dataset range (files={}, sizes={})", index, fileNames.size(), fileSizeList.size());
+            return Collections.emptyList();
+        }
+
+        long fileStartGlobal = 0;
+        for (int i = 0; i < fileIndex; i++) {
+            fileStartGlobal += fileSizeList.get(i);
+        }
+
+        while (remaining > 0 && fileIndex < fileNames.size() && fileIndex < fileSizeList.size()) {
+            long rowsInFile = fileSizeList.get(fileIndex);
+            long localStart = globalPos - fileStartGlobal;
+            if (localStart < 0) {
+                localStart = 0;
+            }
+            if (localStart >= rowsInFile) {
+                fileStartGlobal += rowsInFile;
+                fileIndex++;
+                continue;
+            }
+
+            long available = rowsInFile - localStart;
+            int rowsToRead = (int) Math.min(remaining, available);
+
+            String jsonDataPath = datasetEnum.path + fileNames.get(fileIndex);
+            log.info("使用JSON文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+
+            try {
+                List<JsonObject> slice = JsonDatasetLoader.readJsonLines(new File(jsonDataPath), localStart, rowsToRead);
+                result.addAll(slice);
+            } catch (IOException e) {
+                log.error("读取JSON文件失败: {} (localStart={}, rowsToRead={})", jsonDataPath, localStart, rowsToRead, e);
+                throw new RuntimeException("读取JSON文件失败: " + jsonDataPath + ", cause: " + e.getMessage(), e);
+            }
+
+            remaining -= rowsToRead;
+            globalPos += rowsToRead;
+            fileStartGlobal += rowsInFile;
+            fileIndex++;
+        }
+
+        log.info("读取JSON文件(可能跨多个文件)，可以使用的数据长度：{}", result.size());
+        return result;
     }
 
     public static int findIndex(long startId, List<Long> fileSizeList) {
