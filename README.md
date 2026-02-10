@@ -469,11 +469,14 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
   - **性能测试建议**：当需要测试 Insert 性能时，推荐添加多个 `InsertParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20），来递增压力，观察不同并发级别下的性能表现。
   - **并发场景注意**：测试 Insert 并发时，如果使用多个 Insert 组件且设置了 `runningMinutes` 作为运行时长，需要将 `numEntries` 设置得足够大，否则数据可能在运行时长结束前就已经插入完毕，导致无法持续压测到预期时长。
   - **避免重复数据**：使用多个 Insert 组件时，应为每个组件设置不同的 `startId`，确保各组件插入的数据 ID 范围不重叠，避免插入重复数据。例如：组件 A 设置 `startId: 0, numEntries: 5000000`，组件 B 设置 `startId: 5000000, numEntries: 5000000`。
-- **`dataset`**（string，前端必填）：`random/gist/deep/sift/laion`。前端默认 `random`。
-- **`runningMinutes`**（long，前端必填）：Insert 中该字段>0 时会成为“时间上限”，否则以数据量批次数为准。前端默认 `0`。
+- **`fieldDataSourceList`**（list，可空）：字段级数据源配置，指定某个字段从哪个数据集读取数据。未配置的字段默认使用 random 生成。前端默认 `[]`。
+  - 每条配置包含 `fieldName`（字段名）和 `dataset`（数据集名称，如 `sift`/`gist`/`deep`/`laion`/`bluesky`）
+  - 数据集类型：`sift`/`gist`/`deep`/`laion` 为向量数据集（NPY 格式），`bluesky` 为标量 JSON 数据集（JSON Lines 格式）
+  - 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "json_col", "dataset": "bluesky"}]`
+- **`runningMinutes`**（long，前端必填）：Insert 中该字段>0 时会成为"时间上限"，否则以数据量批次数为准。前端默认 `0`。
 - **`retryAfterDeny`**（boolean，可空）：禁写后是否等待重试。前端默认 `false`。
 - **`ignoreError`**（boolean，可空）：出错是否忽略继续。前端默认 `false`。
-- **`generalDataRoleList`**（list，可空）：数据生成规则（见 `GeneralDataRole`）。前端默认是“带 1 条空规则”的占位数组；**如果你不使用该能力，建议直接传 `[]`**。
+- **`generalDataRoleList`**（list，可空）：数据生成规则（见 `GeneralDataRole`），仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；**如果你不使用该能力，建议直接传 `[]`**。
 
 **Array of Struct 数据生成说明**：
 - Insert/Upsert 组件会自动识别 collection 中的 Array of Struct 字段
@@ -553,10 +556,11 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`batchSize`**（long，前端必填）：前端默认 `1000`。
 - **`numConcurrency`**（int，前端必填）：前端默认 `1`。
   - **性能测试建议**：当需要测试 Upsert 性能时，推荐添加多个 `UpsertParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20），来递增压力，观察不同并发级别下的性能表现。
-- **`dataset`**（string，前端必填）：前端默认 `random`。
+- **`fieldDataSourceList`**（list，可空）：字段级数据源配置，与 InsertParams 用法相同。前端默认 `[]`。
+  - 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "json_col", "dataset": "bluesky"}]`
 - **`runningMinutes`**（long，可空）：>0 时作为时间上限。前端模板里存在该字段且默认 `0`（UI 未展示该输入项）。
 - **`retryAfterDeny`**（boolean，可空）：前端默认 `false`。
-- **`generalDataRoleList`**（list，可空）：前端默认是“带 1 条空规则”的占位数组；不使用建议传 `[]`。
+- **`generalDataRoleList`**（list，可空）：仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；不使用建议传 `[]`。
 - **`targetQps`**（int，可空）：前端默认 `0`。
 
 ##### 5.1.8 Delete：`DeleteParams`
@@ -759,8 +763,6 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`filePaths`**（list of list，建议必填）：文件路径二维数组，按 batch/组组织。前端默认：`[]`。
 - **`collectionName`**（string，可空）：为空时使用最近创建/记录的 collection。前端默认：`""`。
 - **`partitionName`**（string，可空）：前端默认：`""`。
-- **`dataset`**（string）：数据集类型标识。前端默认：`random`。
-
 **示例 JSON**：
 
 ```json
@@ -771,8 +773,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
       ["data/batch2/vectors.npy", "data/batch2/ids.npy"]
     ],
     "collectionName": "",
-    "partitionName": "",
-    "dataset": "random"
+    "partitionName": ""
   }
 }
 ```
@@ -895,6 +896,23 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`CreateInstanceParams`**（`createInstanceEdit.vue`）
   - 必填：`instanceName`/`dbVersion`/`replica`/`rootPassword`/`roleUse`/`useHours`
   - 默认：`cuType=class-1-enterprise`，`architecture=2`，`replica=1`，`rootPassword=Milvus123`，`roleUse=root`，`useHours=10`，`instanceType=1`，`bizCritical=false`，`monopolized=false`，`dbVersion=latest-release`
+  - **`cuType` 实例规格说明**：
+    前端使用二级级联选择器，3 大类型：
+
+    | 类型 | cuType 格式 | 说明 |
+    |------|------------|------|
+    | **Memory**（内存型） | `class-{N}-enterprise` | 标准内存型实例，适用于大部分场景 |
+    | **DiskANN**（磁盘型） | `class-{N}-disk-enterprise` | 基于 DiskANN 索引的磁盘型实例，适合大数据量低成本场景 |
+    | **Tiered**（分层存储） | `class-{N}-tiered-enterprise` | 分层存储实例，冷热数据自动分层 |
+
+    其中 `{N}` 为 CU 数量，可选值：`1`（standalone）、`2`、`4`、`6`、`8`、`12`（cluster 起）、`16`、`20`、`24`、`28`、`32`、`64`、`128`
+
+    示例：
+    - 4CU Memory 实例：`"cuType": "class-4-enterprise"`
+    - 4CU DiskANN 实例：`"cuType": "class-4-disk-enterprise"`
+    - 4CU Tiered 实例：`"cuType": "class-4-tiered-enterprise"`
+    - 12CU Memory 集群：`"cuType": "class-12-enterprise"`
+
   - **`dbVersion` 特殊值说明**：
     - `latest-release`：后端会获取最新的 release 版本镜像
     - `nightly`：后端会自动查找最新的 nightly 版本镜像（通过关键字查询匹配的镜像，返回最新的一个）
@@ -1295,12 +1313,25 @@ docker-compose up -d
 > - **Helm 部署实例**（通过 `HelmCreateInstanceParams` 创建，无论云上还是本地）：**不能使用 `AUTOINDEX`**，必须使用显式索引类型（如 `HNSW`、`IVF_FLAT`、`SPARSE_WAND` 等）
 > - **本地环境**（`devops`、`fouram`）：可以使用所有索引类型
 
-#### 6.2 `dataset`（Insert/Upsert）
+#### 6.2 `fieldDataSourceList`（Insert/Upsert 字段级数据源）
 
-代码中按 `toLowerCase()` switch，支持：
+Insert/Upsert 支持为每个字段单独指定数据来源。未配置的字段默认使用 random 生成。
 
-- `random`：随机生成向量（最通用，推荐默认）
-- `gist` / `deep` / `sift` / `laion`：从固定路径读取 `.npy` 数据集（依赖运行机器上存在 `DatasetEnum.path`）
+配置格式：`[{"fieldName": "字段名", "dataset": "数据集名称"}, ...]`
+
+可用的数据集（对应 `DatasetEnum`）：
+
+| 数据集 | 格式 | 类型 | 维度 | 路径 |
+|--------|------|------|------|------|
+| `sift` | NPY | vector | 128 | `/test/milvus/raw_data/sift1b/` |
+| `gist` | NPY | vector | 768 | `/test/milvus/raw_data/gist1m/` |
+| `deep` | NPY | vector | 96 | `/test/milvus/raw_data/deep1b/` |
+| `laion` | NPY | vector | 768 | `/test/milvus/raw_data/laion200M-en/` |
+| `bluesky` | JSON Lines | scalar_json | - | `/test/milvus/raw_data/bluesky/` |
+
+- **向量数据集**（sift/gist/deep/laion）：NPY 格式，用于 FloatVector 字段
+- **标量 JSON 数据集**（bluesky）：JSON Lines 格式（每行一个 JSON 对象），用于 JSON 类型字段
+- 不配置 `fieldDataSourceList`（或传 `[]`）时，所有字段使用 random 生成（等同于旧版 `dataset: "random"`）
 
 #### 6.3 `collectionRule`
 
@@ -1494,7 +1525,7 @@ filter 占位符规则（Search/Query）：
     - `numPartitions`（与 partitionKey 有约束关系）
     - `shardNum`、`enableDynamic`（CreateCollection 核心字段）
     - `numEntries`、`batchSize`、`numConcurrency`（Insert/Search/Query 核心字段）
-    - `dataset`（Insert/Upsert 必填）
+    - `fieldDataSourceList`（Insert/Upsert，不使用时传 `[]`）
     - `annsField`（Search 必填）
     - `nq`、`topK`（Search/Query 必填）
     - `randomVector`（Search 必填）
@@ -1610,7 +1641,7 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "numEntries": 10000,
     "batchSize": 1000,
     "numConcurrency": 5,
-    "dataset": "random",
+    "fieldDataSourceList": [],
     "runningMinutes": 0,
     "retryAfterDeny": false,
     "ignoreError": false,
@@ -1741,7 +1772,7 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "numEntries": 100000,
     "batchSize": 1000,
     "numConcurrency": 5,
-    "dataset": "random",
+    "fieldDataSourceList": [],
     "runningMinutes": 0,
     "retryAfterDeny": false,
     "ignoreError": false,
@@ -1931,7 +1962,7 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
         "numEntries": 1000,
         "batchSize": 1000,
         "numConcurrency": 1,
-        "dataset": "random",
+        "fieldDataSourceList": [],
         "runningMinutes": 0,
         "retryAfterDeny": false,
         "ignoreError": false,
@@ -2100,7 +2131,7 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "numEntries": 50000,
     "batchSize": 1000,
     "numConcurrency": 5,
-    "dataset": "random",
+    "fieldDataSourceList": [],
     "runningMinutes": 0,
     "retryAfterDeny": false,
     "ignoreError": false,
@@ -2208,7 +2239,7 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "numEntries": 10000,
     "batchSize": 1000,
     "numConcurrency": 5,
-    "dataset": "random",
+    "fieldDataSourceList": [],
     "runningMinutes": 0,
     "retryAfterDeny": false,
     "ignoreError": false,
