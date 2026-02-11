@@ -651,6 +651,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`numConcurrency`**（int）
 - **`runningMinutes`**（long，建议必填且 >0）
 - **`randomVector`**（boolean）
+- **`indexAlgo`**（string，可空）：索引算法。前端默认 `""`。
 - **`useV1`**（boolean）：当前实现未使用该字段（保留）
 
 ##### 5.2.2 HybridSearch：`HybridSearchParams`
@@ -715,7 +716,6 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
     "nq": 1,
     "randomVector": true,
     "outputs": ["*"],
-    "filter": "",
     "numConcurrency": 10,
     "runningMinutes": 1,
     "targetQps": 0,
@@ -763,6 +763,8 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`filePaths`**（list of list，建议必填）：文件路径二维数组，按 batch/组组织。前端默认：`[]`。
 - **`collectionName`**（string，可空）：为空时使用最近创建/记录的 collection。前端默认：`""`。
 - **`partitionName`**（string，可空）：前端默认：`""`。
+- **`dataset`**（string，可空）：数据集类型标识（由导入逻辑解释）。默认：`"random"`。
+
 **示例 JSON**：
 
 ```json
@@ -773,7 +775,8 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
       ["data/batch2/vectors.npy", "data/batch2/ids.npy"]
     ],
     "collectionName": "",
-    "partitionName": ""
+    "partitionName": "",
+    "dataset": "random"
   }
 }
 ```

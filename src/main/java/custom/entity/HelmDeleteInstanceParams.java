@@ -15,7 +15,7 @@ public class HelmDeleteInstanceParams {
     /**
      * Kubernetes 命名空间。
      * <p>
-     * 前端默认值：`qa`
+     * 前端默认值：`milvus-qtp`
      */
     String namespace;
 
