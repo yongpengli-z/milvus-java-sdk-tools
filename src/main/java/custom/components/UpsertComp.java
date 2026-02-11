@@ -217,14 +217,7 @@ public class UpsertComp {
     }
 
     private static DatasetEnum resolveDatasetEnum(String datasetName) {
-        switch (datasetName.toLowerCase()) {
-            case "gist": return DatasetEnum.GIST;
-            case "deep": return DatasetEnum.DEEP;
-            case "sift": return DatasetEnum.SIFT;
-            case "laion": return DatasetEnum.LAION;
-            case "bluesky": return DatasetEnum.BLUESKY;
-            default: return null;
-        }
+        return DatasetEnum.fromName(datasetName);
     }
 
     @Data

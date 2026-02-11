@@ -28,4 +28,22 @@ public enum DatasetEnum {
     public String getDatasetName(DatasetEnum datasetEnum){
         return datasetEnum.name();
     }
+
+    /**
+     * 根据 datasetName 查找对应的枚举值（忽略大小写）。
+     *
+     * @param name 数据集名称，如 "gist"、"msmarco-text"
+     * @return 匹配的 DatasetEnum，未找到返回 null
+     */
+    public static DatasetEnum fromName(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        for (DatasetEnum e : values()) {
+            if (e.datasetName.equalsIgnoreCase(name)) {
+                return e;
+            }
+        }
+        return null;
+    }
 }
