@@ -470,9 +470,9 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
   - **并发场景注意**：测试 Insert 并发时，如果使用多个 Insert 组件且设置了 `runningMinutes` 作为运行时长，需要将 `numEntries` 设置得足够大，否则数据可能在运行时长结束前就已经插入完毕，导致无法持续压测到预期时长。
   - **避免重复数据**：使用多个 Insert 组件时，应为每个组件设置不同的 `startId`，确保各组件插入的数据 ID 范围不重叠，避免插入重复数据。例如：组件 A 设置 `startId: 0, numEntries: 5000000`，组件 B 设置 `startId: 5000000, numEntries: 5000000`。
 - **`fieldDataSourceList`**（list，可空）：字段级数据源配置，指定某个字段从哪个数据集读取数据。未配置的字段默认使用 random 生成。前端默认 `[]`。
-  - 每条配置包含 `fieldName`（字段名）和 `dataset`（数据集名称，如 `sift`/`gist`/`deep`/`laion`/`bluesky`）
-  - 数据集类型：`sift`/`gist`/`deep`/`laion` 为向量数据集（NPY 格式），`bluesky` 为标量 JSON 数据集（JSON Lines 格式）
-  - 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "json_col", "dataset": "bluesky"}]`
+  - 每条配置包含 `fieldName`（字段名）和 `dataset`（数据集名称，如 `sift`/`gist`/`deep`/`laion`/`bluesky`/`msmarco-text`）
+  - 数据集类型：`sift`/`gist`/`deep`/`laion` 为向量数据集（NPY 格式），`bluesky` 为标量 JSON 数据集（JSON Lines 格式），`msmarco-text` 为纯文本数据集（TXT 格式，用于 VarChar 字段）
+  - 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "json_col", "dataset": "bluesky"}, {"fieldName": "text_col", "dataset": "msmarco-text"}]`
 - **`runningMinutes`**（long，前端必填）：Insert 中该字段>0 时会成为"时间上限"，否则以数据量批次数为准。前端默认 `0`。
 - **`retryAfterDeny`**（boolean，可空）：禁写后是否等待重试。前端默认 `false`。
 - **`ignoreError`**（boolean，可空）：出错是否忽略继续。前端默认 `false`。
@@ -557,7 +557,7 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`numConcurrency`**（int，前端必填）：前端默认 `1`。
   - **性能测试建议**：当需要测试 Upsert 性能时，推荐添加多个 `UpsertParams` 组件，设置不同的 `numConcurrency`（如 1、5、10、20），来递增压力，观察不同并发级别下的性能表现。
 - **`fieldDataSourceList`**（list，可空）：字段级数据源配置，与 InsertParams 用法相同。前端默认 `[]`。
-  - 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "json_col", "dataset": "bluesky"}]`
+  - 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "json_col", "dataset": "bluesky"}, {"fieldName": "text_col", "dataset": "msmarco-text"}]`
 - **`runningMinutes`**（long，可空）：>0 时作为时间上限。前端模板里存在该字段且默认 `0`（UI 未展示该输入项）。
 - **`retryAfterDeny`**（boolean，可空）：前端默认 `false`。
 - **`generalDataRoleList`**（list，可空）：仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；不使用建议传 `[]`。
@@ -1328,9 +1328,11 @@ Insert/Upsert 支持为每个字段单独指定数据来源。未配置的字段
 | `deep` | NPY | vector | 96 | `/test/milvus/raw_data/deep1b/` |
 | `laion` | NPY | vector | 768 | `/test/milvus/raw_data/laion200M-en/` |
 | `bluesky` | JSON Lines | scalar_json | - | `/test/milvus/raw_data/bluesky/` |
+| `msmarco-text` | TXT | scalar_text | - | `/test/milvus/raw_data/msmarco_passage_v2/` |
 
 - **向量数据集**（sift/gist/deep/laion）：NPY 格式，用于 FloatVector 字段
 - **标量 JSON 数据集**（bluesky）：JSON Lines 格式（每行一个 JSON 对象），用于 JSON 类型字段
+- **纯文本数据集**（msmarco-text）：TXT 格式（每行一段纯文本），用于 VarChar 字段（如 BM25 全文检索场景）
 - 不配置 `fieldDataSourceList`（或传 `[]`）时，所有字段使用 random 生成（等同于旧版 `dataset: "random"`）
 
 #### 6.3 `collectionRule`

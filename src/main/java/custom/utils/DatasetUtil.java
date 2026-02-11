@@ -72,6 +72,18 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             fileSizeList.add(firstFileRows);
         }
         log.info("JSON数据集文件数量: {}，每个文件行数: {}，总行数: {}", fileNames.size(), firstFileRows, firstFileRows * fileNames.size());
+    } else if ("txt".equalsIgnoreCase(datasetEnum.fileFormat)) {
+        // TXT 数据集：每个文件行数不同，逐个统计
+        for (String fileName : fileNames) {
+            String path = datasetEnum.path + fileName;
+            try {
+                fileSizeList.add(JsonDatasetLoader.readRowCount(new File(path)));
+            } catch (IOException e) {
+                log.error("读取文件行数失败: {}", path, e);
+                fileSizeList.add(0L);
+            }
+        }
+        log.info("TXT数据集文件数量: {}，总行数: {}", fileNames.size(), fileSizeList.stream().mapToLong(Long::longValue).sum());
     } else {
         // NPY 数据集：逐个读取 header（很快）
         for (String fileName : fileNames) {
@@ -231,6 +243,88 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
         }
 
         log.info("读取JSON文件(可能跨多个文件)，可以使用的数据长度：{}", result.size());
+        return result;
+    }
+
+    public static List<String> providerTextLinesByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum, List<Long> fileSizeList) {
+        if (count <= 0) {
+            return Collections.emptyList();
+        }
+        if (count > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("count is too large for List: " + count);
+        }
+        if (index < 0) {
+            throw new IllegalArgumentException("index must be >= 0");
+        }
+        if (fileNames == null || fileNames.isEmpty()) {
+            log.warn("Dataset fileNames is empty");
+            return Collections.emptyList();
+        }
+        if (fileSizeList == null || fileSizeList.isEmpty()) {
+            log.warn("Dataset fileSizeList is empty");
+            return Collections.emptyList();
+        }
+
+        List<String> result = new ArrayList<>((int) count);
+
+        long remaining = count;
+        long globalPos = index;
+
+        int fileIndex = findIndex(globalPos, fileSizeList);
+        if (fileIndex < 0 || fileIndex >= fileNames.size() || fileIndex >= fileSizeList.size()) {
+            log.warn("index {} out of dataset range (files={}, sizes={})", index, fileNames.size(), fileSizeList.size());
+            return Collections.emptyList();
+        }
+
+        long fileStartGlobal = 0;
+        for (int i = 0; i < fileIndex; i++) {
+            fileStartGlobal += fileSizeList.get(i);
+        }
+
+        while (remaining > 0 && fileIndex < fileNames.size() && fileIndex < fileSizeList.size()) {
+            long rowsInFile = fileSizeList.get(fileIndex);
+            long localStart = globalPos - fileStartGlobal;
+            if (localStart < 0) {
+                localStart = 0;
+            }
+            if (localStart >= rowsInFile) {
+                fileStartGlobal += rowsInFile;
+                fileIndex++;
+                continue;
+            }
+
+            long available = rowsInFile - localStart;
+            int rowsToRead = (int) Math.min(remaining, available);
+
+            String txtDataPath = datasetEnum.path + fileNames.get(fileIndex);
+            log.info("使用TXT文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(txtDataPath)), 8 * 1024 * 1024)) {
+                // 跳过前 localStart 行
+                for (long skip = 0; skip < localStart; skip++) {
+                    if (reader.readLine() == null) {
+                        break;
+                    }
+                }
+                // 读取目标行
+                String line;
+                int read = 0;
+                while ((line = reader.readLine()) != null && read < rowsToRead) {
+                    result.add(line);
+                    read++;
+                }
+            } catch (IOException e) {
+                log.error("读取TXT文件失败: {} (localStart={}, rowsToRead={})", txtDataPath, localStart, rowsToRead, e);
+                throw new RuntimeException("读取TXT文件失败: " + txtDataPath + ", cause: " + e.getMessage(), e);
+            }
+
+            remaining -= rowsToRead;
+            globalPos += rowsToRead;
+            fileStartGlobal += rowsInFile;
+            fileIndex++;
+        }
+
+        log.info("读取TXT文件(可能跨多个文件)，可以使用的数据长度：{}", result.size());
         return result;
     }
 

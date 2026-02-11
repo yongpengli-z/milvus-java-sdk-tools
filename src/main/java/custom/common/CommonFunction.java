@@ -411,6 +411,10 @@ public class CommonFunction {
                     List<List<Float>> floatVectors = DatasetUtil.providerFloatVectorByDataset(
                             startId, count, info.getFileNames(), info.getDatasetEnum(), info.getFileSizeList());
                     fieldDataCache.put(entry.getKey(), floatVectors);
+                } else if ("txt".equalsIgnoreCase(info.getDatasetEnum().fileFormat)) {
+                    List<String> textLines = DatasetUtil.providerTextLinesByDataset(
+                            startId, count, info.getFileNames(), info.getDatasetEnum(), info.getFileSizeList());
+                    fieldDataCache.put(entry.getKey(), textLines);
                 }
             }
         }
@@ -447,6 +451,9 @@ public class CommonFunction {
                             if (item instanceof JsonObject) {
                                 // JSON 数据源
                                 jsonObject.add(name, (JsonObject) item);
+                            } else if (item instanceof String) {
+                                // TXT 纯文本数据源 (用于 VarChar 字段)
+                                jsonObject.addProperty(name, (String) item);
                             } else if (item instanceof List) {
                                 // NPY 向量数据源 (List<Float>)
                                 @SuppressWarnings("unchecked")
