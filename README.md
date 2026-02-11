@@ -242,6 +242,19 @@ milvus-java-sdk-toos/
 - **`enableAnalyzer`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不启用分析器）。
   - **BM25 约束**：如果该字段是 `functionParams` 中 BM25 function 的**输入字段**（即字段名出现在 `functionParams.inputFieldNames` 中），则**必须设置 `enableAnalyzer: true`**，否则 Milvus 会报错：`BM25 function input field must set enable_analyzer to true`。
 - **`analyzerParamsList`**（list，可空）：前端新增行默认 `[{paramsKey:"", paramsValue:""}]`（占位；不需要可传 `[]`）。
+  - 每个元素为 `{paramsKey: "xxx", paramsValue: "xxx"}`，最终会被组装为 `Map<String, Object>` 传给 Milvus SDK。
+  - **BM25 场景一般使用内置 `standard` 分词器即可**：`[{paramsKey: "type", paramsValue: "standard"}]`。
+  - 可选的 analyzer_params 配置方式：
+
+  | 配置方式 | analyzerParamsList 写法 | 说明 |
+  |---------|------------------------|------|
+  | 内置 standard | `[{"paramsKey":"type","paramsValue":"standard"}]` | 标准分词，**BM25 推荐** |
+  | 内置 english | `[{"paramsKey":"type","paramsValue":"english"}]` | 英文分词 + stemming + stop words |
+  | 内置 chinese | `[{"paramsKey":"type","paramsValue":"chinese"}]` | 中文 jieba 分词 |
+  | 自定义组合 | `[{"paramsKey":"tokenizer","paramsValue":"whitespace"},{"paramsKey":"filter","paramsValue":["lowercase","asciifolding"]}]` | 自定义 tokenizer + filter |
+
+  - **Tokenizer 可选值**：`standard`、`whitespace`、`jieba`
+  - **Filter 可选值**：`lowercase`、`asciifolding`、`stemmer`、`stop`、`alphanumonly`、`length`
 
 > **重要提示**：虽然这些 boolean 字段（`autoId`、`partitionKey`、`nullable`、`enableMatch`、`enableAnalyzer`）的前端默认值都是 `false`，但**建议在生成 JSON 时显式给出 `false`**，以避免后端反序列化时因字段缺失导致的不确定性。特别是当 LLM 生成 JSON 时，明确写出这些字段有助于提高可读性和避免歧义。
 
