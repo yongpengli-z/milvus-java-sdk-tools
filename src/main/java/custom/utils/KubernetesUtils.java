@@ -192,10 +192,10 @@ public class KubernetesUtils {
                         }
                     }
 
-                    // 构建 endpoint（格式：hostIp:port）
+                    // 构建 endpoint（格式：podIp:port）
                     String endpoint = "";
-                    if (hostIp != null && !hostIp.isEmpty() && primaryPort != null) {
-                        endpoint = hostIp + ":" + primaryPort;
+                    if (podIp != null && !podIp.isEmpty() && primaryPort != null) {
+                        endpoint = podIp + ":" + primaryPort;
                     }
 
                     podStatuses.add(PodStatus.builder()

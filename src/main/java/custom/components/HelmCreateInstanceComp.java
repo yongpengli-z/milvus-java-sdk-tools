@@ -126,15 +126,21 @@ public class HelmCreateInstanceComp {
                 log.warn("Not all pods are ready");
             }
 
-            // 8. 获取连接地址（LoadBalancer）
-            log.info("Step 7: Getting connection address...");
+            // 8. 获取连接地址（通过 Pod IP）
+            log.info("Step 7: Getting connection address via Pod IP...");
             String uri = "";
 
-            // 通过标签选择器和 releaseName 查找服务
-            // 优先级：releaseName-milvus > releaseName > 任何带 19530 端口的服务
-            String lbIp = KubernetesUtils.getLoadBalancerIpByLabel(coreApi, namespace, releaseName, labelSelector, 10);
-            if (!lbIp.isEmpty()) {
-                uri = "http://" + lbIp + ":19530";
+            // 从 standalone/proxy Pod 的 podIp 获取连接地址
+            String milvusMode = params.getMilvusMode();
+            String podPrefix = (milvusMode != null && milvusMode.equalsIgnoreCase("cluster"))
+                    ? releaseName + "-milvus-proxy"
+                    : releaseName + "-milvus-standalone";
+            for (KubernetesUtils.PodStatus pod : podStatuses) {
+                if (pod.getName().startsWith(podPrefix) && pod.getPodIp() != null && !pod.getPodIp().isEmpty()) {
+                    uri = "http://" + pod.getPodIp() + ":19530";
+                    log.info("Found Milvus pod: " + pod.getName() + ", podIp: " + pod.getPodIp());
+                    break;
+                }
             }
 
             log.info("Milvus URI: " + uri);
@@ -166,7 +172,6 @@ public class HelmCreateInstanceComp {
 
             // 12. 构建返回结果
             int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
-            String milvusMode = params.getMilvusMode();
             LocalDateTime createTime = LocalDateTime.now();
             int useHours = params.getUseHours();
             LocalDateTime expireTime = null;
