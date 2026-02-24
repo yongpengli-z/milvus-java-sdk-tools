@@ -52,9 +52,15 @@ public class JsonDatasetLoader {
 
             // 读取目标行并解析
             String line;
+            long lineNum = startRow;
             while ((line = reader.readLine()) != null && result.size() < rowCount) {
+                lineNum++;
                 if (!line.isEmpty()) {
-                    result.add(GSON.fromJson(line, JsonObject.class));
+                    try {
+                        result.add(GSON.fromJson(line, JsonObject.class));
+                    } catch (com.google.gson.JsonSyntaxException e) {
+                        log.warn("JSON Lines 文件 {} 第 {} 行解析失败，跳过: {}", file.getName(), lineNum, e.getMessage());
+                    }
                 }
             }
         }

@@ -491,6 +491,8 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`ignoreError`**（boolean，可空）：出错是否忽略继续。前端默认 `false`。
 - **`generalDataRoleList`**（list，可空）：数据生成规则（见 `GeneralDataRole`），仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；**如果你不使用该能力，建议直接传 `[]`**。
 
+> **注意**：`InsertParams` **没有**顶层 `dataset` 字段。数据集配置**只能通过 `fieldDataSourceList` 指定**，不要在 InsertParams 中添加 `"dataset": "random"` 等多余字段（`dataset` 字段属于 `BulkImportParams`，不是 `InsertParams`）。
+
 **Array of Struct 数据生成说明**：
 - Insert/Upsert 组件会自动识别 collection 中的 Array of Struct 字段
 - 数据生成时，`genCommonData` 方法会从 `collectionSchema.getStructFields()` 获取 Struct 字段信息
@@ -575,6 +577,8 @@ Array of Struct 允许在一个字段中存储多个结构体元素，每个结�
 - **`retryAfterDeny`**（boolean，可空）：前端默认 `false`。
 - **`generalDataRoleList`**（list，可空）：仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；不使用建议传 `[]`。
 - **`targetQps`**（int，可空）：前端默认 `0`。
+
+> **注意**：`UpsertParams` **没有**顶层 `dataset` 字段。数据集配置**只能通过 `fieldDataSourceList` 指定**（同 InsertParams）。
 
 ##### 5.1.8 Delete：`DeleteParams`
 
@@ -1349,7 +1353,7 @@ Insert/Upsert 支持为每个字段单独指定数据来源。未配置的字段
 - **向量数据集**（sift/gist/deep/laion）：NPY 格式，用于 FloatVector 字段
 - **标量 JSON 数据集**（bluesky）：JSON Lines 格式（每行一个 JSON 对象），用于 JSON 类型字段
 - **纯文本数据集**（msmarco-text）：TXT 格式（每行一段纯文本），用于 VarChar 字段（如 BM25 全文检索场景）
-- 不配置 `fieldDataSourceList`（或传 `[]`）时，所有字段使用 random 生成（等同于旧版 `dataset: "random"`）
+- 不配置 `fieldDataSourceList`（或传 `[]`）时，所有字段使用 random 生成
 
 #### 6.3 `collectionRule`
 
