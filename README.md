@@ -191,6 +191,8 @@ milvus-java-sdk-toos/
   - **重要约束**：当 `numPartitions > 0` 时，`fieldParamsList` 中**必须至少有一个字段的 `partitionKey` 为 `true`**，否则 Milvus 会报错：`num_partitions should only be specified with partition key field enabled`。
   - 如果不需要分区，请设置 `numPartitions: 0`，且所有字段的 `partitionKey: false`。
 - **`enableDynamic`**（boolean，前端必填）：是否开启动态列。前端默认：`false`。
+  - **`$meta` 与 `enableDynamic` 的关系**：当 `enableDynamic: true` 时，Milvus 会自动创建一个名为 `$meta` 的 JSON 类型隐藏字段（Type Params 为 null），用于存储未在 schema 中定义的动态字段数据。**不要在 `fieldParamsList` 中手动定义 `$meta` 字段**，它由 Milvus 自动管理。
+  - **LLM 推理规则**：当用户提供的 schema / 截图中出现 `$meta`（JSON 类型、Type Params 为 null）字段时，说明该 collection 开启了动态列，应设置 `enableDynamic: true`，且**不要**将 `$meta` 加入 `fieldParamsList`。
 - **`fieldParamsList`**（list，前端必填）：字段定义（见 `FieldParams`）。前端默认：2 个字段（`Int64_0` 作为 PK + `FloatVector_1` 向量字段）。
   - **向量字段约束**：一个 collection **必须至少包含一个向量字段**。向量字段可以是：
     - 正常的顶层向量字段（如 `FloatVector`、`BinaryVector` 等）

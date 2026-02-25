@@ -216,26 +216,75 @@ public class GenerateUtil {
     private static final Faker FAKER_CN = new Faker (new Locale("zh-CN"));
     private static final Faker FAKER_EN = new Faker();
 
-    public static String generateRandomLengthSentence(int maxLength) {
+    private static final Random TEMPLATE_RANDOM = new Random();
 
+    /**
+     * 生成随机长度的英文句子（多种模板随机组合）。
+     * <p>
+     * 包含 8 种句型模板：人物介绍、产品评论、新闻摘要、技术描述、
+     * 名言引用、地址描述、书籍/教育、公司描述。每次循环随机选一个模板
+     * 拼接，直到接近 maxLength 为止。
+     */
+    public static String generateRandomLengthSentence(int maxLength) {
         StringBuilder sentence = new StringBuilder();
         while (sentence.length() < maxLength) {
-            // 使用领域数据生成有意义的句子片段
-            String person = FAKER_EN.name().fullName();
-            String company = FAKER_EN.company().name();
-            String job = FAKER_EN.job().title();
-            String city = FAKER_EN.address().city();
-
-            String part = person + " works as a " + job + " at " + company + " in " + city + ". ";
+            String part = generateOneRandomSentence();
 
             if (sentence.length() + part.length() > maxLength) {
-                if (sentence.length() == 0){
+                if (sentence.length() == 0) {
                     sentence.append(part, 0, maxLength);
                 }
-                break;  // 如果添加后超过最大长度，则停止
+                break;
             }
             sentence.append(part);
         }
         return sentence.toString();
+    }
+
+    /**
+     * 从 8 种模板中随机选一种，生成一句话。
+     */
+    private static String generateOneRandomSentence() {
+        int template = TEMPLATE_RANDOM.nextInt(8);
+        switch (template) {
+            case 0:
+                // 人物介绍
+                return FAKER_EN.name().fullName() + " works as a " + FAKER_EN.job().title()
+                        + " at " + FAKER_EN.company().name() + " in " + FAKER_EN.address().city() + ". ";
+            case 1:
+                // 产品评论
+                return "The " + FAKER_EN.commerce().productName() + " received "
+                        + (TEMPLATE_RANDOM.nextInt(5) + 1) + "/5 stars, customers noted it was "
+                        + FAKER_EN.commerce().material() + " and " + FAKER_EN.color().name() + ". ";
+            case 2:
+                // 新闻摘要
+                return "Breaking news from " + FAKER_EN.address().city() + ": "
+                        + FAKER_EN.company().name() + " announced " + FAKER_EN.company().bs() + " yesterday. ";
+            case 3:
+                // 技术描述
+                return "The " + FAKER_EN.app().name() + " platform uses " + FAKER_EN.hacker().adjective()
+                        + " " + FAKER_EN.hacker().noun() + " to " + FAKER_EN.hacker().verb()
+                        + " the " + FAKER_EN.hacker().ingverb() + " " + FAKER_EN.hacker().noun() + ". ";
+            case 4:
+                // 名言引用
+                return "As " + FAKER_EN.name().fullName() + " once said, \""
+                        + FAKER_EN.shakespeare().hamletQuote() + "\" ";
+            case 5:
+                // 地址描述
+                return FAKER_EN.name().fullName() + " lives at " + FAKER_EN.address().streetAddress()
+                        + ", " + FAKER_EN.address().city() + ", " + FAKER_EN.address().country() + ". ";
+            case 6:
+                // 书籍/教育
+                return FAKER_EN.name().fullName() + " studied at " + FAKER_EN.university().name()
+                        + " and wrote \"" + FAKER_EN.book().title() + "\" about "
+                        + FAKER_EN.lorem().sentence() + " ";
+            case 7:
+                // 公司描述
+                return FAKER_EN.company().name() + " is a " + FAKER_EN.company().industry()
+                        + " company founded in " + FAKER_EN.address().city()
+                        + ", known for " + FAKER_EN.company().bs() + ". ";
+            default:
+                return FAKER_EN.lorem().sentence() + " ";
+        }
     }
 }

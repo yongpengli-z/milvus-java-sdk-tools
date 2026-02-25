@@ -544,9 +544,7 @@ public class CommonFunction {
                                 ByteBuffer int8Buffer = generateInt8Vector(subFieldDim);
                                 structObj.add(subFieldName, gson.toJsonTree(int8Buffer.array()));
                             } else if (subFieldType == DataType.VarChar || subFieldType == DataType.String) {
-                                String strValue = subFieldIsEnableMatch ?
-                                        GenerateUtil.generateRandomLengthSentence(subFieldMaxLength) :
-                                        MathUtil.genRandomString(subFieldMaxLength);
+                                String strValue = GenerateUtil.generateRandomLengthSentence(subFieldMaxLength);
                                 structObj.add(subFieldName, gson.toJsonTree(strValue));
                             } else if (subFieldType == DataType.Int64) {
                                 structObj.add(subFieldName, gson.toJsonTree(i * 1000L + structIdx));
@@ -635,7 +633,7 @@ public class CommonFunction {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
             } else {
-                row.add(fieldName, gson.toJsonTree(isEnableMatch ? GenerateUtil.generateRandomLengthSentence(dimOrLength) : MathUtil.genRandomString(dimOrLength)));
+                row.add(fieldName, gson.toJsonTree(GenerateUtil.generateRandomLengthSentence(dimOrLength)));
             }
         }
         if (dataType == DataType.String) {
@@ -646,7 +644,7 @@ public class CommonFunction {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
                 }
             } else {
-                row.add(fieldName, gson.toJsonTree(isEnableMatch ? GenerateUtil.generateRandomLengthSentence(dimOrLength) : MathUtil.genRandomString(dimOrLength)));
+                row.add(fieldName, gson.toJsonTree(GenerateUtil.generateRandomLengthSentence(dimOrLength)));
 
             }
         }
