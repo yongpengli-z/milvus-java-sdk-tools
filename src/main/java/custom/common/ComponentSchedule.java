@@ -132,9 +132,10 @@ public class ComponentSchedule {
             reportStepResult(DropCollectionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(dropCollectionResult));
         }
         if (object instanceof RecallParams) {
-            log.info("*********** < recall > ***********");
-            RecallComp.calcRecall((RecallParams) object);
-
+            log.info("*********** < recall test > ***********");
+            RecallResult recallResult = RecallComp.recallTest((RecallParams) object);
+            jsonObject.put("Recall_" + index, recallResult);
+            reportStepResult(RecallParams.class.getSimpleName() + "_" + index, JSON.toJSONString(recallResult));
         }
         if (object instanceof WaitParams) {
             log.info("*********** < Wait > ***********");

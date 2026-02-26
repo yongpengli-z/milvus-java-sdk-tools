@@ -2,10 +2,13 @@ package custom.entity;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
- * Recall 参数（用于计算不同 search level 下的 recall/命中率）。
+ * Recall 评测参数（多维度 recall 评测：多 topK x 多 searchLevel 组合）。
  * <p>
- * 前端当前未提供对应的 Edit 表单（`customize/components/items/` 下无 recallEdit）。
+ * 通过 brute force search（高 search level）获取 ground truth，
+ * 然后在不同 (topK, searchLevel) 组合下计算 recall@K。
  */
 @Data
 public class RecallParams {
@@ -19,16 +22,64 @@ public class RecallParams {
     private String collectionName;
 
     /**
-     * Search level（会写入 searchParams: {"level": x}）。
-     * <p>
-     * 默认值：1
-     */
-    private int searchLevel;
-
-    /**
      * 向量字段名（annsField）。
      * <p>
-     * 默认值：`FloatVector_1`
+     * 支持正常向量字段或 struct 中的向量字段（格式：structFieldName[subFieldName]）。
+     * <p>
+     * 默认值："FloatVector_1"
      */
-    String annsField;
+    private String annsField;
+
+    /**
+     * NQ（query 向量数量，从采样数据中随机挑选 nq 条用于评测）。
+     * <p>
+     * 默认值：10
+     */
+    private int nq;
+
+    /**
+     * TopK 列表（评测多个 topK 值下的 recall）。
+     * <p>
+     * 示例：[1, 10, 50, 100]
+     * <p>
+     * 默认值：[1]
+     */
+    private List<Integer> topKList;
+
+    /**
+     * Search Level 列表（评测多个 search level 下的 recall）。
+     * <p>
+     * 示例：[1, 2, 3, 5]
+     * <p>
+     * 默认值：[1]
+     */
+    private List<Integer> searchLevelList;
+
+    /**
+     * Ground truth 所使用的 search level（brute force）。
+     * <p>
+     * 默认值：10
+     */
+    private int groundTruthLevel;
+
+    /**
+     * 标量过滤表达式（可选）。
+     * <p>
+     * 默认值：""（空字符串，不过滤）
+     */
+    private String filter;
+
+    /**
+     * 从 collection 中采样的向量数量（用于构建查询向量池）。
+     * <p>
+     * 默认值：1000
+     */
+    private int sampleNum;
+
+    /**
+     * 一致性级别。
+     * <p>
+     * 默认值："BOUNDED"
+     */
+    private String consistencyLevel;
 }
