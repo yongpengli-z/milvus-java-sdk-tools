@@ -160,4 +160,15 @@ public class CreateInstanceParams {
      * 前端默认值：`{replicaNum:"", cpu:"", memory:"", disk:""}`
      */
     StreamingNodeParams streamingNodeParams;
+
+    /**
+     * CMEK（Customer Managed Encryption Key）集成 ID（可选）。
+     * <p>
+     * 通过 cloud-meta 的 /meta/v1/integration/cmek/add 接口创建后获取。
+     * <p>
+     * 传入后创建实例时会关联 KMS 加密密钥。
+     * <p>
+     * 前端默认值：""（空字符串，表示不使用 CMEK）
+     */
+    String kmsIntegrationId;
 }

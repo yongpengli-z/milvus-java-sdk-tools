@@ -22,6 +22,10 @@ import static custom.BaseTest.*;
 public class ResourceManagerServiceUtils {
     public static String createInstance(CreateInstanceParams createInstanceParams) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/create";
+        String kmsField = "";
+        if (createInstanceParams.getKmsIntegrationId() != null && !createInstanceParams.getKmsIntegrationId().isEmpty()) {
+            kmsField = "  \"kmsIntegrationId\": \"" + createInstanceParams.getKmsIntegrationId() + "\",\n";
+        }
         String body = "{\n" +
                 "  \"classId\": \"" + createInstanceParams.getCuType() + "\",\n" +
                 "  \"dbVersion\": \"" + createInstanceParams.getDbVersion() + "\",\n" +
@@ -30,6 +34,7 @@ public class ResourceManagerServiceUtils {
                 "  \"instanceDescription\": \"create by java tools\",\n" +
                 "  \"instanceName\": \"" + createInstanceParams.getInstanceName() + "\",\n" +
                 "  \"instanceType\": " + createInstanceParams.getInstanceType() + ",\n" +
+                kmsField +
                 "  \"mockTag\": false,\n" +
                 "  \"orgType\": \"SAAS\",\n" +
                 "  \"processorArchitecture\": \"" + createInstanceParams.getArchitecture() + "\",\n" +
