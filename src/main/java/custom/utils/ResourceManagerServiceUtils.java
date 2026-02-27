@@ -24,7 +24,8 @@ public class ResourceManagerServiceUtils {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/create";
         String kmsField = "";
         if (createInstanceParams.getKmsIntegrationId() != null && !createInstanceParams.getKmsIntegrationId().isEmpty()) {
-            kmsField = "  \"kmsIntegrationId\": \"" + createInstanceParams.getKmsIntegrationId() + "\",\n";
+            kmsField = "  \"enableCMEK\": true,\n" +
+                    "  \"kmsIntegrationId\": \"" + createInstanceParams.getKmsIntegrationId() + "\",\n";
         }
         String body = "{\n" +
                 "  \"classId\": \"" + createInstanceParams.getCuType() + "\",\n" +
