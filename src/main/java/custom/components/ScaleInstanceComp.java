@@ -61,32 +61,49 @@ public class ScaleInstanceComp {
                     .costSeconds(0).build();
         }
 
-        // 使用 modify 接口（classId 必传，没变化时传当前值）
-        String modifyClassId = cuNeedChange ? targetCuType : currentClassId;
-        int modifyReplica = replicaNeedChange ? targetReplica : 0;
+        // 分开调用：先改 CU，再改 replica（RM modify 不支持同时变更两者）
         if (cuNeedChange) {
             log.info("Scale CU: " + currentClassId + " -> " + targetCuType);
+            String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, targetCuType, 0);
+            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
+            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message("modify CU failed: " + modifyJO.getString("Message")).build()).build();
+            }
+            log.info("Submit modify CU success!");
+            String waitResult = waitForRunning(instanceId);
+            if (waitResult != null) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.WARNING.result)
+                                .message("Wait for CU change timeout: " + waitResult).build()).build();
+            }
+            log.info("CU change completed, instance is RUNNING.");
         }
-        if (replicaNeedChange) {
-            log.info("Scale replica: " + currentReplica + " -> " + targetReplica);
-        }
-        String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, modifyClassId, modifyReplica);
-        JSONObject modifyJO = JSONObject.parseObject(modifyResp);
-        if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
-            return ScaleInstanceResult.builder()
-                    .commonResult(CommonResult.builder()
-                            .result(ResultEnum.EXCEPTION.result)
-                            .message("modify instance failed: " + modifyJO.getString("Message")).build()).build();
-        }
-        log.info("Submit modify instance success!");
 
-        // 轮询等待实例恢复 RUNNING
-        String waitResult = waitForRunning(instanceId);
-        if (waitResult != null) {
-            return ScaleInstanceResult.builder()
-                    .commonResult(CommonResult.builder()
-                            .result(ResultEnum.WARNING.result)
-                            .message(waitResult).build()).build();
+        if (replicaNeedChange) {
+            // 如果 CU 刚改过，需要重新获取当前 classId
+            String classIdForReplica = cuNeedChange ? targetCuType : currentClassId;
+            log.info("Scale replica: " + currentReplica + " -> " + targetReplica);
+            String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, classIdForReplica, targetReplica);
+            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
+            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message("modify replica failed: " + modifyJO.getString("Message")).build()).build();
+            }
+            log.info("Submit modify replica success!");
+            String waitResult = waitForRunning(instanceId);
+            if (waitResult != null) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.WARNING.result)
+                                .message("Wait for replica change timeout: " + waitResult).build()).build();
+            }
+            log.info("Replica change completed, instance is RUNNING.");
         }
 
         long endTime = System.currentTimeMillis();
