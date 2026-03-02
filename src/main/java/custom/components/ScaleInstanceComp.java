@@ -58,6 +58,17 @@ public class ScaleInstanceComp {
         boolean cuNeedChange = !targetBaseCu.equalsIgnoreCase(currentBaseCu);
         boolean replicaNeedChange = finalReplica != currentReplica;
 
+        // replica > 1 时，CU 必须 >= 8
+        if (finalReplica > 1) {
+            int targetCu = extractCu(targetBaseCu);
+            if (targetCu < 8) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.WARNING.result)
+                                .message("replica > 1 requires CU >= 8, but target CU is " + targetCu).build()).build();
+            }
+        }
+
         if (!cuNeedChange && !replicaNeedChange) {
             log.info("No changes needed, CU and replica are already at target values.");
             return ScaleInstanceResult.builder()
@@ -141,6 +152,16 @@ public class ScaleInstanceComp {
         int firstDash = normalized.indexOf("-"); // "class" 后的第一个 -
         int secondDash = normalized.indexOf("-", firstDash + 1); // CU 数后的 -
         return normalized.substring(0, secondDash) + "-" + replica + normalized.substring(secondDash);
+    }
+
+    /**
+     * 从 classId 中提取 CU 数。
+     * class-8-enterprise -> 8, class-128-2-disk-enterprise -> 128
+     */
+    private static int extractCu(String classId) {
+        // parts[1] 就是 CU 数: class-{cu}-...
+        String[] parts = classId.split("-");
+        return Integer.parseInt(parts[1]);
     }
 
     /**
