@@ -1,6 +1,7 @@
 package custom.components;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import custom.common.InstanceStatusEnum;
 import custom.entity.ScaleInstanceParams;
 import custom.entity.result.CommonResult;
@@ -45,7 +46,7 @@ public class ScaleInstanceComp {
         if (scaleInstanceParams.getTargetCuType() != null && !scaleInstanceParams.getTargetCuType().equalsIgnoreCase("")) {
             String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, scaleInstanceParams.getTargetCuType());
             JSONObject modifyJO = JSONObject.parseObject(modifyResp);
-            if (modifyJO.getInteger("Code") != 0) {
+            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
                 return ScaleInstanceResult.builder()
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.EXCEPTION.result)
@@ -54,11 +55,12 @@ public class ScaleInstanceComp {
             log.info("Submit modify CU success!");
         }
 
-        // 修改 replica
-        if (scaleInstanceParams.getTargetReplica() > 0) {
-            String replicaResp = ResourceManagerServiceUtils.modifyReplica(instanceId, scaleInstanceParams.getTargetReplica());
+        // 修改 replica（使用 update_replicas 接口）
+        if (scaleInstanceParams.getTargetReplica() > 1) {
+            String replicaResp = ResourceManagerServiceUtils.updateReplica(instanceId, scaleInstanceParams.getTargetReplica(),
+                    Lists.newArrayList("queryNode"));
             JSONObject replicaJO = JSONObject.parseObject(replicaResp);
-            if (replicaJO.getInteger("Code") != 0) {
+            if (replicaJO.getInteger("Code") != null && replicaJO.getInteger("Code") != 0) {
                 return ScaleInstanceResult.builder()
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.EXCEPTION.result)
