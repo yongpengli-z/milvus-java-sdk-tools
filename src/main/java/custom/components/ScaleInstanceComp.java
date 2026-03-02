@@ -46,17 +46,20 @@ public class ScaleInstanceComp {
         int currentReplica = dataJO.getInteger("Replica");
         log.info("Current classId:" + currentClassId + ", current replica:" + currentReplica);
 
-        // 构造目标 classId（replica 编码在 classId 中，如 class-8-2-enterprise）
-        String baseClassId = (scaleInstanceParams.getTargetCuType() != null && !scaleInstanceParams.getTargetCuType().isEmpty())
-                ? scaleInstanceParams.getTargetCuType() : currentClassId;
+        // replica 编码在 classId 中（如 class-8-2-enterprise），RM 不允许同时改 CU 和 replica
+        String baseCuType = (scaleInstanceParams.getTargetCuType() != null && !scaleInstanceParams.getTargetCuType().isEmpty())
+                ? scaleInstanceParams.getTargetCuType() : null;
         int targetReplica = scaleInstanceParams.getTargetReplica();
-        // 如果未指定 replica（0），保持当前值
         int finalReplica = targetReplica > 0 ? targetReplica : currentReplica;
-        String targetClassId = buildClassId(baseClassId, finalReplica);
-        log.info("Target classId: " + targetClassId + " (baseClassId=" + baseClassId + ", replica=" + finalReplica + ")");
 
-        if (targetClassId.equalsIgnoreCase(currentClassId)) {
-            log.info("No changes needed, classId is already " + currentClassId);
+        // 判断 CU 是否需要变更（比较去掉 replica 后的基础 classId）
+        String currentBaseCu = stripReplica(currentClassId);
+        String targetBaseCu = baseCuType != null ? stripReplica(baseCuType) : currentBaseCu;
+        boolean cuNeedChange = !targetBaseCu.equalsIgnoreCase(currentBaseCu);
+        boolean replicaNeedChange = finalReplica != currentReplica;
+
+        if (!cuNeedChange && !replicaNeedChange) {
+            log.info("No changes needed, CU and replica are already at target values.");
             return ScaleInstanceResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result)
@@ -64,25 +67,51 @@ public class ScaleInstanceComp {
                     .costSeconds(0).build();
         }
 
-        // 一次 modify 调用，classId 中已包含 replica 信息
-        log.info("Scale instance: " + currentClassId + " -> " + targetClassId);
-        String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, targetClassId, finalReplica);
-        JSONObject modifyJO = JSONObject.parseObject(modifyResp);
-        if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
-            return ScaleInstanceResult.builder()
-                    .commonResult(CommonResult.builder()
-                            .result(ResultEnum.EXCEPTION.result)
-                            .message("modify failed: " + modifyJO.getString("Message")).build()).build();
+        // 第一步：改 CU（保持当前 replica 不变）
+        if (cuNeedChange) {
+            String cuClassId = buildClassId(targetBaseCu, currentReplica);
+            log.info("Step1 - Scale CU: " + currentClassId + " -> " + cuClassId);
+            String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, cuClassId, currentReplica);
+            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
+            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message("modify CU failed: " + modifyJO.getString("Message")).build()).build();
+            }
+            log.info("Submit modify CU success!");
+            String waitResult = waitForRunning(instanceId);
+            if (waitResult != null) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.WARNING.result)
+                                .message("Wait for CU change timeout: " + waitResult).build()).build();
+            }
+            log.info("CU change completed, instance is RUNNING.");
         }
-        log.info("Submit modify success!");
-        String waitResult = waitForRunning(instanceId);
-        if (waitResult != null) {
-            return ScaleInstanceResult.builder()
-                    .commonResult(CommonResult.builder()
-                            .result(ResultEnum.WARNING.result)
-                            .message("Wait for scale timeout: " + waitResult).build()).build();
+
+        // 第二步：改 replica（CU 用目标值）
+        if (replicaNeedChange) {
+            String replicaClassId = buildClassId(targetBaseCu, finalReplica);
+            log.info("Step2 - Scale replica: " + currentReplica + " -> " + finalReplica + ", classId: " + replicaClassId);
+            String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, replicaClassId, finalReplica);
+            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
+            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message("modify replica failed: " + modifyJO.getString("Message")).build()).build();
+            }
+            log.info("Submit modify replica success!");
+            String waitResult = waitForRunning(instanceId);
+            if (waitResult != null) {
+                return ScaleInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.WARNING.result)
+                                .message("Wait for replica change timeout: " + waitResult).build()).build();
+            }
+            log.info("Replica change completed, instance is RUNNING.");
         }
-        log.info("Scale completed, instance is RUNNING.");
 
         long endTime = System.currentTimeMillis();
         int costSeconds = (int) ((endTime - startTime) / 1000);
