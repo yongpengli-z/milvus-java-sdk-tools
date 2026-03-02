@@ -264,9 +264,7 @@ public class ResourceManagerServiceUtils {
         Gson gson = new Gson();
         Map<String, Object> params = new HashMap<>();
         params.put("instanceId", instanceId);
-        if (classId != null && !classId.isEmpty()) {
-            params.put("classId", classId);
-        }
+        params.put("classId", classId);
         if (replica > 0) {
             params.put("replica", replica);
         }

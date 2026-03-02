@@ -61,8 +61,8 @@ public class ScaleInstanceComp {
                     .costSeconds(0).build();
         }
 
-        // 使用 modify 接口，支持同时传 classId 和 replica
-        String modifyClassId = cuNeedChange ? targetCuType : null;
+        // 使用 modify 接口（classId 必传，没变化时传当前值）
+        String modifyClassId = cuNeedChange ? targetCuType : currentClassId;
         int modifyReplica = replicaNeedChange ? targetReplica : 0;
         if (cuNeedChange) {
             log.info("Scale CU: " + currentClassId + " -> " + targetCuType);
