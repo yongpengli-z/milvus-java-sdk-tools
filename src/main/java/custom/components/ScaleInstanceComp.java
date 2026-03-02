@@ -46,14 +46,17 @@ public class ScaleInstanceComp {
         int currentReplica = dataJO.getInteger("Replica");
         log.info("Current classId:" + currentClassId + ", current replica:" + currentReplica);
 
-        // 对比目标值与当前值
-        String targetCuType = scaleInstanceParams.getTargetCuType();
+        // 构造目标 classId（replica 编码在 classId 中，如 class-8-2-enterprise）
+        String baseClassId = (scaleInstanceParams.getTargetCuType() != null && !scaleInstanceParams.getTargetCuType().isEmpty())
+                ? scaleInstanceParams.getTargetCuType() : currentClassId;
         int targetReplica = scaleInstanceParams.getTargetReplica();
-        boolean cuNeedChange = targetCuType != null && !targetCuType.isEmpty() && !targetCuType.equalsIgnoreCase(currentClassId);
-        boolean replicaNeedChange = targetReplica > 0 && targetReplica != currentReplica;
+        // 如果未指定 replica（0），保持当前值
+        int finalReplica = targetReplica > 0 ? targetReplica : currentReplica;
+        String targetClassId = buildClassId(baseClassId, finalReplica);
+        log.info("Target classId: " + targetClassId + " (baseClassId=" + baseClassId + ", replica=" + finalReplica + ")");
 
-        if (!cuNeedChange && !replicaNeedChange) {
-            log.info("No changes needed, CU and replica are already at target values.");
+        if (targetClassId.equalsIgnoreCase(currentClassId)) {
+            log.info("No changes needed, classId is already " + currentClassId);
             return ScaleInstanceResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result)
@@ -61,50 +64,25 @@ public class ScaleInstanceComp {
                     .costSeconds(0).build();
         }
 
-        // 分开调用：先改 CU，再改 replica（RM modify 不支持同时变更两者）
-        if (cuNeedChange) {
-            log.info("Scale CU: " + currentClassId + " -> " + targetCuType);
-            String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, targetCuType, 0);
-            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
-            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.EXCEPTION.result)
-                                .message("modify CU failed: " + modifyJO.getString("Message")).build()).build();
-            }
-            log.info("Submit modify CU success!");
-            String waitResult = waitForRunning(instanceId);
-            if (waitResult != null) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.WARNING.result)
-                                .message("Wait for CU change timeout: " + waitResult).build()).build();
-            }
-            log.info("CU change completed, instance is RUNNING.");
+        // 一次 modify 调用，classId 中已包含 replica 信息
+        log.info("Scale instance: " + currentClassId + " -> " + targetClassId);
+        String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, targetClassId, finalReplica);
+        JSONObject modifyJO = JSONObject.parseObject(modifyResp);
+        if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
+            return ScaleInstanceResult.builder()
+                    .commonResult(CommonResult.builder()
+                            .result(ResultEnum.EXCEPTION.result)
+                            .message("modify failed: " + modifyJO.getString("Message")).build()).build();
         }
-
-        if (replicaNeedChange) {
-            // 如果 CU 刚改过，需要重新获取当前 classId
-            String classIdForReplica = cuNeedChange ? targetCuType : currentClassId;
-            log.info("Scale replica: " + currentReplica + " -> " + targetReplica);
-            String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, classIdForReplica, targetReplica);
-            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
-            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.EXCEPTION.result)
-                                .message("modify replica failed: " + modifyJO.getString("Message")).build()).build();
-            }
-            log.info("Submit modify replica success!");
-            String waitResult = waitForRunning(instanceId);
-            if (waitResult != null) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.WARNING.result)
-                                .message("Wait for replica change timeout: " + waitResult).build()).build();
-            }
-            log.info("Replica change completed, instance is RUNNING.");
+        log.info("Submit modify success!");
+        String waitResult = waitForRunning(instanceId);
+        if (waitResult != null) {
+            return ScaleInstanceResult.builder()
+                    .commonResult(CommonResult.builder()
+                            .result(ResultEnum.WARNING.result)
+                            .message("Wait for scale timeout: " + waitResult).build()).build();
         }
+        log.info("Scale completed, instance is RUNNING.");
 
         long endTime = System.currentTimeMillis();
         int costSeconds = (int) ((endTime - startTime) / 1000);
@@ -113,6 +91,51 @@ public class ScaleInstanceComp {
                 .commonResult(CommonResult.builder()
                         .result(ResultEnum.SUCCESS.result).build())
                 .costSeconds(costSeconds).build();
+    }
+
+    /**
+     * 根据基础 classId 和 replica 数构造最终 classId。
+     * 规则：replica=1 时省略，replica>=2 时插在 CU 数后面。
+     * 例：class-8-enterprise + replica=2 -> class-8-2-enterprise
+     *     class-8-disk-enterprise + replica=3 -> class-8-3-disk-enterprise
+     *     class-8-2-enterprise + replica=1 -> class-8-enterprise（去掉 replica 部分）
+     */
+    private static String buildClassId(String baseClassId, int replica) {
+        // 先把 baseClassId 中可能已有的 replica 数去掉，还原为 1-replica 形式
+        // 格式: class-{cu}[-{replica}][-disk|-tiered]-enterprise
+        String normalized = stripReplica(baseClassId);
+        if (replica <= 1) {
+            return normalized;
+        }
+        // 在 CU 数后面插入 replica: class-{cu} + -{replica} + 剩余部分
+        // normalized 格式: class-{cu}-enterprise / class-{cu}-disk-enterprise / class-{cu}-tiered-enterprise
+        int firstDash = normalized.indexOf("-"); // "class" 后的第一个 -
+        int secondDash = normalized.indexOf("-", firstDash + 1); // CU 数后的 -
+        return normalized.substring(0, secondDash) + "-" + replica + normalized.substring(secondDash);
+    }
+
+    /**
+     * 去掉 classId 中的 replica 部分，还原为 1-replica 形式。
+     * class-8-2-enterprise -> class-8-enterprise
+     * class-8-3-disk-enterprise -> class-8-disk-enterprise
+     * class-8-enterprise -> class-8-enterprise (不变)
+     */
+    private static String stripReplica(String classId) {
+        // 格式: class-{cu}[-{replicaNum}][-disk|-tiered]-enterprise
+        String[] parts = classId.split("-");
+        // parts[0]=class, parts[1]=cu, ...可能有 replica 数字, 然后 disk/tiered(可选), enterprise
+        // 判断 parts[2] 是否为纯数字（replica）
+        if (parts.length >= 4 && parts[2].matches("\\d+")) {
+            // 去掉 parts[2]（replica 部分）
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                if (i == 2) continue;
+                if (sb.length() > 0) sb.append("-");
+                sb.append(parts[i]);
+            }
+            return sb.toString();
+        }
+        return classId;
     }
 
     /**
