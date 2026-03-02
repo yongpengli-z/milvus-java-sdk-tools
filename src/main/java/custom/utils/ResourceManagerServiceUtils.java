@@ -259,19 +259,24 @@ public class ResourceManagerServiceUtils {
         return s;
     }
 
-    public static String modifyInstance(String instanceId, String classId) {
+    public static String modifyInstance(String instanceId, String classId, int replica) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/modify";
         Gson gson = new Gson();
         Map<String, Object> params = new HashMap<>();
         params.put("instanceId", instanceId);
-        params.put("classId", classId);
+        if (classId != null && !classId.isEmpty()) {
+            params.put("classId", classId);
+        }
+        if (replica > 0) {
+            params.put("replica", replica);
+        }
         String jsonParams = gson.toJson(params);
         Map<String, String> header = new HashMap<>();
         header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(jsonParams).toJSONString());
-        log.info("modify instance (scale CU): " + s);
+        log.info("modify instance: " + s);
         return s;
     }
 

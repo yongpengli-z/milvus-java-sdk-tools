@@ -1,7 +1,6 @@
 package custom.components;
 
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
 import custom.common.InstanceStatusEnum;
 import custom.entity.ScaleInstanceParams;
 import custom.entity.result.CommonResult;
@@ -47,72 +46,51 @@ public class ScaleInstanceComp {
         int currentReplica = dataJO.getInteger("Replica");
         log.info("Current classId:" + currentClassId + ", current replica:" + currentReplica);
 
-        // 修改 CU class（对比当前值）
-        boolean cuChanged = false;
-        if (scaleInstanceParams.getTargetCuType() != null && !scaleInstanceParams.getTargetCuType().equalsIgnoreCase("")
-                && !scaleInstanceParams.getTargetCuType().equalsIgnoreCase(currentClassId)) {
-            log.info("Scale CU: " + currentClassId + " -> " + scaleInstanceParams.getTargetCuType());
-            String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, scaleInstanceParams.getTargetCuType());
-            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
-            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.EXCEPTION.result)
-                                .message("modify CU failed: " + modifyJO.getString("Message")).build()).build();
-            }
-            log.info("Submit modify CU success!");
-            cuChanged = true;
-            // 轮询等待 CU 变更完成（实例恢复 RUNNING）
-            String waitResult = waitForRunning(instanceId, "modify CU");
-            if (waitResult != null) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.WARNING.result)
-                                .message(waitResult).build()).build();
-            }
-        } else {
-            log.info("CU type unchanged, skip modify CU.");
-        }
+        // 对比目标值与当前值
+        String targetCuType = scaleInstanceParams.getTargetCuType();
+        int targetReplica = scaleInstanceParams.getTargetReplica();
+        boolean cuNeedChange = targetCuType != null && !targetCuType.isEmpty() && !targetCuType.equalsIgnoreCase(currentClassId);
+        boolean replicaNeedChange = targetReplica > 0 && targetReplica != currentReplica;
 
-        // 修改 replica（对比当前值）
-        boolean replicaChanged = false;
-        if (scaleInstanceParams.getTargetReplica() > 0 && scaleInstanceParams.getTargetReplica() != currentReplica) {
-            log.info("Scale replica: " + currentReplica + " -> " + scaleInstanceParams.getTargetReplica());
-            String replicaResp = ResourceManagerServiceUtils.updateReplica(instanceId, scaleInstanceParams.getTargetReplica(),
-                    Lists.newArrayList("queryNode"));
-            JSONObject replicaJO = JSONObject.parseObject(replicaResp);
-            if (replicaJO.getInteger("Code") == null || replicaJO.getInteger("Code") != 0) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.EXCEPTION.result)
-                                .message("modify replica failed: " + replicaJO.getString("Message")).build()).build();
-            }
-            log.info("Submit modify replica success!");
-            replicaChanged = true;
-            // 轮询等待 replica 变更完成
-            String waitResult = waitForRunning(instanceId, "modify replica");
-            if (waitResult != null) {
-                return ScaleInstanceResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.WARNING.result)
-                                .message(waitResult).build()).build();
-            }
-        } else {
-            log.info("Replica unchanged, skip modify replica.");
-        }
-
-        long endTime = System.currentTimeMillis();
-        int costSeconds = (int) ((endTime - startTime) / 1000);
-
-        if (!cuChanged && !replicaChanged) {
+        if (!cuNeedChange && !replicaNeedChange) {
             log.info("No changes needed, CU and replica are already at target values.");
             return ScaleInstanceResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result)
                             .message("No changes needed, already at target values.").build())
-                    .costSeconds(costSeconds).build();
+                    .costSeconds(0).build();
         }
 
+        // 使用 modify 接口，支持同时传 classId 和 replica
+        String modifyClassId = cuNeedChange ? targetCuType : null;
+        int modifyReplica = replicaNeedChange ? targetReplica : 0;
+        if (cuNeedChange) {
+            log.info("Scale CU: " + currentClassId + " -> " + targetCuType);
+        }
+        if (replicaNeedChange) {
+            log.info("Scale replica: " + currentReplica + " -> " + targetReplica);
+        }
+        String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, modifyClassId, modifyReplica);
+        JSONObject modifyJO = JSONObject.parseObject(modifyResp);
+        if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
+            return ScaleInstanceResult.builder()
+                    .commonResult(CommonResult.builder()
+                            .result(ResultEnum.EXCEPTION.result)
+                            .message("modify instance failed: " + modifyJO.getString("Message")).build()).build();
+        }
+        log.info("Submit modify instance success!");
+
+        // 轮询等待实例恢复 RUNNING
+        String waitResult = waitForRunning(instanceId);
+        if (waitResult != null) {
+            return ScaleInstanceResult.builder()
+                    .commonResult(CommonResult.builder()
+                            .result(ResultEnum.WARNING.result)
+                            .message(waitResult).build()).build();
+        }
+
+        long endTime = System.currentTimeMillis();
+        int costSeconds = (int) ((endTime - startTime) / 1000);
         log.info("ScaleInstance cost " + costSeconds + " seconds");
         return ScaleInstanceResult.builder()
                 .commonResult(CommonResult.builder()
@@ -125,7 +103,7 @@ public class ScaleInstanceComp {
      *
      * @return null 表示成功，非 null 表示超时错误信息
      */
-    private static String waitForRunning(String instanceId, String operation) {
+    private static String waitForRunning(String instanceId) {
         try {
             Thread.sleep(1000 * 20);
         } catch (InterruptedException e) {
@@ -137,7 +115,7 @@ public class ScaleInstanceComp {
             String describeInstance = ResourceManagerServiceUtils.describeInstance(instanceId);
             JSONObject jo = JSONObject.parseObject(describeInstance);
             scaleStatus = jo.getJSONObject("Data").getInteger("Status");
-            log.info("[ScaleInstance][" + operation + "] current status:" + InstanceStatusEnum.getInstanceStatusByCode(scaleStatus).toString());
+            log.info("[ScaleInstance] current status:" + InstanceStatusEnum.getInstanceStatusByCode(scaleStatus).toString());
             try {
                 if (scaleStatus != InstanceStatusEnum.RUNNING.code) {
                     Thread.sleep(1000 * 10);
@@ -147,9 +125,9 @@ public class ScaleInstanceComp {
             }
         }
         if (scaleStatus != InstanceStatusEnum.RUNNING.code) {
-            return "ScaleInstance [" + operation + "] time out!";
+            return "ScaleInstance time out!";
         }
-        log.info("[ScaleInstance][" + operation + "] completed successfully.");
+        log.info("[ScaleInstance] completed successfully.");
         return null;
     }
 }
