@@ -322,6 +322,12 @@ public class ComponentSchedule {
             jsonObject.put("HybridSearch_" + index, hybridSearchResult);
             reportStepResult(HybridSearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(hybridSearchResult));
         }
+        if (object instanceof ScaleInstanceParams) {
+            log.info("*********** < scale instance > ***********");
+            ScaleInstanceResult scaleInstanceResult = ScaleInstanceComp.scaleInstance((ScaleInstanceParams) object);
+            jsonObject.put("ScaleInstance_" + index, scaleInstanceResult);
+            reportStepResult(ScaleInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(scaleInstanceResult));
+        }
         if (object instanceof HelmCreateInstanceParams) {
             log.info("*********** < Helm create instance > ***********");
             HelmCreateInstanceResult helmCreateInstanceResult = HelmCreateInstanceComp.createInstance((HelmCreateInstanceParams) object);
