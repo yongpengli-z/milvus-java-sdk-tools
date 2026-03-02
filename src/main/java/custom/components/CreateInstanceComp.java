@@ -90,6 +90,11 @@ public class CreateInstanceComp {
             String s = ResourceManagerServiceUtils.updateQNMonopoly(instanceId);
             log.info("update monopolized: " + s);
         }
+        // 判断是否需要打散
+        if (createInstanceParams.isQnBreakUp()) {
+            String s = ResourceManagerServiceUtils.updateQNBreakUp(instanceId);
+            log.info("update qn break up: " + s);
+        }
         // 判断是否需要修改replica（创建接口的replica字段可能不生效，需要通过update_replicas接口设置）
         if (createInstanceParams.getReplica() > 1) {
             String s = ResourceManagerServiceUtils.updateReplica(instanceId, createInstanceParams.getReplica(),

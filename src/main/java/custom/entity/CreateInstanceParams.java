@@ -153,6 +153,15 @@ public class CreateInstanceParams {
     boolean monopolized;
 
     /**
+     * 是否打散（QN 分散部署到不同机器）。
+     * <p>
+     * 前端：`createInstanceEdit.vue` -> "Update QN Break Up"
+     * <p>
+     * 前端默认值：false
+     */
+    boolean qnBreakUp;
+
+    /**
      * Streaming node 临时配置（dev ops 提供修改 sn 的配置；可选）。
      * <p>
      * 前端：`createInstanceEdit.vue` -> "Modify streaming node config"

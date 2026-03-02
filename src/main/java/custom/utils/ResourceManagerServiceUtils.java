@@ -228,6 +228,21 @@ public class ResourceManagerServiceUtils {
         return s;
     }
 
+    public static String updateQNBreakUp(String instanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_qn_break_up?InstanceId=" + instanceId;
+        Gson gson = new Gson();
+        Map<String, Object> params = new HashMap<>();
+        params.put("enable", true);
+        String jsonParams = gson.toJson(params);
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(jsonParams).toJSONString());
+        log.info("update qn break up: " + s);
+        return s;
+    }
+
     public static String updateReplica(String instanceId, int replicaNum, List<String> nodeCategories) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_replicas?InstanceId=" + instanceId;
         Gson gson = new Gson();
