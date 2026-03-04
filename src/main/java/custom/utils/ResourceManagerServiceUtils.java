@@ -298,5 +298,49 @@ public class ResourceManagerServiceUtils {
         return s;
 
     }
+
+    /**
+     * 根据基础 classId 和 replica 数构造最终 classId。
+     * 规则：replica=1 时省略，replica>=2 时插在 CU 数后面。
+     * 例：class-8-enterprise + replica=2 -> class-8-2-enterprise
+     *     class-8-disk-enterprise + replica=3 -> class-8-3-disk-enterprise
+     */
+    public static String buildClassId(String baseClassId, int replica) {
+        String normalized = stripReplica(baseClassId);
+        if (replica <= 1) {
+            return normalized;
+        }
+        int firstDash = normalized.indexOf("-");
+        int secondDash = normalized.indexOf("-", firstDash + 1);
+        return normalized.substring(0, secondDash) + "-" + replica + normalized.substring(secondDash);
+    }
+
+    /**
+     * 去掉 classId 中的 replica 部分，还原为 1-replica 形式。
+     * class-8-2-enterprise -> class-8-enterprise
+     * class-8-3-disk-enterprise -> class-8-disk-enterprise
+     */
+    public static String stripReplica(String classId) {
+        String[] parts = classId.split("-");
+        if (parts.length >= 4 && parts[2].matches("\\d+")) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                if (i == 2) continue;
+                if (sb.length() > 0) sb.append("-");
+                sb.append(parts[i]);
+            }
+            return sb.toString();
+        }
+        return classId;
+    }
+
+    /**
+     * 从 classId 中提取 CU 数。
+     * class-8-enterprise -> 8, class-128-2-disk-enterprise -> 128
+     */
+    public static int extractCu(String classId) {
+        String[] parts = classId.split("-");
+        return Integer.parseInt(parts[1]);
+    }
 }
 

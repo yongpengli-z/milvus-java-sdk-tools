@@ -61,7 +61,7 @@ public class CreateInstanceComp {
             latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(createInstanceParams.getDbVersion());
             createInstanceParams.setDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
         }
-        // 调用rm-service
+        // 调用rm-service（先用 replica=1 的 classId 创建，创建成功后再通过 modify 设置 replica）
         String resp = ResourceManagerServiceUtils.createInstance(createInstanceParams);
         log.info("create instance:" + resp);
         JSONObject jsonObject = JSONObject.parseObject(resp);
@@ -95,12 +95,7 @@ public class CreateInstanceComp {
             String s = ResourceManagerServiceUtils.updateQNBreakUp(instanceId);
             log.info("update qn break up: " + s);
         }
-        // 判断是否需要修改replica（创建接口的replica字段可能不生效，需要通过update_replicas接口设置）
-        if (createInstanceParams.getReplica() > 1) {
-            String s = ResourceManagerServiceUtils.updateReplica(instanceId, createInstanceParams.getReplica(),
-                    Lists.newArrayList("queryNode"));
-            log.info("update queryNode replica: " + s);
-        }
+        // replica 在创建成功后通过 modifyInstance 设置（需要等实例 RUNNING 后执行）
         //判断是否需要修改streamingNode配置--2.6 image 才行
         if (latestImageByKeywords.contains("2.6") && createInstanceParams.getStreamingNodeParams() != null) {
             // 判断是否需要修改replica
@@ -179,6 +174,41 @@ public class CreateInstanceComp {
 
         log.info("创建实例成功：" + newInstanceInfo);
         ComponentSchedule.updateInstanceStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);
+
+        // 创建成功后，通过 modifyInstance 设置 replica（classId 编码 replica，如 class-8-3-enterprise）
+        if (createInstanceParams.getReplica() > 1) {
+            String replicaClassId = ResourceManagerServiceUtils.buildClassId(
+                    createInstanceParams.getCuType(), createInstanceParams.getReplica());
+            log.info("Modify replica: classId=" + replicaClassId + ", replica=" + createInstanceParams.getReplica());
+            String modifyResp = ResourceManagerServiceUtils.modifyInstance(
+                    newInstanceInfo.getInstanceId(), replicaClassId, createInstanceParams.getReplica());
+            log.info("Modify replica response: " + modifyResp);
+            JSONObject modifyJO = JSONObject.parseObject(modifyResp);
+            if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
+                log.warn("Modify replica failed: " + modifyJO.getString("Message"));
+            } else {
+                log.info("Submit modify replica success, waiting for RUNNING...");
+                // 等待 replica 变更完成
+                LocalDateTime replicaEndTime = LocalDateTime.now().plusMinutes(30);
+                int replicaStatus = 0;
+                try { Thread.sleep(1000 * 20); } catch (InterruptedException e) { log.error(e.getMessage()); }
+                while (replicaStatus != InstanceStatusEnum.RUNNING.code && LocalDateTime.now().isBefore(replicaEndTime)) {
+                    String descResp = ResourceManagerServiceUtils.describeInstance(newInstanceInfo.getInstanceId());
+                    JSONObject jo = JSONObject.parseObject(descResp);
+                    replicaStatus = jo.getJSONObject("Data").getInteger("Status");
+                    log.info("[CreateInstance] replica change status:" + InstanceStatusEnum.getInstanceStatusByCode(replicaStatus));
+                    if (replicaStatus != InstanceStatusEnum.RUNNING.code) {
+                        try { Thread.sleep(1000 * 10); } catch (InterruptedException e) { log.error(e.getMessage()); }
+                    }
+                }
+                if (replicaStatus != InstanceStatusEnum.RUNNING.code) {
+                    log.warn("Modify replica timeout!");
+                } else {
+                    log.info("Modify replica completed, instance is RUNNING.");
+                }
+            }
+        }
+
         createInstanceResult.setCommonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build());
         createInstanceResult.setInstanceId(newInstanceInfo.getInstanceId());
         createInstanceResult.setUri(newInstanceInfo.getUri());

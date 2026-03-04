@@ -53,14 +53,14 @@ public class ScaleInstanceComp {
         int finalReplica = targetReplica > 0 ? targetReplica : currentReplica;
 
         // 判断 CU 是否需要变更（比较去掉 replica 后的基础 classId）
-        String currentBaseCu = stripReplica(currentClassId);
-        String targetBaseCu = baseCuType != null ? stripReplica(baseCuType) : currentBaseCu;
+        String currentBaseCu = ResourceManagerServiceUtils.stripReplica(currentClassId);
+        String targetBaseCu = baseCuType != null ? ResourceManagerServiceUtils.stripReplica(baseCuType) : currentBaseCu;
         boolean cuNeedChange = !targetBaseCu.equalsIgnoreCase(currentBaseCu);
         boolean replicaNeedChange = finalReplica != currentReplica;
 
         // replica > 1 时，CU 必须 >= 8
         if (finalReplica > 1) {
-            int targetCu = extractCu(targetBaseCu);
+            int targetCu = ResourceManagerServiceUtils.extractCu(targetBaseCu);
             if (targetCu < 8) {
                 return ScaleInstanceResult.builder()
                         .commonResult(CommonResult.builder()
@@ -80,8 +80,8 @@ public class ScaleInstanceComp {
 
         // 决定操作顺序：降配时先减 replica 再降 CU，升配时先升 CU 再加 replica
         // 原因：中间状态也必须满足 replica>1 时 CU>=8 的约束
-        int targetCu = extractCu(targetBaseCu);
-        int currentCu = extractCu(currentBaseCu);
+        int targetCu = ResourceManagerServiceUtils.extractCu(targetBaseCu);
+        int currentCu = ResourceManagerServiceUtils.extractCu(currentBaseCu);
         boolean scaleDown = targetCu < currentCu;
 
         if (scaleDown) {
@@ -120,7 +120,7 @@ public class ScaleInstanceComp {
      * @return null 表示成功，非 null 表示错误信息
      */
     private static String doModifyCu(String instanceId, String currentClassId, String targetBaseCu, int keepReplica) {
-        String cuClassId = buildClassId(targetBaseCu, keepReplica);
+        String cuClassId = ResourceManagerServiceUtils.buildClassId(targetBaseCu, keepReplica);
         log.info("Scale CU: " + currentClassId + " -> " + cuClassId);
         String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, cuClassId, keepReplica);
         JSONObject modifyJO = JSONObject.parseObject(modifyResp);
@@ -136,7 +136,7 @@ public class ScaleInstanceComp {
      * @return null 表示成功，非 null 表示错误信息
      */
     private static String doModifyReplica(String instanceId, String baseCu, int currentReplica, int targetReplica) {
-        String replicaClassId = buildClassId(baseCu, targetReplica);
+        String replicaClassId = ResourceManagerServiceUtils.buildClassId(baseCu, targetReplica);
         log.info("Scale replica: " + currentReplica + " -> " + targetReplica + ", classId: " + replicaClassId);
         String modifyResp = ResourceManagerServiceUtils.modifyInstance(instanceId, replicaClassId, targetReplica);
         JSONObject modifyJO = JSONObject.parseObject(modifyResp);
@@ -159,61 +159,6 @@ public class ScaleInstanceComp {
                 .commonResult(CommonResult.builder()
                         .result(ResultEnum.EXCEPTION.result)
                         .message("modify " + operation + " failed: " + errMsg).build()).build();
-    }
-
-    /**
-     * 根据基础 classId 和 replica 数构造最终 classId。
-     * 规则：replica=1 时省略，replica>=2 时插在 CU 数后面。
-     * 例：class-8-enterprise + replica=2 -> class-8-2-enterprise
-     *     class-8-disk-enterprise + replica=3 -> class-8-3-disk-enterprise
-     *     class-8-2-enterprise + replica=1 -> class-8-enterprise（去掉 replica 部分）
-     */
-    private static String buildClassId(String baseClassId, int replica) {
-        // 先把 baseClassId 中可能已有的 replica 数去掉，还原为 1-replica 形式
-        // 格式: class-{cu}[-{replica}][-disk|-tiered]-enterprise
-        String normalized = stripReplica(baseClassId);
-        if (replica <= 1) {
-            return normalized;
-        }
-        // 在 CU 数后面插入 replica: class-{cu} + -{replica} + 剩余部分
-        // normalized 格式: class-{cu}-enterprise / class-{cu}-disk-enterprise / class-{cu}-tiered-enterprise
-        int firstDash = normalized.indexOf("-"); // "class" 后的第一个 -
-        int secondDash = normalized.indexOf("-", firstDash + 1); // CU 数后的 -
-        return normalized.substring(0, secondDash) + "-" + replica + normalized.substring(secondDash);
-    }
-
-    /**
-     * 从 classId 中提取 CU 数。
-     * class-8-enterprise -> 8, class-128-2-disk-enterprise -> 128
-     */
-    private static int extractCu(String classId) {
-        // parts[1] 就是 CU 数: class-{cu}-...
-        String[] parts = classId.split("-");
-        return Integer.parseInt(parts[1]);
-    }
-
-    /**
-     * 去掉 classId 中的 replica 部分，还原为 1-replica 形式。
-     * class-8-2-enterprise -> class-8-enterprise
-     * class-8-3-disk-enterprise -> class-8-disk-enterprise
-     * class-8-enterprise -> class-8-enterprise (不变)
-     */
-    private static String stripReplica(String classId) {
-        // 格式: class-{cu}[-{replicaNum}][-disk|-tiered]-enterprise
-        String[] parts = classId.split("-");
-        // parts[0]=class, parts[1]=cu, ...可能有 replica 数字, 然后 disk/tiered(可选), enterprise
-        // 判断 parts[2] 是否为纯数字（replica）
-        if (parts.length >= 4 && parts[2].matches("\\d+")) {
-            // 去掉 parts[2]（replica 部分）
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < parts.length; i++) {
-                if (i == 2) continue;
-                if (sb.length() > 0) sb.append("-");
-                sb.append(parts[i]);
-            }
-            return sb.toString();
-        }
-        return classId;
     }
 
     /**
