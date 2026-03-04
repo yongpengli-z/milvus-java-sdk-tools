@@ -11,6 +11,7 @@ import custom.entity.RollingUpgradeParams;
 import custom.pojo.ParamInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -203,6 +204,7 @@ public class ResourceManagerServiceUtils {
         Gson gson = new Gson();
         Map<String, Object> params = new HashMap<>();
         params.put("enable", true);
+        params.put("nodeCategories", Arrays.asList("queryNode", "standalone"));
         String jsonParams = gson.toJson(params);
         Map<String, String> header = new HashMap<>();
         header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
