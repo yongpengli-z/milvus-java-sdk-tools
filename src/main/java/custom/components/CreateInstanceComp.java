@@ -79,16 +79,18 @@ public class CreateInstanceComp {
         log.info("Submit create instance success!");
         ComponentSchedule.initInstanceStatus(instanceId, "", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
         // 判断是否需要重保
+        boolean bizCriticalSuccess = false;
         if (createInstanceParams.isBizCritical()) {
-            HashMap<String, String> labels = new HashMap<>();
-            labels.put("biz-critical", "true");
             String s = ResourceManagerServiceUtils.updateLabel(instanceId);
             log.info("update biz-critical: " + s);
+            bizCriticalSuccess = isApiSuccess(s);
         }
         // 判断是否需要独占
+        boolean monopolizedSuccess = false;
         if (createInstanceParams.isMonopolized()) {
             String s = ResourceManagerServiceUtils.updateQNMonopoly(instanceId);
             log.info("update monopolized: " + s);
+            monopolizedSuccess = isApiSuccess(s);
         }
         // 判断是否需要打散
         if (createInstanceParams.isQnBreakUp()) {
@@ -156,10 +158,9 @@ public class CreateInstanceComp {
         int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
         CreateInstanceResult createInstanceResult = CreateInstanceResult.builder()
                 .createCostSeconds(costSeconds).build();
-        // 创建成功，检查是否是重保
-        createInstanceResult.setBizCritical(createInstanceParams.isBizCritical());
-        // 创建成功，检查是否是独占
-        createInstanceResult.setMonopolized(createInstanceParams.isMonopolized());
+        // 根据实际 API 调用结果设置
+        createInstanceResult.setBizCritical(bizCriticalSuccess);
+        createInstanceResult.setMonopolized(monopolizedSuccess);
         // 初始化实例
         if (createInstanceParams.getRoleUse().equalsIgnoreCase("root")) {
             String token = MilvusConnect.provideToken(newInstanceInfo.getUri());
@@ -214,5 +215,14 @@ public class CreateInstanceComp {
         createInstanceResult.setUri(newInstanceInfo.getUri());
         return createInstanceResult;
 
+    }
+
+    private static boolean isApiSuccess(String response) {
+        try {
+            JSONObject jo = JSONObject.parseObject(response);
+            return jo != null && jo.getInteger("Code") != null && jo.getInteger("Code") == 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
