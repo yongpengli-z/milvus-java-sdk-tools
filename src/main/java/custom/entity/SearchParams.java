@@ -168,4 +168,15 @@ public class SearchParams {
      * 前端默认值：""（None）
      */
     private String collectionRule;
+
+    /**
+     * 查询分区列表（可选）。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Partition Names"（逗号分隔输入）
+     * <p>
+     * 前端默认值：""（空字符串，占位；失焦后会被 split 成数组）
+     * <p>
+     * 建议：生成 JSON 时使用 [] 或 ["p1","p2"]。
+     */
+    private List<String> partitionNames;
 }

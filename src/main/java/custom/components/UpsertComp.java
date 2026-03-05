@@ -130,10 +130,14 @@ public class UpsertComp {
                             UpsertResp upsertResp = null;
                             long startTime = System.currentTimeMillis();
                             try {
-                                upsertResp = milvusClientV2.upsert(UpsertReq.builder()
+                                UpsertReq upsertReq = UpsertReq.builder()
                                         .data(jsonObjects)
                                         .collectionName(finalCollectionName)
-                                        .build());
+                                        .build();
+                                if (upsertParams.getPartitionName() != null && !upsertParams.getPartitionName().equalsIgnoreCase("")) {
+                                    upsertReq.setPartitionName(upsertParams.getPartitionName());
+                                }
+                                upsertResp = milvusClientV2.upsert(upsertReq);
                                 if (upsertResp.getUpsertCnt() > 0) {
                                     retryCount = 0;
                                 }

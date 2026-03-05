@@ -110,10 +110,14 @@ public class InsertComp {
                             long startTime = System.currentTimeMillis();
                             long endTime = 0;
                             try {
-                                insert = milvusClientV2.insert(InsertReq.builder()
+                                InsertReq insertReq = InsertReq.builder()
                                         .data(jsonObjects)
                                         .collectionName(finalCollectionName)
-                                        .build());
+                                        .build();
+                                if (insertParams.getPartitionName() != null && !insertParams.getPartitionName().equalsIgnoreCase("")) {
+                                    insertReq.setPartitionName(insertParams.getPartitionName());
+                                }
+                                insert = milvusClientV2.insert(insertReq);
                                 endTime = System.currentTimeMillis();
                                 costTime.add((float) ((endTime - startTime) / 1000.00));
                                 if (insert.getInsertCnt() > 0) {

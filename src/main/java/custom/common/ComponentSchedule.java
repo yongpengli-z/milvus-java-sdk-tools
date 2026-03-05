@@ -340,6 +340,42 @@ public class ComponentSchedule {
             jsonObject.put("HelmDeleteInstance_" + index, helmDeleteInstanceResult);
             reportStepResult(HelmDeleteInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(helmDeleteInstanceResult));
         }
+        if (object instanceof CreatePartitionParams) {
+            log.info("*********** < create partition > ***********");
+            CreatePartitionResult createPartitionResult = CreatePartitionComp.createPartition((CreatePartitionParams) object);
+            jsonObject.put("CreatePartition_" + index, createPartitionResult);
+            reportStepResult(CreatePartitionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createPartitionResult));
+        }
+        if (object instanceof DropPartitionParams) {
+            log.info("*********** < drop partition > ***********");
+            DropPartitionResult dropPartitionResult = DropPartitionComp.dropPartition((DropPartitionParams) object);
+            jsonObject.put("DropPartition_" + index, dropPartitionResult);
+            reportStepResult(DropPartitionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(dropPartitionResult));
+        }
+        if (object instanceof ListPartitionsParams) {
+            log.info("*********** < list partitions > ***********");
+            ListPartitionsResult listPartitionsResult = ListPartitionsComp.listPartitions((ListPartitionsParams) object);
+            jsonObject.put("ListPartitions_" + index, listPartitionsResult);
+            reportStepResult(ListPartitionsParams.class.getSimpleName() + "_" + index, JSON.toJSONString(listPartitionsResult));
+        }
+        if (object instanceof HasPartitionParams) {
+            log.info("*********** < has partition > ***********");
+            HasPartitionResult hasPartitionResult = HasPartitionComp.hasPartition((HasPartitionParams) object);
+            jsonObject.put("HasPartition_" + index, hasPartitionResult);
+            reportStepResult(HasPartitionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(hasPartitionResult));
+        }
+        if (object instanceof LoadPartitionsParams) {
+            log.info("*********** < load partitions > ***********");
+            LoadPartitionsResult loadPartitionsResult = LoadPartitionsComp.loadPartitions((LoadPartitionsParams) object);
+            jsonObject.put("LoadPartitions_" + index, loadPartitionsResult);
+            reportStepResult(LoadPartitionsParams.class.getSimpleName() + "_" + index, JSON.toJSONString(loadPartitionsResult));
+        }
+        if (object instanceof ReleasePartitionsParams) {
+            log.info("*********** < release partitions > ***********");
+            ReleasePartitionsResult releasePartitionsResult = ReleasePartitionsComp.releasePartitions((ReleasePartitionsParams) object);
+            jsonObject.put("ReleasePartitions_" + index, releasePartitionsResult);
+            reportStepResult(ReleasePartitionsParams.class.getSimpleName() + "_" + index, JSON.toJSONString(releasePartitionsResult));
+        }
         return jsonObject;
     }
 

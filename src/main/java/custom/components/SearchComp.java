@@ -161,6 +161,7 @@ public class SearchComp {
                                     .filter(filter)
                                     .data(randomBaseVectors)
                                     .annsField(searchParams.getAnnsField())
+                                    .partitionNames(searchParams.getPartitionNames() == null || searchParams.getPartitionNames().isEmpty() ? new ArrayList<>() : searchParams.getPartitionNames())
                                     .build();
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = null;
