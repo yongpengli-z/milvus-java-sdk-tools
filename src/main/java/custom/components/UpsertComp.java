@@ -12,6 +12,7 @@ import custom.pojo.FieldDataSource;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.UpsertReq;
@@ -97,6 +98,8 @@ public class UpsertComp {
         }
 
         // upsert data with multiple threads
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("Upsert");
+        statsReporter.start();
         Map<String, InsertComp.FieldDatasetInfo> finalFieldDatasetInfoMap = fieldDatasetInfoMap;
         for (int c = 0; c < upsertParams.getNumConcurrency(); c++) {
             RateLimiter finalRateLimiter = rateLimiter;
@@ -158,7 +161,9 @@ public class UpsertComp {
                                 }
                             }
                             long endTime = System.currentTimeMillis();
-                            costTime.add((endTime - startTime) / 1000.00);
+                            double costTimeItem = (endTime - startTime) / 1000.00;
+                            costTime.add(costTimeItem);
+                            statsReporter.recordCostTime((float) costTimeItem);
                             insertCnt.add((int) upsertResp.getUpsertCnt());
                             log.info(
                                     "线程 ["
@@ -179,6 +184,7 @@ public class UpsertComp {
             list.add(future);
 
         }
+        statsReporter.stop();
         long requestNum = 0;
         double costTotal = 0.0;
         CommonResult commonResult;

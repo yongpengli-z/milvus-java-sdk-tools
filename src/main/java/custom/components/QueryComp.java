@@ -9,6 +9,7 @@ import custom.entity.result.ResultEnum;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.response.QueryResp;
@@ -70,6 +71,8 @@ public class QueryComp {
             log.info("启用QPS控制: {} 请求/秒", queryParams.getTargetQps());
         }
 
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("Query");
+        statsReporter.start();
         for (int i = 0; i < queryParams.getNumConcurrency(); i++) {
             int finalI = i;
             RateLimiter finalRateLimiter = rateLimiter;
@@ -119,7 +122,9 @@ public class QueryComp {
                         log.error("query exception:" + e.getMessage());
                     }
                     long endItemTime = System.currentTimeMillis();
-                    costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
+                    float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
+                    costTime.add(costTimeItem);
+                    statsReporter.recordCostTime(costTimeItem);
                     returnNum.add(query.getQueryResults().size());
                     if (printLog >= logInterval) {
                         log.info("线程[" + finalI + "] 已经 query :" + returnNum.size() + "次");
@@ -134,6 +139,7 @@ public class QueryComp {
             Future<QueryItemResult> future = executorService.submit(callable);
             list.add(future);
         }
+        statsReporter.stop();
         long requestNum = 0;
         long successNum = 0;
         CommonResult commonResult;

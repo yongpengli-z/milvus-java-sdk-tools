@@ -11,6 +11,7 @@ import custom.entity.result.ResultEnum;
 import custom.pojo.FieldDataSource;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.InsertReq;
@@ -86,6 +87,8 @@ public class InsertComp {
         }
 
         // insert data with multiple threads
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("Insert");
+        statsReporter.start();
         Map<String, FieldDatasetInfo> finalFieldDatasetInfoMap = fieldDatasetInfoMap;
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             RateLimiter finalRateLimiter = rateLimiter;
@@ -132,7 +135,9 @@ public class InsertComp {
                                 }
                                 insert = milvusClientV2.insert(insertReq);
                                 endTime = System.currentTimeMillis();
-                                costTime.add((float) ((endTime - startTime) / 1000.00));
+                                float costTimeItem = (float) ((endTime - startTime) / 1000.00);
+                                costTime.add(costTimeItem);
+                                statsReporter.recordCostTime(costTimeItem);
                                 if (insert.getInsertCnt() > 0) {
                                     retryCount = 0;
                                 }
@@ -178,6 +183,7 @@ public class InsertComp {
 
         }
 
+        statsReporter.stop();
         long requestNum = 0;
         List<Float> costTimeTotal = new ArrayList<>();
         CommonResult commonResult;

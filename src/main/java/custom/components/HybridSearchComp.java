@@ -9,6 +9,7 @@ import custom.entity.result.ResultEnum;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -172,6 +173,8 @@ public class HybridSearchComp {
         final List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
         final Map<String, Object> finalRankerParams = rankerParams;
 
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("HybridSearch");
+        statsReporter.start();
         for (int c = 0; c < hybridSearchParams.getNumConcurrency(); c++) {
             int finalC = c;
             Callable<HybridSearchResultInner> callable = () -> {
@@ -328,6 +331,7 @@ public class HybridSearchComp {
                     int resultSize = hybridSearchResp != null ? hybridSearchResp.getSearchResults().size() : 0;
 //                    log.info("线程[{}] hybridSearch cost:{} s，result size：{}", finalC, costTimeItem, resultSize);
                     costTime.add(costTimeItem);
+                    statsReporter.recordCostTime(costTimeItem);
                     returnNum.add(resultSize);
 
                     if (printLog >= logInterval) {
@@ -355,6 +359,7 @@ public class HybridSearchComp {
             list.add(future);
         }
 
+        statsReporter.stop();
         long requestNum = 0;
         long successNum = 0;
         CommonResult commonResult;

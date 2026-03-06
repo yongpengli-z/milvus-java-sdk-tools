@@ -9,6 +9,7 @@ import custom.entity.result.SearchResultA;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -111,6 +112,8 @@ public class SearchComp {
             rateLimiter = RateLimiter.create(searchParams.getTargetQps());
             log.info("启用QPS控制: {} 请求/秒", searchParams.getTargetQps());
         }
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("Search");
+        statsReporter.start();
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
             List<String> finalOutputs = outputs;
@@ -179,6 +182,7 @@ public class SearchComp {
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
 //                            log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，result size：" + search.getSearchResults().size() + ",");
                             costTime.add(costTimeItem);
+                            statsReporter.recordCostTime(costTimeItem);
 //                            returnNum.add(search.getSearchResults().get(0).size());
                             returnNum.add(search.getSearchResults().size());
                             if (printLog >= logInterval) {
@@ -203,6 +207,7 @@ public class SearchComp {
             Future<SearchResult> future = executorService.submit(callable);
             list.add(future);
         }
+        statsReporter.stop();
         long requestNum = 0;
         long successNum = 0;
         CommonResult commonResult;

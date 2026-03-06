@@ -6,6 +6,7 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.SearchResultA;
 import custom.utils.MathUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -73,6 +74,8 @@ public class SearchCompTest {
         if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
             searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("SearchTest");
+        statsReporter.start();
         for (int c = 0; c < searchParams.getNumConcurrency(); c++) {
             int finalC = c;
             List<String> finalOutputs = outputs;
@@ -101,7 +104,9 @@ public class SearchCompTest {
                                     .annsField(searchParams.getAnnsField())
                                     .build());
                             long endItemTime = System.currentTimeMillis();
-                            costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
+                            float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
+                            costTime.add(costTimeItem);
+                            statsReporter.recordCostTime(costTimeItem);
                             returnNum.add(search.getSearchResults().get(0).size());
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
@@ -116,6 +121,7 @@ public class SearchCompTest {
             Future<SearchResult> future = executorService.submit(callable);
             list.add(future);
         }
+        statsReporter.stop();
         long requestNum = 0;
         long successNum = 0;
         CommonResult commonResult;

@@ -5,6 +5,7 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.QueryIteratorResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.MathUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.orm.iterator.QueryIterator;
 import io.milvus.response.QueryResultsWrapper;
 import io.milvus.v2.common.ConsistencyLevel;
@@ -37,6 +38,8 @@ public class QueryIteratorComp {
 
         float queryTotalTime;
         long startTimeTotal = System.currentTimeMillis();
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("QueryIterator");
+        statsReporter.start();
 
         for (int c = 0; c < queryIteratorParams.getNumConcurrency(); c++) {
             int finalC = c;
@@ -78,7 +81,9 @@ public class QueryIteratorComp {
                     }
                     returnNum.add(totalCount);
                     long endItemTime = System.currentTimeMillis();
-                    costTime.add((float) ((endItemTime - startItemTime) / 1000.00));
+                    float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
+                    costTime.add(costTimeItem);
+                    statsReporter.recordCostTime(costTimeItem);
                     if (printLog >= logInterval) {
                         log.info("线程[" + finalC + "] 已经 queryIterator :" + returnNum.size() + "次, 最近一次返回: " + totalCount + " 条");
                         printLog = 0;
@@ -93,6 +98,7 @@ public class QueryIteratorComp {
             list.add(future);
         }
 
+        statsReporter.stop();
         long requestNum = 0;
         long successNum = 0;
         CommonResult commonResult;

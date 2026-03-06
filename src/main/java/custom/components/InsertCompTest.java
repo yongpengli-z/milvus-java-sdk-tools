@@ -11,6 +11,7 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
+import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.InsertReq;
@@ -51,6 +52,8 @@ public class InsertCompTest {
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         // insert data with multiple threads
+        PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("InsertTest");
+        statsReporter.start();
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
             int finalC = c;
             Callable callable =
@@ -86,7 +89,9 @@ public class InsertCompTest {
                                         .collectionName(collectionName)
                                         .build());
                                 endTime = System.currentTimeMillis();
-                                costTime.add((float) ((endTime - startTime) / 1000.00));
+                                float costTimeItem = (float) ((endTime - startTime) / 1000.00);
+                                costTime.add(costTimeItem);
+                                statsReporter.recordCostTime(costTimeItem);
                                 if (insert.getInsertCnt() > 0) {
                                     retryCount = 0;
                                 }
@@ -128,6 +133,7 @@ public class InsertCompTest {
 
         }
 
+        statsReporter.stop();
         long requestNum = 0;
         List<Float> costTimeTotal = new ArrayList<>();
         CommonResult commonResult;
