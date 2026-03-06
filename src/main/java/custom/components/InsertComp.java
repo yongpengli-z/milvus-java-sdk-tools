@@ -1,5 +1,6 @@
 package custom.components;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
 import custom.common.DatasetEnum;
@@ -77,9 +78,17 @@ public class InsertComp {
             }
         }
 
+        // 创建RateLimiter实例（根据配置的QPS）
+        RateLimiter rateLimiter = null;
+        if (insertParams.getTargetQps() > 0) {
+            rateLimiter = RateLimiter.create(insertParams.getTargetQps());
+            log.info("启用QPS控制: {} 请求/秒", insertParams.getTargetQps());
+        }
+
         // insert data with multiple threads
         Map<String, FieldDatasetInfo> finalFieldDatasetInfoMap = fieldDatasetInfoMap;
         for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
+            RateLimiter finalRateLimiter = rateLimiter;
             int finalC = c;
             String finalCollectionName = collectionName;
             Callable callable =
@@ -99,6 +108,10 @@ public class InsertComp {
                                 insertResultItem.setInsertCnt(insertCnt);
                                 insertResultItem.setCostTime(costTime);
                                 return insertResultItem;
+                            }
+                            // QPS控制点（如果需要）
+                            if (finalRateLimiter != null) {
+                                finalRateLimiter.acquire();
                             }
                             long genDataStartTime = System.currentTimeMillis();
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(insertParams.getBatchSize(),

@@ -133,6 +133,18 @@ public class InsertParams {
     private String collectionRule;
 
     /**
+     * 目标 QPS（每秒请求数）。
+     * <p>
+     * 前端：`insertEdit.vue` -> "Target QPS"
+     * <p>
+     * 前端默认值：0
+     * <p>
+     * 说明：当该值 > 0 时，使用 Guava RateLimiter 控制写入速率；为 0 时不限速。
+     * 建议先进行性能摸底，再使用固定 QPS。
+     */
+    private int targetQps;
+
+    /**
      * 字段级别数据源配置（可选）。
      * <p>
      * 为指定字段配置独立的数据集来源，未配置的字段默认使用 random 生成。
