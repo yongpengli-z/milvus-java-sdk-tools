@@ -139,7 +139,6 @@ public class QueryComp {
             Future<QueryItemResult> future = executorService.submit(callable);
             list.add(future);
         }
-        statsReporter.stop();
         long requestNum = 0;
         long successNum = 0;
         CommonResult commonResult;
@@ -189,6 +188,7 @@ public class QueryComp {
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .commonResult(commonResult)
                 .build();
+        statsReporter.stop();
         executorService.shutdown();
         return queryResult;
     }

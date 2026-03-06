@@ -184,7 +184,6 @@ public class UpsertComp {
             list.add(future);
 
         }
-        statsReporter.stop();
         long requestNum = 0;
         double costTotal = 0.0;
         CommonResult commonResult;
@@ -222,6 +221,7 @@ public class UpsertComp {
                 .requestNum(requestNum)
                 .costTime(upsertTotalTime)
                 .build();
+        statsReporter.stop();
         executorService.shutdown();
         return upsertResult;
     }

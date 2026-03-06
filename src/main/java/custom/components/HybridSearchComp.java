@@ -359,7 +359,6 @@ public class HybridSearchComp {
             list.add(future);
         }
 
-        statsReporter.stop();
         long requestNum = 0;
         long successNum = 0;
         CommonResult commonResult;
@@ -414,6 +413,7 @@ public class HybridSearchComp {
                 .commonResult(commonResult)
                 .build();
         
+        statsReporter.stop();
         // 优雅关闭线程池
         executorService.shutdown();
         try {

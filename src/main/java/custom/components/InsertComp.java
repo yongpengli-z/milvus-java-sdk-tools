@@ -183,7 +183,6 @@ public class InsertComp {
 
         }
 
-        statsReporter.stop();
         long requestNum = 0;
         List<Float> costTimeTotal = new ArrayList<>();
         CommonResult commonResult;
@@ -242,6 +241,7 @@ public class InsertComp {
                 .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .build();
+        statsReporter.stop();
         executorService.shutdown();
         return insertResult;
     }
