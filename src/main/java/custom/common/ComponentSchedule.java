@@ -376,6 +376,66 @@ public class ComponentSchedule {
             jsonObject.put("ReleasePartitions_" + index, releasePartitionsResult);
             reportStepResult(ReleasePartitionsParams.class.getSimpleName() + "_" + index, JSON.toJSONString(releasePartitionsResult));
         }
+        if (object instanceof ListCollectionsParams) {
+            log.info("*********** < list collections > ***********");
+            ListCollectionsResult listCollectionsResult = ListCollectionsComp.listCollections((ListCollectionsParams) object);
+            jsonObject.put("ListCollections_" + index, listCollectionsResult);
+            reportStepResult(ListCollectionsParams.class.getSimpleName() + "_" + index, JSON.toJSONString(listCollectionsResult));
+        }
+        if (object instanceof HasCollectionParams) {
+            log.info("*********** < has collection > ***********");
+            HasCollectionResult hasCollectionResult = HasCollectionComp.hasCollection((HasCollectionParams) object);
+            jsonObject.put("HasCollection_" + index, hasCollectionResult);
+            reportStepResult(HasCollectionParams.class.getSimpleName() + "_" + index, JSON.toJSONString(hasCollectionResult));
+        }
+        if (object instanceof GetLoadStateParams) {
+            log.info("*********** < get load state > ***********");
+            GetLoadStateResult getLoadStateResult = GetLoadStateComp.getLoadState((GetLoadStateParams) object);
+            jsonObject.put("GetLoadState_" + index, getLoadStateResult);
+            reportStepResult(GetLoadStateParams.class.getSimpleName() + "_" + index, JSON.toJSONString(getLoadStateResult));
+        }
+        if (object instanceof DescribeIndexParams) {
+            log.info("*********** < describe index > ***********");
+            DescribeIndexResult describeIndexResult = DescribeIndexComp.describeIndex((DescribeIndexParams) object);
+            jsonObject.put("DescribeIndex_" + index, describeIndexResult);
+            reportStepResult(DescribeIndexParams.class.getSimpleName() + "_" + index, JSON.toJSONString(describeIndexResult));
+        }
+        if (object instanceof ListIndexesParams) {
+            log.info("*********** < list indexes > ***********");
+            ListIndexesResult listIndexesResult = ListIndexesComp.listIndexes((ListIndexesParams) object);
+            jsonObject.put("ListIndexes_" + index, listIndexesResult);
+            reportStepResult(ListIndexesParams.class.getSimpleName() + "_" + index, JSON.toJSONString(listIndexesResult));
+        }
+        if (object instanceof DropAliasParams) {
+            log.info("*********** < drop alias > ***********");
+            DropAliasResult dropAliasResult = DropAliasComp.dropAlias((DropAliasParams) object);
+            jsonObject.put("DropAlias_" + index, dropAliasResult);
+            reportStepResult(DropAliasParams.class.getSimpleName() + "_" + index, JSON.toJSONString(dropAliasResult));
+        }
+        if (object instanceof ListAliasesParams) {
+            log.info("*********** < list aliases > ***********");
+            ListAliasesResult listAliasesResult = ListAliasesComp.listAliases((ListAliasesParams) object);
+            jsonObject.put("ListAliases_" + index, listAliasesResult);
+            reportStepResult(ListAliasesParams.class.getSimpleName() + "_" + index, JSON.toJSONString(listAliasesResult));
+        }
+        if (object instanceof DescribeAliasParams) {
+            log.info("*********** < describe alias > ***********");
+            DescribeAliasResult describeAliasResult = DescribeAliasComp.describeAlias((DescribeAliasParams) object);
+            jsonObject.put("DescribeAlias_" + index, describeAliasResult);
+            reportStepResult(DescribeAliasParams.class.getSimpleName() + "_" + index, JSON.toJSONString(describeAliasResult));
+        }
+        if (object instanceof GetParams) {
+            log.info("*********** < get entities > ***********");
+            GetResult getResult = GetComp.get((GetParams) object);
+            jsonObject.put("Get_" + index, getResult);
+            reportStepResult(GetParams.class.getSimpleName() + "_" + index, JSON.toJSONString(getResult));
+        }
+        if (object instanceof QueryIteratorParams) {
+            log.info("*********** < query iterator > ***********");
+            QueryIteratorResult queryIteratorResult = QueryIteratorComp.queryIterator((QueryIteratorParams) object);
+            jsonObject.put("QueryIterator_" + index, queryIteratorResult);
+            reportStepResult(QueryIteratorParams.class.getSimpleName() + "_" + index, JSON.toJSONString(queryIteratorResult));
+        }
         return jsonObject;
     }
 
