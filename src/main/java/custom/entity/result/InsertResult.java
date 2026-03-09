@@ -3,6 +3,8 @@ package custom.entity.result;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 public class InsertResult {
@@ -18,4 +20,5 @@ public class InsertResult {
     double tp85;
     double tp80;
     double tp50;
+    List<String> assertMessages;
 }

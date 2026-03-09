@@ -7,6 +7,8 @@ import custom.entity.result.CreateIndexResult;
 import custom.entity.result.ResultEnum;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.List;
 
 import static custom.BaseTest.globalCollectionNames;
 
@@ -32,9 +34,21 @@ public class CreateIndexComp {
             commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
                     .message(e.getMessage()).build();
         }
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (commonResult.getResult().equals(ResultEnum.EXCEPTION.result)) {
+            assertMessages.add("[ASSERT FAIL] createIndex exception: " + commonResult.getMessage());
+        }
+        if (commonResult.getResult().equals(ResultEnum.SUCCESS.result) && createIndexResult.getCostTimes() <= 0) {
+            assertMessages.add("[ASSERT WARN] createIndex costTimes <= 0");
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("CreateIndex assertions: " + assertMessages);
+        }
         createIndexResult.setIndexParams(createIndexParams.getIndexParams());
         createIndexResult.setCommonResult(commonResult);
         createIndexResult.setCollectionName(collectionName);
+        createIndexResult.setAssertMessages(assertMessages);
         return createIndexResult;
     }
 }

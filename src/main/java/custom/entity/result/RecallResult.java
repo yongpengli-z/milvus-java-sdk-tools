@@ -42,6 +42,8 @@ public class RecallResult {
      */
     List<RecallDetail> recallDetails;
 
+    List<String> assertMessages;
+
     /**
      * 单条 (topK, searchLevel) 组合的 recall 评测结果。
      */

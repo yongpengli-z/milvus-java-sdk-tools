@@ -42,6 +42,14 @@ public class FlushComp {
                     .message(e.getMessage())
                     .build();
         }
-        return FlushResult.builder().commonResult(commonResult).build();
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (commonResult.getResult().equals(ResultEnum.EXCEPTION.result)) {
+            assertMessages.add("[ASSERT FAIL] flush exception: " + commonResult.getMessage());
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Flush assertions: " + assertMessages);
+        }
+        return FlushResult.builder().commonResult(commonResult).assertMessages(assertMessages).build();
     }
 }

@@ -9,6 +9,7 @@ import java.util.List;
 @Builder
 public class DropCollectionResult {
     List<DropCollectionResultItem> dropCollectionResultList;
+    List<String> assertMessages;
     @Data
     @Builder
     public static class DropCollectionResultItem{

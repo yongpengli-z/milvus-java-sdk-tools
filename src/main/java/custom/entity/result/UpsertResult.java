@@ -3,6 +3,8 @@ package custom.entity.result;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 public class UpsertResult {
@@ -11,4 +13,5 @@ public class UpsertResult {
     double costTime;
     long requestNum;
     double rps;
+    List<String> assertMessages;
 }

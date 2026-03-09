@@ -102,6 +102,19 @@ public class LoadCollectionComp {
                         .build());
             }
         }
-        return LoadResult.builder().loadResultList(loadResultList).build();
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (loadResultList.isEmpty()) {
+            assertMessages.add("[ASSERT FAIL] loadCollection: no collection was loaded");
+        }
+        for (LoadResult.LoadResultItem item : loadResultList) {
+            if (item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result)) {
+                assertMessages.add("[ASSERT FAIL] loadCollection [" + item.getCollectionName() + "] failed: " + item.getCommonResult().getMessage());
+            }
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("LoadCollection assertions: " + assertMessages);
+        }
+        return LoadResult.builder().loadResultList(loadResultList).assertMessages(assertMessages).build();
     }
 }

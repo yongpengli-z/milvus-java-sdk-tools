@@ -66,8 +66,19 @@ public class CompactComp {
             } while (!compactState);
         }
 
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        for (CompactResult.CompactResultItem item : compactResultItemList) {
+            if (item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result)) {
+                assertMessages.add("[ASSERT FAIL] compact [" + item.getCollectionName() + "] failed: " + item.getCommonResult().getMessage());
+            }
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Compact assertions: " + assertMessages);
+        }
         CompactResult build = CompactResult.builder().
                 compactResultList(compactResultItemList).
+                assertMessages(assertMessages).
                 build();
         log.info("Compact result:" + build);
         return build;

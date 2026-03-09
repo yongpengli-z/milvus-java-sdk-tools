@@ -7,20 +7,23 @@ import custom.entity.result.ResultEnum;
 import io.milvus.v2.service.vector.request.DeleteReq;
 import io.milvus.v2.service.vector.response.DeleteResp;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
 @Data
+@Slf4j
 public class DeleteComp {
     public static DeleteResult delete(DeleteParams deleteParams) {
-        // 先search collection
         String collection = (deleteParams.getCollectionName() == null ||
                 deleteParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : deleteParams.getCollectionName();
         CommonResult commonResult = CommonResult.builder().build();
+        List<String> assertMessages = new ArrayList<>();
 
-        // 然后delete
-        // TODO: delete logic here
         try {
             DeleteReq deleteReq = DeleteReq.builder()
                     .collectionName(collection)
@@ -35,11 +38,20 @@ public class DeleteComp {
             DeleteResp deleteResp = milvusClientV2.delete(deleteReq);
             long deleteCnt = deleteResp.getDeleteCnt();
             commonResult.setResult(ResultEnum.SUCCESS.result);
-            return DeleteResult.builder().deletedCount(deleteCnt).commonResult(commonResult).build();
+            // assertions
+            if (deleteCnt == 0) {
+                assertMessages.add("[ASSERT WARN] delete deletedCount == 0, no entities were deleted");
+            }
+            if (!assertMessages.isEmpty()) {
+                log.warn("Delete assertions: " + assertMessages);
+            }
+            return DeleteResult.builder().deletedCount(deleteCnt).commonResult(commonResult).assertMessages(assertMessages).build();
         } catch (Exception e) {
             commonResult.setResult(ResultEnum.EXCEPTION.result);
             commonResult.setMessage(e.getMessage());
-            return DeleteResult.builder().commonResult(commonResult).build();
+            assertMessages.add("[ASSERT FAIL] delete exception: " + e.getMessage());
+            log.warn("Delete assertions: " + assertMessages);
+            return DeleteResult.builder().commonResult(commonResult).assertMessages(assertMessages).build();
         }
     }
 }

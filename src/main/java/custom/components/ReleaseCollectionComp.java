@@ -62,6 +62,16 @@ public class ReleaseCollectionComp {
                         .build());
             }
         }
-        return ReleaseResult.builder().releaseResultList(releaseResultList).build();
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        for (ReleaseResult.ReleaseResultItem item : releaseResultList) {
+            if (item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result)) {
+                assertMessages.add("[ASSERT FAIL] releaseCollection [" + item.getCollectionName() + "] failed: " + item.getCommonResult().getMessage());
+            }
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("ReleaseCollection assertions: " + assertMessages);
+        }
+        return ReleaseResult.builder().releaseResultList(releaseResultList).assertMessages(assertMessages).build();
     }
 }

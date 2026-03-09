@@ -397,12 +397,25 @@ public class HybridSearchComp {
         log.info("TP50:{}", MathUtil.calculateTP99(costTimeTotal, 0.50f));
 
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        float passRate = (float) (100.0 * successNum / requestNum);
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (requestNum == 0) {
+            assertMessages.add("[ASSERT FAIL] hybridSearch requestNum == 0, no search was executed");
+        }
+        if (passRate < 100.0f) {
+            assertMessages.add(String.format("[ASSERT WARN] hybridSearch passRate=%.2f%% < 100%%, %d/%d requests returned results",
+                    passRate, successNum, requestNum));
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("HybridSearch assertions: " + assertMessages);
+        }
         hybridSearchResult = HybridSearchResult.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(hybridSearchParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)
-                .passRate((float) (100.0 * successNum / requestNum))
+                .passRate(passRate)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
@@ -411,6 +424,7 @@ public class HybridSearchComp {
                 .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .commonResult(commonResult)
+                .assertMessages(assertMessages)
                 .build();
         
         statsReporter.stop();

@@ -9,6 +9,7 @@ import java.util.List;
 @Builder
 public class ReleaseResult {
     List<ReleaseResultItem> releaseResultList;
+    List<String> assertMessages;
     @Data
     @Builder
     public static class ReleaseResultItem{

@@ -180,6 +180,24 @@ public class RecallComp {
                     .result(ResultEnum.SUCCESS.result)
                     .build();
 
+            // assertions
+            List<String> assertMessages = new ArrayList<>();
+            for (RecallResult.RecallDetail detail : recallDetails) {
+                if (detail.getRecall() < 0.9) {
+                    assertMessages.add(String.format("[ASSERT FAIL] recall@%d (level=%d) = %.4f < 0.9",
+                            detail.getTopK(), detail.getSearchLevel(), detail.getRecall()));
+                } else if (detail.getRecall() < 0.95) {
+                    assertMessages.add(String.format("[ASSERT WARN] recall@%d (level=%d) = %.4f < 0.95",
+                            detail.getTopK(), detail.getSearchLevel(), detail.getRecall()));
+                }
+            }
+            if (recallDetails.isEmpty()) {
+                assertMessages.add("[ASSERT FAIL] recall recallDetails is empty");
+            }
+            if (!assertMessages.isEmpty()) {
+                log.warn("Recall assertions: " + assertMessages);
+            }
+
             return RecallResult.builder()
                     .commonResult(commonResult)
                     .nq(nq)
@@ -187,6 +205,7 @@ public class RecallComp {
                     .groundTruthLevel(groundTruthLevel)
                     .totalCostSeconds(totalCostSeconds)
                     .recallDetails(recallDetails)
+                    .assertMessages(assertMessages)
                     .build();
 
         } catch (Exception e) {
@@ -196,9 +215,12 @@ public class RecallComp {
                     .result(ResultEnum.EXCEPTION.result)
                     .message("RecallTest 异常: " + e.getMessage())
                     .build();
+            List<String> assertMessages = new ArrayList<>();
+            assertMessages.add("[ASSERT FAIL] recall exception: " + e.getMessage());
             return RecallResult.builder()
                     .commonResult(commonResult)
                     .totalCostSeconds((totalEndTime - totalStartTime) / 1000.0)
+                    .assertMessages(assertMessages)
                     .build();
         }
     }

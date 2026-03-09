@@ -9,6 +9,7 @@ import java.util.List;
 @Builder
 public class CompactResult {
     List<CompactResult.CompactResultItem> compactResultList;
+    List<String> assertMessages;
 
     @Builder
     @Data

@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class LoadResult {
     List<LoadResultItem> loadResultList;
+    List<String> assertMessages;
 
     @Builder
     @Data

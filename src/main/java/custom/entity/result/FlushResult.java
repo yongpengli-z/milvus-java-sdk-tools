@@ -7,4 +7,5 @@ import lombok.Data;
 @Builder
 public class FlushResult {
     CommonResult commonResult;
+    java.util.List<String> assertMessages;
 }

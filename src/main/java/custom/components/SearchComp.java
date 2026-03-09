@@ -241,12 +241,28 @@ public class SearchComp {
         log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
         log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        float passRate = (float) (100.0 * successNum / requestNum);
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (requestNum == 0) {
+            assertMessages.add("[ASSERT FAIL] search requestNum == 0, no search was executed");
+        }
+        if (passRate < 100.0f) {
+            assertMessages.add(String.format("[ASSERT WARN] search passRate=%.2f%% < 100%%, %d/%d requests returned topK=%d results",
+                    passRate, successNum, requestNum, searchParams.getTopK()));
+        }
+        if (requestNum > 0 && requestNum / searchTotalTime <= 0) {
+            assertMessages.add("[ASSERT FAIL] search RPS <= 0");
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Search assertions: " + assertMessages);
+        }
         searchResultA = SearchResultA.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)
-                .passRate((float) (100.0 * successNum / requestNum))
+                .passRate(passRate)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
@@ -255,6 +271,7 @@ public class SearchComp {
                 .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .commonResult(commonResult)
+                .assertMessages(assertMessages)
                 .build();
         statsReporter.stop();
         executorService.shutdown();

@@ -214,12 +214,25 @@ public class UpsertComp {
                 "Total cost of inserting " + requestNum * upsertParams.getBatchSize() + " entities: " + upsertTotalTime + " seconds!");
         log.info("Total insert " + requestNum + " 次数,RPS avg :" + requestNum / upsertTotalTime + " ");
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        long totalEntries = requestNum * upsertParams.getBatchSize();
+        if (requestNum == 0) {
+            assertMessages.add("[ASSERT FAIL] upsert requestNum == 0, no data was upserted");
+        }
+        if (totalEntries == 0) {
+            assertMessages.add("[ASSERT FAIL] upsert numEntries == 0");
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Upsert assertions: " + assertMessages);
+        }
         upsertResult = UpsertResult.builder()
                 .commonResult(commonResult)
                 .rps(requestNum / upsertTotalTime)
-                .numEntries(requestNum * upsertParams.getBatchSize())
+                .numEntries(totalEntries)
                 .requestNum(requestNum)
                 .costTime(upsertTotalTime)
+                .assertMessages(assertMessages)
                 .build();
         statsReporter.stop();
         executorService.shutdown();

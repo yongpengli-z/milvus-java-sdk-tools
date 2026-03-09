@@ -10,6 +10,8 @@ import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import lombok.extern.slf4j.Slf4j;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static custom.BaseTest.globalCollectionNames;
@@ -46,9 +48,21 @@ public class CreateCollectionComp {
                 log.info(String.format("property %s : %s", s, properties.get(s)));
             }
         }
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (commonResult.getResult().equals(ResultEnum.EXCEPTION.result)) {
+            assertMessages.add("[ASSERT FAIL] createCollection exception: " + commonResult.getMessage());
+        }
+        if (collection == null || collection.isEmpty()) {
+            assertMessages.add("[ASSERT FAIL] createCollection returned null/empty collectionName");
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("CreateCollection assertions: " + assertMessages);
+        }
         return CreateCollectionResult.builder()
                 .commonResult(commonResult)
-                .collectionName(collection).build();
+                .collectionName(collection)
+                .assertMessages(assertMessages).build();
     }
 
 }

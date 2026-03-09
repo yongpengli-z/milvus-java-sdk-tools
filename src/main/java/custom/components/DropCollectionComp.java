@@ -76,6 +76,16 @@ public class DropCollectionComp {
                         .build());
             }
         }
-        return DropCollectionResult.builder().dropCollectionResultList(dropCollectionResultList).build();
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        for (DropCollectionResult.DropCollectionResultItem item : dropCollectionResultList) {
+            if (item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result)) {
+                assertMessages.add("[ASSERT FAIL] dropCollection [" + item.getCollectionName() + "] failed: " + item.getCommonResult().getMessage());
+            }
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("DropCollection assertions: " + assertMessages);
+        }
+        return DropCollectionResult.builder().dropCollectionResultList(dropCollectionResultList).assertMessages(assertMessages).build();
     }
 }

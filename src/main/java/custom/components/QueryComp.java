@@ -173,12 +173,25 @@ public class QueryComp {
         log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
         log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        float passRate = (float) (100.0 * successNum / requestNum);
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (requestNum == 0) {
+            assertMessages.add("[ASSERT FAIL] query requestNum == 0, no query was executed");
+        }
+        if (passRate < 100.0f && queryParams.getLimit() > 0) {
+            assertMessages.add(String.format("[ASSERT WARN] query passRate=%.2f%% < 100%%, %d/%d requests returned limit=%d results",
+                    passRate, successNum, requestNum, queryParams.getLimit()));
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Query assertions: " + assertMessages);
+        }
         queryResult = QueryResult.builder()
                 .rps(requestNum / queryTotalTime)
                 .concurrencyNum(queryParams.getNumConcurrency())
                 .costTime(queryTotalTime)
                 .requestNum(requestNum)
-                .passRate((float) (100.0 * successNum / requestNum))
+                .passRate(passRate)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
@@ -187,6 +200,7 @@ public class QueryComp {
                 .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .commonResult(commonResult)
+                .assertMessages(assertMessages)
                 .build();
         statsReporter.stop();
         executorService.shutdown();

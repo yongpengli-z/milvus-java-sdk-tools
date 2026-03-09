@@ -3,6 +3,8 @@ package custom.entity.result;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * HybridSearch（混合搜索）结果。
  */
@@ -73,5 +75,7 @@ public class HybridSearchResult {
      * TP50 延迟（秒）。
      */
     double tp50;
+
+    List<String> assertMessages;
 }
 

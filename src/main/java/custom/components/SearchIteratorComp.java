@@ -146,12 +146,24 @@ public class SearchIteratorComp {
         log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
         log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
+        float passRate = (float) (100.0 * successNum / requestNum);
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (requestNum == 0) {
+            assertMessages.add("[ASSERT FAIL] searchIterator requestNum == 0");
+        }
+        if (passRate < 100.0f) {
+            assertMessages.add(String.format("[ASSERT WARN] searchIterator passRate=%.2f%% < 100%%", passRate));
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("SearchIterator assertions: " + assertMessages);
+        }
         searchIteratorResultA = SearchIteratorResultA.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(searchIteratorParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)
-                .passRate((float) (100.0 * successNum / requestNum))
+                .passRate(passRate)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
@@ -160,6 +172,7 @@ public class SearchIteratorComp {
                 .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .commonResult(commonResult)
+                .assertMessages(assertMessages)
                 .build();
         statsReporter.stop();
         executorService.shutdown();

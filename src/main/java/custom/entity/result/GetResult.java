@@ -11,4 +11,5 @@ import java.util.List;
 public class GetResult {
     CommonResult commonResult;
     List<QueryResp.QueryResult> getResults;
+    List<String> assertMessages;
 }

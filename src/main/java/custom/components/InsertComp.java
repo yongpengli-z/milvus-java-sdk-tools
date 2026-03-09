@@ -227,10 +227,25 @@ public class InsertComp {
             commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
                     .message(exceptionFinally).build();
         }
+        // assertions
+        List<String> assertMessages = new ArrayList<>();
+        if (commonResult.getResult().equals(ResultEnum.EXCEPTION.result)) {
+            assertMessages.add("[ASSERT FAIL] insert exception: " + exceptionFinally);
+        }
+        long totalEntries = requestNum * insertParams.getBatchSize();
+        if (requestNum == 0) {
+            assertMessages.add("[ASSERT FAIL] insert requestNum == 0, no data was inserted");
+        }
+        if (totalEntries == 0 && commonResult.getResult().equals(ResultEnum.SUCCESS.result)) {
+            assertMessages.add("[ASSERT FAIL] insert numEntries == 0 but result is SUCCESS");
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Insert assertions: " + assertMessages);
+        }
         insertResult = InsertResult.builder()
                 .commonResult(commonResult)
                 .rps(requestNum / insertTotalTime)
-                .numEntries(requestNum * insertParams.getBatchSize())
+                .numEntries(totalEntries)
                 .requestNum(requestNum)
                 .costTime(insertTotalTime)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
@@ -240,6 +255,7 @@ public class InsertComp {
                 .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
                 .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
+                .assertMessages(assertMessages)
                 .build();
         statsReporter.stop();
         executorService.shutdown();

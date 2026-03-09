@@ -13,4 +13,5 @@ public class CreateIndexResult {
     List<IndexParams> indexParams;
     CommonResult commonResult;
     float costTimes;
+    List<String> assertMessages;
 }
