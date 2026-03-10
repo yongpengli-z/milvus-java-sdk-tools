@@ -403,7 +403,10 @@ public class HybridSearchComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] hybridSearch requestNum == 0, no search was executed");
         }
-        if (passRate < 100.0f) {
+        if (passRate < 50.0f) {
+            assertMessages.add(String.format("[ASSERT FAIL] hybridSearch passRate=%.2f%% < 50%%, %d/%d requests returned results",
+                    passRate, successNum, requestNum));
+        } else if (passRate < 100.0f) {
             assertMessages.add(String.format("[ASSERT WARN] hybridSearch passRate=%.2f%% < 100%%, %d/%d requests returned results",
                     passRate, successNum, requestNum));
         }

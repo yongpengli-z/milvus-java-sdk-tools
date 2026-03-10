@@ -152,7 +152,9 @@ public class SearchIteratorComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] searchIterator requestNum == 0");
         }
-        if (passRate < 100.0f) {
+        if (passRate < 50.0f) {
+            assertMessages.add(String.format("[ASSERT FAIL] searchIterator passRate=%.2f%% < 50%%", passRate));
+        } else if (passRate < 100.0f) {
             assertMessages.add(String.format("[ASSERT WARN] searchIterator passRate=%.2f%% < 100%%", passRate));
         }
         if (!assertMessages.isEmpty()) {

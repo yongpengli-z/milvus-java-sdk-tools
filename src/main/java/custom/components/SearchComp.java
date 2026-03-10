@@ -184,7 +184,13 @@ public class SearchComp {
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime(costTimeItem);
 //                            returnNum.add(search.getSearchResults().get(0).size());
-                            returnNum.add(search.getSearchResults().size());
+                            // getSearchResults() 返回 List<List<SearchResult>>，外层size=nq，内层size=每个query的结果数
+                            // 取第一个查询向量的结果数量来判断是否返回了topK条结果
+                            if (search == null || search.getSearchResults().isEmpty()) {
+                                returnNum.add(0);
+                            } else {
+                                returnNum.add(search.getSearchResults().get(0).size());
+                            }
                             if (printLog >= logInterval) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 printLog = 0;
@@ -247,7 +253,10 @@ public class SearchComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] search requestNum == 0, no search was executed");
         }
-        if (passRate < 100.0f) {
+        if (passRate < 50.0f) {
+            assertMessages.add(String.format("[ASSERT FAIL] search passRate=%.2f%% < 50%%, %d/%d requests returned topK=%d results",
+                    passRate, successNum, requestNum, searchParams.getTopK()));
+        } else if (passRate < 100.0f) {
             assertMessages.add(String.format("[ASSERT WARN] search passRate=%.2f%% < 100%%, %d/%d requests returned topK=%d results",
                     passRate, successNum, requestNum, searchParams.getTopK()));
         }

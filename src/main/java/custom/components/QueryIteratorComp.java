@@ -137,7 +137,9 @@ public class QueryIteratorComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] queryIterator requestNum == 0");
         }
-        if (passRate < 100.0f) {
+        if (passRate < 50.0f) {
+            assertMessages.add(String.format("[ASSERT FAIL] queryIterator passRate=%.2f%% < 50%%", passRate));
+        } else if (passRate < 100.0f) {
             assertMessages.add(String.format("[ASSERT WARN] queryIterator passRate=%.2f%% < 100%%", passRate));
         }
         if (!assertMessages.isEmpty()) {

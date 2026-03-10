@@ -179,9 +179,14 @@ public class QueryComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] query requestNum == 0, no query was executed");
         }
-        if (passRate < 100.0f && queryParams.getLimit() > 0) {
-            assertMessages.add(String.format("[ASSERT WARN] query passRate=%.2f%% < 100%%, %d/%d requests returned limit=%d results",
-                    passRate, successNum, requestNum, queryParams.getLimit()));
+        if (queryParams.getLimit() > 0) {
+            if (passRate < 50.0f) {
+                assertMessages.add(String.format("[ASSERT FAIL] query passRate=%.2f%% < 50%%, %d/%d requests returned limit=%d results",
+                        passRate, successNum, requestNum, queryParams.getLimit()));
+            } else if (passRate < 100.0f) {
+                assertMessages.add(String.format("[ASSERT WARN] query passRate=%.2f%% < 100%%, %d/%d requests returned limit=%d results",
+                        passRate, successNum, requestNum, queryParams.getLimit()));
+            }
         }
         if (!assertMessages.isEmpty()) {
             log.warn("Query assertions: " + assertMessages);
