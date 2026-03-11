@@ -11,7 +11,7 @@ public class SearchResultA{
     CommonResult commonResult;
     int concurrencyNum;
     long requestNum;
-    float passRate;
+    double passRate;
     float costTime;
     float rps;
     double avg;

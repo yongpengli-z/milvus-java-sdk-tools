@@ -29,7 +29,7 @@ public class HybridSearchResult {
     /**
      * 通过率（%）。
      */
-    float passRate;
+    double passRate;
 
     /**
      * 总耗时（秒）。

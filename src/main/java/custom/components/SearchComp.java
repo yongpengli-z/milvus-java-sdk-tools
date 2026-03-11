@@ -247,7 +247,7 @@ public class SearchComp {
         log.info("TP80:" + MathUtil.calculateTP99(costTimeTotal, 0.80f));
         log.info("TP50:" + MathUtil.calculateTP99(costTimeTotal, 0.50f));
         commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
-        float passRate = (float) (100.0 * successNum / requestNum);
+        double passRate = 100.0 * successNum / requestNum;
         // assertions
         List<String> assertMessages = new ArrayList<>();
         if (requestNum == 0) {

@@ -12,7 +12,7 @@ public class QueryIteratorResult {
     long requestNum;
     float costTime;
     float rps;
-    float passRate;
+    double passRate;
     int concurrencyNum;
     double avg;
     double tp99;
