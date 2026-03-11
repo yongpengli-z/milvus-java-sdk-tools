@@ -183,10 +183,10 @@ public class HybridSearchComp {
                 List<Integer> returnNum = new ArrayList<>();
                 List<Float> costTime = new ArrayList<>();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(hybridSearchParams.getRunningMinutes());
-                int printLog = 1;
                 // QPS控制计数器
                 int requestCount = 0;
                 long lastLogTime = System.currentTimeMillis();
+                long lastPrintTime = System.currentTimeMillis();
 
                 // 准备当前线程的向量数据
                 Map<String, List<BaseVector>> threadVectorsMap = new HashMap<>();
@@ -256,7 +256,9 @@ public class HybridSearchComp {
                                     processedFilter = processedFilter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                                 }
                                 filter = processedFilter;
-                                log.info("线程[{}] 字段[{}] hybridSearch filter:{}", finalC, annsField, filter);
+                                if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                    log.info("线程[{}] 字段[{}] hybridSearch filter:{}", finalC, annsField, filter);
+                                }
                             }
                         }
 
@@ -334,11 +336,10 @@ public class HybridSearchComp {
                     statsReporter.recordCostTime(costTimeItem);
                     returnNum.add(resultSize);
 
-                    if (printLog >= logInterval) {
+                    if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                         log.info("线程[{}] 已经 hybridSearch :{}次", finalC, returnNum.size());
-                        printLog = 0;
+                        lastPrintTime = System.currentTimeMillis();
                     }
-                    printLog++;
 
                     // QPS监控日志
                     requestCount++;

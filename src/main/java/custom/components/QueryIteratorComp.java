@@ -50,7 +50,7 @@ public class QueryIteratorComp {
                 List<Integer> returnNum = new ArrayList<>();
                 List<Float> costTime = new ArrayList<>();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(queryIteratorParams.getRunningMinutes());
-                int printLog = 1;
+                long lastPrintTime = System.currentTimeMillis();
                 while (LocalDateTime.now().isBefore(endTime)) {
                     long startItemTime = System.currentTimeMillis();
                     QueryIteratorReq.QueryIteratorReqBuilder builder = QueryIteratorReq.builder()
@@ -84,11 +84,10 @@ public class QueryIteratorComp {
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                     costTime.add(costTimeItem);
                     statsReporter.recordCostTime(costTimeItem);
-                    if (printLog >= logInterval) {
+                    if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                         log.info("线程[" + finalC + "] 已经 queryIterator :" + returnNum.size() + "次, 最近一次返回: " + totalCount + " 条");
-                        printLog = 0;
+                        lastPrintTime = System.currentTimeMillis();
                     }
-                    printLog++;
                 }
                 itemResult.setResultNum(returnNum);
                 itemResult.setCostTime(costTime);

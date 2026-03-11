@@ -112,6 +112,7 @@ public class UpsertComp {
                         List<Double> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
                         int retryCount = 0;
+                        long lastPrintTime = System.currentTimeMillis();
                         LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(upsertParams.getRunningMinutes());
                         for (long r = ((upsertRounds / upsertParams.getNumConcurrency()) * finalC);
                              r < ((upsertRounds / upsertParams.getNumConcurrency()) * (finalC + 1));
@@ -129,7 +130,9 @@ public class UpsertComp {
                             }
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(upsertParams.getBatchSize(),
                                     (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap);
-                            log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
+                            if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
+                            }
                             UpsertResp upsertResp = null;
                             long startTime = System.currentTimeMillis();
                             try {
@@ -165,16 +168,19 @@ public class UpsertComp {
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime((float) costTimeItem);
                             insertCnt.add((int) upsertResp.getUpsertCnt());
-                            log.info(
-                                    "线程 ["
-                                            + finalC
-                                            + "]Upsert第"
-                                            + r
-                                            + "批次数据, 成功upsert "
-                                            + upsertResp.getUpsertCnt()
-                                            + " 条， cost:"
-                                            + (endTime - startTime) / 1000.00
-                                            + " seconds ");
+                            if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                log.info(
+                                        "线程 ["
+                                                + finalC
+                                                + "]Upsert第"
+                                                + r
+                                                + "批次数据, 成功upsert "
+                                                + upsertResp.getUpsertCnt()
+                                                + " 条， cost:"
+                                                + (endTime - startTime) / 1000.00
+                                                + " seconds ");
+                                lastPrintTime = System.currentTimeMillis();
+                            }
                         }
                         upsertResultItem.setUpsertCnt(insertCnt);
                         upsertResultItem.setCostTime(costTime);

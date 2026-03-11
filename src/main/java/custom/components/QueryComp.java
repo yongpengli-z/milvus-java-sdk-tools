@@ -84,7 +84,7 @@ public class QueryComp {
                 List<Integer> returnNum = new ArrayList<>();
                 List<Float> costTime = new ArrayList<>();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(queryParams.getRunningMinutes());
-                int printLog = 1;
+                long lastPrintTime = System.currentTimeMillis();
                 while (LocalDateTime.now().isBefore(endTime)) {
                     // 3. QPS控制点（如果需要）
                     if (finalRateLimiter != null) {
@@ -97,10 +97,14 @@ public class QueryComp {
                     if (finalGeneralDataRoleList != null && finalGeneralDataRoleList.size() > 0) {
                         for (GeneralDataRole generalFilterRole : finalGeneralDataRoleList) {
                             int replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
-                            log.info("query random:{}", replaceFilterParams);
+                            if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                log.info("query random:{}", replaceFilterParams);
+                            }
                             filterParams = filterParams.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                         }
-                        log.info("query filter:{}", filterParams);
+                        if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                            log.info("query filter:{}", filterParams);
+                        }
                     }
                     try {
                         QueryReq queryReq = QueryReq.builder()
@@ -126,11 +130,10 @@ public class QueryComp {
                     costTime.add(costTimeItem);
                     statsReporter.recordCostTime(costTimeItem);
                     returnNum.add(query.getQueryResults().size());
-                    if (printLog >= logInterval) {
+                    if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                         log.info("线程[" + finalI + "] 已经 query :" + returnNum.size() + "次");
-                        printLog = 0;
+                        lastPrintTime = System.currentTimeMillis();
                     }
-                    printLog++;
                 }
                 queryItemResult.setResultNum(returnNum);
                 queryItemResult.setCostTime(costTime);

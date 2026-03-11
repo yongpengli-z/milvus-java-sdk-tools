@@ -128,10 +128,10 @@ public class SearchComp {
                         List<Integer> returnNum = new ArrayList<>();
                         List<Float> costTime = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
-                        int printLog = 1;
                         // QPS控制计数器
                         int requestCount = 0;
                         long lastLogTime = System.currentTimeMillis();
+                        long lastPrintTime = System.currentTimeMillis();
                         while (LocalDateTime.now().isBefore(endTime)) {
                             // 3. QPS控制点（如果需要）
                             if (finalRateLimiter != null) {
@@ -153,7 +153,9 @@ public class SearchComp {
 //                                    log.info("search random:{}", replaceFilterParams);
                                     filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                                 }
-                                log.info("线程[" + finalC + "] search filter:{}", filter);
+                                if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                    log.info("线程[" + finalC + "] search filter:{}", filter);
+                                }
                             }
                             SearchReq searchReq = SearchReq.builder()
                                     .topK(searchParams.getTopK())
@@ -191,11 +193,10 @@ public class SearchComp {
                             } else {
                                 returnNum.add(search.getSearchResults().get(0).size());
                             }
-                            if (printLog >= logInterval) {
+                            if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
-                                printLog = 0;
+                                lastPrintTime = System.currentTimeMillis();
                             }
-                            printLog++;
                             // 4. QPS监控日志
                             requestCount++;
                             long currentTime = System.currentTimeMillis();

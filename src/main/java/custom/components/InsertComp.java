@@ -101,6 +101,7 @@ public class InsertComp {
                         List<Float> costTime = new ArrayList<>();
                         List<Integer> insertCnt = new ArrayList<>();
                         int retryCount = 0;
+                        long lastPrintTime = System.currentTimeMillis();
                         LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(insertParams.getRunningMinutes());
                         for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
                              r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
@@ -120,7 +121,9 @@ public class InsertComp {
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(insertParams.getBatchSize(),
                                     (r * insertParams.getBatchSize() + insertParams.getStartId()), insertParams.getGeneralDataRoleList(), insertParams.getNumEntries(), insertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap);
                             long genDataEndTime = System.currentTimeMillis();
-                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
+                            if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，范围: " + (r * insertParams.getBatchSize() + insertParams.getStartId()) + "~" + ((r + 1) * insertParams.getBatchSize() + insertParams.getStartId()));
+                            }
 //                            log.info("线程[" + finalC + "]insert数据 " + insertParams.getBatchSize() + "条，生成数据耗时: " + (genDataEndTime - genDataStartTime) / 1000.00 + " seconds");
                             InsertResp insert = null;
                             long startTime = System.currentTimeMillis();
@@ -163,16 +166,19 @@ public class InsertComp {
                             }
 
                             insertCnt.add((int) insert.getInsertCnt());
-                            log.info(
-                                    "线程 ["
-                                            + finalC
-                                            + "]insert第"
-                                            + r
-                                            + "批次数据, 成功导入 "
-                                            + insert.getInsertCnt()
-                                            + " 条， cost:"
-                                            + (endTime - startTime) / 1000.00
-                                            + " seconds ");
+                            if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                log.info(
+                                        "线程 ["
+                                                + finalC
+                                                + "]insert第"
+                                                + r
+                                                + "批次数据, 成功导入 "
+                                                + insert.getInsertCnt()
+                                                + " 条， cost:"
+                                                + (endTime - startTime) / 1000.00
+                                                + " seconds ");
+                                lastPrintTime = System.currentTimeMillis();
+                            }
                         }
                         insertResultItem.setInsertCnt(insertCnt);
                         insertResultItem.setCostTime(costTime);

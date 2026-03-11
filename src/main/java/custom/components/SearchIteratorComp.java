@@ -69,7 +69,7 @@ public class SearchIteratorComp {
                         List<Integer> returnNum = new ArrayList<>();
                         List<Float> costTime = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchIteratorParams.getRunningMinutes());
-                        int printLog = 1;
+                        long lastPrintTime = System.currentTimeMillis();
                         while (LocalDateTime.now().isBefore(endTime)) {
                             if (searchIteratorParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchIteratorParams.getNq());
@@ -99,11 +99,10 @@ public class SearchIteratorComp {
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime(costTimeItem);
-                            if (printLog >= logInterval) {
+                            if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("线程[" + finalC + "] 已经 searchIterator :" + returnNum.size() + "次");
-                                printLog = 0;
+                                lastPrintTime = System.currentTimeMillis();
                             }
-                            printLog++;
                         }
                         searchIteratorResult.setResultNum(returnNum);
                         searchIteratorResult.setCostTime(costTime);
