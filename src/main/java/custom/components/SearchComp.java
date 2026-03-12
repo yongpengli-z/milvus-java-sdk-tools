@@ -133,7 +133,6 @@ public class SearchComp {
                         int requestCount = 0;
                         long lastLogTime = System.currentTimeMillis();
                         long lastPrintTime = System.currentTimeMillis();
-                        int failCount = 0;
                         while (LocalDateTime.now().isBefore(endTime)) {
                             // 3. QPS控制点（如果需要）
                             if (finalRateLimiter != null) {
@@ -175,7 +174,6 @@ public class SearchComp {
                             try {
                                 search = milvusClientV2.withTimeout(800,TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).search(searchReq);
                             } catch (Exception e) {
-                                failCount++;
                                 statsReporter.recordFailure();
                                 log.error("线程[" + finalC + "]  search error :" + e.getMessage());
                                 if (searchParams.isIgnoreError()) {
@@ -198,7 +196,7 @@ public class SearchComp {
                                 returnNum.add(search.getSearchResults().get(0).size());
                             }
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
-                                log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次, 失败:" + failCount + "次");
+                                log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 lastPrintTime = System.currentTimeMillis();
                             }
                             // 4. QPS监控日志
