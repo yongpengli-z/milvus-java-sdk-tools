@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class PeriodicStatsReporter {
 
     private final ConcurrentLinkedQueue<Float> costTimeQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Boolean> failQueue = new ConcurrentLinkedQueue<>();
     private final String componentName;
     private final ScheduledExecutorService scheduler;
 
@@ -46,6 +47,13 @@ public class PeriodicStatsReporter {
     }
 
     /**
+     * 记录一次失败请求。线程安全，可在多个并发线程中调用。
+     */
+    public void recordFailure() {
+        failQueue.add(Boolean.TRUE);
+    }
+
+    /**
      * 启动定时报告，每 60 秒打印一次前一分钟的聚合统计。
      */
     public void start() {
@@ -56,11 +64,16 @@ public class PeriodicStatsReporter {
                 while ((item = costTimeQueue.poll()) != null) {
                     window.add(item);
                 }
-                if (window.isEmpty()) {
+                int failCount = 0;
+                while (failQueue.poll() != null) {
+                    failCount++;
+                }
+                if (window.isEmpty() && failCount == 0) {
                     return;
                 }
                 int requestCount = window.size();
-                double rps = requestCount / 60.0;
+                int totalCount = requestCount + failCount;
+                double rps = totalCount / 60.0;
                 double avg = MathUtil.calculateAverage(window);
                 double tp99 = MathUtil.calculateTP99(window, 0.99f);
                 double tp98 = MathUtil.calculateTP99(window, 0.98f);
@@ -68,8 +81,9 @@ public class PeriodicStatsReporter {
                 double tp85 = MathUtil.calculateTP99(window, 0.85f);
                 double tp80 = MathUtil.calculateTP99(window, 0.80f);
                 double tp50 = MathUtil.calculateTP99(window, 0.50f);
-                log.info("[{}] 前一分钟压测统计: 请求数={}, RPS={}, Avg={}, TP99={}, TP98={}, TP90={}, TP85={}, TP80={}, TP50={}",
-                        componentName, requestCount,
+                log.info("[{}] 前一分钟压测统计: 请求数={}, 失败数={}, 失败率={}, RPS={}, Avg={}, TP99={}, TP98={}, TP90={}, TP85={}, TP80={}, TP50={}",
+                        componentName, totalCount, failCount,
+                        totalCount > 0 ? String.format("%.2f%%", 100.0 * failCount / totalCount) : "0.00%",
                         String.format("%.2f", rps),
                         avg, tp99, tp98, tp90, tp85, tp80, tp50);
             } catch (Exception e) {

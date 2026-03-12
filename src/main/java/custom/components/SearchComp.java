@@ -176,6 +176,7 @@ public class SearchComp {
                                 search = milvusClientV2.withTimeout(800,TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).search(searchReq);
                             } catch (Exception e) {
                                 failCount++;
+                                statsReporter.recordFailure();
                                 log.error("线程[" + finalC + "]  search error :" + e.getMessage());
                                 if (searchParams.isIgnoreError()) {
                                     log.error("线程[" + finalC + "] Ignore error, continue search...... ");

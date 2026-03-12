@@ -148,6 +148,7 @@ public class UpsertComp {
                                     retryCount = 0;
                                 }
                             } catch (Exception e) {
+                                statsReporter.recordFailure();
                                 log.error("线程[" + finalC + "]" + "upsert error,reason:" + e.getMessage());
                                 // 禁写后重试判断
                                 if ((!upsertParams.isRetryAfterDeny()) || (retryCount == 10)) {

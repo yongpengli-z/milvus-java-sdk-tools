@@ -145,6 +145,7 @@ public class InsertComp {
                                     retryCount = 0;
                                 }
                             } catch (Exception e) {
+                                statsReporter.recordFailure();
                                 if (insertParams.isIgnoreError()) {
                                     log.error("线程[" + finalC + "]" + "Ignore error，continue insert......");
                                     continue;

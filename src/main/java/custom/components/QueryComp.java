@@ -123,6 +123,7 @@ public class QueryComp {
 //                        log.info("query size: " + query.getQueryResults().get(0).getEntity());
 //                        log.info("query result: " + query.getQueryResults());
                     } catch (Exception e) {
+                        statsReporter.recordFailure();
                         log.error("query exception:" + e.getMessage());
                     }
                     long endItemTime = System.currentTimeMillis();

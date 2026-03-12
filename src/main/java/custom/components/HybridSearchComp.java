@@ -320,6 +320,7 @@ public class HybridSearchComp {
                     try {
                         hybridSearchResp = milvusClientV2.hybridSearch(hybridSearchReq);
                     } catch (Exception e) {
+                        statsReporter.recordFailure();
                         log.error("线程[{}] hybridSearch error :{}", finalC, e.getMessage());
                         if (hybridSearchParams.isIgnoreError()) {
                             log.error("线程[{}] Ignore error, continue hybridSearch......", finalC);
