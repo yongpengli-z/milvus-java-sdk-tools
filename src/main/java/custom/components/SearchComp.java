@@ -171,7 +171,7 @@ public class SearchComp {
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = null;
                             try {
-                                search = milvusClientV2.withTimeout(5,TimeUnit.SECONDS).search(searchReq);
+                                search = milvusClientV2.withTimeout(800,TimeUnit.MILLISECONDS).search(searchReq);
                             } catch (Exception e) {
                                 log.error("线程[" + finalC + "]  search error :" + e.getMessage());
                                 if (searchParams.isIgnoreError()) {
