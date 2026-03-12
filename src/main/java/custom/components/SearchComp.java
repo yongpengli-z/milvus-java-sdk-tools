@@ -10,6 +10,7 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import io.milvus.v2.client.RetryConfig;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -172,7 +173,7 @@ public class SearchComp {
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = null;
                             try {
-                                search = milvusClientV2.withTimeout(800,TimeUnit.MILLISECONDS).search(searchReq);
+                                search = milvusClientV2.withTimeout(800,TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).search(searchReq);
                             } catch (Exception e) {
                                 failCount++;
                                 log.error("线程[" + finalC + "]  search error :" + e.getMessage());
