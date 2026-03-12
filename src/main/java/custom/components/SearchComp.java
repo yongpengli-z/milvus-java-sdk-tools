@@ -192,14 +192,8 @@ public class SearchComp {
                             // 取第一个查询向量的结果数量来判断是否返回了topK条结果
                             if (search == null || search.getSearchResults().isEmpty()) {
                                 returnNum.add(0);
-                                statsReporter.recordFailure();
-                                log.error("线程[" + finalC + "] search 返回结果为空");
                             } else {
-                                int resultSize = search.getSearchResults().get(0).size();
-                                returnNum.add(resultSize);
-                                if (resultSize < searchParams.getTopK()) {
-                                    log.warn("线程[" + finalC + "] search 返回结果不足topK, 实际:" + resultSize + ", 期望:" + searchParams.getTopK());
-                                }
+                                returnNum.add(search.getSearchResults().get(0).size());
                             }
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
