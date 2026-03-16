@@ -373,8 +373,8 @@ public class RestfulSearchComp {
     private static String doPostJsonQuietly(String url, Map<String, String> headers, String json) {
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(10000)
-                .setSocketTimeout(10000)
-                .setConnectionRequestTimeout(5)
+                .setSocketTimeout(5)
+                .setConnectionRequestTimeout(10000)
                 .build();
         CloseableHttpClient httpClient = HttpClients.custom()
                 .setDefaultRequestConfig(requestConfig)
