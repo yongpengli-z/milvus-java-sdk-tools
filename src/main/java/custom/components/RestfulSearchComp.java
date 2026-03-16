@@ -11,7 +11,6 @@ import custom.entity.result.ResultEnum;
 import custom.entity.result.SearchResultA;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
-import custom.utils.HttpClientUtils;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
@@ -20,7 +19,15 @@ import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.data.*;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -193,7 +200,7 @@ public class RestfulSearchComp {
 
                             long startItemTime = System.currentTimeMillis();
                             try {
-                                String response = HttpClientUtils.doPostJson(finalSearchUrl, headers, requestBody.toJSONString());
+                                String response = doPostJsonQuietly(finalSearchUrl, headers, requestBody.toJSONString());
                                 long endItemTime = System.currentTimeMillis();
                                 float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                                 costTime.add(costTimeItem);
@@ -357,6 +364,38 @@ public class RestfulSearchComp {
             }
         }
         return dataArray;
+    }
+
+    /**
+     * 静默版 HTTP POST JSON，不打印请求/响应日志，避免高并发压测时日志爆炸
+     */
+    private static String doPostJsonQuietly(String url, Map<String, String> headers, String json) {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpResponse response = null;
+        String resultString = "";
+        try {
+            HttpPost httpPost = new HttpPost(url);
+            if (headers != null) {
+                for (String key : headers.keySet()) {
+                    httpPost.setHeader(key, headers.get(key));
+                }
+            }
+            StringEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
+            httpPost.setEntity(entity);
+            response = httpClient.execute(httpPost);
+            resultString = EntityUtils.toString(response.getEntity(), "utf-8");
+        } catch (Exception e) {
+            log.error("restful request error:", e);
+        } finally {
+            try {
+                if (response != null) {
+                    response.close();
+                }
+                httpClient.close();
+            } catch (IOException ignored) {
+            }
+        }
+        return resultString;
     }
 
     @Data
