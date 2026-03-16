@@ -23,6 +23,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -370,7 +371,14 @@ public class RestfulSearchComp {
      * 静默版 HTTP POST JSON，不打印请求/响应日志，避免高并发压测时日志爆炸
      */
     private static String doPostJsonQuietly(String url, Map<String, String> headers, String json) {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(5000)
+                .setSocketTimeout(30000)
+                .setConnectionRequestTimeout(5000)
+                .build();
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig)
+                .build();
         CloseableHttpResponse response = null;
         String resultString = "";
         try {
