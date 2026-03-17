@@ -24,7 +24,7 @@
   | `dbVersion` | String | 是 | `latest-release` | 镜像版本（见下方特殊值说明） |
   | `cuType` | String | 否 | `class-1-enterprise` | CU 规格（见下方说明） |
   | `architecture` | int | 否 | `2` | 架构：`1`=AMD（x86），`2`=ARM |
-  | `instanceType` | int | 否 | `1` | 实例类型（通常保持默认） |
+  | `instanceType` | int | 推荐必传 | `1` | 实例类型，不传时 Java int 默认为 0 可能导致异常，建议显式传 `1` |
   | `replica` | int | 是 | `1` | 副本数。`>1` 时 CU 必须 ≥8；创建时先用 replica=1，成功后通过 modifyInstance 设置 |
   | `rootPassword` | String | 是 | `Milvus123` | root/db_admin 密码，用于后续连接 token 生成 |
   | `roleUse` | String | 是 | `root` | 创建完成后使用哪个角色连接：`root` 或 `db_admin` |

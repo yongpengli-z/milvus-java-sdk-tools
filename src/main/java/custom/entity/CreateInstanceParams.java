@@ -62,7 +62,7 @@ public class CreateInstanceParams {
      * <p>
      * 前端默认值：1
      */
-    int instanceType;
+    int instanceType = 1;
 
     /**
      * 创建实例所使用的账号邮箱（可选）。
