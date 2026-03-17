@@ -32,6 +32,27 @@ public class DropIndexComp {
                     .fieldName(dropIndexParams.getFieldName())
                     .indexName(indexName)
                     .build());
+
+            // 轮询确认索引已真正删除（describeIndex 抛异常说明索引不存在）
+            long startTime = System.currentTimeMillis();
+            long timeout = 60 * 1000L; // 60秒超时
+            while (true) {
+                try {
+                    Thread.sleep(1000L);
+                    milvusClientV2.describeIndex(DescribeIndexReq.builder()
+                            .collectionName(collectionName)
+                            .fieldName(dropIndexParams.getFieldName())
+                            .build());
+                    log.info("Index for field [{}] still exists, waiting...", dropIndexParams.getFieldName());
+                    if (System.currentTimeMillis() - startTime > timeout) {
+                        log.warn("Drop index timeout after 60s, index may still exist");
+                        break;
+                    }
+                } catch (Exception ex) {
+                    log.info("Index for field [{}] confirmed deleted", dropIndexParams.getFieldName());
+                    break;
+                }
+            }
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
         } catch (Exception e) {
             commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
