@@ -60,6 +60,7 @@
 - **`generalFilterRoleList`**（list，可空）：前端默认是“带 1 条空规则”的占位数组；**如果你不使用该能力，建议直接传 `[]`**。
 - **`partitionNames`**（list，可空）：查询分区列表。前端初始模板里是 `""`（占位，失焦后会 split 成数组）；**建议生成 JSON 时直接用 `[]` 或 `["p1","p2"]`**。
 - **`ignoreError`**（boolean，可空）：前端默认 `false`。
+- **`timeout`**（long，可空）：SDK 请求超时时间（毫秒）。前端默认 `800`。`0` 表示使用默认值 800ms。
 
 ##### 5.1.6 Query：`QueryParams`
 

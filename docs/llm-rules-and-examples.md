@@ -126,7 +126,8 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   }
 }
 ```
@@ -167,7 +168,8 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   }
 }
 ```
@@ -287,7 +289,8 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   },
   "SearchParams_2": {
     "collectionName": "",
@@ -304,7 +307,8 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   },
   "SearchParams_3": {
     "collectionName": "",
@@ -321,7 +325,8 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   },
   "SearchParams_4": {
     "collectionName": "",
@@ -338,7 +343,8 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   }
 }
 ```
@@ -632,7 +638,8 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   }
 }
 ```

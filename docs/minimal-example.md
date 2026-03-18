@@ -93,7 +93,8 @@
     "indexAlgo": "",
     "targetQps": 0,
     "generalFilterRoleList": [],
-    "ignoreError": true
+    "ignoreError": true,
+    "timeout": 800
   },
   "QueryParams_6": {
     "collectionName": "",
