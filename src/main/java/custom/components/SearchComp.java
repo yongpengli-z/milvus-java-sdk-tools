@@ -172,7 +172,8 @@ public class SearchComp {
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = null;
                             try {
-                                search = milvusClientV2.withTimeout(800,TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).search(searchReq);
+                                long timeoutMs = searchParams.getTimeout() > 0 ? searchParams.getTimeout() : 800;
+                                search = milvusClientV2.withTimeout(timeoutMs,TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).search(searchReq);
                             } catch (Exception e) {
                                 statsReporter.recordFailure();
                                 log.error("线程[" + finalC + "]  search error :" + e.getMessage());

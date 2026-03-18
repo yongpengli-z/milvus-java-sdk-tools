@@ -88,4 +88,11 @@ public class RestfulSearchParams {
      * 查询分区列表（可选）。
      */
     private List<String> partitionNames;
+
+    /**
+     * HTTP Socket 读取超时时间（毫秒）。默认值：5000
+     * <p>
+     * 说明：0 表示使用默认值 5000ms。
+     */
+    private int socketTimeout;
 }

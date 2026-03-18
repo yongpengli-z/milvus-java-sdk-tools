@@ -201,7 +201,8 @@ public class RestfulSearchComp {
 
                             long startItemTime = System.currentTimeMillis();
                             try {
-                                String response = doPostJsonQuietly(finalSearchUrl, headers, requestBody.toJSONString());
+                                String response = doPostJsonQuietly(finalSearchUrl, headers, requestBody.toJSONString(),
+                                        searchParams.getSocketTimeout());
                                 long endItemTime = System.currentTimeMillis();
                                 float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                                 costTime.add(costTimeItem);
@@ -370,10 +371,11 @@ public class RestfulSearchComp {
     /**
      * 静默版 HTTP POST JSON，不打印请求/响应日志，避免高并发压测时日志爆炸
      */
-    private static String doPostJsonQuietly(String url, Map<String, String> headers, String json) {
+    private static String doPostJsonQuietly(String url, Map<String, String> headers, String json,
+                                            int socketTimeout) {
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(10000)
-                .setSocketTimeout(5)
+                .setSocketTimeout(socketTimeout > 0 ? socketTimeout : 5000)
                 .setConnectionRequestTimeout(10000)
                 .build();
         CloseableHttpClient httpClient = HttpClients.custom()

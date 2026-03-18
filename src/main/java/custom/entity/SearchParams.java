@@ -179,4 +179,15 @@ public class SearchParams {
      * 建议：生成 JSON 时使用 [] 或 ["p1","p2"]。
      */
     private List<String> partitionNames;
+
+    /**
+     * SDK 请求超时时间（毫秒）。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Timeout(ms)"
+     * <p>
+     * 前端默认值：800
+     * <p>
+     * 说明：每次 search 请求的超时时间，0 表示使用默认值 800ms。
+     */
+    private long timeout;
 }
