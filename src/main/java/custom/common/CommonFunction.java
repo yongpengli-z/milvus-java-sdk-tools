@@ -258,9 +258,21 @@ public class CommonFunction {
                         params.put("build_level", indexParamItem.getBuildLevel());
                     }
                 }
+                // JSON path 索引：用 jsonPath 生成唯一的 indexName，避免同 field 多 path 时重名
+                String indexName;
+                if (indexParamItem.getJsonPath() != null && !indexParamItem.getJsonPath().equals("")) {
+                    // e.g. JSON_2["commit"]["record"]["langs"] -> JSON_2_commit_record_langs
+                    String pathSuffix = indexParamItem.getJsonPath()
+                            .replaceAll("[\\[\\]\"]", "_")
+                            .replaceAll("_+", "_")
+                            .replaceAll("^_|_$", "");
+                    indexName = "idx_" + pathSuffix;
+                } else {
+                    indexName = "idx_" + indexParamItem.getFieldName() + "_" + i;
+                }
                 IndexParam indexParam = IndexParam.builder()
                         .fieldName(indexParamItem.getFieldName())
-                        .indexName("idx_" + indexParamItem.getFieldName() + "_" + i)
+                        .indexName(indexName)
                         .indexType(indexParamItem.getIndextype())
                         .extraParams(params)
                         .build();
