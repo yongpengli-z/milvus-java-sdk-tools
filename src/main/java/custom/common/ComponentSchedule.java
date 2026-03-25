@@ -75,6 +75,12 @@ public class ComponentSchedule {
             }
             JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
             results.add(jsonObject);
+
+            // 如果实例创建失败，直接退出，不再执行后续步骤
+            if (isInstanceCreateFailed(operators.get(i), jsonObject, i)) {
+                log.error("实例创建失败，终止后续步骤执行！");
+                break;
+            }
         }
         log.info("[结果汇总]： " +
                 "\n" + results);
@@ -443,6 +449,25 @@ public class ComponentSchedule {
             reportStepResult(QueryIteratorParams.class.getSimpleName() + "_" + index, JSON.toJSONString(queryIteratorResult));
         }
         return jsonObject;
+    }
+
+    /**
+     * 判断实例创建步骤是否失败（Cloud 实例或 Helm 实例）
+     */
+    private static boolean isInstanceCreateFailed(Object operator, JSONObject stepResult, int index) {
+        CommonResult commonResult = null;
+        if (operator instanceof CreateInstanceParams) {
+            Object obj = stepResult.get("CreateInstance_" + index);
+            if (obj instanceof CreateInstanceResult) {
+                commonResult = ((CreateInstanceResult) obj).getCommonResult();
+            }
+        } else if (operator instanceof HelmCreateInstanceParams) {
+            Object obj = stepResult.get("HelmCreateInstance_" + index);
+            if (obj instanceof HelmCreateInstanceResult) {
+                commonResult = ((HelmCreateInstanceResult) obj).getCommonResult();
+            }
+        }
+        return commonResult != null && ResultEnum.EXCEPTION.result.equals(commonResult.getResult());
     }
 
     public static int queryTaskRedisValue() {
