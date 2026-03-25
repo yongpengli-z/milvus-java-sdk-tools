@@ -32,14 +32,21 @@ public class CreateCollectionComp {
                     .result(ResultEnum.SUCCESS.result)
                     .build();
         } catch (Exception e) {
+            log.error("create collection failed!", e);
             commonResult = CommonResult.builder()
                     .result(ResultEnum.EXCEPTION.result)
                     .message(e.getMessage())
                     .build();
+            List<String> assertMessages = new ArrayList<>();
+            assertMessages.add("[ASSERT FAIL] createCollection exception: " + e.getMessage());
+            return CreateCollectionResult.builder()
+                    .commonResult(commonResult)
+                    .collectionName(null)
+                    .assertMessages(assertMessages).build();
         }
         globalCollectionNames.add(collection);
-        // 检查properties（collection 创建成功后才检查）
-        if (collection != null && createCollectionParams.getProperties() != null && createCollectionParams.getProperties().size() > 0) {
+        // 检查properties
+        if (createCollectionParams.getProperties() != null && createCollectionParams.getProperties().size() > 0) {
             DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder()
                     .collectionName(collection).build());
             Map<String, String> properties =
