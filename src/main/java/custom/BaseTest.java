@@ -49,6 +49,7 @@ public class BaseTest {
     public static int upsertCollectionIndex = 0;
 
     public static void main(String[] args) {
+        int exitCode = 0;
         try {
             taskId = Integer.parseInt(System.getProperty("taskId") == null
                     ? ""
@@ -109,10 +110,24 @@ public class BaseTest {
                 InitialComp.initialRunning(initialParamsObj);
             }
 //        // 自动调度
-            ComponentSchedule.runningSchedule(customizeParams);
-            ComponentSchedule.updateCaseStatus(10);
+            List<JSONObject> results = ComponentSchedule.runningSchedule(customizeParams);
+            // 检查是否有步骤失败（result为exception）
+            boolean hasFailed = false;
+            for (JSONObject result : results) {
+                String resultStr = result.toJSONString();
+                if (resultStr.contains("\"result\":\"exception\"")) {
+                    hasFailed = true;
+                    break;
+                }
+            }
+            ComponentSchedule.updateCaseStatus(hasFailed ? -1 : 10);
+            if (hasFailed) {
+                log.error("任务存在失败步骤，退出码设为1");
+                exitCode = 1;
+            }
         } catch (Exception e) {
             log.error("Task execution failed", e);
+            exitCode = 1;
             try {
                 ComponentSchedule.updateCaseStatus(-1);
             } catch (Exception ignored) {
@@ -124,7 +139,7 @@ public class BaseTest {
             if (milvusClientV1 != null) {
                 try { milvusClientV1.close(); } catch (Exception ignored) {}
             }
-            System.exit(0);
+            System.exit(exitCode);
         }
     }
 }
