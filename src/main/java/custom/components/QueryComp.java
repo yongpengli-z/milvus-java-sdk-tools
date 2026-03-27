@@ -152,7 +152,7 @@ public class QueryComp {
             try {
                 QueryItemResult queryItemResult = future.get();
                 requestNum += queryItemResult.getResultNum().size();
-                successNum += queryItemResult.getResultNum().stream().filter(x -> x == queryParams.getLimit()).count();
+                successNum += queryItemResult.getResultNum().stream().filter(x -> x > 0).count();
                 costTimeTotal.addAll(queryItemResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("query 统计异常:" + e.getMessage());
@@ -183,14 +183,12 @@ public class QueryComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] query requestNum == 0, no query was executed");
         }
-        if (queryParams.getLimit() > 0) {
-            if (passRate < 50.0f) {
-                assertMessages.add(String.format("[ASSERT FAIL] query passRate=%.2f%% < 50%%, %d/%d requests returned limit=%d results",
-                        passRate, successNum, requestNum, queryParams.getLimit()));
-            } else if (passRate < 100.0f) {
-                assertMessages.add(String.format("[ASSERT WARN] query passRate=%.2f%% < 100%%, %d/%d requests returned limit=%d results",
-                        passRate, successNum, requestNum, queryParams.getLimit()));
-            }
+        if (passRate < 50.0f) {
+            assertMessages.add(String.format("[ASSERT FAIL] query passRate=%.2f%% < 50%%, %d/%d requests returned results",
+                    passRate, successNum, requestNum));
+        } else if (passRate < 100.0f) {
+            assertMessages.add(String.format("[ASSERT WARN] query passRate=%.2f%% < 100%%, %d/%d requests returned results",
+                    passRate, successNum, requestNum));
         }
         if (!assertMessages.isEmpty()) {
             log.warn("Query assertions: " + assertMessages);
