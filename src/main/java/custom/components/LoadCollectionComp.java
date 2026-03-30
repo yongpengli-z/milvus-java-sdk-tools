@@ -29,11 +29,15 @@ public class LoadCollectionComp {
                     log.info("Loading collection [" + collectionName + "]");
                     long startLoadTime = System.currentTimeMillis();
                     boolean loadState;
-                    LoadCollectionReq collectionReq = LoadCollectionReq.builder().collectionName(collectionName)
+                    LoadCollectionReq.LoadCollectionReqBuilder reqBuilder = LoadCollectionReq.builder()
+                            .collectionName(collectionName)
                             .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
                             .async(false)
-                            .timeout(600000L)
-                            .build();
+                            .timeout(600000L);
+                    if (loadParams.getReplicaNum() > 0) {
+                        reqBuilder.numReplicas(loadParams.getReplicaNum());
+                    }
+                    LoadCollectionReq collectionReq = reqBuilder.build();
                     if (loadParams.getLoadFields().size()>0){
                         collectionReq.setLoadFields(loadParams.getLoadFields());
                     }
@@ -70,11 +74,15 @@ public class LoadCollectionComp {
                 log.info("Loading collection [" + collectionName + "]");
                 long startLoadTime = System.currentTimeMillis();
                 boolean loadState = false;
-                LoadCollectionReq collectionReq = LoadCollectionReq.builder().collectionName(collectionName)
+                LoadCollectionReq.LoadCollectionReqBuilder reqBuilder = LoadCollectionReq.builder()
+                        .collectionName(collectionName)
                         .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
                         .async(false)
-                        .timeout(60000L)
-                        .build();
+                        .timeout(60000L);
+                if (loadParams.getReplicaNum() > 0) {
+                    reqBuilder.numReplicas(loadParams.getReplicaNum());
+                }
+                LoadCollectionReq collectionReq = reqBuilder.build();
                 if (loadParams.getLoadFields().size()>0){
                     collectionReq.setLoadFields(loadParams.getLoadFields());
                 }

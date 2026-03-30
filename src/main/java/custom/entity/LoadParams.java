@@ -53,4 +53,15 @@ public class LoadParams {
      */
     private boolean skipLoadDynamicField;
 
+    /**
+     * Load 时的副本数（replica number）。
+     * <p>
+     * 对应 SDK 的 {@code LoadCollectionReq.numReplicas}。
+     * <p>
+     * 0 或不传：使用 SDK 默认值（1）。
+     * <p>
+     * 前端默认值：0
+     */
+    private int replicaNum;
+
 }
