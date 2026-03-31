@@ -323,12 +323,127 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 }
 ```
 
-**FieldParams 字段**：`fieldName`, `dataType`, `primaryKey`, `autoId`, `dim`(向量必填), `maxLength`(VarChar必填), `maxCapacity`(Array必填), `elementType`(Array必填), `structSchema`(Array of Struct时), `partitionKey`, `nullable`, `enableMatch`, `enableAnalyzer`, `analyzerParamsList`
+#### FieldParams 字段说明
+
+每个字段对象的 JSON key 如下（**注意：boolean 字段使用 `isXxx` 前缀**）：
+
+```json
+{
+  "fieldName": "id_pk",
+  "dataType": "Int64",
+  "isPrimaryKey": true,
+  "isAutoId": false,
+  "dim": 0,
+  "maxLength": 0,
+  "maxCapacity": 0,
+  "elementType": null,
+  "structSchema": [],
+  "isPartitionKey": false,
+  "isNullable": false,
+  "enableMatch": false,
+  "enableAnalyzer": false,
+  "analyzerParamsList": []
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `fieldName` | String | 字段名 |
+| `dataType` | String | 数据类型枚举名，如 `Int64`、`VarChar`、`FloatVector`、`SparseFloatVector`、`Array`、`JSON` 等 |
+| `isPrimaryKey` | boolean | 是否主键 |
+| `isAutoId` | boolean | 主键是否自动生成 ID |
+| `dim` | int | 向量维度（仅向量类型必填，非向量字段传 0 或不传） |
+| `maxLength` | int | VarChar 最大长度（仅 VarChar/String 必填） |
+| `maxCapacity` | int | Array 最大容量（仅 Array 必填） |
+| `elementType` | String | Array 元素类型（仅 Array 必填，如 `VarChar`、`Int64`） |
+| `structSchema` | List | Struct 子字段列表（仅 Array of Struct 时使用） |
+| `isPartitionKey` | boolean | 是否 Partition Key |
+| `isNullable` | boolean | 是否允许为 NULL |
+| `enableMatch` | boolean | 是否启用文本匹配 |
+| `enableAnalyzer` | boolean | 是否启用分词器 |
+| `analyzerParamsList` | List | 分词器参数（见下方说明） |
+
+#### analyzerParamsList 说明（重要）
+
+`analyzerParamsList` 是 **KV 对数组**，每个元素只有 `paramsKey` 和 `paramsValue` 两个字段。**不要**直接在对象里放 `type`、`tokenizer`、`filter` 等字段。
+
+**正确示例 — standard 分词器**：
+```json
+"analyzerParamsList": [
+  {"paramsKey": "type", "paramsValue": "standard"}
+]
+```
+
+**正确示例 — 自定义 tokenizer + filter**：
+```json
+"analyzerParamsList": [
+  {"paramsKey": "tokenizer", "paramsValue": "whitespace"},
+  {"paramsKey": "filter", "paramsValue": ["lowercase", "asciifolding"]}
+]
+```
+
+**错误示例**（字段会被忽略）：
+```json
+"analyzerParamsList": [{"type": "standard"}]
+"analyzerParamsList": [{"tokenizer": "whitespace", "filter": ["lowercase"]}]
+```
+
+#### functionParams 说明（BM25 等）
+
+`functionParams` 是一个**单对象**（不是数组），字段名必须严格匹配：
+
+```json
+"functionParams": {
+  "functionType": "BM25",
+  "name": "my_bm25_func",
+  "inputFieldNames": ["text_field"],
+  "outputFieldNames": ["sparse_field"]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `functionType` | String | **必须**用 `functionType`，不能用 `type`。值为 `BM25` 等 |
+| `name` | String | Function 名称 |
+| `inputFieldNames` | List | 输入字段名列表 |
+| `outputFieldNames` | List | 输出字段名列表 |
+
+**禁止**：
+- 不要用 `"type": "BM25"`，必须用 `"functionType": "BM25"`
+- 不要传 `description`、`params` 等多余字段（Java 类中没有这些字段）
+- 不需要 function 时传 `"functionParams": null`
+
+#### BM25 全文检索完整示例
+
+```json
+{
+  "CreateCollectionParams_0": {
+    "collectionName": "my_bm25_collection",
+    "shardNum": 1,
+    "numPartitions": 0,
+    "enableDynamic": false,
+    "fieldParamsList": [
+      {"fieldName": "id", "dataType": "Int64", "isPrimaryKey": true, "isAutoId": false, "isPartitionKey": false, "isNullable": false, "enableMatch": false, "enableAnalyzer": false, "analyzerParamsList": []},
+      {"fieldName": "text", "dataType": "VarChar", "maxLength": 65535, "isPrimaryKey": false, "isAutoId": false, "isPartitionKey": false, "isNullable": false, "enableMatch": true, "enableAnalyzer": true, "analyzerParamsList": [{"paramsKey": "type", "paramsValue": "standard"}]},
+      {"fieldName": "sparse_vec", "dataType": "SparseFloatVector", "isPrimaryKey": false, "isAutoId": false, "isPartitionKey": false, "isNullable": false, "enableMatch": false, "enableAnalyzer": false, "analyzerParamsList": []}
+    ],
+    "functionParams": {
+      "functionType": "BM25",
+      "name": "text_bm25",
+      "inputFieldNames": ["text"],
+      "outputFieldNames": ["sparse_vec"]
+    },
+    "properties": [],
+    "databaseName": ""
+  }
+}
+```
 
 **约束**：
-- `numPartitions > 0` 时必须有一个字段 `partitionKey: true`
+- `numPartitions > 0` 时必须有一个字段 `isPartitionKey: true`
 - 必须至少有一个向量字段
 - `enableDynamic: true` 时不要在 fieldParamsList 中定义 `$meta` 字段
+- BM25 function 的输出字段必须是 `SparseFloatVector` 类型
 
 ### 4.2 CreateIndexParams（创建索引）
 
@@ -363,9 +478,12 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
   "loadAll": false,
   "collectionName": "",
   "loadFields": [],
-  "skipLoadDynamicField": false
+  "skipLoadDynamicField": false,
+  "replicaNum": 0
 }
 ```
+
+- `replicaNum`：Load 时的副本数。`0` 或不传使用默认值（1）。`> 0` 时传给 SDK 的 `numReplicas`
 
 ### 4.4 InsertParams（插入数据）
 
