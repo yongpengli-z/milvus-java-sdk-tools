@@ -45,10 +45,16 @@ public class ComponentSchedule {
             String item = parseJO.getString(keyString);
             String paramName = keyString.substring(0, keyString.indexOf("_"));
             try {
+                log.info("反序列化步骤: key={}, className=custom.entity.{}", keyString, paramName);
                 Object o = JSONObject.parseObject(item, Class.forName("custom.entity." + paramName));
+                log.info("反序列化成功: {} -> {}", keyString, o.getClass().getSimpleName());
                 operators.add(o);
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                log.error("找不到实体类 custom.entity.{}, key={}", paramName, keyString, e);
+                throw new RuntimeException("找不到实体类 custom.entity." + paramName + ", 请检查步骤key: " + keyString, e);
+            } catch (Exception e) {
+                log.error("JSON反序列化失败, key={}, className=custom.entity.{}, json={}", keyString, paramName, item, e);
+                throw new RuntimeException("JSON反序列化失败, key=" + keyString + ", class=" + paramName + ": " + e.getMessage(), e);
             }
         }
         // 收集结果
@@ -89,7 +95,10 @@ public class ComponentSchedule {
 
     public static JSONObject callComponentSchedule(Object object, int index) {
         JSONObject jsonObject = new JSONObject();
+        String componentName = object.getClass().getSimpleName();
         log.info("当前父节点：" + parentNodeName.toString());
+        log.info("执行组件: {} , 参数: {}", componentName, JSON.toJSONString(object));
+        try {
         if (object instanceof CreateCollectionParams) {
             log.info("*********** < create collection > ***********");
             CreateCollectionResult createCollectionResult = CreateCollectionComp.createCollection((CreateCollectionParams) object);
@@ -447,6 +456,24 @@ public class ComponentSchedule {
             QueryIteratorResult queryIteratorResult = QueryIteratorComp.queryIterator((QueryIteratorParams) object);
             jsonObject.put("QueryIterator_" + index, queryIteratorResult);
             reportStepResult(QueryIteratorParams.class.getSimpleName() + "_" + index, JSON.toJSONString(queryIteratorResult));
+        }
+        } catch (Exception e) {
+            String errorKey = componentName + "_" + index;
+            log.error("组件 [{}] 执行异常! Step index: {}", componentName, index, e);
+            // 打印完整异常链
+            Throwable cause = e.getCause();
+            int depth = 1;
+            while (cause != null) {
+                log.error("  Caused by (depth={}): {} - {}", depth, cause.getClass().getName(), cause.getMessage());
+                cause = cause.getCause();
+                depth++;
+            }
+            // 构造异常结果，让上层能感知到失败
+            JSONObject errorResult = new JSONObject();
+            errorResult.put("result", "exception");
+            errorResult.put("errorMsg", e.getClass().getName() + ": " + e.getMessage());
+            jsonObject.put(errorKey, errorResult);
+            reportStepResult(errorKey, JSON.toJSONString(errorResult));
         }
         return jsonObject;
     }

@@ -77,6 +77,7 @@ public class BaseTest {
                             ? ""
                             : System.getProperty("customize_params");
 //            log.info("***********customizeParams*********"+customizeParams);
+            log.info("========== [阶段1] 参数解析完成, taskId={}, env={}, uri={} ==========", taskId, env, uri.isEmpty() ? "(空)" : uri);
             redisKey = "customize_task_" + taskId;
             if (!uri.equalsIgnoreCase("")) {
                 newInstanceInfo.setUri(uri);
@@ -100,6 +101,7 @@ public class BaseTest {
                 log.info("当前环境信息:" + envConfig);
             }
             log.info("newInstanceInfo:" + newInstanceInfo.toString());
+            log.info("========== [阶段2] 环境配置完成，准备连接Milvus ==========");
             if (newInstanceInfo.getUri() != null) {
                 log.info("创建milvusClientV2，uri:" + newInstanceInfo.getUri());
                 milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
@@ -109,6 +111,7 @@ public class BaseTest {
                 InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
                 InitialComp.initialRunning(initialParamsObj);
             }
+            log.info("========== [阶段3] Milvus连接完成，开始执行调度 ==========");
 //        // 自动调度
             List<JSONObject> results = ComponentSchedule.runningSchedule(customizeParams);
             // 检查是否有步骤失败（result为exception）
@@ -126,11 +129,21 @@ public class BaseTest {
                 exitCode = 1;
             }
         } catch (Exception e) {
-            log.error("Task execution failed", e);
+            log.error("Task execution failed: {} - {}", e.getClass().getName(), e.getMessage());
+            log.error("异常堆栈:", e);
+            // 打印完整异常链
+            Throwable cause = e.getCause();
+            int depth = 1;
+            while (cause != null) {
+                log.error("  Caused by (depth={}): {} - {}", depth, cause.getClass().getName(), cause.getMessage());
+                cause = cause.getCause();
+                depth++;
+            }
             exitCode = 1;
             try {
                 ComponentSchedule.updateCaseStatus(-1);
-            } catch (Exception ignored) {
+            } catch (Exception updateEx) {
+                log.error("更新任务状态也失败了: {}", updateEx.getMessage());
             }
         } finally {
             if (milvusClientV2 != null) {
