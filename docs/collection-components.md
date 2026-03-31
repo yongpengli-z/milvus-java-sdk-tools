@@ -60,8 +60,10 @@
   - 如果 `numPartitions = 0`，则所有字段的 `partitionKey` 都应为 `false`。
 - **`nullable`**（boolean）：前端默认：`false`（且主键/向量字段会禁用 nullable=true）。**建议显式给 `false`**（除非确实需要可空）。
 - **`enableMatch`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不启用匹配功能）。
+  - **enableMatch 与 enableAnalyzer 的联动约束**：当 `enableMatch: true` 时，**必须同时设置 `enableAnalyzer: true` 并配置 `analyzerParamsList`**，否则 Milvus 会拒绝创建 Collection，报错：`field which has enable_match must also enable_analyzer`。
 - **`enableAnalyzer`**（boolean）：前端默认：`false`。**建议显式给 `false`**（即使不启用分析器）。
   - **BM25 约束**：如果该字段是 `functionParams` 中 BM25 function 的**输入字段**（即字段名出现在 `functionParams.inputFieldNames` 中），则**必须设置 `enableAnalyzer: true`**，否则 Milvus 会报错：`BM25 function input field must set enable_analyzer to true`。
+  - **简单规则**：只要字段设置了 `enableMatch: true` 或作为 BM25 的 `inputFieldNames`，就必须 `enableAnalyzer: true` + 配置 `analyzerParamsList`（至少 `[{"paramsKey": "type", "paramsValue": "standard"}]`）。
 - **`analyzerParamsList`**（list，可空）：前端新增行默认 `[{paramsKey:"", paramsValue:""}]`（占位；不需要可传 `[]`）。
   - 每个元素为 `{paramsKey: "xxx", paramsValue: "xxx"}`，最终会被组装为 `Map<String, Object>` 传给 Milvus SDK。
   - **BM25 场景一般使用内置 `standard` 分词器即可**：`[{paramsKey: "type", paramsValue: "standard"}]`。

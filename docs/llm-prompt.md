@@ -359,8 +359,8 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 | `structSchema` | List | Struct 子字段列表（仅 Array of Struct 时使用） |
 | `isPartitionKey` | boolean | 是否 Partition Key |
 | `isNullable` | boolean | 是否允许为 NULL |
-| `enableMatch` | boolean | 是否启用文本匹配 |
-| `enableAnalyzer` | boolean | 是否启用分词器 |
+| `enableMatch` | boolean | 是否启用文本匹配。**设为 true 时必须同时 `enableAnalyzer: true`** |
+| `enableAnalyzer` | boolean | 是否启用分词器。`enableMatch=true` 或作为 BM25 输入字段时**必须为 true** |
 | `analyzerParamsList` | List | 分词器参数（见下方说明） |
 
 #### analyzerParamsList 说明（重要）
@@ -444,6 +444,9 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 - 必须至少有一个向量字段
 - `enableDynamic: true` 时不要在 fieldParamsList 中定义 `$meta` 字段
 - BM25 function 的输出字段必须是 `SparseFloatVector` 类型
+- **`enableMatch: true` 的字段必须同时设置 `enableAnalyzer: true` 并配置 `analyzerParamsList`**（否则 Milvus 会拒绝创建 Collection，报错 `field which has enable_match must also enable_analyzer`）
+- **作为 BM25 function 输入字段的 VarChar 字段，也必须设置 `enableAnalyzer: true`**
+- 简单规则：只要字段设置了 `enableMatch: true` 或作为 BM25 的 inputFieldNames，就必须 `enableAnalyzer: true` + 配置 analyzerParamsList（至少 `[{"paramsKey": "type", "paramsValue": "standard"}]`）
 
 ### 4.2 CreateIndexParams（创建索引）
 
