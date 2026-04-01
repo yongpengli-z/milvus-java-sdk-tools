@@ -154,4 +154,16 @@ public class InsertParams {
      * 前端默认值：null 或空列表
      */
     private List<FieldDataSource> fieldDataSourceList;
+
+    /**
+     * 随机长度系数（0~1 之间）。
+     * <p>
+     * 前端：`insertEdit.vue` -> "Length Factor"
+     * <p>
+     * 前端默认值：0（不启用，使用原始随机长度）
+     * <p>
+     * 说明：当该值 > 0 时，所有随机长度（VarChar 长度、Array capacity 等）= 原始 maxLength/maxCapacity * lengthFactor。
+     * 例如 0.5 表示生成长度约为原始上限的 50%。
+     */
+    private double lengthFactor;
 }

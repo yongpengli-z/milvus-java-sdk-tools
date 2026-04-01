@@ -392,9 +392,10 @@ public class CommonFunction {
      * 生成通用的数据
      *
      * @param count 生成的数量
+     * @param lengthFactor 随机长度系数（0~1），>0 时所有随机长度 = maxLength/maxCapacity * lengthFactor
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap) {
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor) {
         Random random = new Random();
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -486,12 +487,18 @@ public class CommonFunction {
                 } else if (dataType == DataType.VarChar || dataType == DataType.String) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxLength - 1) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    int effectiveMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (maxLength * lengthFactor)) : maxLength;
+                    int varcharLen = random.nextInt(effectiveMaxLen - 1) + 1;
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, varcharLen, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
                     // 普通 Array 类型（不包括 Array of Struct）
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(maxCapacity - 1) + 1, i, elementType, random.nextInt(maxLength - 1) + 1, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    int effectiveMaxCap = (lengthFactor > 0) ? Math.max(2, (int) (maxCapacity * lengthFactor)) : maxCapacity;
+                    int arrayCap = random.nextInt(effectiveMaxCap - 1) + 1;
+                    int effectiveElemMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (maxLength * lengthFactor)) : maxLength;
+                    int arrayElemLen = random.nextInt(effectiveElemMaxLen - 1) + 1;
+                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, arrayCap, i, elementType, arrayElemLen, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
@@ -528,7 +535,8 @@ public class CommonFunction {
                 if (structFieldIsNullable && i % 2 == 0) {
                     jsonObject = jsonObjectItem;
                 } else {
-                    int arrayLength = random.nextInt(Math.max(1, structFieldMaxCapacity - 1)) + 1;
+                    int effectiveStructCap = (lengthFactor > 0) ? Math.max(2, (int) (structFieldMaxCapacity * lengthFactor)) : Math.max(2, structFieldMaxCapacity);
+                    int arrayLength = random.nextInt(effectiveStructCap - 1) + 1;
                     List<com.google.gson.JsonObject> structArray = new ArrayList<>();
                     for (int structIdx = 0; structIdx < arrayLength; structIdx++) {
                         com.google.gson.JsonObject structObj = new com.google.gson.JsonObject();
@@ -556,7 +564,8 @@ public class CommonFunction {
                                 ByteBuffer int8Buffer = generateInt8Vector(subFieldDim);
                                 structObj.add(subFieldName, gson.toJsonTree(int8Buffer.array()));
                             } else if (subFieldType == DataType.VarChar || subFieldType == DataType.String) {
-                                String strValue = GenerateUtil.generateRandomLengthSentence(subFieldMaxLength);
+                                int effectiveSubMaxLen = (lengthFactor > 0) ? Math.max(1, (int) (subFieldMaxLength * lengthFactor)) : subFieldMaxLength;
+                                String strValue = GenerateUtil.generateRandomLengthSentence(effectiveSubMaxLen);
                                 structObj.add(subFieldName, gson.toJsonTree(strValue));
                             } else if (subFieldType == DataType.Int64) {
                                 structObj.add(subFieldName, gson.toJsonTree(i * 1000L + structIdx));

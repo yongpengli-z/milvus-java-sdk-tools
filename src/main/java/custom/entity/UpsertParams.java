@@ -136,4 +136,12 @@ public class UpsertParams {
      * 前端默认值：null 或空列表
      */
     private List<FieldDataSource> fieldDataSourceList;
+
+    /**
+     * 随机长度系数（0~1 之间）。
+     * <p>
+     * 当该值 > 0 时，所有随机长度（VarChar 长度、Array capacity 等）= 原始上限 * lengthFactor。
+     * 默认值：0（不启用，使用原始随机长度）
+     */
+    private double lengthFactor;
 }

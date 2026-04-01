@@ -129,7 +129,7 @@ public class UpsertComp {
                                 finalRateLimiter.acquire(); // 阻塞直到获得令牌
                             }
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(upsertParams.getBatchSize(),
-                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap);
+                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap, upsertParams.getLengthFactor());
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             }
