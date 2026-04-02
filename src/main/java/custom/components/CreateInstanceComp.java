@@ -171,7 +171,8 @@ public class CreateInstanceComp {
             newInstanceInfo.setToken(token);
         }
         milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
-        milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
+        // 暂时注释 V1 连接，生产环境只用 V2
+//        milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
 
         log.info("创建实例成功：" + newInstanceInfo);
         ComponentSchedule.updateInstanceStatus(newInstanceInfo.getInstanceId(), newInstanceInfo.getUri(), latestImageByKeywords, InstanceStatusEnum.RUNNING.code);

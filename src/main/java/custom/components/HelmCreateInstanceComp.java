@@ -155,7 +155,8 @@ public class HelmCreateInstanceComp {
                     newInstanceInfo.setInstanceId(releaseName);
 
                     milvusClientV2 = MilvusConnect.createMilvusClientV2(uri, "");
-                    milvusClientV1 = MilvusConnect.createMilvusClientV1(uri, "");
+                    // 暂时注释 V1 连接，生产环境只用 V2
+//                    milvusClientV1 = MilvusConnect.createMilvusClientV1(uri, "");
                     log.info("Milvus client initialized successfully");
                 } catch (Exception e) {
                     log.error("Failed to initialize Milvus client: " + e.getMessage());
