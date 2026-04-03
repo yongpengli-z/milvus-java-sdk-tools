@@ -105,8 +105,7 @@ public class BaseTest {
             if (newInstanceInfo.getUri() != null) {
                 log.info("创建milvusClientV2，uri:" + newInstanceInfo.getUri());
                 milvusClientV2 = MilvusConnect.createMilvusClientV2(newInstanceInfo.getUri(), newInstanceInfo.getToken());
-                // 暂时注释 V1 连接，生产环境只用 V2
-//                milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
+                milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
                 importUrl = uri;
                 // 初始化环境
                 InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);

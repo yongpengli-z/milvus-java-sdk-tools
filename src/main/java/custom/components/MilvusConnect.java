@@ -1,8 +1,11 @@
 package custom.components;
 
 import com.alibaba.fastjson.JSON;
+import io.milvus.client.MilvusServiceClient;
+import io.milvus.param.ConnectParam;
 import io.milvus.v2.client.ConnectConfig;
 import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.client.globalcluster.GlobalClusterUtils;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import lombok.extern.slf4j.Slf4j;
 import custom.utils.HttpClientUtils;
@@ -55,31 +58,32 @@ public class MilvusConnect {
         return milvusClientV2;
     }
 
-    // 暂时注释掉 V1 连接，生产环境只用 V2，避免 GlobalClusterUtils.fetchTopology 调用外部接口
-//    public static MilvusServiceClient createMilvusClientV1(String uri, String token) {
-//        String actualUri = uri;
-//        if (GlobalClusterUtils.isGlobalEndpoint(uri)) {
-//            String authorization = token;
-//            String primaryEndpoint = GlobalClusterUtils.fetchTopology(uri, authorization)
-//                    .getPrimary().getEndpoint();
-//            if (!primaryEndpoint.startsWith("http://") && !primaryEndpoint.startsWith("https://")) {
-//                primaryEndpoint = "https://" + primaryEndpoint;
-//            }
-//            log.info("Global cluster: resolved primary endpoint for V1 client: {}", primaryEndpoint);
-//            actualUri = primaryEndpoint;
-//        }
-//
-//        MilvusServiceClient milvusServiceClient = null;
-//        if (!token.equalsIgnoreCase("123456") && !token.equalsIgnoreCase("")) {
-//            milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
-//                    .withUri(actualUri).withToken(token).build());
-//        }
-//        if (token.equalsIgnoreCase("123456") || token.equalsIgnoreCase("")) {
-//            milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
-//                    .withUri(actualUri).build());
-//        }
-//        log.info("Use clientV1 connecting to DB: " + actualUri);
-//        return milvusServiceClient;
-//    }
+    public static MilvusServiceClient createMilvusClientV1(String uri, String token) {
+        // V1 不支持 global cluster 协议，需要先解析出真实的 primary endpoint
+        String actualUri = uri;
+        if (GlobalClusterUtils.isGlobalEndpoint(uri)) {
+            String authorization = token;
+            // token 格式可能是 "root:password"，fetchTopology 需要的是原始 token
+            String primaryEndpoint = GlobalClusterUtils.fetchTopology(uri, authorization)
+                    .getPrimary().getEndpoint();
+            if (!primaryEndpoint.startsWith("http://") && !primaryEndpoint.startsWith("https://")) {
+                primaryEndpoint = "https://" + primaryEndpoint;
+            }
+            log.info("Global cluster: resolved primary endpoint for V1 client: {}", primaryEndpoint);
+            actualUri = primaryEndpoint;
+        }
+
+        MilvusServiceClient milvusServiceClient = null;
+        if (!token.equalsIgnoreCase("123456") && !token.equalsIgnoreCase("")) {
+            milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
+                    .withUri(actualUri).withToken(token).build());
+        }
+        if (token.equalsIgnoreCase("123456") || token.equalsIgnoreCase("")) {
+            milvusServiceClient = new MilvusServiceClient(ConnectParam.newBuilder()
+                    .withUri(actualUri).build());
+        }
+        log.info("Use clientV1 connecting to DB: " + actualUri);
+        return milvusServiceClient;
+    }
 
 }
