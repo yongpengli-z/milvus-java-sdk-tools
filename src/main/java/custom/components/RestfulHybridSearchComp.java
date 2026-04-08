@@ -173,14 +173,28 @@ public class RestfulHybridSearchComp {
         }
         String rankerType = hybridSearchParams.getRanker();
         if (rankerType == null || rankerType.equalsIgnoreCase("")) {
-            rankerType = "RRF";
+            rankerType = "rrf";
         }
-        // 如果使用 RRF 且没有设置 k，使用默认值
-        if ("RRF".equalsIgnoreCase(rankerType) && !rankerParams.containsKey("k")) {
+        // RESTful API 的 strategy 只认小写 "rrf" / "weighted"（见 milvus
+        // internal/util/function/rerank/function_score.go 中 rankTypeMap）。
+        // 兼容 SDK 风格的 "RRF" / "WeightedRanker"，统一规范化为 REST 可识别的值。
+        String normalizedRanker;
+        if ("RRF".equalsIgnoreCase(rankerType) || "rrf".equalsIgnoreCase(rankerType)) {
+            normalizedRanker = "rrf";
+        } else if ("WeightedRanker".equalsIgnoreCase(rankerType)
+                || "weighted".equalsIgnoreCase(rankerType)
+                || "weight".equalsIgnoreCase(rankerType)) {
+            normalizedRanker = "weighted";
+        } else {
+            normalizedRanker = rankerType.toLowerCase();
+        }
+        rankerType = normalizedRanker;
+        // 如果使用 rrf 且没有设置 k，使用默认值
+        if ("rrf".equals(rankerType) && !rankerParams.containsKey("k")) {
             rankerParams.put("k", 60);
         }
-        // 如果使用 WeightedRanker 且没有设置 weights，使用平均权重
-        if ("WeightedRanker".equalsIgnoreCase(rankerType) && !rankerParams.containsKey("weights")) {
+        // 如果使用 weighted 且没有设置 weights，使用平均权重
+        if ("weighted".equals(rankerType) && !rankerParams.containsKey("weights")) {
             int numRequests = hybridSearchParams.getSearchRequests().size();
             List<Double> weights = new ArrayList<>();
             for (int i = 0; i < numRequests; i++) {
