@@ -78,7 +78,7 @@ public class LoadCollectionComp {
                         .collectionName(collectionName)
                         .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
                         .async(false)
-                        .timeout(60000L);
+                        .timeout(600000L);
                 if (loadParams.getReplicaNum() > 0) {
                     reqBuilder.numReplicas(loadParams.getReplicaNum());
                 }
