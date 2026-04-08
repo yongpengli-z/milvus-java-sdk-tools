@@ -343,6 +343,12 @@ public class ComponentSchedule {
             jsonObject.put("HybridSearch_" + index, hybridSearchResult);
             reportStepResult(HybridSearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(hybridSearchResult));
         }
+        if (object instanceof RestfulHybridSearchParams) {
+            log.info("*********** < restful hybrid search collection > ***********");
+            RestfulHybridSearchResult restfulHybridSearchResult = RestfulHybridSearchComp.restfulHybridSearchCollection((RestfulHybridSearchParams) object);
+            jsonObject.put("RestfulHybridSearch_" + index, restfulHybridSearchResult);
+            reportStepResult(RestfulHybridSearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(restfulHybridSearchResult));
+        }
         if (object instanceof ScaleInstanceParams) {
             log.info("*********** < scale instance > ***********");
             ScaleInstanceResult scaleInstanceResult = ScaleInstanceComp.scaleInstance((ScaleInstanceParams) object);
