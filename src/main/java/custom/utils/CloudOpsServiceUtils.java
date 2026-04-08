@@ -72,10 +72,10 @@ public class CloudOpsServiceUtils {
 
         // 剔除重复
         collect = lists.stream().distinct().collect(Collectors.toList());
-        // 如果关键字是nightly，排除dbVersion包含master的条目，避免误匹配master-nightly
+        // 如果关键字是nightly，排除dbVersion包含v3.0.0的条目，避免误匹配v3.0.0-nightly
         if (keywords.equalsIgnoreCase("nightly")) {
             collect = collect.stream()
-                    .filter(s -> !s.substring(0, s.indexOf("(")).contains("master"))
+                    .filter(s -> !s.substring(0, s.indexOf("(")).contains("v3.0.0"))
                     .collect(Collectors.toList());
         }
         return collect.stream().findFirst().orElse("");
