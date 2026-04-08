@@ -13,6 +13,7 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import io.milvus.common.utils.Float16Utils;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -487,9 +488,18 @@ public class RestfulHybridSearchComp {
                 dataArray.add(baseVector.getData());
             } else if (baseVector instanceof EmbeddedText) {
                 dataArray.add(baseVector.getData());
-            } else if (baseVector instanceof BinaryVec
-                    || baseVector instanceof Float16Vec
-                    || baseVector instanceof BFloat16Vec) {
+            } else if (baseVector instanceof Float16Vec) {
+                // Milvus REST API 对 Float16Vector 要求 JSON 中传 float 数组（长度=dim），
+                // 由服务端内部再做 fp16 量化存储，不能直接传原始字节。
+                ByteBuffer buffer = (ByteBuffer) baseVector.getData();
+                dataArray.add(Float16Utils.fp16BufferToVector(buffer));
+                buffer.rewind();
+            } else if (baseVector instanceof BFloat16Vec) {
+                // BFloat16Vector 同样需要在 REST 接口里传 float 数组。
+                ByteBuffer buffer = (ByteBuffer) baseVector.getData();
+                dataArray.add(Float16Utils.bf16BufferToVector(buffer));
+                buffer.rewind();
+            } else if (baseVector instanceof BinaryVec) {
                 ByteBuffer buffer = (ByteBuffer) baseVector.getData();
                 byte[] bytes = new byte[buffer.remaining()];
                 buffer.get(bytes);
