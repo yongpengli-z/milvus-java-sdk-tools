@@ -1256,34 +1256,66 @@ public class CommonFunction {
         // 获取主键信息
         PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
-        QueryResp query = null;
-        try {
-            String filterStr;
-            if (pkFieldInfo.getDataType() == DataType.VarChar) {
-                filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
-            } else {
-                filterStr = pkFieldInfo.getFieldName() + " > 0 ";
+        String filterStr;
+        if (pkFieldInfo.getDataType() == DataType.VarChar) {
+            filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
+        } else {
+            filterStr = pkFieldInfo.getFieldName() + " > 0 ";
+        }
+        // 分页采集：由于某些行的 inputField 可能是 null/空串，需要循环捞取直到采满 randomNum
+        // 或者 collection 里没有更多可读数据为止。
+        long offset = 0;
+        int totalScanned = 0;
+        while (baseVectorDataset.size() < randomNum) {
+            int remain = randomNum - baseVectorDataset.size();
+            // 每页多取一些，降低空值导致反复请求的成本；至少取 remain，最多 randomNum
+            int pageSize = Math.min(Math.max(remain * 2, 100), randomNum);
+            QueryResp query;
+            try {
+                query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
+                        .filter(filterStr)
+                        .outputFields(Lists.newArrayList(inputFieldName))
+                        .limit(pageSize)
+                        .offset(offset)
+                        .build());
+            } catch (Exception e) {
+                log.error("providerSearchFunctionData query 异常: {}, collection={}, inputField={}, offset={}",
+                        e.getMessage(), collection, inputFieldName, offset);
+                break;
             }
-            query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
-                    .filter(filterStr)
-                    .outputFields(Lists.newArrayList(inputFieldName))
-                    .limit(randomNum)
-                    .build());
-            log.info("query result:" + query.getQueryResults().size());
-        } catch (Exception e) {
-            log.error("query 异常: " + e.getMessage());
-        }
-        if (query == null || query.getQueryResults() == null) {
-            log.warn("providerSearchFunctionData: query 结果为空，collection={}, inputField={}", collection, inputFieldName);
-            return baseVectorDataset;
-        }
-        for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
-            Object o = queryResult.getEntity().get(inputFieldName);
-            if (o == null) {
-                continue;
+            if (query == null || query.getQueryResults() == null || query.getQueryResults().isEmpty()) {
+                log.warn("providerSearchFunctionData: 已无更多数据，collection={}, inputField={}, offset={}, 已采集={}",
+                        collection, inputFieldName, offset, baseVectorDataset.size());
+                break;
             }
-            baseVectorDataset.add(new EmbeddedText(o.toString()));
+            int pageActual = query.getQueryResults().size();
+            totalScanned += pageActual;
+            int pageValid = 0;
+            for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
+                Object o = queryResult.getEntity().get(inputFieldName);
+                if (o == null) {
+                    continue;
+                }
+                String text = o.toString();
+                if (text.isEmpty()) {
+                    continue;
+                }
+                baseVectorDataset.add(new EmbeddedText(text));
+                pageValid++;
+                if (baseVectorDataset.size() >= randomNum) {
+                    break;
+                }
+            }
+            offset += pageActual;
+            log.info("providerSearchFunctionData 分页采集: collection={}, inputField={}, pageSize={}, pageActual={}, pageValid={}, 累计采集={}, 累计扫描={}",
+                    collection, inputFieldName, pageSize, pageActual, pageValid, baseVectorDataset.size(), totalScanned);
+            // 如果返回数量小于请求的页大小，说明已经没有更多数据了
+            if (pageActual < pageSize) {
+                break;
+            }
         }
+        log.info("providerSearchFunctionData 采集完成: collection={}, inputField={}, 期望={}, 实际采集={}, 累计扫描={}",
+                collection, inputFieldName, randomNum, baseVectorDataset.size(), totalScanned);
         return baseVectorDataset;
     }
 
