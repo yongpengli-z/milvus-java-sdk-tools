@@ -370,8 +370,39 @@ public class RestfulHybridSearchComp {
                         costTime.add(costTimeItem);
                         statsReporter.recordCostTime(costTimeItem);
 
-                        // 解析响应
-                        JSONObject responseJson = JSON.parseObject(response);
+                        // 解析响应：HTTP 执行失败时 response 可能是空串或非 JSON 格式
+                        if (response == null || response.isEmpty()) {
+                            statsReporter.recordFailure();
+                            log.error("线程[{}] restful hybridSearch 返回空响应，可能是HTTP请求失败，请求体: {}",
+                                    finalC, requestBody.toJSONString());
+                            if (hybridSearchParams.isIgnoreError()) {
+                                returnNum.add(0);
+                                continue;
+                            }
+                            throw new RuntimeException("restful hybridSearch empty response");
+                        }
+                        JSONObject responseJson;
+                        try {
+                            responseJson = JSON.parseObject(response);
+                        } catch (Exception parseEx) {
+                            statsReporter.recordFailure();
+                            log.error("线程[{}] restful hybridSearch 响应解析失败：{}, raw: {}",
+                                    finalC, parseEx.getMessage(), response);
+                            if (hybridSearchParams.isIgnoreError()) {
+                                returnNum.add(0);
+                                continue;
+                            }
+                            throw parseEx;
+                        }
+                        if (responseJson == null) {
+                            statsReporter.recordFailure();
+                            log.error("线程[{}] restful hybridSearch 响应JSON为空，raw: {}", finalC, response);
+                            if (hybridSearchParams.isIgnoreError()) {
+                                returnNum.add(0);
+                                continue;
+                            }
+                            throw new RuntimeException("restful hybridSearch response parsed to null");
+                        }
                         int code = responseJson.getIntValue("code");
                         if (code == 0 || code == 200) {
                             JSONArray data = responseJson.getJSONArray("data");
@@ -391,7 +422,8 @@ public class RestfulHybridSearchComp {
                         }
                     } catch (Exception e) {
                         statsReporter.recordFailure();
-                        log.error("线程[{}] restful hybridSearch error :{}", finalC, e.getMessage());
+                        log.error("线程[{}] restful hybridSearch error :{}", finalC,
+                                e.getMessage() == null ? e.getClass().getName() : e.getMessage());
                         if (hybridSearchParams.isIgnoreError()) {
                             log.error("线程[{}] Ignore error, continue restful hybridSearch......", finalC);
                             returnNum.add(0);

@@ -1231,11 +1231,16 @@ public class CommonFunction {
      * @return List<BaseVector>
      */
     public static List<BaseVector> providerSearchVectorByNq(List<BaseVector> baseVectorDataset, int nq) {
+        List<BaseVector> baseVectors = new ArrayList<>();
+        if (baseVectorDataset == null || baseVectorDataset.isEmpty()) {
+            log.warn("providerSearchVectorByNq: baseVectorDataset 为空，返回空列表");
+            return baseVectors;
+        }
         Random random = new Random();
         int randomNum = baseVectorDataset.size();
-        List<BaseVector> baseVectors = new ArrayList<>();
         for (int i = 0; i < nq; i++) {
-            BaseVector baseVector = baseVectorDataset.get(random.nextInt(randomNum - 1));
+            // random.nextInt(bound) 要求 bound > 0；这里使用 size 作为上界，合法范围 [0, size)
+            BaseVector baseVector = baseVectorDataset.get(random.nextInt(randomNum));
             baseVectors.add(baseVector);
         }
         return baseVectors;
