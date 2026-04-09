@@ -136,6 +136,25 @@ public class RestfulHybridSearchComp {
             }
         }
 
+        // 校验：每个 annsField 都必须成功采样到向量数据，否则后续 providerSearchVectorByNq
+        // 会因为 random.nextInt(size-1) 越界抛 IllegalArgumentException / NPE。
+        for (RestfulHybridSearchParams.RestfulHybridSearchRequest request : hybridSearchParams.getSearchRequests()) {
+            String annsField = request.getAnnsField();
+            if (annsField == null || annsField.isEmpty()) {
+                continue;
+            }
+            List<BaseVector> vecs = fieldVectorsMap.get(annsField);
+            if (vecs == null || vecs.isEmpty()) {
+                String errMsg = String.format("RestfulHybridSearch 字段 [%s] 未能采样到向量数据，请检查 collection [%s] 的数据是否为空或字段是否正确", annsField, collection);
+                log.error(errMsg);
+                CommonResult cr = CommonResult.builder()
+                        .result(ResultEnum.EXCEPTION.result)
+                        .message(errMsg)
+                        .build();
+                return RestfulHybridSearchResult.builder().commonResult(cr).build();
+            }
+        }
+
         // 准备初始查询向量--先提供不随机时候的向量
         Map<String, List<BaseVector>> initialVectorsMap = new HashMap<>();
         for (Map.Entry<String, List<BaseVector>> entry : fieldVectorsMap.entrySet()) {

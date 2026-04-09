@@ -1268,8 +1268,15 @@ public class CommonFunction {
         } catch (Exception e) {
             log.error("query 异常: " + e.getMessage());
         }
+        if (query == null || query.getQueryResults() == null) {
+            log.warn("providerSearchFunctionData: query 结果为空，collection={}, inputField={}", collection, inputFieldName);
+            return baseVectorDataset;
+        }
         for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
             Object o = queryResult.getEntity().get(inputFieldName);
+            if (o == null) {
+                continue;
+            }
             baseVectorDataset.add(new EmbeddedText(o.toString()));
         }
         return baseVectorDataset;
