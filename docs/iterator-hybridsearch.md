@@ -110,6 +110,71 @@
 }
 ```
 
+##### 5.2.3.1 RestfulHybridSearch：`RestfulHybridSearchParams`
+
+对应组件：`custom.components.RestfulHybridSearchComp`
+
+**用途**：功能上与 `HybridSearchParams` 等价（同一 collection 多向量字段 + 融合排序），但通过 Milvus RESTful 接口 `/v2/vectordb/entities/advanced_search` 发起请求，而非 Java SDK。常用于 REST 通道的压测 / 功能验证。
+
+字段（与 `HybridSearchParams` 对齐，仅标注差异点）：
+
+- **`collectionName`** / **`collectionRule`**：与 HybridSearch 一致
+- **`searchRequests`**（list，必填）：子请求结构同 HybridSearch
+  - **`annsField`**（string）
+  - **`topK`**（int）
+  - **`searchParams`**（object，例如 `{"level": 1}`）
+  - **`filter`**（string）
+- **`ranker`** / **`rankerParams`**：同 HybridSearch（`RRF` / `WeightedRanker`）
+- **`topK`** / **`nq`** / **`randomVector`** / **`outputs`**：同 HybridSearch
+- **`numConcurrency`**：默认 `10`
+- **`runningMinutes`**：默认 `10`
+- **`targetQps`**（double）：默认 `0`（不限速）
+- **`generalFilterRoleList`**：filter 占位符替换规则
+- **`ignoreError`**（boolean）：默认 `false`
+- **`socketTimeout`**（int，ms，可空）：HTTP Socket 读取超时，默认 `5000`；`0` 表示使用默认值
+
+**示例 JSON**：
+
+```json
+{
+  "RestfulHybridSearchParams_0": {
+    "collectionName": "",
+    "collectionRule": "",
+    "searchRequests": [
+      {
+        "annsField": "float_vec",
+        "topK": 10,
+        "searchParams": {"level": 1},
+        "filter": ""
+      },
+      {
+        "annsField": "sparse_vec",
+        "topK": 10,
+        "searchParams": {},
+        "filter": ""
+      }
+    ],
+    "ranker": "RRF",
+    "rankerParams": {"k": 60},
+    "topK": 10,
+    "nq": 1,
+    "randomVector": true,
+    "outputs": ["*"],
+    "numConcurrency": 10,
+    "runningMinutes": 1,
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": false,
+    "socketTimeout": 5000
+  }
+}
+```
+
+**注意事项**：
+- REST 请求体中的向量会按字段类型正确编码：`Float16Vector` / `BFloat16Vector` 会被序列化为 float 数组（而非 base64），Sparse 向量按 `{idx: val}` 结构传输
+- `ranker` 值会在发请求前统一转为小写（`RRF` → `rrf`），与 REST API 要求一致
+- 走 SDK 的多向量混合搜索请继续使用 `HybridSearchParams`；只有明确需要 REST 通道时才使用本组件
+
 ##### 5.2.4 Recall：`RecallParams`
 
 对应组件：`custom.components.RecallComp`

@@ -323,6 +323,12 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 }
 ```
 
+- **`enableDynamic: true` 的数据生成行为**：当开启动态列时，Insert 组件会自动生成 3 种交替模式的 dynamic field 数据（无需用户配置）：
+  - `i%3==0`：所有 dynamic 字段都有值
+  - `i%3==1`：部分 dynamic 字段值为 `null`（JsonNull）
+  - `i%3==2`：部分 dynamic 字段缺失（字段不存在）
+  - 用于覆盖 dynamic field 的 null / missing 场景测试
+
 #### FieldParams 字段说明
 
 每个字段对象的 JSON key 如下（**注意：boolean 字段使用 `isXxx` 前缀**）：
@@ -503,7 +509,8 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
   "runningMinutes": 0,
   "retryAfterDeny": false,
   "ignoreError": false,
-  "generalDataRoleList": []
+  "generalDataRoleList": [],
+  "lengthFactor": 0
 }
 ```
 
@@ -512,6 +519,7 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 - `fieldDataSourceList`：字段级数据源，格式 `[{"fieldName":"vec","dataset":"sift"}]`
   - 可用数据集：`sift`(128d), `gist`(768d), `deep`(96d), `laion`(768d), `bluesky`(JSON), `msmarco-text`(文本)
 - 多个 Insert 组件时设置不同 `startId` 避免重复数据
+- `lengthFactor`（0~1）：随机长度系数。`> 0` 时，VarChar 长度、Array capacity、Struct 子字段的随机上限 = 原始 `maxLength` / `maxCapacity` × `lengthFactor`；`0` 或不传保持原行为（默认）。用于缩小写入数据规模以加速写入或节省空间
 
 ### 4.5 SearchParams（向量搜索）
 
@@ -576,9 +584,13 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
   "runningMinutes": 0,
   "retryAfterDeny": false,
   "generalDataRoleList": [],
-  "targetQps": 0
+  "targetQps": 0,
+  "lengthFactor": 0
 }
 ```
+
+- `lengthFactor`：与 InsertParams 含义一致，`0~1` 之间缩放随机长度
+- **autoID 场景**：Upsert 与 Insert 不同，**即使 collection 的主键字段 `autoId=true`，Upsert 的数据中也会包含主键值**（由框架自动处理）。用户无需特殊配置，保持 `startId` 与已有数据一致即可更新对应行
 
 ### 4.8 DeleteParams（删除数据）
 
@@ -608,6 +620,80 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 ```json
 { "collectionName": "" }
 ```
+
+- 框架会自动在 `dropCollection` 前先 `listAliases` 并 `dropAlias`，用户无需手动处理别名
+
+### 4.12 RestfulInsertParams（通过 REST API 插入数据）
+
+使用 Milvus RESTful `/v2/vectordb/entities/insert` 接口写入数据，字段与 `InsertParams` 基本一致，但走 HTTP 而非 Java SDK。
+
+```json
+{
+  "collectionName": "",
+  "collectionRule": "",
+  "partitionName": "",
+  "startId": 0,
+  "numEntries": 10000,
+  "batchSize": 1000,
+  "numConcurrency": 1,
+  "runningMinutes": 0,
+  "retryAfterDeny": false,
+  "ignoreError": false,
+  "targetQps": 0,
+  "fieldDataSourceList": [],
+  "generalDataRoleList": [],
+  "lengthFactor": 0
+}
+```
+
+- 字段含义与 `InsertParams` 一致
+- 场景：需要通过 REST 通道压测 / 验证 RESTful 写入行为时使用；默认仍优先使用 `InsertParams`（SDK 通道）
+
+### 4.13 RestfulHybridSearchParams（通过 REST API 做多向量混合搜索）
+
+使用 Milvus RESTful `/v2/vectordb/entities/advanced_search` 接口做混合搜索，字段与 `HybridSearchParams` 对齐。
+
+```json
+{
+  "RestfulHybridSearchParams_0": {
+    "collectionName": "",
+    "collectionRule": "",
+    "searchRequests": [
+      {
+        "annsField": "float_vec",
+        "topK": 10,
+        "searchParams": { "level": 1 },
+        "filter": ""
+      },
+      {
+        "annsField": "sparse_vec",
+        "topK": 10,
+        "searchParams": {},
+        "filter": ""
+      }
+    ],
+    "ranker": "RRF",
+    "rankerParams": { "k": 60 },
+    "topK": 10,
+    "nq": 1,
+    "randomVector": true,
+    "outputs": ["*"],
+    "numConcurrency": 10,
+    "runningMinutes": 10,
+    "targetQps": 0,
+    "generalFilterRoleList": [],
+    "ignoreError": false,
+    "socketTimeout": 5000
+  }
+}
+```
+
+- `searchRequests`：每个元素是一个向量字段的子搜索请求（`annsField` + `topK` + `searchParams` + `filter`）
+- `ranker`：融合策略，`"RRF"` 或 `"WeightedRanker"`
+  - RRF：`rankerParams: {"k": 60}`
+  - WeightedRanker：`rankerParams: {"weights": [0.5, 0.5]}`（长度需与 `searchRequests` 数量一致）
+- `topK`：最终返回候选数；`nq`：每次请求的 query 向量数
+- 场景：同一个 collection 内多个向量字段 + 融合排序时使用；走 SDK 请用 `HybridSearchParams`
 
 ---
 
@@ -711,6 +797,8 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 | SearchIteratorParams | collectionName, annsField, topK, batchSize 等 |
 | QueryIteratorParams | collectionName, filter, batchSize 等 |
 | HybridSearchParams | collectionName, searchRequests 等 |
+| RestfulHybridSearchParams | REST 版多向量混合搜索，见 4.13 |
+| RestfulInsertParams | REST 版数据写入，见 4.12 |
 | RecallParams | collectionName 等 |
 
 ---

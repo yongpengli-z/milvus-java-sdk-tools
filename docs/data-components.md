@@ -23,6 +23,19 @@
 - **`retryAfterDeny`**（boolean，可空）：禁写后是否等待重试。前端默认 `false`。
 - **`ignoreError`**（boolean，可空）：出错是否忽略继续。前端默认 `false`。
 - **`generalDataRoleList`**（list，可空）：数据生成规则（见 `GeneralDataRole`），仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；**如果你不使用该能力，建议直接传 `[]`**。
+- **`lengthFactor`**（double，可空）：随机长度系数，取值范围 `0 ~ 1`。前端默认 `0`。
+  - 当 `> 0` 时，VarChar 长度、Array `maxCapacity`、Struct 内部 VarChar / Array 的随机上限都会按 `原始 maxLength * lengthFactor` / `原始 maxCapacity * lengthFactor` 计算（仍保证最小为 1）。
+  - `0` 或不传 → 保持原始随机行为（按完整 `maxLength`/`maxCapacity` 取随机长度）。
+  - **典型用途**：当 schema 定义的 `maxLength` 很大（如 65535）时，为了节省带宽 / 磁盘，可用 `lengthFactor: 0.01` 把实际平均长度缩小到约 1%；压测写入不关心内容完整性时使用。
+
+**动态字段（`enableDynamic: true`）数据生成行为**：
+
+当 Collection 开启了 dynamic field，Insert 生成的每一行会按 `i % 3` 采用 3 种交替模式（框架自动处理，无需额外配置）：
+- `i % 3 == 0`：所有 dynamic 字段都有值
+- `i % 3 == 1`：部分 dynamic 字段值为 JSON `null`
+- `i % 3 == 2`：部分 dynamic 字段缺失（key 不存在）
+
+这 3 种模式覆盖了 dynamic field 的 null / missing 场景，适用于回归测试和稳定性验证。
 
 > **注意**：`InsertParams` **没有**顶层 `dataset` 字段。数据集配置**只能通过 `fieldDataSourceList` 指定**，不要在 InsertParams 中添加 `"dataset": "random"` 等多余字段（`dataset` 字段属于 `BulkImportParams`，不是 `InsertParams`）。
 
@@ -35,6 +48,50 @@
   - 字符串字段：生成随机字符串
   - 数值字段：生成递增或随机数值
 - **注意**：Array of Struct 字段不会出现在 `fieldSchemaList` 中，只会出现在 `structFieldSchemaList` 中
+
+##### 5.1.4.1 RestfulInsert：`RestfulInsertParams`
+
+对应组件：`custom.components.RestfulInsertComp`
+
+**用途**：通过 Milvus RESTful 接口 `/v2/vectordb/entities/insert` 写入数据，字段语义与 `InsertParams` 基本一致，区别仅在于请求通道（HTTP vs Java SDK）。常用于 REST 通道的压测 / 功能验证。
+
+字段（与 `InsertParams` 一致，仅标注差异）：
+
+- **`collectionName`** / **`collectionRule`** / **`partitionName`**：同 InsertParams
+- **`startId`**（long）：默认 `0`
+- **`numEntries`**（long）：默认 `1500000`
+- **`batchSize`**（long）：默认 `1000`
+- **`numConcurrency`**（int）：默认 `1`
+- **`runningMinutes`**（long）：>0 时作为时间上限，默认 `0`
+- **`retryAfterDeny`** / **`ignoreError`**（boolean）：默认 `false`
+- **`targetQps`**（int）：默认 `0`（不限速）
+- **`fieldDataSourceList`** / **`generalDataRoleList`**：同 InsertParams
+- **`lengthFactor`**（double）：与 InsertParams 语义一致，`0 ~ 1` 缩放随机长度上限
+
+**示例 JSON**：
+
+```json
+{
+  "RestfulInsertParams_0": {
+    "collectionName": "",
+    "collectionRule": "",
+    "partitionName": "",
+    "startId": 0,
+    "numEntries": 10000,
+    "batchSize": 1000,
+    "numConcurrency": 1,
+    "runningMinutes": 0,
+    "retryAfterDeny": false,
+    "ignoreError": false,
+    "targetQps": 0,
+    "fieldDataSourceList": [],
+    "generalDataRoleList": [],
+    "lengthFactor": 0
+  }
+}
+```
+
+> **何时使用**：只有在明确要测试 RESTful 写入通道时才使用；常规写入测试请继续使用 `InsertParams`（SDK 通道性能更好、支持特性更全）。
 
 ##### 5.1.5 Search：`SearchParams`
 
@@ -112,8 +169,11 @@
 - **`retryAfterDeny`**（boolean，可空）：前端默认 `false`。
 - **`generalDataRoleList`**（list，可空）：仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；不使用建议传 `[]`。
 - **`targetQps`**（int，可空）：前端默认 `0`。
+- **`lengthFactor`**（double，可空）：与 InsertParams 语义一致，`0 ~ 1` 之间缩放随机长度上限。默认 `0`（不启用）。
 
 > **注意**：`UpsertParams` **没有**顶层 `dataset` 字段。数据集配置**只能通过 `fieldDataSourceList` 指定**（同 InsertParams）。
+
+> **autoID 场景**：Milvus Upsert 必须由客户端提供主键来定位行，即使 Collection 的主键字段设置了 `autoId: true`，Upsert 的数据中**也必须包含主键值**（否则服务端会报 `must assign pk when checking duplicates`）。框架在 `UpsertComp` 中会自动生成主键字段的数据（与普通 insert 的数据生成行为不同），**用户无需手动配置**。只需保持 `startId` 指向已有数据的范围，即可更新对应行。
 
 ##### 5.1.8 Delete：`DeleteParams`
 
