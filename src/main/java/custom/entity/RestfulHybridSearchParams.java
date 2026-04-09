@@ -118,11 +118,6 @@ public class RestfulHybridSearchParams {
         private int topK;
 
         /**
-         * 距离度量类型（MetricType）。可选：L2、IP、COSINE、HAMMING、JACCARD、BM25
-         */
-        private String metricType;
-
-        /**
          * 搜索参数（Map），例如 {"level": 1}
          */
         private Map<String, Object> searchParams;

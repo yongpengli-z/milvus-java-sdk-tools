@@ -328,9 +328,8 @@ public class RestfulHybridSearchComp {
                         if (filter != null && !filter.isEmpty()) {
                             subSearch.put("filter", filter);
                         }
-                        if (request.getMetricType() != null && !request.getMetricType().isEmpty()) {
-                            subSearch.put("metricType", request.getMetricType());
-                        }
+                        // metricType 不再由前端传入，服务端会根据 collection index 自动决定，
+                        // 与 SDK 版 HybridSearch 保持一致。
                         // params 内层
                         JSONObject paramsJson = new JSONObject();
                         paramsJson.putAll(searchParams);
