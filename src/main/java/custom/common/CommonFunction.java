@@ -389,13 +389,22 @@ public class CommonFunction {
     }
 
     /**
+     * 生成通用的数据（兼容旧调用，默认非 upsert 场景）
+     */
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor) {
+        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, false);
+    }
+
+    /**
      * 生成通用的数据
      *
      * @param count 生成的数量
      * @param lengthFactor 随机长度系数（0~1），>0 时所有随机长度 = maxLength/maxCapacity * lengthFactor
+     * @param forUpsert 是否用于 upsert 场景；为 true 时即使主键是 autoID 也必须生成 pk 值，
+     *                  因为 Milvus upsert 需要客户端显式传入主键以定位已有行。
      * @return List<JsonObject>
      */
-    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor) {
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, boolean forUpsert) {
         Random random = new Random();
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -443,8 +452,9 @@ public class CommonFunction {
                 Integer maxLength = fieldSchema.getMaxLength();
                 boolean isNullable = fieldSchema.getIsNullable();
                 boolean isEnableMatch = fieldSchema.getEnableMatch() != null && fieldSchema.getEnableMatch();
-                // primary key auto id
-                if (fieldSchema.getIsPrimaryKey() && fieldSchema.getAutoID()) {
+                // primary key auto id：upsert 场景下必须显式传 pk，否则 Milvus 会报
+                // "must assign pk when checking duplicates"，所以只有非 upsert 场景才跳过。
+                if (fieldSchema.getIsPrimaryKey() && fieldSchema.getAutoID() && !forUpsert) {
                     continue;
                 }
                 // 如果使用function自动生成数据，则继续
