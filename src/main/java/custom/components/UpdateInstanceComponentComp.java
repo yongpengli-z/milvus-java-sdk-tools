@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,6 +56,17 @@ public class UpdateInstanceComponentComp {
                 : params.getInstanceId();
         params.setInstanceId(instanceId);
 
+        // 2.1) 前端传过来的空串当作 null 处理，避免当成真实 Quantity 下发给 RM。
+        if (params.getSpecs() != null) {
+            for (ComponentSpec s : params.getSpecs()) {
+                if (s == null) continue;
+                s.setCpuRequest(nullIfBlank(s.getCpuRequest()));
+                s.setMemoryRequest(nullIfBlank(s.getMemoryRequest()));
+                s.setCpuLimit(nullIfBlank(s.getCpuLimit()));
+                s.setMemoryLimit(nullIfBlank(s.getMemoryLimit()));
+            }
+        }
+
         // 3) 参数校验
         String validateMsg = validate(params);
         if (validateMsg != null) {
@@ -72,66 +84,86 @@ public class UpdateInstanceComponentComp {
         }
 
         // 4) 按 spec 顺序拆分成若干 RM 调用，任一失败立即返回（快速失败）
+        //    注意：RM 的 update_replicas / update_requests / update_limits 在 DAO 层用
+        //    `replica_index = NULL` 这种等值查询，replicaIndex 传 null 时 SQL 永远匹配不上
+        //    任何行，接口会"静默无操作"并返回 Code=0。因此 tool 层必须自己把 null 展开成
+        //    该 category 下所有真实的 replicaIndex 逐个下发。
         for (ComponentSpec spec : params.getSpecs()) {
             List<String> categories = Collections.singletonList(spec.getCategory());
-
-            // 4.1 replicas
-            if (spec.getReplicas() != null) {
-                String payload = String.format("{\"replicas\":%d}", spec.getReplicas());
-                try {
-                    String resp = ResourceManagerServiceUtils.updateReplicas(
-                            instanceId, spec.getReplicas(), categories, spec.getReplicaIndex());
-                    ChangeRecord cr = recordFromRmResp(spec, "replicas", payload, resp);
-                    changes.add(cr);
-                    if (!cr.isSuccess()) {
-                        return fail(changes, "update_replicas failed: " + cr.getMessage(), startTs);
-                    }
-                } catch (Exception e) {
-                    log.error("update_replicas threw", e);
-                    changes.add(exceptionRecord(spec, "replicas", payload, e));
-                    return fail(changes, "update_replicas threw: " + e.getMessage(), startTs);
-                }
+            List<Integer> targetIndexes = resolveReplicaIndexes(spec, nodeMap);
+            if (targetIndexes.isEmpty()) {
+                return fail(changes,
+                        "no node found for category=" + spec.getCategory()
+                                + (spec.getReplicaIndex() == null
+                                        ? "" : (" replicaIndex=" + spec.getReplicaIndex())),
+                        startTs);
             }
 
-            // 4.2 requests（cpu + memory 必须成对传给 RM，缺的那一维用 describe 回填）
-            Map<String, String> requestList = buildResourceList(
-                    spec.getCpuRequest(), spec.getMemoryRequest(),
-                    nodeMap, spec, /* readFrom */ "Requests");
-            if (requestList != null) {
-                String payload = new com.google.gson.Gson().toJson(requestList);
-                try {
-                    String resp = ResourceManagerServiceUtils.updateRequests(
-                            instanceId, requestList, categories, spec.getReplicaIndex());
-                    ChangeRecord cr = recordFromRmResp(spec, "requests", payload, resp);
-                    changes.add(cr);
-                    if (!cr.isSuccess()) {
-                        return fail(changes, "update_requests failed: " + cr.getMessage(), startTs);
+            for (Integer idx : targetIndexes) {
+                // 4.1 replicas
+                if (spec.getReplicas() != null) {
+                    String payload = String.format("{\"replicas\":%d,\"replicaIndex\":%s}",
+                            spec.getReplicas(), String.valueOf(idx));
+                    try {
+                        String resp = ResourceManagerServiceUtils.updateReplicas(
+                                instanceId, spec.getReplicas(), categories, idx);
+                        ChangeRecord cr = recordFromRmResp(spec, idx, "replicas", payload, resp);
+                        changes.add(cr);
+                        if (!cr.isSuccess()) {
+                            return fail(changes, "update_replicas failed: " + cr.getMessage(), startTs);
+                        }
+                    } catch (Exception e) {
+                        log.error("update_replicas threw", e);
+                        changes.add(exceptionRecord(spec, idx, "replicas", payload, e));
+                        return fail(changes, "update_replicas threw: " + e.getMessage(), startTs);
                     }
-                } catch (Exception e) {
-                    log.error("update_requests threw", e);
-                    changes.add(exceptionRecord(spec, "requests", payload, e));
-                    return fail(changes, "update_requests threw: " + e.getMessage(), startTs);
                 }
-            }
 
-            // 4.3 limits
-            Map<String, String> limitList = buildResourceList(
-                    spec.getCpuLimit(), spec.getMemoryLimit(),
-                    nodeMap, spec, /* readFrom */ "Limits");
-            if (limitList != null) {
-                String payload = new com.google.gson.Gson().toJson(limitList);
-                try {
-                    String resp = ResourceManagerServiceUtils.updateLimits(
-                            instanceId, limitList, categories, spec.getReplicaIndex());
-                    ChangeRecord cr = recordFromRmResp(spec, "limits", payload, resp);
-                    changes.add(cr);
-                    if (!cr.isSuccess()) {
-                        return fail(changes, "update_limits failed: " + cr.getMessage(), startTs);
+                // 4.2 requests（无论用户是否传值都会下发：全量回填 + 必要时合并用户值，
+                //      配合后续 restart 确保配置被真正推到 pod）
+                {
+                    String payload = null;
+                    try {
+                        Map<String, String> requestList = buildResourceList(
+                                spec.getCpuRequest(), spec.getMemoryRequest(),
+                                nodeMap, spec.getCategory(), idx, /* readFrom */ "Requests");
+                        payload = new com.google.gson.Gson().toJson(requestList);
+                        String resp = ResourceManagerServiceUtils.updateRequests(
+                                instanceId, requestList, categories, idx);
+                        ChangeRecord cr = recordFromRmResp(spec, idx, "requests", payload, resp);
+                        changes.add(cr);
+                        if (!cr.isSuccess()) {
+                            return fail(changes, "update_requests failed: " + cr.getMessage(), startTs);
+                        }
+                    } catch (Exception e) {
+                        log.error("update_requests threw", e);
+                        changes.add(exceptionRecord(spec, idx, "requests",
+                                payload == null ? "" : payload, e));
+                        return fail(changes, "update_requests threw: " + e.getMessage(), startTs);
                     }
-                } catch (Exception e) {
-                    log.error("update_limits threw", e);
-                    changes.add(exceptionRecord(spec, "limits", payload, e));
-                    return fail(changes, "update_limits threw: " + e.getMessage(), startTs);
+                }
+
+                // 4.3 limits（同上）
+                {
+                    String payload = null;
+                    try {
+                        Map<String, String> limitList = buildResourceList(
+                                spec.getCpuLimit(), spec.getMemoryLimit(),
+                                nodeMap, spec.getCategory(), idx, /* readFrom */ "Limits");
+                        payload = new com.google.gson.Gson().toJson(limitList);
+                        String resp = ResourceManagerServiceUtils.updateLimits(
+                                instanceId, limitList, categories, idx);
+                        ChangeRecord cr = recordFromRmResp(spec, idx, "limits", payload, resp);
+                        changes.add(cr);
+                        if (!cr.isSuccess()) {
+                            return fail(changes, "update_limits failed: " + cr.getMessage(), startTs);
+                        }
+                    } catch (Exception e) {
+                        log.error("update_limits threw", e);
+                        changes.add(exceptionRecord(spec, idx, "limits",
+                                payload == null ? "" : payload, e));
+                        return fail(changes, "update_limits threw: " + e.getMessage(), startTs);
+                    }
                 }
             }
         }
@@ -167,6 +199,11 @@ public class UpdateInstanceComponentComp {
 
     // ----------------------------- helpers -----------------------------
 
+    /** 前端 el-input 默认空串，这里把空/纯空白串归一化为 null 以便后续按"未指定"处理。 */
+    private static String nullIfBlank(String s) {
+        return (s == null || s.trim().isEmpty()) ? null : s.trim();
+    }
+
     private static String validate(UpdateInstanceComponentParams params) {
         if (params == null) return "params is null";
         if (params.getInstanceId() == null || params.getInstanceId().isEmpty()) {
@@ -180,20 +217,17 @@ public class UpdateInstanceComponentComp {
             if (s.getCategory() == null || s.getCategory().isEmpty()) {
                 return "specs[" + i + "].category is required";
             }
-            boolean anyChange = s.getReplicas() != null
-                    || s.getCpuRequest() != null || s.getMemoryRequest() != null
-                    || s.getCpuLimit() != null || s.getMemoryLimit() != null;
-            if (!anyChange) {
-                return "specs[" + i + "] (" + s.getCategory() + ") has no field to update";
-            }
+            // 允许一个 spec 什么字段都不填：此时 replicas 分支 no-op，requests / limits
+            // 会用 describe 的当前值全量回填再下发，配合 restart 等于"强制 resync + 重启"。
         }
         return null;
     }
 
     /**
-     * 拉 describe，按 (Role, ReplicaIndex) 建索引；
-     * 对于 replicaIndex 为 null 的 spec，我们用特殊 key null 表示"任意组"并映射到第一个命中的 node，
-     * 回填时够用（因为 RM 也是对所有副本组统一下发一组资源）。
+     * 拉 describe，按 (Role, ReplicaIndex) 建索引。
+     * 注意这里**不再**放"任意副本组"的兜底 null key —— RM 的 update_replicas/requests/limits
+     * 在 DAO 层用 `replica_index = NULL` 等值查询永远匹配不上，必须上游把 null 展开成真实的
+     * replicaIndex 列表再下发，见 {@link #resolveReplicaIndexes}。
      */
     private static Map<NodeKey, JSONObject> loadNodeMap(String instanceId) {
         String descResp = ResourceManagerServiceUtils.describeInstance(instanceId);
@@ -214,64 +248,85 @@ public class UpdateInstanceComponentComp {
             String role = node.getString("Role");
             Integer idx = node.getInteger("ReplicaIndex");
             out.putIfAbsent(new NodeKey(role, idx), node);
-            // 同时放一个"任意副本组"的兜底项，便于 replicaIndex==null 的 spec 命中
-            out.putIfAbsent(new NodeKey(role, null), node);
         }
         return out;
     }
 
     /**
+     * 把 spec.replicaIndex 展开成一组"真正存在"的 replicaIndex：
+     * <ul>
+     *   <li>spec.replicaIndex 非 null → 直接返回 [replicaIndex]，不校验是否真实存在
+     *       （留给 RM 后端去报错，和单副本组用户原来的行为一致）</li>
+     *   <li>spec.replicaIndex == null → 从 describe 结果里捞出该 category 下所有 node 的
+     *       ReplicaIndex，返回它们的列表</li>
+     * </ul>
+     * 若 null 场景下找不到任何 node，返回空 list，调用方按错误处理。
+     */
+    private static List<Integer> resolveReplicaIndexes(ComponentSpec spec,
+                                                        Map<NodeKey, JSONObject> nodeMap) {
+        if (spec.getReplicaIndex() != null) {
+            return Collections.singletonList(spec.getReplicaIndex());
+        }
+        List<Integer> indexes = new ArrayList<>();
+        for (Map.Entry<NodeKey, JSONObject> e : nodeMap.entrySet()) {
+            if (Objects.equals(e.getKey().role, spec.getCategory())) {
+                indexes.add(e.getKey().replicaIndex);
+            }
+        }
+        Collections.sort(indexes, Comparator.nullsFirst(Comparator.naturalOrder()));
+        return indexes;
+    }
+
+    /**
      * 组装一次 update_requests / update_limits 的 resourceList。
      * <ul>
-     *   <li>cpu 和 memory 都没指定 → 返回 null，表示本 spec 不需要调这个接口</li>
-     *   <li>只指定了其中一个 → 从 describe 结果里回填另一个，避免 RM 把没传的那一维清空</li>
      *   <li>两个都指定了 → 直接使用</li>
+     *   <li>只指定了一个 → 从 describe 结果回填另一个，避免 RM 把未传的那一维清空</li>
+     *   <li>两个都没指定 → 从 describe 全量回填 cpu + memory，照样调 RM 接口
+     *       （配合后续 restart 把配置重新推到 pod）</li>
      * </ul>
-     * 如果需要回填但 describe 里找不到对应 node 或对应字段，返回 null 并打 warn，
-     * 让调用方知道这个维度跳过了（而不是发送一个会把值清空的危险 payload）。
+     * describe 里找不到对应 node / 资源字段时抛 RuntimeException，由调用方走快速失败路径。
      *
      * @param readFrom "Requests" 或 "Limits"，对应 describe node 里的 map 字段名
      */
     private static Map<String, String> buildResourceList(String cpu, String memory,
                                                           Map<NodeKey, JSONObject> nodeMap,
-                                                          ComponentSpec spec,
+                                                          String category,
+                                                          Integer replicaIndex,
                                                           String readFrom) {
-        if (cpu == null && memory == null) {
-            return null;
-        }
         Map<String, String> out = new LinkedHashMap<>();
         if (cpu != null) out.put("cpu", cpu);
         if (memory != null) out.put("memory", memory);
 
-        // 需要回填
+        // 任意一维缺失都需要从 describe 回填
         if (cpu == null || memory == null) {
-            JSONObject node = nodeMap.get(new NodeKey(spec.getCategory(), spec.getReplicaIndex()));
+            JSONObject node = nodeMap.get(new NodeKey(category, replicaIndex));
             if (node == null) {
-                log.warn("can not locate node for category={} replicaIndex={}, skip update_{}",
-                        spec.getCategory(), spec.getReplicaIndex(), readFrom.toLowerCase());
-                return null;
+                throw new RuntimeException(String.format(
+                        "can not locate node for category=%s replicaIndex=%s when building %s",
+                        category, replicaIndex, readFrom));
             }
             JSONObject resourceMap = node.getJSONObject(readFrom);
             if (resourceMap == null) {
-                log.warn("describe node has no {} field for category={} replicaIndex={}, skip",
-                        readFrom, spec.getCategory(), spec.getReplicaIndex());
-                return null;
+                throw new RuntimeException(String.format(
+                        "describe node has no %s field for category=%s replicaIndex=%s",
+                        readFrom, category, replicaIndex));
             }
             if (cpu == null) {
                 String currentCpu = resourceMap.getString("cpu");
                 if (currentCpu == null) {
-                    log.warn("describe has no current cpu for category={}, skip update_{}",
-                            spec.getCategory(), readFrom.toLowerCase());
-                    return null;
+                    throw new RuntimeException(String.format(
+                            "describe has no current cpu in %s for category=%s replicaIndex=%s",
+                            readFrom, category, replicaIndex));
                 }
                 out.put("cpu", currentCpu);
             }
             if (memory == null) {
                 String currentMem = resourceMap.getString("memory");
                 if (currentMem == null) {
-                    log.warn("describe has no current memory for category={}, skip update_{}",
-                            spec.getCategory(), readFrom.toLowerCase());
-                    return null;
+                    throw new RuntimeException(String.format(
+                            "describe has no current memory in %s for category=%s replicaIndex=%s",
+                            readFrom, category, replicaIndex));
                 }
                 out.put("memory", currentMem);
             }
@@ -283,14 +338,14 @@ public class UpdateInstanceComponentComp {
         return ordered;
     }
 
-    private static ChangeRecord recordFromRmResp(ComponentSpec spec, String action,
-                                                  String payload, String rmResp) {
+    private static ChangeRecord recordFromRmResp(ComponentSpec spec, Integer replicaIndex,
+                                                  String action, String payload, String rmResp) {
         JSONObject jo = JSONObject.parseObject(rmResp);
         boolean success = jo != null && jo.getInteger("Code") != null && jo.getInteger("Code") == 0;
         String msg = (jo == null) ? "null response" : jo.getString("Message");
         return ChangeRecord.builder()
                 .category(spec.getCategory())
-                .replicaIndex(spec.getReplicaIndex())
+                .replicaIndex(replicaIndex)
                 .action(action)
                 .payload(payload)
                 .success(success)
@@ -298,11 +353,11 @@ public class UpdateInstanceComponentComp {
                 .build();
     }
 
-    private static ChangeRecord exceptionRecord(ComponentSpec spec, String action,
-                                                 String payload, Exception e) {
+    private static ChangeRecord exceptionRecord(ComponentSpec spec, Integer replicaIndex,
+                                                 String action, String payload, Exception e) {
         return ChangeRecord.builder()
                 .category(spec.getCategory())
-                .replicaIndex(spec.getReplicaIndex())
+                .replicaIndex(replicaIndex)
                 .action(action)
                 .payload(payload)
                 .success(false)

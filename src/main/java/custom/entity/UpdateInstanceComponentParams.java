@@ -54,8 +54,14 @@ public class UpdateInstanceComponentParams {
         String category;
 
         /**
-         * 多副本组场景指定组下标。传 null 时对该 category 下所有副本组生效
-         * （对应 RM 端 replicaIndex == null 分支）。单副本组场景直接传 null 即可。
+         * 多副本组场景指定组下标。传 null 时由 tool 层先 describe 一次，把该 category 下
+         * 所有真实存在的 replicaIndex 展开，逐个下发 RM。
+         * <p>
+         * 注意：不能指望 RM 端自己处理 null —— RM 的 update_replicas / update_requests /
+         * update_limits 在 DAO 层直接用 `replica_index = NULL` 等值查询，SQL 永远匹配不上，
+         * 接口会"静默 no-op 并返回 Code=0"。这是 RM 的历史坑，tool 层必须自己展开。
+         * <p>
+         * 单副本组场景直接传 null 即可。
          */
         Integer replicaIndex;
 
