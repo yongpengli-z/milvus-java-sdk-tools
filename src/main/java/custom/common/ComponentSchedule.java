@@ -355,6 +355,12 @@ public class ComponentSchedule {
             jsonObject.put("ScaleInstance_" + index, scaleInstanceResult);
             reportStepResult(ScaleInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(scaleInstanceResult));
         }
+        if (object instanceof UpdateInstanceComponentParams) {
+            log.info("*********** < update instance component > ***********");
+            UpdateInstanceComponentResult updateInstanceComponentResult = UpdateInstanceComponentComp.updateInstanceComponent((UpdateInstanceComponentParams) object);
+            jsonObject.put("UpdateInstanceComponent_" + index, updateInstanceComponentResult);
+            reportStepResult(UpdateInstanceComponentParams.class.getSimpleName() + "_" + index, JSON.toJSONString(updateInstanceComponentResult));
+        }
         if (object instanceof HelmCreateInstanceParams) {
             log.info("*********** < Helm create instance > ***********");
             HelmCreateInstanceResult helmCreateInstanceResult = HelmCreateInstanceComp.createInstance((HelmCreateInstanceParams) object);

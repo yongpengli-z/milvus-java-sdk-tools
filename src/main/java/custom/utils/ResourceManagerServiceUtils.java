@@ -344,5 +344,101 @@ public class ResourceManagerServiceUtils {
         String[] parts = classId.split("-");
         return Integer.parseInt(parts[1]);
     }
+
+    /**
+     * RM 通用 POST 帮助方法：拼 header，发 body，返回原始响应。
+     * 复用 UpdateInstanceComponentComp 等新组件，避免每个方法各自组装 header。
+     */
+    private static String postToRm(String url, String body) {
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        return HttpClientUtils.doPostJson(url, header, body);
+    }
+
+    /**
+     * 修改指定 NodeCategory 的 pod 副本数。
+     * <p>
+     * 对应 RM 接口 POST /resource/v1/instance/milvus/update_replicas?InstanceId=xxx。
+     * NodeCategories 是广播语义 —— 列表里所有 category 会被设置成同一个 replicas 值。
+     * 如果要让不同 category 用不同 replicas，应拆成多次调用。
+     *
+     * @param instanceId     实例 ID
+     * @param replicas       目标 pod 副本数
+     * @param nodeCategories NodeCategory specName 列表，例 ["queryNode"]、["dataNode","indexNode"]
+     * @param replicaIndex   多副本组场景的组下标；null 表示作用于所有副本组
+     * @return RM 原始响应
+     */
+    public static String updateReplicas(String instanceId, int replicas,
+                                        List<String> nodeCategories, Integer replicaIndex) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_replicas?InstanceId=" + instanceId;
+        Map<String, Object> params = new HashMap<>();
+        params.put("replicas", replicas);
+        params.put("nodeCategories", nodeCategories);
+        if (replicaIndex != null) {
+            params.put("replicaIndex", replicaIndex);
+        }
+        String body = new Gson().toJson(params);
+        String resp = postToRm(url, body);
+        log.info("update_replicas [{} replicaIndex={}] replicas={} resp={}", nodeCategories, replicaIndex, replicas, resp);
+        return resp;
+    }
+
+    /**
+     * 修改指定 NodeCategory 的 pod resource requests。
+     * <p>
+     * 对应 RM 接口 POST /resource/v1/instance/milvus/update_requests?InstanceId=xxx。
+     * resourceList 里的 value 必须是 k8s Quantity 字符串（例 "8000m"、"32Gi"），原样透传。
+     * 注意 RM 会整组覆盖 ResourceList，调用方需自行保证 cpu/memory 一起传，
+     * 否则未传的维度可能被清空。
+     *
+     * @param instanceId     实例 ID
+     * @param resourceList   resource map，例 {"cpu":"8000m","memory":"32Gi"}
+     * @param nodeCategories NodeCategory specName 列表
+     * @param replicaIndex   多副本组场景的组下标；null 表示作用于所有副本组
+     * @return RM 原始响应
+     */
+    public static String updateRequests(String instanceId, Map<String, String> resourceList,
+                                        List<String> nodeCategories, Integer replicaIndex) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_requests?InstanceId=" + instanceId;
+        Map<String, Object> params = new HashMap<>();
+        params.put("resourceList", resourceList);
+        params.put("nodeCategories", nodeCategories);
+        if (replicaIndex != null) {
+            params.put("replicaIndex", replicaIndex);
+        }
+        String body = new Gson().toJson(params);
+        String resp = postToRm(url, body);
+        log.info("update_requests [{} replicaIndex={}] resourceList={} resp={}", nodeCategories, replicaIndex, resourceList, resp);
+        return resp;
+    }
+
+    /**
+     * 修改指定 NodeCategory 的 pod resource limits。
+     * <p>
+     * 对应 RM 接口 POST /resource/v1/instance/milvus/update_limits?InstanceId=xxx。
+     * 注意事项同 {@link #updateRequests}。
+     *
+     * @param instanceId     实例 ID
+     * @param resourceList   resource map，例 {"cpu":"8000m","memory":"32Gi"}
+     * @param nodeCategories NodeCategory specName 列表
+     * @param replicaIndex   多副本组场景的组下标；null 表示作用于所有副本组
+     * @return RM 原始响应
+     */
+    public static String updateLimits(String instanceId, Map<String, String> resourceList,
+                                      List<String> nodeCategories, Integer replicaIndex) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_limits?InstanceId=" + instanceId;
+        Map<String, Object> params = new HashMap<>();
+        params.put("resourceList", resourceList);
+        params.put("nodeCategories", nodeCategories);
+        if (replicaIndex != null) {
+            params.put("replicaIndex", replicaIndex);
+        }
+        String body = new Gson().toJson(params);
+        String resp = postToRm(url, body);
+        log.info("update_limits [{} replicaIndex={}] resourceList={} resp={}", nodeCategories, replicaIndex, resourceList, resp);
+        return resp;
+    }
 }
 
