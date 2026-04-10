@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static custom.BaseTest.cloudServiceUserInfo;
+import static custom.BaseTest.newInstanceInfo;
 
 /**
  * 一次调用批量修改一个实例中多个 NodeCategory 的 replicas / requests / limits，
@@ -48,13 +49,17 @@ public class UpdateInstanceComponentComp {
 
         List<ChangeRecord> changes = new ArrayList<>();
 
-        // 2) 参数校验
+        // 2) instanceId 回退：留空时使用当前已创建的实例（与 ScaleInstanceComp 等保持一致）
+        String instanceId = (params.getInstanceId() == null || params.getInstanceId().isEmpty())
+                ? (newInstanceInfo == null ? null : newInstanceInfo.getInstanceId())
+                : params.getInstanceId();
+        params.setInstanceId(instanceId);
+
+        // 3) 参数校验
         String validateMsg = validate(params);
         if (validateMsg != null) {
             return fail(changes, validateMsg, startTs);
         }
-
-        String instanceId = params.getInstanceId();
 
         // 3) describe 一次，仅用于补齐用户未指定的 cpu / memory 维度
         //    ShowAllNodes=true 保证多副本组的节点都能拿到
