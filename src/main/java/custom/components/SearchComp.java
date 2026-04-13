@@ -26,11 +26,17 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+import io.milvus.v2.client.MilvusClientV2;
+
 import static custom.BaseTest.*;
 
 @Slf4j
 public class SearchComp {
     public static SearchResultA searchCollection(SearchParams searchParams) {
+        // 根据 targetEndpoint 选择 client
+        MilvusClientV2 client = getMilvusClient(searchParams.getTargetEndpoint());
+        log.info("Search 使用 endpoint: {}", searchParams.getTargetEndpoint() == null ? "primary(default)" : searchParams.getTargetEndpoint());
+
         // 先search collection
         // 判断collection获取规则
         Random random = new Random();
@@ -52,7 +58,7 @@ public class SearchComp {
         }
 
         // 判定是不是sparse向量，并且是由Function BM25生成
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
@@ -173,7 +179,7 @@ public class SearchComp {
                             SearchResp search = null;
                             try {
                                 long timeoutMs = searchParams.getTimeout() > 0 ? searchParams.getTimeout() : 800;
-                                search = milvusClientV2.withTimeout(timeoutMs,TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).search(searchReq);
+                                search = client.withTimeout(timeoutMs,TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).search(searchReq);
                             } catch (Exception e) {
                                 statsReporter.recordFailure();
                                 log.error("线程[" + finalC + "]  search error :" + e.getMessage());

@@ -361,6 +361,12 @@ public class ComponentSchedule {
             jsonObject.put("UpdateInstanceComponent_" + index, updateInstanceComponentResult);
             reportStepResult(UpdateInstanceComponentParams.class.getSimpleName() + "_" + index, JSON.toJSONString(updateInstanceComponentResult));
         }
+        if (object instanceof CreateGlobalClusterParams) {
+            log.info("*********** < create global cluster > ***********");
+            CreateGlobalClusterResult createGlobalClusterResult = CreateGlobalClusterComp.createGlobalCluster((CreateGlobalClusterParams) object);
+            jsonObject.put("CreateGlobalCluster_" + index, createGlobalClusterResult);
+            reportStepResult(CreateGlobalClusterParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createGlobalClusterResult));
+        }
         if (object instanceof HelmCreateInstanceParams) {
             log.info("*********** < Helm create instance > ***********");
             HelmCreateInstanceResult helmCreateInstanceResult = HelmCreateInstanceComp.createInstance((HelmCreateInstanceParams) object);

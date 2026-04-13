@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
+import custom.entity.CreateGlobalClusterParams;
 import custom.entity.CreateInstanceParams;
 import custom.entity.DeleteInstanceParams;
 import custom.entity.ModifyParams;
@@ -439,6 +440,98 @@ public class ResourceManagerServiceUtils {
         String resp = postToRm(url, body);
         log.info("update_limits [{} replicaIndex={}] resourceList={} resp={}", nodeCategories, replicaIndex, resourceList, resp);
         return resp;
+    }
+
+    /**
+     * 创建 Global Cluster（主实例 + secondary 实例列表）。
+     * <p>
+     * 对应 RM 接口 POST /resource/v1/global_cluster/milvus/create。
+     */
+    public static String createGlobalCluster(CreateGlobalClusterParams params) {
+        String url = envConfig.getRmHost() + "/resource/v1/global_cluster/milvus/create";
+        Gson gson = new Gson();
+        Map<String, Object> body = new HashMap<>();
+        body.put("regionId", params.getRegionId() != null ? params.getRegionId() : envConfig.getRegionId());
+        body.put("realUserId", cloudServiceUserInfo.getUserId());
+        body.put("dbVersion", params.getDbVersion());
+        body.put("classId", params.getClassId());
+        body.put("replica", params.getReplica());
+        body.put("instanceName", params.getInstanceName());
+        body.put("instanceType", params.getInstanceType());
+        body.put("instanceDescription", params.getInstanceDescription());
+        body.put("projectId", cloudServiceUserInfo.getDefaultProjectId());
+        body.put("orgType", params.getOrgType());
+        body.put("processorArchitecture", params.getArchitecture());
+        body.put("defaultTimeZone", "UTC");
+        body.put("defaultCharacterset", "UTF-8");
+        body.put("whitelistAddress", "0.0.0.0/0");
+        if (params.getRootPwd() != null && !params.getRootPwd().isEmpty()) {
+            body.put("rootPwd", params.getRootPwd());
+        }
+        if (params.getSecondaryClusters() != null && !params.getSecondaryClusters().isEmpty()) {
+            List<Map<String, Object>> secondaries = new ArrayList<>();
+            for (CreateGlobalClusterParams.SecondaryCluster sc : params.getSecondaryClusters()) {
+                Map<String, Object> scMap = new HashMap<>();
+                scMap.put("regionId", sc.getRegionId());
+                scMap.put("instanceName", sc.getInstanceName());
+                scMap.put("classId", sc.getClassId());
+                if (sc.getReplica() != null) {
+                    scMap.put("replica", sc.getReplica());
+                }
+                secondaries.add(scMap);
+            }
+            body.put("secondaryClusters", secondaries);
+        }
+        body.put("enableChildJobCenter", params.isEnableChildJobCenter());
+        String jsonBody = gson.toJson(body);
+        String resp = postToRm(url, jsonBody);
+        log.info("[rm-service][create global cluster]: {}", resp);
+        return resp;
+    }
+
+    /**
+     * 从 describeInstance 响应中提取 GlobalClusterId。
+     *
+     * @param instanceId 实例 ID
+     * @return GlobalClusterId，不属于 Global Cluster 时返回 null
+     */
+    public static String getGlobalClusterId(String instanceId) {
+        String resp = describeInstance(instanceId);
+        JSONObject jo = JSONObject.parseObject(resp);
+        if (jo.getInteger("Code") != null && jo.getInteger("Code") == 0) {
+            String gcId = jo.getJSONObject("Data").getString("GlobalClusterId");
+            if (gcId != null && !gcId.isEmpty()) {
+                return gcId;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 通过 cloud-service 查询 Global Cluster 的 ConnectAddress（global endpoint）。
+     *
+     * @param globalClusterId Global Cluster ID（gdc-xxx）
+     * @return global endpoint（如 https://gdc-xxx.global-cluster.xxx.zilliz.com:19530），查询失败返回 null
+     */
+    public static String describeGlobalClusterEndpoint(String globalClusterId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/global_cluster/describe?globalClusterId=" + globalClusterId;
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("Authorization", "Bearer " + cloudServiceUserInfo.getToken());
+        String resp = HttpClientUtils.doGet(url, header, null);
+        log.info("[cloud-service][describe global cluster]: {}", resp);
+        JSONObject jo = JSONObject.parseObject(resp);
+        if (jo.getInteger("Code") != null && jo.getInteger("Code") == 0) {
+            String connectAddress = jo.getJSONObject("Data").getString("ConnectAddress");
+            if (connectAddress != null && !connectAddress.isEmpty()) {
+                if (!connectAddress.startsWith("https://")) {
+                    connectAddress = "https://" + connectAddress;
+                }
+                return connectAddress;
+            }
+        }
+        return null;
     }
 }
 
