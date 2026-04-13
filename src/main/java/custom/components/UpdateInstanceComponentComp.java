@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -255,26 +254,19 @@ public class UpdateInstanceComponentComp {
     /**
      * 把 spec.replicaIndex 展开成一组"真正存在"的 replicaIndex：
      * <ul>
-     *   <li>spec.replicaIndex 非 null → 直接返回 [replicaIndex]，不校验是否真实存在
-     *       （留给 RM 后端去报错，和单副本组用户原来的行为一致）</li>
-     *   <li>spec.replicaIndex == null → 从 describe 结果里捞出该 category 下所有 node 的
-     *       ReplicaIndex，返回它们的列表</li>
+     *   <li>spec.replicaIndex 非 null → 直接返回 [replicaIndex]</li>
+     *   <li>spec.replicaIndex == null → 默认返回 [1]。
+     *       原因：streamingNode / queryNode 在 DB 中预创建了 10 条记录（replicaIndex 1~10），
+     *       但活跃副本组默认从 1 开始，传 null 给 RM 会导致 SQL 匹配不上而静默无操作。</li>
      * </ul>
-     * 若 null 场景下找不到任何 node，返回空 list，调用方按错误处理。
      */
     private static List<Integer> resolveReplicaIndexes(ComponentSpec spec,
                                                         Map<NodeKey, JSONObject> nodeMap) {
         if (spec.getReplicaIndex() != null) {
             return Collections.singletonList(spec.getReplicaIndex());
         }
-        List<Integer> indexes = new ArrayList<>();
-        for (Map.Entry<NodeKey, JSONObject> e : nodeMap.entrySet()) {
-            if (Objects.equals(e.getKey().role, spec.getCategory())) {
-                indexes.add(e.getKey().replicaIndex);
-            }
-        }
-        Collections.sort(indexes, Comparator.nullsFirst(Comparator.naturalOrder()));
-        return indexes;
+        // replicaIndex 未传时默认 1（replicaIndex 取值 1~10，代表第 1~第 10 副本组）
+        return Collections.singletonList(1);
     }
 
     /**
