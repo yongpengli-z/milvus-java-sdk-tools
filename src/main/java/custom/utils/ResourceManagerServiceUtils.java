@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import custom.entity.CreateGlobalClusterParams;
 import custom.entity.CreateInstanceParams;
+import custom.entity.CreateSecondaryParams;
 import custom.entity.DeleteInstanceParams;
 import custom.entity.ModifyParams;
 import custom.entity.RollingUpgradeParams;
@@ -486,6 +487,54 @@ public class ResourceManagerServiceUtils {
         String jsonBody = gson.toJson(body);
         String resp = postToRm(url, jsonBody);
         log.info("[rm-service][create global cluster]: {}", resp);
+        return resp;
+    }
+
+    /**
+     * 为已有实例添加 Secondary 集群（也可将普通实例转为 Global Cluster）。
+     * <p>
+     * 对应 RM 接口 POST /resource/v1/global_cluster/milvus/create_secondary。
+     * <ul>
+     *   <li>场景 A：传 instanceId（普通实例）→ 自动转为 Global Cluster 并添加 secondary</li>
+     *   <li>场景 B：传 globalClusterId（已有 GC）→ 在已有 GC 下添加新 secondary</li>
+     * </ul>
+     */
+    public static String createSecondary(CreateSecondaryParams params) {
+        String url = envConfig.getRmHost() + "/resource/v1/global_cluster/milvus/create_secondary";
+        Gson gson = new Gson();
+        Map<String, Object> body = new HashMap<>();
+        // 场景 A：普通实例转 GC
+        if (params.getInstanceId() != null && !params.getInstanceId().isEmpty()) {
+            body.put("instanceId", params.getInstanceId());
+        }
+        // 场景 B：已有 GC 扩展 secondary
+        if (params.getGlobalClusterId() != null && !params.getGlobalClusterId().isEmpty()) {
+            body.put("globalClusterId", params.getGlobalClusterId());
+        }
+        body.put("realUserId", cloudServiceUserInfo.getUserId());
+        body.put("projectId", cloudServiceUserInfo.getDefaultProjectId());
+        if (params.getSecondaryClusters() != null && !params.getSecondaryClusters().isEmpty()) {
+            List<Map<String, Object>> secondaries = new ArrayList<>();
+            for (CreateSecondaryParams.SecondaryCluster sc : params.getSecondaryClusters()) {
+                Map<String, Object> scMap = new HashMap<>();
+                scMap.put("regionId", sc.getRegionId());
+                if (sc.getInstanceName() != null && !sc.getInstanceName().isEmpty()) {
+                    scMap.put("instanceName", sc.getInstanceName());
+                }
+                if (sc.getClassId() != null && !sc.getClassId().isEmpty()) {
+                    scMap.put("classId", sc.getClassId());
+                }
+                if (sc.getReplica() != null) {
+                    scMap.put("replica", sc.getReplica());
+                }
+                secondaries.add(scMap);
+            }
+            body.put("secondaryClusters", secondaries);
+        }
+        body.put("enableChildJobCenter", params.isEnableChildJobCenter());
+        String jsonBody = gson.toJson(body);
+        String resp = postToRm(url, jsonBody);
+        log.info("[rm-service][create secondary]: {}", resp);
         return resp;
     }
 
