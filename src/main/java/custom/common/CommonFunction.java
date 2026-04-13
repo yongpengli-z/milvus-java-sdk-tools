@@ -603,7 +603,7 @@ public class CommonFunction {
                 JsonObject dynamicJson = new JsonObject();
                 long countIndex = i + realStartId;
                 Gson dynamicGson = new Gson();
-                if (i % 3 == 0) {
+                if (i % 4 == 0) {
                     // 情况1：所有字段都有值（正常数据）
                     dynamicJson.add(CommonData.fieldInt64, dynamicGson.toJsonTree((int) countIndex % 32767));
                     dynamicJson.add(CommonData.fieldInt32, dynamicGson.toJsonTree((int) countIndex % 32767));
@@ -616,20 +616,24 @@ public class CommonFunction {
                     nestedJson.add(CommonData.fieldInt64, dynamicGson.toJsonTree((int) countIndex % 32767));
                     nestedJson.add(CommonData.fieldVarchar, dynamicGson.toJsonTree("Str" + countIndex));
                     dynamicJson.add(CommonData.fieldJson, nestedJson);
-                } else if (i % 3 == 1) {
+                    row.add(CommonData.dynamicField, dynamicJson);
+                } else if (i % 4 == 1) {
                     // 情况2：部分字段存在且值为 null
                     dynamicJson.add(CommonData.fieldInt64, com.google.gson.JsonNull.INSTANCE);
                     dynamicJson.add(CommonData.fieldVarchar, com.google.gson.JsonNull.INSTANCE);
                     dynamicJson.add(CommonData.fieldDouble, dynamicGson.toJsonTree((double) countIndex));
                     dynamicJson.add(CommonData.fieldBool, dynamicGson.toJsonTree(countIndex % 2 == 0));
                     dynamicJson.add(CommonData.fieldJson, com.google.gson.JsonNull.INSTANCE);
-                } else {
+                    row.add(CommonData.dynamicField, dynamicJson);
+                } else if (i % 4 == 2) {
                     // 情况3：部分字段不存在（缺失字段）
                     dynamicJson.add(CommonData.fieldInt64, dynamicGson.toJsonTree((int) countIndex % 32767));
                     dynamicJson.add(CommonData.fieldVarchar, dynamicGson.toJsonTree("Str" + countIndex));
                     // fieldInt32, fieldDouble, fieldArray, fieldBool, fieldFloat, fieldJson 不存在
+                    row.add(CommonData.dynamicField, dynamicJson);
+                } else {
+                    // 情况4：直接不传 dynamic field
                 }
-                row.add(CommonData.dynamicField, dynamicJson);
             }
             jsonList.add(row);
         }
