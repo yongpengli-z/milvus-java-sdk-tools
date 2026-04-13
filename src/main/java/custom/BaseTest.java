@@ -165,6 +165,31 @@ public class BaseTest {
                     primaryInstanceInfo.setInstanceId(primaryCluster.getClusterId());
                     log.info("Global Cluster primary: id={}, endpoint={}", primaryCluster.getClusterId(), primaryEndpoint);
 
+                    // 从 Global Endpoint URI 中提取 globalClusterId（格式: https://gdc-xxx.global-cluster...）
+                    try {
+                        String host = uri.replace("https://", "").replace("http://", "");
+                        String gcId = host.substring(0, host.indexOf("."));
+                        globalClusterInfo.setInstanceId(gcId);
+                        log.info("Global Cluster ID (from URI): {}", gcId);
+                    } catch (Exception e) {
+                        log.warn("从 Global Endpoint URI 提取 globalClusterId 失败，尝试通过 describeInstance 获取");
+                    }
+                    // 如果 URI 提取失败，通过 primary instanceId 查询
+                    if (globalClusterInfo.getInstanceId() == null || globalClusterInfo.getInstanceId().isEmpty()) {
+                        try {
+                            if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
+                                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
+                            }
+                            String gcId = ResourceManagerServiceUtils.getGlobalClusterId(primaryCluster.getClusterId());
+                            if (gcId != null && !gcId.isEmpty()) {
+                                globalClusterInfo.setInstanceId(gcId);
+                                log.info("Global Cluster ID (from describeInstance): {}", gcId);
+                            }
+                        } catch (Exception e) {
+                            log.warn("通过 describeInstance 获取 globalClusterId 失败: {}", e.getMessage());
+                        }
+                    }
+
                     secondaryInstanceInfoList.clear();
                     for (ClusterInfo cluster : topology.getClusters()) {
                         if (!cluster.isPrimary()) {
