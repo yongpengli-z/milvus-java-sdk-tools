@@ -6,7 +6,8 @@ public enum DatasetEnum {
     DEEP("deep","/test/milvus/raw_data/deep1b/","binary_96d_",96,"npy","vector"),
     SIFT("sift","/test/milvus/raw_data/sift1b/","binary_128d_",128,"npy","vector"),
     BLUESKY("bluesky","/test/milvus/raw_data/bluesky/","file_",0,"json","scalar_json"),
-    MSMARCO_TEXT("msmarco-text","/test/milvus/raw_data/msmarco_passage_v2/","docs_",0,"txt","scalar_text");
+    MSMARCO_TEXT("msmarco-text","/test/milvus/raw_data/msmarco_passage_v2/","docs_",0,"txt","scalar_text"),
+    EXAMPLE_PARQUET("example-parquet","/test/milvus/raw_data/example_parquet/","file_",0,"parquet","scalar_parquet");
 
     public final String datasetName;
     public final String path;

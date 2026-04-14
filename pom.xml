@@ -99,6 +99,24 @@
             <version>2.0</version>
         </dependency>
 
+        <!-- Apache Parquet -->
+        <dependency>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-hadoop</artifactId>
+            <version>1.13.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>3.3.6</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Kubernetes Java Client -->
         <dependency>
             <groupId>io.kubernetes</groupId>

@@ -447,6 +447,10 @@ public class CommonFunction {
                     List<String> textLines = DatasetUtil.providerTextLinesByDataset(
                             startId, count, info.getFileNames(), info.getDatasetEnum(), info.getFileSizeList());
                     fieldDataCache.put(entry.getKey(), textLines);
+                } else if ("parquet".equalsIgnoreCase(info.getDatasetEnum().fileFormat)) {
+                    List<String> textLines = DatasetUtil.providerParquetLinesByDataset(
+                            startId, count, info.getFileNames(), info.getDatasetEnum(), info.getFileSizeList());
+                    fieldDataCache.put(entry.getKey(), textLines);
                 }
             }
         }

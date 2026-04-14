@@ -84,6 +84,18 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             }
         }
         log.info("TXT数据集文件数量: {}，总行数: {}", fileNames.size(), fileSizeList.stream().mapToLong(Long::longValue).sum());
+    } else if ("parquet".equalsIgnoreCase(datasetEnum.fileFormat)) {
+        // Parquet 数据集：从 footer metadata 快速读取行数
+        for (String fileName : fileNames) {
+            String path = datasetEnum.path + fileName;
+            try {
+                fileSizeList.add(ParquetDatasetLoader.readRowCount(new File(path)));
+            } catch (IOException e) {
+                log.error("读取文件行数失败: {}", path, e);
+                fileSizeList.add(0L);
+            }
+        }
+        log.info("Parquet数据集文件数量: {}，总行数: {}", fileNames.size(), fileSizeList.stream().mapToLong(Long::longValue).sum());
     } else {
         // NPY 数据集：逐个读取 header（很快）
         for (String fileName : fileNames) {
@@ -325,6 +337,77 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
         }
 
         log.info("读取TXT文件(可能跨多个文件)，可以使用的数据长度：{}", result.size());
+        return result;
+    }
+
+    public static List<String> providerParquetLinesByDataset(long index, long count, List<String> fileNames, DatasetEnum datasetEnum, List<Long> fileSizeList) {
+        if (count <= 0) {
+            return Collections.emptyList();
+        }
+        if (count > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("count is too large for List: " + count);
+        }
+        if (index < 0) {
+            throw new IllegalArgumentException("index must be >= 0");
+        }
+        if (fileNames == null || fileNames.isEmpty()) {
+            log.warn("Dataset fileNames is empty");
+            return Collections.emptyList();
+        }
+        if (fileSizeList == null || fileSizeList.isEmpty()) {
+            log.warn("Dataset fileSizeList is empty");
+            return Collections.emptyList();
+        }
+
+        List<String> result = new ArrayList<>((int) count);
+
+        long remaining = count;
+        long globalPos = index;
+
+        int fileIndex = findIndex(globalPos, fileSizeList);
+        if (fileIndex < 0 || fileIndex >= fileNames.size() || fileIndex >= fileSizeList.size()) {
+            log.warn("index {} out of dataset range (files={}, sizes={})", index, fileNames.size(), fileSizeList.size());
+            return Collections.emptyList();
+        }
+
+        long fileStartGlobal = 0;
+        for (int i = 0; i < fileIndex; i++) {
+            fileStartGlobal += fileSizeList.get(i);
+        }
+
+        while (remaining > 0 && fileIndex < fileNames.size() && fileIndex < fileSizeList.size()) {
+            long rowsInFile = fileSizeList.get(fileIndex);
+            long localStart = globalPos - fileStartGlobal;
+            if (localStart < 0) {
+                localStart = 0;
+            }
+            if (localStart >= rowsInFile) {
+                fileStartGlobal += rowsInFile;
+                fileIndex++;
+                continue;
+            }
+
+            long available = rowsInFile - localStart;
+            int rowsToRead = (int) Math.min(remaining, available);
+
+            String parquetDataPath = datasetEnum.path + fileNames.get(fileIndex);
+            log.info("使用Parquet文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+
+            try {
+                List<String> slice = ParquetDatasetLoader.readTextColumn(new java.io.File(parquetDataPath), localStart, rowsToRead);
+                result.addAll(slice);
+            } catch (java.io.IOException e) {
+                log.error("读取Parquet文件失败: {} (localStart={}, rowsToRead={})", parquetDataPath, localStart, rowsToRead, e);
+                throw new RuntimeException("读取Parquet文件失败: " + parquetDataPath + ", cause: " + e.getMessage(), e);
+            }
+
+            remaining -= rowsToRead;
+            globalPos += rowsToRead;
+            fileStartGlobal += rowsInFile;
+            fileIndex++;
+        }
+
+        log.info("读取Parquet文件(可能跨多个文件)，可以使用的数据长度：{}", result.size());
         return result;
     }
 
