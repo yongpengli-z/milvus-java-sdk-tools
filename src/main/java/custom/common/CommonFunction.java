@@ -517,16 +517,16 @@ public class CommonFunction {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
                     int effectiveMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (maxLength * lengthFactor)) : maxLength;
-                    int varcharLen = random.nextInt(effectiveMaxLen - 1) + 1;
+                    int varcharLen = (lengthFactor > 0) ? effectiveMaxLen : random.nextInt(effectiveMaxLen - 1) + 1;
                     jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, varcharLen, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
                     // 普通 Array 类型（不包括 Array of Struct）
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
                     int effectiveMaxCap = (lengthFactor > 0) ? Math.max(2, (int) (maxCapacity * lengthFactor)) : maxCapacity;
-                    int arrayCap = random.nextInt(effectiveMaxCap - 1) + 1;
+                    int arrayCap = (lengthFactor > 0) ? effectiveMaxCap : random.nextInt(effectiveMaxCap - 1) + 1;
                     int effectiveElemMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (maxLength * lengthFactor)) : maxLength;
-                    int arrayElemLen = random.nextInt(effectiveElemMaxLen - 1) + 1;
+                    int arrayElemLen = (lengthFactor > 0) ? effectiveElemMaxLen : random.nextInt(effectiveElemMaxLen - 1) + 1;
                     jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, arrayCap, i, elementType, arrayElemLen, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
@@ -570,7 +570,7 @@ public class CommonFunction {
                     jsonObject = jsonObjectItem;
                 } else {
                     int effectiveStructCap = (lengthFactor > 0) ? Math.max(2, (int) (structFieldMaxCapacity * lengthFactor)) : Math.max(2, structFieldMaxCapacity);
-                    int arrayLength = random.nextInt(effectiveStructCap - 1) + 1;
+                    int arrayLength = (lengthFactor > 0) ? effectiveStructCap : random.nextInt(effectiveStructCap - 1) + 1;
                     List<com.google.gson.JsonObject> structArray = new ArrayList<>();
                     for (int structIdx = 0; structIdx < arrayLength; structIdx++) {
                         com.google.gson.JsonObject structObj = new com.google.gson.JsonObject();
