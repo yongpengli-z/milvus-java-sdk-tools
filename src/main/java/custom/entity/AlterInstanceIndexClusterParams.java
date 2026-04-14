@@ -31,4 +31,11 @@ public class AlterInstanceIndexClusterParams {
      * 建议：生成 JSON 时 indexClusterId 传数字（或不传）。
      */
     int indexClusterId;
+
+    /**
+     * 是否需要重启实例（可选，默认 true）。
+     * <p>
+     * 前端默认值：true
+     */
+    boolean needRestart = true;
 }
