@@ -2,6 +2,7 @@ package custom.entity;
 
 import custom.pojo.FieldDataSource;
 import custom.pojo.GeneralDataRole;
+import custom.pojo.UpdateFieldName;
 import lombok.Data;
 
 import java.util.List;
@@ -144,4 +145,26 @@ public class UpsertParams {
      * 默认值：0（不启用，使用原始随机长度）
      */
     private double lengthFactor;
+
+    /**
+     * 是否启用 Partial Update（部分更新）。
+     * <p>
+     * 启用后，仅更新 updateFieldNames 中指定的字段，其余字段保持不变。
+     * <p>
+     * 前端：`upsertEdit.vue` -> "Partial Update"
+     * <p>
+     * 前端默认值：false
+     */
+    private boolean partialUpdate;
+
+    /**
+     * Partial Update 时需要更新的字段名列表（不含主键，主键会自动包含）。
+     * <p>
+     * 仅当 partialUpdate=true 时生效。
+     * <p>
+     * 前端：`upsertEdit.vue` -> "Update Fields"
+     * <p>
+     * 前端默认值：空列表
+     */
+    private List<UpdateFieldName> updateFieldNames;
 }

@@ -11,6 +11,7 @@ import custom.entity.result.UpsertResult;
 import custom.pojo.FieldDataSource;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
+import custom.pojo.UpdateFieldName;
 import custom.utils.DatasetUtil;
 import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -61,6 +63,14 @@ public class UpsertComp {
         long upsertRounds = upsertParams.getNumEntries() / upsertParams.getBatchSize();
         float upsertTotalTime = 0;
         log.info("Upsert collection [" + upsertParams.getCollectionName() + "]  from id:" + upsertParams.getStartId() + " , total " + upsertParams.getNumEntries() + " entities... ");
+        if (upsertParams.isPartialUpdate()) {
+            List<String> fieldNames = upsertParams.getUpdateFieldNames() == null ? Collections.emptyList()
+                    : upsertParams.getUpdateFieldNames().stream()
+                    .map(UpdateFieldName::getFieldName)
+                    .filter(fn -> fn != null && !fn.isEmpty())
+                    .collect(Collectors.toList());
+            log.info("Partial Update enabled, update fields: " + fieldNames);
+        }
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(upsertParams.getNumConcurrency());
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
@@ -129,8 +139,17 @@ public class UpsertComp {
                                 finalRateLimiter.acquire(); // 阻塞直到获得令牌
                             }
                             // upsert 场景下必须显式传入 pk（即使 schema 是 autoID）
+                            // partial update 场景下，仅生成主键 + updateFieldNames 中指定的字段
+                            List<String> fieldsToGen = null;
+                            if (upsertParams.isPartialUpdate() && upsertParams.getUpdateFieldNames() != null) {
+                                fieldsToGen = upsertParams.getUpdateFieldNames().stream()
+                                        .map(UpdateFieldName::getFieldName)
+                                        .filter(fn -> fn != null && !fn.isEmpty())
+                                        .collect(Collectors.toList());
+                            }
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(upsertParams.getBatchSize(),
-                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap, upsertParams.getLengthFactor(), true);
+                                    (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap, upsertParams.getLengthFactor(), true,
+                                    fieldsToGen);
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             }
@@ -140,6 +159,7 @@ public class UpsertComp {
                                 UpsertReq upsertReq = UpsertReq.builder()
                                         .data(jsonObjects)
                                         .collectionName(finalCollectionName)
+                                        .partialUpdate(upsertParams.isPartialUpdate())
                                         .build();
                                 if (upsertParams.getPartitionName() != null && !upsertParams.getPartitionName().equalsIgnoreCase("")) {
                                     upsertReq.setPartitionName(upsertParams.getPartitionName());

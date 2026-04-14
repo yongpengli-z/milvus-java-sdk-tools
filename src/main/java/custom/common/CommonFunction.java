@@ -405,6 +405,16 @@ public class CommonFunction {
      * @return List<JsonObject>
      */
     public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, boolean forUpsert) {
+        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, forUpsert, null);
+    }
+
+    /**
+     * 生成通用的数据（支持字段过滤）
+     *
+     * @param fieldsToGenerate 需要生成数据的字段名列表（不含主键，主键自动包含）。
+     *                         为 null 或空时生成所有字段数据。用于 partial update 场景。
+     */
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, boolean forUpsert, List<String> fieldsToGenerate) {
         Random random = new Random();
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -459,6 +469,11 @@ public class CommonFunction {
                 }
                 // 如果使用function自动生成数据，则继续
                 if (tempOutputFieldNames.contains(name)) {
+                    continue;
+                }
+                // partial update 场景：仅生成主键 + 指定字段的数据
+                if (fieldsToGenerate != null && !fieldsToGenerate.isEmpty()
+                        && !fieldSchema.getIsPrimaryKey() && !fieldsToGenerate.contains(name)) {
                     continue;
                 }
                 JsonObject jsonObject = new JsonObject();
@@ -526,6 +541,11 @@ public class CommonFunction {
 
                 // 跳过 function 自动生成的字段
                 if (tempOutputFieldNames.contains(structFieldName)) {
+                    continue;
+                }
+                // partial update 场景：跳过不在更新列表中的 struct 字段
+                if (fieldsToGenerate != null && !fieldsToGenerate.isEmpty()
+                        && !fieldsToGenerate.contains(structFieldName)) {
                     continue;
                 }
 
@@ -598,8 +618,10 @@ public class CommonFunction {
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
 
-            // 判断是否有动态列
-            if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()) {
+            // 判断是否有动态列（partial update 场景下，仅当 updateFieldNames 包含动态字段时才生成）
+            if (describeCollectionResp.getCollectionSchema().isEnableDynamicField()
+                    && (fieldsToGenerate == null || fieldsToGenerate.isEmpty()
+                    || fieldsToGenerate.contains(CommonData.dynamicField))) {
                 JsonObject dynamicJson = new JsonObject();
                 long countIndex = i + realStartId;
                 Gson dynamicGson = new Gson();
