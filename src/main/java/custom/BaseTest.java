@@ -9,9 +9,7 @@ import custom.config.EnvConfig;
 import custom.config.EnvEnum;
 import custom.entity.InitialParams;
 import custom.pojo.InstanceInfo;
-import custom.utils.CloudServiceUtils;
 import custom.utils.ConfigUtils;
-import custom.utils.ResourceManagerServiceUtils;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.client.globalcluster.ClusterInfo;
@@ -172,22 +170,7 @@ public class BaseTest {
                         globalClusterInfo.setInstanceId(gcId);
                         log.info("Global Cluster ID (from URI): {}", gcId);
                     } catch (Exception e) {
-                        log.warn("从 Global Endpoint URI 提取 globalClusterId 失败，尝试通过 describeInstance 获取");
-                    }
-                    // 如果 URI 提取失败，通过 primary instanceId 查询
-                    if (globalClusterInfo.getInstanceId() == null || globalClusterInfo.getInstanceId().isEmpty()) {
-                        try {
-                            if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
-                                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-                            }
-                            String gcId = ResourceManagerServiceUtils.getGlobalClusterId(primaryCluster.getClusterId());
-                            if (gcId != null && !gcId.isEmpty()) {
-                                globalClusterInfo.setInstanceId(gcId);
-                                log.info("Global Cluster ID (from describeInstance): {}", gcId);
-                            }
-                        } catch (Exception e) {
-                            log.warn("通过 describeInstance 获取 globalClusterId 失败: {}", e.getMessage());
-                        }
+                        log.warn("从 Global Endpoint URI 提取 globalClusterId 失败: {}", e.getMessage());
                     }
 
                     secondaryInstanceInfoList.clear();
@@ -232,67 +215,6 @@ public class BaseTest {
                 log.info("当前环境信息:" + envConfig);
             }
             log.info("newInstanceInfo:" + newInstanceInfo.toString());
-
-            // 如果传入的是普通实例 URI（非 Global Endpoint），尝试检测是否属于某个 Global Cluster
-            if (!uri.equalsIgnoreCase("") && !GlobalClusterUtils.isGlobalEndpoint(uri)
-                    && newInstanceInfo.getInstanceId() != null && !newInstanceInfo.getInstanceId().isEmpty()
-                    && (globalClusterInfo.getUri() == null || globalClusterInfo.getUri().isEmpty())) {
-                try {
-                    // 确保 cloudServiceUserInfo 已初始化
-                    if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
-                        cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-                    }
-                    String gcId = ResourceManagerServiceUtils.getGlobalClusterId(newInstanceInfo.getInstanceId());
-                    if (gcId != null && !gcId.isEmpty()) {
-                        log.info("检测到实例 {} 属于 Global Cluster: {}", newInstanceInfo.getInstanceId(), gcId);
-                        String globalEndpoint = ResourceManagerServiceUtils.describeGlobalClusterEndpoint(gcId);
-                        if (globalEndpoint != null && !globalEndpoint.isEmpty()) {
-                            globalClusterInfo.setInstanceId(gcId);
-                            globalClusterInfo.setUri(globalEndpoint);
-                            log.info("Global Cluster endpoint: {}", globalEndpoint);
-                            // 通过 topology 获取所有成员，填充 secondaryInstanceInfoList
-                            GlobalTopology topology = GlobalClusterUtils.fetchTopology(globalEndpoint, newInstanceInfo.getToken());
-                            secondaryInstanceInfoList.clear();
-                            for (ClusterInfo cluster : topology.getClusters()) {
-                                if (cluster.getClusterId().equals(newInstanceInfo.getInstanceId())) {
-                                    // 当前实例，跳过
-                                    continue;
-                                }
-                                if (!cluster.isPrimary()) {
-                                    InstanceInfo secInfo = new InstanceInfo();
-                                    secInfo.setInstanceId(cluster.getClusterId());
-                                    String secEndpoint = cluster.getEndpoint();
-                                    if (!secEndpoint.startsWith("https://")) {
-                                        secEndpoint = "https://" + secEndpoint;
-                                    }
-                                    secInfo.setUri(secEndpoint);
-                                    secondaryInstanceInfoList.add(secInfo);
-                                    log.info("Global Cluster secondary: id={}, endpoint={}", cluster.getClusterId(), secEndpoint);
-                                }
-                            }
-                            // 记录 primary 实例信息
-                            ClusterInfo primaryCluster = topology.getPrimary();
-                            String primaryEndpoint = primaryCluster.getEndpoint();
-                            if (!primaryEndpoint.startsWith("https://")) {
-                                primaryEndpoint = "https://" + primaryEndpoint;
-                            }
-                            primaryInstanceInfo.setInstanceId(primaryCluster.getClusterId());
-                            primaryInstanceInfo.setUri(primaryEndpoint);
-                            primaryInstanceInfo.setToken(newInstanceInfo.getToken());
-                            if (!primaryCluster.getClusterId().equals(newInstanceInfo.getInstanceId())) {
-                                log.info("传入的 URI 是 secondary 实例，primary 为: id={}, endpoint={}",
-                                        primaryCluster.getClusterId(), primaryEndpoint);
-                            } else {
-                                log.info("传入的 URI 是 primary 实例");
-                            }
-                        }
-                    } else {
-                        log.info("实例 {} 不属于任何 Global Cluster", newInstanceInfo.getInstanceId());
-                    }
-                } catch (Exception e) {
-                    log.warn("检测 Global Cluster 成员关系失败，跳过: {}", e.getMessage());
-                }
-            }
 
             log.info("========== [阶段2] 环境配置完成，准备连接Milvus ==========");
             if (newInstanceInfo.getUri() != null) {
