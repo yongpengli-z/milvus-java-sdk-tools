@@ -12,7 +12,9 @@
 - `ScaleInstanceParams`（`ScaleInstanceComp`）
 - `UpdateIndexPoolParams`（`UpdateIndexPoolComp`）
 - `AlterInstanceIndexClusterParams`（`AlterInstanceIndexClusterComp`）
+- `UpdateInstanceComponentParams`（`UpdateInstanceComponentComp`）
 - `RestoreBackupParams`（`RestoreBackupComp`）
+- `CreateSecondaryParams`（`CreateSecondaryComp`）
 
 前端默认值/必填速查（来自 `*Edit.vue`，详细字段见 `custom.entity/*Params` 的 Javadoc）：
 
@@ -110,10 +112,71 @@
 - **`UpdateIndexPoolParams`**（`updateIndexPoolEdit.vue`）
   - 默认：`managerImageTag=""`，`workerImageTag=""`，`indexClusterId=""`（占位；后端是 int）
 - **`AlterInstanceIndexClusterParams`**（`alterInstanceIndexClusterEdit.vue`）
-  - 默认：`instanceId=""`，`indexClusterId=""`（占位；后端是 int）
+  - 默认：`instanceId=""`，`indexClusterId=""`（占位；后端是 int），`needRestart=true`
+  - **`needRestart`**（boolean）：切换 index cluster 后是否自动重启实例。默认 `true`。内嵌调用 `RestartInstanceComp.restartInstance()`，轮询等待实例恢复 RUNNING 状态（最长 30 分钟）。重启失败返回 WARNING（alter 操作本身已成功）
+- **`UpdateInstanceComponentParams`**（`updateInstanceComponentEdit.vue`）
+  - 功能：批量更新实例的节点组件资源（replicas、CPU/Memory requests/limits），更新完成后自动重启实例
+  - 默认：`instanceId=""`（留空则使用当前已创建的实例），`specs=[{...}]`
+  - **`specs`**（list）：组件规格列表，每条包含：
+    - `category`（string）：节点类型名称，如 `queryNode`、`dataNode`、`indexNode`、`proxy` 等
+    - `replicaIndex`（Integer，可空）：副本组索引。留空默认为 `1`
+    - `replicas`（Integer，可空）：目标 Pod 副本数。留空则不修改
+    - `cpuRequest`/`cpuLimit`（string，可空）：K8s CPU 资源配置，如 `"100m"`、`"2"`
+    - `memoryRequest`/`memoryLimit`（string，可空）：K8s Memory 资源配置，如 `"512Mi"`、`"2Gi"`
+  - **行为说明**：
+    - 每个 spec 会依次更新 replicas → requests → limits（部分字段为空则跳过该步骤）
+    - 所有 spec 更新完成后，自动调用 `RestartInstanceComp` 重启实例并等待 RUNNING
+    - 任一步骤失败则 fast-fail，立即返回 WARNING 结果
+  - 示例：
+
+    ```json
+    {
+      "UpdateInstanceComponentParams_0": {
+        "instanceId": "",
+        "specs": [
+          {
+            "category": "queryNode",
+            "replicas": 2,
+            "cpuRequest": "500m",
+            "memoryRequest": "1Gi",
+            "cpuLimit": "2",
+            "memoryLimit": "4Gi"
+          }
+        ]
+      }
+    }
+    ```
+
 - **`RestoreBackupParams`**（`restoreBackupEdit.vue`）
   - 必填：`backupId`、`restorePolicy`
   - 默认：`notChangeStatus=false`，`restorePolicy=1`，`skipCreateCollection=false`，`toInstanceId=""`，`truncateBinlogByTs=false`，`withRBAC=false`
+- **`CreateSecondaryParams`**（`createSecondaryEdit.vue`）
+  - 功能：为已有实例添加 Secondary 集群（GDN 全球数据网络）。支持两种场景：
+    - **场景 A**：将独立实例转换为 Global Cluster（传 `instanceId`）
+    - **场景 B**：在已有 Global Cluster 上扩展新的 Secondary（传 `globalClusterId`）
+  - 默认：`instanceId=""`，`globalClusterId=""`，`waitTimeoutMinutes=30`
+  - **`secondaryClusters`**（list）：要创建的 Secondary 集群列表，每条包含：
+    - `regionId`（string）：目标 Region ID
+    - `instanceName`（string）：Secondary 实例名称
+    - `classId`（string）：CU 规格（如 `class-1-enterprise`）
+    - `replica`（int）：副本数，默认 `1`
+  - **行为说明**：
+    - 调用 RM 的 `create_secondary` API 创建 Secondary
+    - 轮询等待所有新 Secondary 实例状态变为 RUNNING（超时 `waitTimeoutMinutes` 分钟）
+    - 创建完成后自动更新全局状态（`globalClusterInfo`、`primaryInstanceInfo`、`secondaryInstanceInfoList`）
+  - 示例：
+
+    ```json
+    {
+      "CreateSecondaryParams_0": {
+        "instanceId": "",
+        "secondaryClusters": [
+          {"regionId": "aws-us-west-2", "instanceName": "secondary-1", "classId": "class-1-enterprise", "replica": 1}
+        ],
+        "waitTimeoutMinutes": 30
+      }
+    }
+    ```
 
 ---
 

@@ -17,7 +17,7 @@
   - **避免重复数据**：使用多个 Insert 组件时，应为每个组件设置不同的 `startId`，确保各组件插入的数据 ID 范围不重叠，避免插入重复数据。例如：组件 A 设置 `startId: 0, numEntries: 5000000`，组件 B 设置 `startId: 5000000, numEntries: 5000000`。
 - **`fieldDataSourceList`**（list，可空）：字段级数据源配置，指定某个字段从哪个数据集读取数据。未配置的字段默认使用 random 生成。前端默认 `[]`。
   - 每条配置包含 `fieldName`（字段名）和 `dataset`（数据集名称，如 `sift`/`gist`/`deep`/`laion`/`bluesky`/`msmarco-text`）
-  - 数据集类型：`sift`/`gist`/`deep`/`laion` 为向量数据集（NPY 格式），`bluesky` 为标量 JSON 数据集（JSON Lines 格式），`msmarco-text` 为纯文本数据集（TXT 格式，用于 VarChar 字段）
+  - 数据集类型：`sift`/`gist`/`deep`/`laion` 为向量数据集（NPY 格式），`bluesky` 为标量 JSON 数据集（JSON Lines 格式），`msmarco-text` 为纯文本数据集（TXT 格式，用于 VarChar 字段），`plaud_a_t_dense` 为 Parquet 格式数据集（用于标量字段）
   - 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "json_col", "dataset": "bluesky"}, {"fieldName": "text_col", "dataset": "msmarco-text"}]`
 - **`runningMinutes`**（long，前端必填）：Insert 中该字段>0 时会成为"时间上限"，否则以数据量批次数为准。前端默认 `0`。
 - **`retryAfterDeny`**（boolean，可空）：禁写后是否等待重试。前端默认 `false`。
@@ -25,8 +25,15 @@
 - **`generalDataRoleList`**（list，可空）：数据生成规则（见 `GeneralDataRole`），仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；**如果你不使用该能力，建议直接传 `[]`**。
 - **`lengthFactor`**（double，可空）：随机长度系数，取值范围 `0 ~ 1`。前端默认 `0`。
   - 当 `> 0` 时，VarChar 长度、Array `maxCapacity`、Struct 内部 VarChar / Array 的随机上限都会按 `原始 maxLength * lengthFactor` / `原始 maxCapacity * lengthFactor` 计算（仍保证最小为 1）。
+  - **注意**：当 `lengthFactor > 0` 时，长度不再随机，而是固定使用 `maxLength * lengthFactor`（Array 同理使用 `maxCapacity * lengthFactor`），确保写入数据的一致性。
   - `0` 或不传 → 保持原始随机行为（按完整 `maxLength`/`maxCapacity` 取随机长度）。
   - **典型用途**：当 schema 定义的 `maxLength` 很大（如 65535）时，为了节省带宽 / 磁盘，可用 `lengthFactor: 0.01` 把实际平均长度缩小到约 1%；压测写入不关心内容完整性时使用。
+- **`nullableRatio`**（double，可空）：Nullable 字段的 null 值比例，取值范围 `0 ~ 1`。前端默认 `0.5`。
+  - `0` = 不生成 null 值（所有 nullable 字段都生成正常数据）
+  - `0.5` = 约 50% 的行为 null
+  - `1` = 全部为 null
+  - 仅对 schema 中 `isNullable=true` 的字段生效，非 nullable 字段不受影响。
+  - 使用 `random.nextDouble() < nullableRatio` 判断每行是否为 null，因此实际比例是概率性的。
 
 **动态字段（`enableDynamic: true`）数据生成行为**：
 
@@ -170,6 +177,14 @@
 - **`generalDataRoleList`**（list，可空）：仅对未配置 `fieldDataSourceList` 的字段生效。前端默认是"带 1 条空规则"的占位数组；不使用建议传 `[]`。
 - **`targetQps`**（int，可空）：前端默认 `0`。
 - **`lengthFactor`**（double，可空）：与 InsertParams 语义一致，`0 ~ 1` 之间缩放随机长度上限。默认 `0`（不启用）。
+- **`nullableRatio`**（double，可空）：与 InsertParams 语义一致，Nullable 字段的 null 值比例。默认 `0.5`。
+- **`partialUpdate`**（boolean，可空）：是否启用 Partial Update（部分更新）。前端默认 `false`。
+  - 启用后，仅更新 `updateFieldNames` 中指定的字段，其余字段保持不变。
+  - Milvus SDK 的 `UpsertReq.partialUpdate` 会设为 `true`。
+- **`updateFieldNames`**（list，可空）：部分更新时需要更新的字段名列表。前端默认 `[{fieldName: ""}]`。
+  - 仅在 `partialUpdate=true` 时生效。
+  - 每条配置包含 `fieldName`（字段名）。不需要包含主键字段（框架自动生成）。
+  - 示例：`[{"fieldName": "varchar_col"}, {"fieldName": "int_col"}]`
 
 > **注意**：`UpsertParams` **没有**顶层 `dataset` 字段。数据集配置**只能通过 `fieldDataSourceList` 指定**（同 InsertParams）。
 
