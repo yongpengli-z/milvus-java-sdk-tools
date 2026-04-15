@@ -33,10 +33,11 @@ public class InitialComp {
                 listCollectionsResp.getCollectionNames();
         log.info("List collection: " + collectionNames);
         globalCollectionNames.addAll(collectionNames);
-        if (collectionNames.size() > 0 && initialParams.isCleanCollection()) {
-            cleanCollections(collectionNames);
-            log.info("clean collections in default db successfully!");
-
+        if (initialParams.isCleanCollection()) {
+            if (collectionNames.size() > 0) {
+                cleanCollections(collectionNames);
+                log.info("clean collections in default db successfully!");
+            }
             // 清理非 default 的数据库
             cleanNonDefaultDatabases();
         }
