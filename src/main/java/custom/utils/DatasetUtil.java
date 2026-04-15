@@ -407,7 +407,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             fileIndex++;
         }
 
-        log.info("读取Parquet文件(可能跨多个文件)，可以使用的数据长度：{}", result.size());
+        log.debug("读取Parquet文件(可能跨多个文件)，可以使用的数据长度：{}", result.size());
         return result;
     }
 
