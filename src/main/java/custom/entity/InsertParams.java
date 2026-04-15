@@ -166,4 +166,16 @@ public class InsertParams {
      * 例如 0.5 表示生成长度约为原始上限的 50%。
      */
     private double lengthFactor;
+
+    /**
+     * Nullable 字段的 null 值比例（0~1 之间）。
+     * <p>
+     * 前端：`insertEdit.vue` -> "Nullable Ratio"
+     * <p>
+     * 前端默认值：0.5
+     * <p>
+     * 说明：0 表示不生成 null 值，1 表示全部为 null，0.5 表示约 50% 的行为 null。
+     * 仅对 isNullable=true 的字段生效。
+     */
+    private double nullableRatio = 0.5;
 }

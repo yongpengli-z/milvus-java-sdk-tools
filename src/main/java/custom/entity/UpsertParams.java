@@ -147,6 +147,14 @@ public class UpsertParams {
     private double lengthFactor;
 
     /**
+     * Nullable 字段的 null 值比例（0~1 之间）。
+     * <p>
+     * 说明：0 表示不生成 null 值，1 表示全部为 null，0.5 表示约 50% 的行为 null。
+     * 仅对 isNullable=true 的字段生效。
+     */
+    private double nullableRatio = 0.5;
+
+    /**
      * 是否启用 Partial Update（部分更新）。
      * <p>
      * 启用后，仅更新 updateFieldNames 中指定的字段，其余字段保持不变。

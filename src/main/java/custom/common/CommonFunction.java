@@ -392,7 +392,11 @@ public class CommonFunction {
      * 生成通用的数据（兼容旧调用，默认非 upsert 场景）
      */
     public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor) {
-        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, false);
+        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, false, null, 0.5);
+    }
+
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, double nullableRatio) {
+        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, false, null, nullableRatio);
     }
 
     /**
@@ -405,7 +409,11 @@ public class CommonFunction {
      * @return List<JsonObject>
      */
     public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, boolean forUpsert) {
-        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, forUpsert, null);
+        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, forUpsert, null, 0.5);
+    }
+
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, boolean forUpsert, double nullableRatio) {
+        return genCommonData(count, startId, generalDataRoleList, totalNum, realStartId, describeCollectionResp, fieldDatasetInfoMap, lengthFactor, forUpsert, null, nullableRatio);
     }
 
     /**
@@ -413,8 +421,9 @@ public class CommonFunction {
      *
      * @param fieldsToGenerate 需要生成数据的字段名列表（不含主键，主键自动包含）。
      *                         为 null 或空时生成所有字段数据。用于 partial update 场景。
+     * @param nullableRatio nullable 字段的 null 值比例（0~1），0 表示不生成 null，1 表示全部为 null。
      */
-    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, boolean forUpsert, List<String> fieldsToGenerate) {
+    public static List<JsonObject> genCommonData(long count, long startId, List<GeneralDataRole> generalDataRoleList, long totalNum, long realStartId, DescribeCollectionResp describeCollectionResp, Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap, double lengthFactor, boolean forUpsert, List<String> fieldsToGenerate, double nullableRatio) {
         Random random = new Random();
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         // 获取function列表，查找不需要构建数据的 outputFieldNames
@@ -518,7 +527,7 @@ public class CommonFunction {
                     jsonObjectItem.add(name, null);
                     int effectiveMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (maxLength * lengthFactor)) : maxLength;
                     int varcharLen = (lengthFactor > 0) ? effectiveMaxLen : random.nextInt(effectiveMaxLen - 1) + 1;
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, varcharLen, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && random.nextDouble() < nullableRatio) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, varcharLen, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
                     // 普通 Array 类型（不包括 Array of Struct）
                     JsonObject jsonObjectItem = new JsonObject();
@@ -527,11 +536,11 @@ public class CommonFunction {
                     int arrayCap = (lengthFactor > 0) ? effectiveMaxCap : random.nextInt(effectiveMaxCap - 1) + 1;
                     int effectiveElemMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (maxLength * lengthFactor)) : maxLength;
                     int arrayElemLen = (lengthFactor > 0) ? effectiveElemMaxLen : random.nextInt(effectiveElemMaxLen - 1) + 1;
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, arrayCap, i, elementType, arrayElemLen, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && random.nextDouble() < nullableRatio) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, arrayCap, i, elementType, arrayElemLen, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    jsonObject = (isNullable && i % 2 == 0) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    jsonObject = (isNullable && random.nextDouble() < nullableRatio) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, 0, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 }
                 row = JsonObjectUtil.jsonMerge(row, jsonObject);
             }
@@ -566,7 +575,7 @@ public class CommonFunction {
                 JsonObject jsonObjectItem = new JsonObject();
                 jsonObjectItem.add(structFieldName, null);
 
-                if (structFieldIsNullable && i % 2 == 0) {
+                if (structFieldIsNullable && random.nextDouble() < nullableRatio) {
                     jsonObject = jsonObjectItem;
                 } else {
                     int effectiveStructCap = (lengthFactor > 0) ? Math.max(2, (int) (structFieldMaxCapacity * lengthFactor)) : Math.max(2, structFieldMaxCapacity);
