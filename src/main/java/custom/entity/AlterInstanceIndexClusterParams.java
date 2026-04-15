@@ -38,4 +38,25 @@ public class AlterInstanceIndexClusterParams {
      * 前端默认值：true
      */
     boolean needRestart = true;
+
+    /**
+     * Cloud 账号邮箱（可选）。
+     * <p>
+     * 当 needRestart=true 时，用于调用 Cloud API 重启实例。
+     * 为空时使用默认账号。
+     * <p>
+     * 前端：`alterInstanceIndexClusterEdit.vue` -> "Account Email"
+     * <p>
+     * 前端默认值：""（空字符串）
+     */
+    String accountEmail;
+
+    /**
+     * Cloud 账号密码（可选）。
+     * <p>
+     * 前端：`alterInstanceIndexClusterEdit.vue` -> "Account Password"
+     * <p>
+     * 前端默认值：""（空字符串）
+     */
+    String accountPassword;
 }

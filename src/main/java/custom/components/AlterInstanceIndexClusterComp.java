@@ -33,6 +33,8 @@ public class AlterInstanceIndexClusterComp {
                 log.info("[AlterIndexCluster] alter success, start restart instance: " + instanceId);
                 RestartInstanceParams restartInstanceParams = new RestartInstanceParams();
                 restartInstanceParams.setInstanceId(instanceId);
+                restartInstanceParams.setAccountEmail(alterInstanceIndexClusterParams.getAccountEmail());
+                restartInstanceParams.setAccountPassword(alterInstanceIndexClusterParams.getAccountPassword());
                 RestartInstanceResult restartResult = RestartInstanceComp.restartInstance(restartInstanceParams);
                 if (restartResult.getCommonResult() == null
                         || !ResultEnum.SUCCESS.result.equalsIgnoreCase(restartResult.getCommonResult().getResult())) {
