@@ -164,7 +164,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             int rowsToRead = (int) Math.min(remaining, available);
 
             String npyDataPath = datasetEnum.path + fileNames.get(fileIndex);
-            log.info("使用文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+            log.debug("使用文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
 
             try {
                 NpyLoader.FloatMatrixSlice slice = NpyLoader.readFloatMatrixSlice(new File(npyDataPath), localStart, rowsToRead);
@@ -238,7 +238,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             int rowsToRead = (int) Math.min(remaining, available);
 
             String jsonDataPath = datasetEnum.path + fileNames.get(fileIndex);
-            log.info("使用JSON文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+            log.debug("使用JSON文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
 
             try {
                 List<JsonObject> slice = JsonDatasetLoader.readJsonLines(new File(jsonDataPath), localStart, rowsToRead);
@@ -309,7 +309,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             int rowsToRead = (int) Math.min(remaining, available);
 
             String txtDataPath = datasetEnum.path + fileNames.get(fileIndex);
-            log.info("使用TXT文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+            log.debug("使用TXT文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(txtDataPath)), 8 * 1024 * 1024)) {
                 // 跳过前 localStart 行
@@ -391,7 +391,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             int rowsToRead = (int) Math.min(remaining, available);
 
             String parquetDataPath = datasetEnum.path + fileNames.get(fileIndex);
-            log.info("使用Parquet文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
+            log.debug("使用Parquet文件：{} (localStart={}, rowsToRead={})", fileNames.get(fileIndex), localStart, rowsToRead);
 
             try {
                 List<String> slice = ParquetDatasetLoader.readTextColumn(new java.io.File(parquetDataPath), localStart, rowsToRead);

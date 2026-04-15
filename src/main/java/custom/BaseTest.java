@@ -226,6 +226,15 @@ public class BaseTest {
                 InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
                 InitialComp.initialRunning(initialParamsObj);
             }
+            // 全局日志级别设置
+            if (!initialParams.isEmpty()) {
+                InitialParams initP = JSONObject.parseObject(initialParams, InitialParams.class);
+                if (initP.getLogLevel() != null && !initP.getLogLevel().isEmpty()) {
+                    org.apache.log4j.Level level = org.apache.log4j.Level.toLevel(initP.getLogLevel(), org.apache.log4j.Level.INFO);
+                    org.apache.log4j.Logger.getRootLogger().setLevel(level);
+                    log.info("全局日志级别设置为: {}", level);
+                }
+            }
             log.info("========== [阶段3] Milvus连接完成，开始执行调度 ==========");
 //        // 自动调度
             List<JSONObject> results = ComponentSchedule.runningSchedule(customizeParams);
