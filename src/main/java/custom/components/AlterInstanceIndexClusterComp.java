@@ -17,9 +17,11 @@ import static custom.BaseTest.newInstanceInfo;
 @Slf4j
 public class AlterInstanceIndexClusterComp {
     public static AlterInstanceIndexClusterResult alterIndexCluster(AlterInstanceIndexClusterParams alterInstanceIndexClusterParams){
-        // 检查账号
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
+        // 检查账号（如果指定了 accountEmail 则强制用该账号登录）
+        if (alterInstanceIndexClusterParams.getAccountEmail() != null && !alterInstanceIndexClusterParams.getAccountEmail().equalsIgnoreCase("")) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(alterInstanceIndexClusterParams.getAccountEmail(), alterInstanceIndexClusterParams.getAccountPassword());
+        } else if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
         String s = CloudOpsServiceUtils.alterIndexCluster(alterInstanceIndexClusterParams);
         JSONObject jsonObject = JSONObject.parseObject(s);
