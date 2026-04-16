@@ -332,7 +332,7 @@ public class HybridSearchComp {
                     long endItemTime = System.currentTimeMillis();
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                     int resultSize = hybridSearchResp != null ? hybridSearchResp.getSearchResults().size() : 0;
-//                    log.info("线程[{}] hybridSearch cost:{} s，result size：{}", finalC, costTimeItem, resultSize);
+                    log.debug("线程[{}] hybridSearch cost:{} s，result size：{}", finalC, costTimeItem, resultSize);
                     costTime.add(costTimeItem);
                     statsReporter.recordCostTime(costTimeItem);
                     returnNum.add(resultSize);

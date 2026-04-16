@@ -157,7 +157,7 @@ public class SearchComp {
                                     } else {
                                         replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
                                     }
-//                                    log.info("search random:{}", replaceFilterParams);
+                                    log.debug("search random:{}", replaceFilterParams);
                                     filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
                                 }
                                 if (System.currentTimeMillis() - lastPrintTime >= 60000) {
@@ -191,7 +191,7 @@ public class SearchComp {
                             }
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
-//                            log.info("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，result size：" + search.getSearchResults().size() + ",");
+                            log.debug("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，result size：" + search.getSearchResults().size() + ",");
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime(costTimeItem);
 //                            returnNum.add(search.getSearchResults().get(0).size());
@@ -211,7 +211,7 @@ public class SearchComp {
                             long currentTime = System.currentTimeMillis();
                             if (currentTime - lastLogTime > 5000) { // 每5秒打印一次QPS
                                 double actualQps = requestCount / ((currentTime - lastLogTime) / 1000.0);
-//                                log.info("线程[{}] 当前QPS: {}", finalC, actualQps);
+                                log.debug("线程[{}] 当前QPS: {}", finalC, actualQps);
                                 requestCount = 0;
                                 lastLogTime = currentTime;
                             }

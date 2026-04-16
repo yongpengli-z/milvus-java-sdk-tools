@@ -528,7 +528,7 @@ public class ComponentSchedule {
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/query/status?redisKey=" + redisKey;
         String s = HttpClientUtils.doGet(uri);
-//        log.info("request qtp:" + s);
+        log.debug("request qtp:" + s);
         JSONObject jsonObject = JSON.parseObject(s);
         return jsonObject.getInteger("data");
     }
@@ -540,7 +540,7 @@ public class ComponentSchedule {
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
         String s = HttpClientUtils.doPost(uri);
-//        log.info("Update case status:" + s);
+        log.debug("Update argo status:" + s);
     }
 
     public static void updateCaseStatus(int status) {
@@ -551,7 +551,7 @@ public class ComponentSchedule {
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
         String s = HttpClientUtils.doPost(uri);
-//        log.info("Update case status:" + s);
+        log.debug("Update case status:" + s);
     }
 
     public static void reportStepResult(String nodeName, String result) {

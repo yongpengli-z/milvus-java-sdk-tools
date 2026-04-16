@@ -138,7 +138,7 @@ public class BaseTest {
                             || System.getProperty("customize_params").equals("")
                             ? ""
                             : System.getProperty("customize_params");
-//            log.info("***********customizeParams*********"+customizeParams);
+            log.debug("***********customizeParams*********"+customizeParams);
             log.info("========== [阶段1] 参数解析完成, taskId={}, env={}, uri={} ==========", taskId, env, uri.isEmpty() ? "(空)" : uri);
             redisKey = "customize_task_" + taskId;
             if (!uri.equalsIgnoreCase("")) {
@@ -209,7 +209,7 @@ public class BaseTest {
             envEnum = EnvEnum.getEnvByName(env);
             //先更新argo任务状态
             ComponentSchedule.updateArgoStatus(1);
-//            log.info("EnvEnum:"+envByName);
+            log.debug("EnvEnum:"+envEnum);
             if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
                 envConfig = ConfigUtils.providerEnvConfig(envEnum);
                 log.info("当前环境信息:" + envConfig);

@@ -209,7 +209,7 @@ public class HttpClientUtils {
 
             if (headMap != null && !headMap.isEmpty()) {
                 for (String key : headMap.keySet()) {
-//                    log.info("头部信息key:" + key + "===值: " + headMap.get(key));
+                    log.debug("头部信息key:" + key + "===值: " + headMap.get(key));
                     httpGet.addHeader(key, headMap.get(key));
                 }
             }
@@ -302,7 +302,7 @@ public class HttpClientUtils {
      */
     public static String doPostJson(String url, String json) {
 
-//        log.info("=====请求地址:"+url);
+        log.debug("=====请求地址:"+url);
         // 创建Httpclient对象
         CloseableHttpClient httpClient = HttpClients.createDefault();
         CloseableHttpResponse response = null;
@@ -311,12 +311,12 @@ public class HttpClientUtils {
             // 创建Http Post请求
             HttpPost httpPost = new HttpPost(url);
             // 创建请求内容
-//            log.info("=====请求参数:"+json);
+            log.debug("=====请求参数:"+json);
             StringEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
             httpPost.setEntity(entity);
             // 执行http请求
             response = httpClient.execute(httpPost);
-//            log.info("=====响应参数:"+response);
+            log.debug("=====响应参数:"+response);
             resultString = EntityUtils.toString(response.getEntity(), "utf-8");
         } catch (Exception e) {
             log.error("系统错误:",e);
