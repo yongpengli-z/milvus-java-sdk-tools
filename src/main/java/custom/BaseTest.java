@@ -226,13 +226,14 @@ public class BaseTest {
                 InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
                 InitialComp.initialRunning(initialParamsObj);
             }
-            // 全局日志级别设置
+            // 日志级别设置：只对本项目 custom.* 包生效，第三方库固定 INFO 防止刷屏
             if (!initialParams.isEmpty()) {
                 InitialParams initP = JSONObject.parseObject(initialParams, InitialParams.class);
                 if (initP.getLogLevel() != null && !initP.getLogLevel().isEmpty()) {
                     org.apache.log4j.Level level = org.apache.log4j.Level.toLevel(initP.getLogLevel(), org.apache.log4j.Level.INFO);
-                    org.apache.log4j.Logger.getRootLogger().setLevel(level);
-                    log.info("全局日志级别设置为: {}", level);
+                    org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.INFO);
+                    org.apache.log4j.Logger.getLogger("custom").setLevel(level);
+                    log.info("本项目日志级别设置为: {}（第三方库固定 INFO）", level);
                 }
             }
             log.info("========== [阶段3] Milvus连接完成，开始执行调度 ==========");
