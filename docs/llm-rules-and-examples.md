@@ -650,5 +650,39 @@ Milvus 操作有严格的依赖顺序，LLM 生成 JSON 时必须遵循：
 - ✅ 使用了用户指定的 `runningMinutes: 2`（Search）
 - ✅ 保持了正确的执行顺序（序号递增）
 
+#### 9.5 JSON 字段索引生成规则（⚠️ 重要）
+
+当 collection schema 中包含 **JSON 类型字段**时，如果需要对该字段建索引，**必须同时指定 `jsonPath` 和 `jsonCastType`**，否则 Milvus 会报错：
+```
+json index must specify cast type: missing parameter[missing_param=json_cast_type]
+```
+
+**正确示例**：
+
+```json
+{
+  "CreateCollectionParams_0": {
+    "fieldParamsList": [
+      {"dataType": "Int64", "fieldName": "id_pk", "primaryKey": true, "autoId": false, "partitionKey": false, "nullable": false, "enableMatch": false, "enableAnalyzer": false, "analyzerParamsList": []},
+      {"dataType": "FloatVector", "fieldName": "vec", "dim": 128, "primaryKey": false, "autoId": false, "partitionKey": false, "nullable": false, "enableMatch": false, "enableAnalyzer": false, "analyzerParamsList": []},
+      {"dataType": "JSON", "fieldName": "meta_json", "primaryKey": false, "autoId": false, "partitionKey": false, "nullable": false, "enableMatch": false, "enableAnalyzer": false, "analyzerParamsList": []}
+    ]
+  },
+  "CreateIndexParams_1": {
+    "indexParams": [
+      {"fieldName": "vec", "indextype": "AUTOINDEX", "metricType": "L2"},
+      {"fieldName": "meta_json", "indextype": "AUTOINDEX", "jsonPath": "meta_json[\"category\"]", "jsonCastType": "varchar"}
+    ]
+  }
+}
+```
+
+**规则汇总**：
+- ✅ JSON 字段索引**必须**设置 `jsonPath` 和 `jsonCastType`
+- ✅ `jsonPath` 格式：`字段名["key"]`，例如 `meta_json["category"]`、`meta_json["age"]`
+- ✅ `jsonCastType` 可选值：`varchar`、`int64`、`double`、`bool`
+- ✅ 索引类型使用 `STL_SORT` 或 `AUTOINDEX`，**不需要 MetricType**
+- ❌ 错误：`{"fieldName": "meta_json", "indextype": "AUTOINDEX"}` — 缺少 `jsonPath` 和 `jsonCastType`，会直接报错
+
 ---
 

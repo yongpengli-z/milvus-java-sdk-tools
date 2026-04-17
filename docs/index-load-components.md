@@ -77,9 +77,12 @@
 
 - **`JSON` / Dynamic Field**：
   - 推荐索引类型：`STL_SORT` 或 `AUTOINDEX`
-  - **必须设置**：`jsonPath`（JSON 路径）和 `jsonCastType`（目标类型）
+  - ⚠️ **必须同时设置 `jsonPath` 和 `jsonCastType`**，缺少任何一个都会报错：`json index must specify cast type`
   - **不需要 MetricType**
-  - 示例：`{"fieldName": "json_field", "indextype": "STL_SORT", "jsonPath": "field[\"key1\"]", "jsonCastType": "varchar"}`
+  - `jsonPath` 格式：`字段名["key"]`，例如 `meta_json["category"]`、`meta_json["age"]`
+  - `jsonCastType` 可选值：`varchar`、`int64`、`double`、`bool`
+  - ✅ 正确：`{"fieldName": "meta_json", "indextype": "AUTOINDEX", "jsonPath": "meta_json[\"category\"]", "jsonCastType": "varchar"}`
+  - ❌ 错误：`{"fieldName": "meta_json", "indextype": "AUTOINDEX"}` — 缺少 jsonPath 和 jsonCastType
 
 详细约束表见下文"6.4.2 IndexType / MetricType"章节。
 

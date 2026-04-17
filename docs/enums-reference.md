@@ -97,7 +97,7 @@ Insert/Upsert 支持为每个字段单独指定数据来源。未配置的字段
 | `Int64` / `Int32` / `Int16` / `Int8` | `STL_SORT` / `AUTOINDEX` | 不需要 | 整数字段索引，用于加速数值查询和排序 |
 | `Float` / `Double` | `STL_SORT` / `AUTOINDEX` | 不需要 | 浮点数字段索引，用于加速数值查询和排序 |
 | `Bool` | `STL_SORT` / `AUTOINDEX` | 不需要 | 布尔字段索引 |
-| `JSON` / Dynamic Field | `STL_SORT` / `AUTOINDEX` | 不需要 | JSON 字段索引，需要配合 `jsonPath` 和 `jsonCastType` 使用 |
+| `JSON` / Dynamic Field | `STL_SORT` / `AUTOINDEX` | 不需要 | ⚠️ **必须同时设置 `jsonPath` 和 `jsonCastType`**，否则会报错 `json index must specify cast type`。示例：`{"fieldName": "json_field", "indextype": "AUTOINDEX", "jsonPath": "json_field[\"key1\"]", "jsonCastType": "varchar"}` |
 
 **标量字段索引说明**：
 
