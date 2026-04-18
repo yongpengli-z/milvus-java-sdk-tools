@@ -10,5 +10,17 @@ import java.util.List;
 public class DeleteResult {
     CommonResult commonResult;
     Long deletedCount;
+    int concurrencyNum;
+    long requestNum;
+    double passRate;
+    float costTime;
+    float rps;
+    double avg;
+    double tp99;
+    double tp98;
+    double tp90;
+    double tp85;
+    double tp80;
+    double tp50;
     List<String> assertMessages;
 }

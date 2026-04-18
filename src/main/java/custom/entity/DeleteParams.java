@@ -50,4 +50,46 @@ public class DeleteParams {
      * 前端默认值：""（空字符串）
      */
     String partitionName;
+
+    /**
+     * 并发线程数。
+     * <p>
+     * 前端：`deleteEdit.vue` -> "Concurrency Num"
+     * <p>
+     * 前端默认值：1
+     * <p>
+     * 为 1 时退化为单次删除（兼容旧行为）。
+     */
+    int numConcurrency;
+
+    /**
+     * 运行时长（分钟）。
+     * <p>
+     * 前端：`deleteEdit.vue` -> "Running time(Minutes)"
+     * <p>
+     * 前端默认值：1
+     * <p>
+     * 为 0 时只执行一轮删除（兼容旧行为）。
+     */
+    long runningMinutes;
+
+    /**
+     * 目标 QPS（每线程 RateLimiter 限流；0 表示不限制）。
+     * <p>
+     * 前端：`deleteEdit.vue` -> "Target QPS"
+     * <p>
+     * 前端默认值：0
+     */
+    double targetQps;
+
+    /**
+     * 每轮删除条数（持续删除模式下，每轮先 query 出这么多条 PK，再按 PK 删除）。
+     * <p>
+     * 前端：`deleteEdit.vue` -> "Delete Num Per Round"
+     * <p>
+     * 前端默认值：10
+     * <p>
+     * 仅在持续删除模式下生效（numConcurrency > 0 且 runningMinutes > 0）。
+     */
+    int deleteNumPerRound;
 }
