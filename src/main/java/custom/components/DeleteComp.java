@@ -141,13 +141,17 @@ public class DeleteComp {
                     try {
                         // Step 1: 随机选一个向量做 search，找出分散的 PK
                         BaseVector randomVector = searchBaseVectors.get(random.nextInt(searchBaseVectors.size()));
-                        SearchResp searchResp = milvusClientV2.search(SearchReq.builder()
+                        SearchReq.SearchReqBuilder searchReqBuilder = SearchReq.builder()
                                 .collectionName(collection)
                                 .annsField(annsField)
                                 .data(Collections.singletonList(randomVector))
                                 .topK(deleteNumPerRound)
-                                .consistencyLevel(ConsistencyLevel.STRONG)
-                                .build());
+                                .consistencyLevel(ConsistencyLevel.STRONG);
+                        // 将 filter 作为 search 的过滤条件，只删除符合条件的数据
+                        if (deleteParams.getFilter() != null && !deleteParams.getFilter().isEmpty()) {
+                            searchReqBuilder.filter(deleteParams.getFilter());
+                        }
+                        SearchResp searchResp = milvusClientV2.search(searchReqBuilder.build());
 
                         List<List<SearchResp.SearchResult>> searchResults = searchResp.getSearchResults();
                         if (searchResults == null || searchResults.isEmpty() || searchResults.get(0).isEmpty()) {
