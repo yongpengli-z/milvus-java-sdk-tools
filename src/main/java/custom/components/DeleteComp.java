@@ -55,6 +55,7 @@ public class DeleteComp {
                     .build();
             if (deleteParams.getIds() != null && deleteParams.getIds().size() > 0) {
                 deleteReq.setIds(deleteParams.getIds());
+                log.info("待删除ID列表({}条): {}", deleteParams.getIds().size(), deleteParams.getIds());
             }
             if (deleteParams.getFilter() != null && !deleteParams.getFilter().equalsIgnoreCase("")) {
                 deleteReq.setFilter(deleteParams.getFilter());
@@ -147,6 +148,8 @@ public class DeleteComp {
                         for (QueryResp.QueryResult qr : queryResults) {
                             pkIds.add(qr.getEntity().get(pkFieldInfo.getFieldName()));
                         }
+
+                        log.info("线程[{}] 本轮待删除PK列表({}条): {}", finalI, pkIds.size(), pkIds);
 
                         // Step 3: 按 PK 删除
                         DeleteReq deleteReq = DeleteReq.builder()
