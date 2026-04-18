@@ -165,6 +165,10 @@ public class DeleteComp {
                             pkIds.add(sr.getId());
                         }
 
+                        if (pkIds.size() < deleteNumPerRound) {
+                            log.warn("线程[{}] search 返回{}条，不足预期{}条，collection数据可能即将删完",
+                                    finalI, pkIds.size(), deleteNumPerRound);
+                        }
                         log.info("线程[{}] 本轮待删除PK列表({}条): {}", finalI, pkIds.size(), pkIds);
 
                         // Step 3: 按 PK 删除
