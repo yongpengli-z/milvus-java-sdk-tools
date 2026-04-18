@@ -6,20 +6,23 @@ import custom.entity.DeleteParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.DeleteResult;
 import custom.entity.result.ResultEnum;
-import custom.entity.PKFieldInfo;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.common.DataType;
+import io.milvus.v2.service.collection.request.CreateCollectionReq;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.DeleteReq;
-import io.milvus.v2.service.vector.request.QueryReq;
+import io.milvus.v2.service.vector.request.SearchReq;
+import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.DeleteResp;
-import io.milvus.v2.service.vector.response.QueryResp;
+import io.milvus.v2.service.vector.response.SearchResp;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static custom.BaseTest.globalCollectionNames;
@@ -80,16 +83,29 @@ public class DeleteComp {
     }
 
     /**
-     * 并发持续删除模式：每轮 query PK -> delete by PK
+     * 并发持续删除模式：每轮用随机向量 search 出分散的 PK，再按 PK 删除
      */
     private static DeleteResult deleteConcurrent(DeleteParams deleteParams, String collection) {
         int numConcurrency = Math.max(deleteParams.getNumConcurrency(), 1);
         long runningMinutes = Math.max(deleteParams.getRunningMinutes(), 1);
         int deleteNumPerRound = deleteParams.getDeleteNumPerRound() > 0 ? deleteParams.getDeleteNumPerRound() : 10;
 
-        // 获取 PK 字段信息
-        PKFieldInfo pkFieldInfo = CommonFunction.getPKFieldInfo(collection);
-        log.info("delete collection: {}, pkField: {}, pkType: {}", collection, pkFieldInfo.getFieldName(), pkFieldInfo.getDataType());
+        // 获取第一个向量字段名
+        String annsField = getFirstVectorField(collection);
+        log.info("delete collection: {}, annsField: {}", collection, annsField);
+
+        // 从 collection 中捞取随机向量用于 search
+        log.info("从collection里捞取向量用于search-then-delete...");
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, annsField);
+        log.info("提供给search使用的随机向量数: {}", searchBaseVectors.size());
+        if (searchBaseVectors.isEmpty()) {
+            log.error("无法从collection中获取向量数据，无法执行持续删除");
+            CommonResult commonResult = CommonResult.builder()
+                    .result(ResultEnum.EXCEPTION.result)
+                    .message("无法从collection中获取向量数据")
+                    .build();
+            return DeleteResult.builder().commonResult(commonResult).build();
+        }
 
         ArrayList<Future<DeleteItemResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(numConcurrency);
@@ -115,6 +131,7 @@ public class DeleteComp {
                 List<Long> deleteCountList = new ArrayList<>();
                 List<Float> costTime = new ArrayList<>();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(runningMinutes);
+                Random random = new Random();
                 long lastPrintTime = System.currentTimeMillis();
                 while (LocalDateTime.now().isBefore(endTime)) {
                     if (finalRateLimiter != null) {
@@ -122,31 +139,26 @@ public class DeleteComp {
                     }
                     long startItemTime = System.currentTimeMillis();
                     try {
-                        // Step 1: query 出一批 PK
-                        String filterStr;
-                        if (pkFieldInfo.getDataType() == io.milvus.v2.common.DataType.VarChar) {
-                            filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
-                        } else {
-                            filterStr = pkFieldInfo.getFieldName() + " >= 0 ";
-                        }
-                        QueryResp queryResp = milvusClientV2.query(QueryReq.builder()
+                        // Step 1: 随机选一个向量做 search，找出分散的 PK
+                        BaseVector randomVector = searchBaseVectors.get(random.nextInt(searchBaseVectors.size()));
+                        SearchResp searchResp = milvusClientV2.search(SearchReq.builder()
                                 .collectionName(collection)
-                                .filter(filterStr)
-                                .outputFields(java.util.Collections.singletonList(pkFieldInfo.getFieldName()))
-                                .limit(deleteNumPerRound)
+                                .annsField(annsField)
+                                .data(Collections.singletonList(randomVector))
+                                .topK(deleteNumPerRound)
                                 .consistencyLevel(ConsistencyLevel.STRONG)
                                 .build());
 
-                        List<QueryResp.QueryResult> queryResults = queryResp.getQueryResults();
-                        if (queryResults == null || queryResults.isEmpty()) {
-                            log.info("线程[{}] query 无数据可删，退出循环", finalI);
+                        List<List<SearchResp.SearchResult>> searchResults = searchResp.getSearchResults();
+                        if (searchResults == null || searchResults.isEmpty() || searchResults.get(0).isEmpty()) {
+                            log.info("线程[{}] search 无数据可删，退出循环", finalI);
                             break;
                         }
 
                         // Step 2: 提取 PK 列表
                         List<Object> pkIds = new ArrayList<>();
-                        for (QueryResp.QueryResult qr : queryResults) {
-                            pkIds.add(qr.getEntity().get(pkFieldInfo.getFieldName()));
+                        for (SearchResp.SearchResult sr : searchResults.get(0)) {
+                            pkIds.add(sr.getId());
                         }
 
                         log.info("线程[{}] 本轮待删除PK列表({}条): {}", finalI, pkIds.size(), pkIds);
@@ -252,6 +264,23 @@ public class DeleteComp {
         statsReporter.stop();
         executorService.shutdown();
         return deleteResult;
+    }
+
+    /**
+     * 获取 collection 的第一个向量字段名
+     */
+    private static String getFirstVectorField(String collectionName) {
+        DescribeCollectionResp resp = milvusClientV2.describeCollection(
+                DescribeCollectionReq.builder().collectionName(collectionName).build());
+        for (CreateCollectionReq.FieldSchema field : resp.getCollectionSchema().getFieldSchemaList()) {
+            DataType dt = field.getDataType();
+            if (dt == DataType.FloatVector || dt == DataType.BinaryVector ||
+                    dt == DataType.Float16Vector || dt == DataType.BFloat16Vector ||
+                    dt == DataType.SparseFloatVector || dt == DataType.Int8Vector) {
+                return field.getName();
+            }
+        }
+        throw new RuntimeException("collection [" + collectionName + "] 没有向量字段");
     }
 
     @Data
