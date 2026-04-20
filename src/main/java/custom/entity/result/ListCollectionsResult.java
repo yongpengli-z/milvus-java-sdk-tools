@@ -10,4 +10,5 @@ import java.util.List;
 public class ListCollectionsResult {
     CommonResult commonResult;
     List<String> collectionNames;
+    int collectionCount;
 }

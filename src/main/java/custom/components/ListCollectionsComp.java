@@ -13,10 +13,17 @@ import static custom.BaseTest.milvusClientV2;
 public class ListCollectionsComp {
     public static ListCollectionsResult listCollections(ListCollectionsParams listCollectionsParams) {
         try {
+            // 如果指定了 databaseName，先切换到该 database
+            String databaseName = listCollectionsParams.getDatabaseName();
+            if (databaseName != null && !databaseName.isEmpty()) {
+                log.info("切换到 database: {}", databaseName);
+                milvusClientV2.useDatabase(databaseName);
+            }
             ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
-            log.info("List collections: {}", listCollectionsResp.getCollectionNames());
+            log.info("List collections({}个): {}", listCollectionsResp.getCollectionNames().size(), listCollectionsResp.getCollectionNames());
             return ListCollectionsResult.builder()
                     .collectionNames(listCollectionsResp.getCollectionNames())
+                    .collectionCount(listCollectionsResp.getCollectionNames().size())
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result)
                             .build())
