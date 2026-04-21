@@ -110,7 +110,7 @@ public class QueryComp {
                         QueryReq queryReq = QueryReq.builder()
                                 .collectionName(finalCollectionName)
                                 .outputFields(queryParams.getOutputs())
-                                .ids(queryParams.getIds().size() == 0 ? null : queryParams.getIds())
+                                .ids(queryParams.getIds() == null || queryParams.getIds().size() == 0 ? null : queryParams.getIds())
                                 .filter(filterParams.equalsIgnoreCase("") ? null : filterParams)
                                 .consistencyLevel(ConsistencyLevel.BOUNDED)
                                 .partitionNames(queryParams.getPartitionNames() == null || queryParams.getPartitionNames().size() == 0 ? new ArrayList<>() : queryParams.getPartitionNames())
@@ -120,11 +120,19 @@ public class QueryComp {
                             queryReq.setLimit(queryParams.getLimit());
                         }
                         query = milvusClientV2.query(queryReq);
-                        log.debug("query size: " + query.getQueryResults().get(0).getEntity());
-                        log.debug("query result: " + query.getQueryResults());
+                        log.debug("query result size: " + query.getQueryResults().size());
+                        if (!query.getQueryResults().isEmpty()) {
+                            log.debug("query first entity: " + query.getQueryResults().get(0).getEntity());
+                        }
                     } catch (Exception e) {
                         statsReporter.recordFailure();
                         log.error("query exception:" + e.getMessage());
+                        long endItemTime = System.currentTimeMillis();
+                        float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
+                        costTime.add(costTimeItem);
+                        statsReporter.recordCostTime(costTimeItem);
+                        returnNum.add(0);
+                        continue;
                     }
                     long endItemTime = System.currentTimeMillis();
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
