@@ -69,7 +69,7 @@
   - **实例创建后的 Milvus 连接 token 格式**（容易踩坑）：
     - **`token = db_admin:<rootPassword>`**
     - ⚠️ **不是** `root:<rootPassword>`，即便 `roleUse=root`。框架/Zilliz Cloud 实际使用的底层账号是 `db_admin`
-    - 例：`rootPassword=Lyp0107!` → 连接 token 为 `db_admin:Lyp0107!`
+    - 例：`rootPassword=Milvus123` → 连接 token 为 `db_admin:Milvus123`
     - 也可用 account 级 96-char hex API Key（整个账号内所有实例通用）
     - 在 `submit_customize_task` 里针对已有实例提交新任务时，这个 token 填到顶层 `token` 参数（不是 params JSON 里）
 
