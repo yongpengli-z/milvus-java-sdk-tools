@@ -65,6 +65,14 @@
   - **`bizCritical`**（boolean）：是否将实例标记为业务关键（biz critical）。设为 `true` 后，创建实例成功后会调用 RM 的 `update_biz_critical` 接口（包含 `nodeCategories` 参数）。默认 `false`。**结果说明**：结果中的 `bizCritical` 字段反映的是 `update_biz_critical` API 调用是否成功，而非简单的参数值
   - **`monopolized`**（boolean）：是否将实例设为独占模式（monopolized）。设为 `true` 后，创建实例成功后会调用 RM 的 `update_monopolized` 接口。默认 `false`。**结果说明**：结果中的 `monopolized` 字段反映的是 `update_monopolized` API 调用是否成功，而非简单的参数值
   - **`streamingNodeParams`**（已废弃，不再需要）：创建实例时不再需要配置 streaming node 参数，可以省略该字段或传 `null`
+
+  - **实例创建后的 Milvus 连接 token 格式**（容易踩坑）：
+    - **`token = db_admin:<rootPassword>`**
+    - ⚠️ **不是** `root:<rootPassword>`，即便 `roleUse=root`。框架/Zilliz Cloud 实际使用的底层账号是 `db_admin`
+    - 例：`rootPassword=Lyp0107!` → 连接 token 为 `db_admin:Lyp0107!`
+    - 也可用 account 级 96-char hex API Key（整个账号内所有实例通用）
+    - 在 `submit_customize_task` 里针对已有实例提交新任务时，这个 token 填到顶层 `token` 参数（不是 params JSON 里）
+
 - **`DeleteInstanceParams`**（`deleteInstanceEdit.vue`）
   - 必填：`useCloudTestApi`（注意后端字段名是 `useOPSTestApi`，需要映射/改 key）
   - 默认：`useCloudTestApi=false`，`instanceId/accountEmail/accountPassword=""`

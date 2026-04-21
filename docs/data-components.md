@@ -156,6 +156,39 @@
 - **`targetQps`**（double，可空）：前端默认 `0`。
 - **`generalFilterRoleList`**（list，可空）：前端默认是“带 1 条空规则”的占位数组；不使用建议传 `[]`。
 
+> **⚠️ 必须显式给出的字段（否则框架 stats 代码 NPE）**：
+>
+> 即使 Javadoc 没标"必填"，以下字段反序列化后若为 null，框架在 `QueryComp` 统计阶段会抛 `java.lang.NullPointerException`，报错形如 `"query 统计异常:java.lang.NullPointerException"`，且 `concurrencyNum=0, requestNum=0`（实际一个请求都没发）。
+>
+> **生成 JSON 时必须显式给值**：
+> - `ids: []`（List，`filter` 有值时传空数组即可）
+> - `partitionNames: []`
+> - `generalFilterRoleList: []`
+> - `limit: 0`
+> - `offset: 0`
+> - `targetQps: 0`
+> - `collectionRule: ""`
+>
+> 最小可运行 QueryParams 示例：
+> ```json
+> {
+>   "QueryParams_0": {
+>     "collectionName": "xxx",
+>     "collectionRule": "",
+>     "outputs": ["id_pk"],
+>     "filter": "id_pk > 0",
+>     "ids": [],
+>     "numConcurrency": 2,
+>     "runningMinutes": 1,
+>     "limit": 0,
+>     "partitionNames": [],
+>     "offset": 0,
+>     "generalFilterRoleList": [],
+>     "targetQps": 0
+>   }
+> }
+> ```
+
 ##### 5.1.7 Upsert：`UpsertParams`
 
 对应组件：`custom.components.UpsertComp`

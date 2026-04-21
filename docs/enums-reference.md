@@ -43,6 +43,57 @@ Insert/Upsert 支持为每个字段单独指定数据来源。未配置的字段
 - **纯文本数据集**（msmarco-text）：TXT 格式（每行一段纯文本），用于 VarChar 字段（如 BM25 全文检索场景）
 - 不配置 `fieldDataSourceList`（或传 `[]`）时，所有字段使用 random 生成
 
+> **使用 `msmarco-text` 数据集的 VarChar 字段注意 `maxLength`**：
+>
+> msmarco passage 数据集里不少段落超过 2048 字符。如果 `maxLength=2048`（很多示例的默认值），插入到一定量（几万条）后会报：
+> ```
+> io.milvus.exception.ParamException: Type mismatch for field 'xxx':
+>   VarChar field value type must be JsonPrimitive of string,
+>   and the string length must shorter than max_length.
+> ```
+> **建议**：给 `msmarco-text` 喂的 VarChar 字段（尤其是 BM25 analyzer 输入字段）直接设 **`maxLength=65535`**（VarChar 上限）。BM25 tokenizer 对长度无额外要求。
+
+> **bluesky 数据集真实 JSON 结构（写 jsonPath 必查）**：
+>
+> 数据集是 Bluesky firehose commit 事件的 JSON Lines，每条是一个 commit。典型样本：
+> ```json
+> {
+>   "did": "did:plc:yj3sjq3blzpynh27cumnp5ks",
+>   "time_us": 1732206349000167,
+>   "kind": "commit",
+>   "commit": {
+>     "rev": "3lbhtytnn2k2f",
+>     "operation": "create",
+>     "collection": "app.bsky.feed.post",
+>     "rkey": "3lbhtyteurk2y",
+>     "record": {
+>       "$type": "app.bsky.feed.post",
+>       "createdAt": "2024-11-21T16:09:27.095Z",
+>       "langs": ["en"],
+>       "reply": {"parent": {"cid": "...", "uri": "at://..."}, "root": {"...": "..."}},
+>       "text": "some post text"
+>     },
+>     "cid": "..."
+>   }
+> }
+> ```
+>
+> **稳定存在的字段 + 适合做 jsonPath 索引的路径**：
+>
+> | jsonPath | jsonCastType | 说明 |
+> |---|---|---|
+> | `field["did"]` | `varchar` | 发帖人 DID |
+> | `field["time_us"]` | `int64` | 微秒时间戳 |
+> | `field["kind"]` | `varchar` | 事件类型（`commit`/`identity`/`account`）|
+> | `field["commit"]["operation"]` | `varchar` | `create` / `update` / `delete` |
+> | `field["commit"]["collection"]` | `varchar` | `app.bsky.feed.post` 等 |
+> | `field["commit"]["record"]["text"]` | `varchar` | 正文（长短不一）|
+> | `field["commit"]["record"]["createdAt"]` | `varchar` | ISO 时间字符串 |
+>
+> **注意**：
+> - `reply` 不是每条都有（只有回复帖才有），索引 `reply.*` 前要能接受缺失
+> - `commit.record.langs` 是数组，当前 jsonPath 索引不支持 array 元素
+
 #### 6.3 `collectionRule`
 
 代码中支持：

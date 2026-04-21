@@ -47,6 +47,7 @@ filter 占位符规则（Search/Query）：
     - `shardNum`、`enableDynamic`（CreateCollection 核心字段）
     - `numEntries`、`batchSize`、`numConcurrency`（Insert/Search/Query 核心字段）
     - `fieldDataSourceList`（Insert/Upsert，不使用时传 `[]`）
+    - **`QueryParams` 的全套 List/number 字段：`ids:[]`、`partitionNames:[]`、`generalFilterRoleList:[]`、`limit:0`、`offset:0`、`targetQps:0`、`collectionRule:""`**（缺失会在框架统计阶段 NPE，概率 100%）
     - `annsField`（Search 必填）
     - `nq`、`topK`（Search/Query 必填）
     - `randomVector`（Search 必填）

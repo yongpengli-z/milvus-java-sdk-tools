@@ -1,3 +1,22 @@
+> **⚠️ 最重要的一条约束（Cloud 托管实例）**：
+>
+> 通过 `CreateInstanceParams` 创建的 Zilliz Cloud 托管实例，**所有字段的索引**（不分向量/标量）必须使用 `AUTOINDEX`，提交 `HNSW`、`BITMAP`、`INVERTED`、`STL_SORT`、`TRIE`、`BIN_IVF_FLAT`、`SPARSE_WAND` 等 explicit 类型都会被服务端拒绝。
+>
+> 这条规则**对标量也适用**——以前文档偏向说向量，容易被误解成"只向量要 AUTOINDEX"。
+>
+> AUTOINDEX 内部会按字段类型自动分发：
+> - `FloatVector/Float16Vector/BFloat16Vector/Int8Vector` → HNSW
+> - `BinaryVector` → BIN_IVF_FLAT
+> - `SparseFloatVector` → SPARSE_WAND（BM25 output 则用 BM25 metric）
+> - `Bool`、低基数 `Int8/Int16` → BITMAP
+> - `Int32/Int64/Float/Double` → STL_SORT
+> - `VarChar/String` → TRIE 或 INVERTED
+> - `JSON/Array` → INVERTED（JSON 需要 `jsonPath` + `jsonCastType`）
+>
+> 换句话说：你想覆盖多种底层索引类型做兼容性测试，只能**靠 AUTOINDEX 自动分发** + **字段类型多样化**来间接实现，不能 explicit 指定。
+>
+> 只有 **Helm 部署（`HelmCreateInstanceParams`）** 和**本地环境（`devops`/`fouram`）** 才允许 explicit 索引类型。
+
 ##### 5.1.2 建索引：`CreateIndexParams`
 
 对应组件：`custom.components.CreateIndexComp`
