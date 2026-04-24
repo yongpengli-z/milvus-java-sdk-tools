@@ -513,6 +513,7 @@ public class ResourceManagerServiceUtils {
         }
         body.put("realUserId", cloudServiceUserInfo.getUserId());
         body.put("projectId", cloudServiceUserInfo.getDefaultProjectId());
+        body.put("instanceType", 1); // InstanceType.MILVUS
         if (params.getSecondaryClusters() != null && !params.getSecondaryClusters().isEmpty()) {
             List<Map<String, Object>> secondaries = new ArrayList<>();
             for (CreateSecondaryParams.SecondaryCluster sc : params.getSecondaryClusters()) {
