@@ -30,13 +30,13 @@ public class DropCollectionParams {
     private String collectionName;
 
     /**
-     * 删除百分比（当 {@link #dropAll}=false 且 {@link #collectionName} 为空时使用）。
+     * 删除比例，范围 0-1（当 {@link #dropAll}=false 且 {@link #collectionName} 为空时使用）。
      * <p>
-     * 前端：`dropCollectionEdit.vue` -> "Drop Percentage"
+     * 前端：`dropCollectionEdit.vue` -> "Drop Ratio"
      * <p>
      * 前端默认值：0
      */
-    private int dropPercentage;
+    private double dropPercentage;
 
     /**
      * Database 名称（可选）。

@@ -31,8 +31,9 @@ public class DropCollectionComp {
         } else if ((dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase(""))
                 && dropCollectionParams.getDropPercentage() > 0) {
             List<String> collectionNames = new ArrayList<>(globalCollectionNames);
-            int dropCount = (int) Math.ceil(collectionNames.size() * dropCollectionParams.getDropPercentage() / 100.0);
-            log.info("Drop {}% collections, count: {}, collections: {}", dropCollectionParams.getDropPercentage(), dropCount, collectionNames);
+            double dropRatio = Math.min(dropCollectionParams.getDropPercentage(), 1.0);
+            int dropCount = (int) Math.ceil(collectionNames.size() * dropRatio);
+            log.info("Drop {} collections ratio, count: {}, collections: {}", dropRatio, dropCount, collectionNames);
             for (String collectionName : collectionNames.subList(0, dropCount)) {
                 dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
             }
