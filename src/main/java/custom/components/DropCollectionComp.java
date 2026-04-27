@@ -26,62 +26,20 @@ public class DropCollectionComp {
             List<String> collectionNames = listCollectionsResp.getCollectionNames();
             log.info("Drop all collections: " + collectionNames);
             for (String collectionName : collectionNames) {
-                try {
-                    // 先清理 alias，否则 Milvus 不允许删除有 alias 关联的 collection
-                    dropAliasesForCollection(collectionName, dropCollectionParams.getDatabaseName());
-                    DropCollectionReq dropCollectionReq = DropCollectionReq.builder()
-                            .collectionName(collectionName).build();
-                    if (dropCollectionParams.getDatabaseName() != null && !dropCollectionParams.getDatabaseName().equalsIgnoreCase("")) {
-                        dropCollectionReq.setDatabaseName(dropCollectionParams.getDatabaseName());
-                    }
-                    milvusClientV2.dropCollection(dropCollectionReq);
-                    // 清空globalCollectionNames
-                    globalCollectionNames.clear();
-                    dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
-                            .collectionName(collectionName)
-                            .commonResult(CommonResult.builder()
-                                    .result(ResultEnum.SUCCESS.result)
-                                    .build())
-                            .build());
-                } catch (Exception e) {
-                    dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
-                            .collectionName(collectionName)
-                            .commonResult(CommonResult.builder()
-                                    .result(ResultEnum.EXCEPTION.result)
-                                    .message(e.getMessage())
-                                    .build())
-                            .build());
-                }
+                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
+            }
+        } else if ((dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase(""))
+                && dropCollectionParams.getDropPercentage() > 0) {
+            List<String> collectionNames = new ArrayList<>(globalCollectionNames);
+            int dropCount = (int) Math.ceil(collectionNames.size() * dropCollectionParams.getDropPercentage() / 100.0);
+            log.info("Drop {}% collections, count: {}, collections: {}", dropCollectionParams.getDropPercentage(), dropCount, collectionNames);
+            for (String collectionName : collectionNames.subList(0, dropCount)) {
+                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
             }
         } else {
             String collectionName = (dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase("")) ?
                     globalCollectionNames.get(globalCollectionNames.size() - 1) : dropCollectionParams.getCollectionName();
-            try {
-                log.info("Drop collection: " + dropCollectionParams.getCollectionName());
-                // 先清理 alias
-                dropAliasesForCollection(collectionName, dropCollectionParams.getDatabaseName());
-                DropCollectionReq dropCollectionReq = DropCollectionReq.builder()
-                        .collectionName(collectionName).build();
-                if (dropCollectionParams.getDatabaseName() != null && !dropCollectionParams.getDatabaseName().equalsIgnoreCase("")) {
-                    dropCollectionReq.setDatabaseName(dropCollectionParams.getDatabaseName());
-                }
-                milvusClientV2.dropCollection(dropCollectionReq);
-                globalCollectionNames.remove(collectionName);
-                dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
-                        .collectionName(collectionName)
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.SUCCESS.result)
-                                .build())
-                        .build());
-            } catch (Exception e) {
-                dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
-                        .collectionName(collectionName)
-                        .commonResult(CommonResult.builder()
-                                .result(ResultEnum.EXCEPTION.result)
-                                .message(e.getMessage())
-                                .build())
-                        .build());
-            }
+            dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
         }
         // assertions
         List<String> assertMessages = new ArrayList<>();
@@ -94,6 +52,35 @@ public class DropCollectionComp {
             log.warn("DropCollection assertions: " + assertMessages);
         }
         return DropCollectionResult.builder().dropCollectionResultList(dropCollectionResultList).assertMessages(assertMessages).build();
+    }
+
+    private static void dropOneCollection(String collectionName, String databaseName,
+                                          List<DropCollectionResult.DropCollectionResultItem> dropCollectionResultList) {
+        try {
+            log.info("Drop collection: " + collectionName);
+            dropAliasesForCollection(collectionName, databaseName);
+            DropCollectionReq dropCollectionReq = DropCollectionReq.builder()
+                    .collectionName(collectionName).build();
+            if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+                dropCollectionReq.setDatabaseName(databaseName);
+            }
+            milvusClientV2.dropCollection(dropCollectionReq);
+            globalCollectionNames.remove(collectionName);
+            dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
+                    .collectionName(collectionName)
+                    .commonResult(CommonResult.builder()
+                            .result(ResultEnum.SUCCESS.result)
+                            .build())
+                    .build());
+        } catch (Exception e) {
+            dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
+                    .collectionName(collectionName)
+                    .commonResult(CommonResult.builder()
+                            .result(ResultEnum.EXCEPTION.result)
+                            .message(e.getMessage())
+                            .build())
+                    .build());
+        }
     }
 
     /**
