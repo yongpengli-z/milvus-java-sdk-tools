@@ -9,7 +9,9 @@ import custom.config.EnvConfig;
 import custom.config.EnvEnum;
 import custom.entity.InitialParams;
 import custom.pojo.InstanceInfo;
+import custom.utils.CloudServiceUtils;
 import custom.utils.ConfigUtils;
+import custom.utils.ResourceManagerServiceUtils;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.client.globalcluster.ClusterInfo;
@@ -110,6 +112,96 @@ public class BaseTest {
         });
     }
 
+    private static String normalizeHttpsEndpoint(String endpoint) {
+        if (endpoint == null || endpoint.isEmpty()) {
+            return endpoint;
+        }
+        if (endpoint.startsWith("https://") || endpoint.startsWith("http://")) {
+            return endpoint;
+        }
+        return "https://" + endpoint;
+    }
+
+    private static String extractGlobalClusterIdFromEndpoint(String uri) {
+        try {
+            String host = uri.replace("https://", "").replace("http://", "");
+            String gcId = host.substring(0, host.indexOf("."));
+            log.info("Global Cluster ID (from URI): {}", gcId);
+            return gcId;
+        } catch (Exception e) {
+            log.warn("从 Global Endpoint URI 提取 globalClusterId 失败: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    private static String extractInstanceIdFromUri(String uri) {
+        if (uri == null || uri.trim().isEmpty()) {
+            return "";
+        }
+        String host = uri.trim();
+        if (host.startsWith("https://")) {
+            host = host.substring("https://".length());
+        } else if (host.startsWith("http://")) {
+            host = host.substring("http://".length());
+        }
+        int dotIndex = host.indexOf(".");
+        if (dotIndex <= 0) {
+            return "";
+        }
+        return host.substring(0, dotIndex);
+    }
+
+    private static void populateGlobalClusterInfo(String globalEndpoint, String globalClusterId, String token) {
+        String normalizedGlobalEndpoint = normalizeHttpsEndpoint(globalEndpoint);
+        globalClusterInfo.setUri(normalizedGlobalEndpoint);
+        globalClusterInfo.setToken(token);
+        if (globalClusterId != null && !globalClusterId.isEmpty()) {
+            globalClusterInfo.setInstanceId(globalClusterId);
+        }
+
+        GlobalTopology topology = GlobalClusterUtils.fetchTopology(normalizedGlobalEndpoint, token);
+        ClusterInfo primaryCluster = topology.getPrimary();
+        String primaryEndpoint = normalizeHttpsEndpoint(primaryCluster.getEndpoint());
+        primaryInstanceInfo.setUri(primaryEndpoint);
+        primaryInstanceInfo.setInstanceId(primaryCluster.getClusterId());
+        primaryInstanceInfo.setToken(token);
+        log.info("Global Cluster primary: id={}, endpoint={}", primaryCluster.getClusterId(), primaryEndpoint);
+
+        secondaryInstanceInfoList.clear();
+        for (ClusterInfo cluster : topology.getClusters()) {
+            if (!cluster.isPrimary()) {
+                InstanceInfo secInfo = new InstanceInfo();
+                String secEndpoint = normalizeHttpsEndpoint(cluster.getEndpoint());
+                secInfo.setInstanceId(cluster.getClusterId());
+                secInfo.setUri(secEndpoint);
+                secInfo.setToken(token);
+                secondaryInstanceInfoList.add(secInfo);
+                log.info("Global Cluster secondary: id={}, endpoint={}", cluster.getClusterId(), secEndpoint);
+            }
+        }
+    }
+
+    private static boolean tryPopulateGlobalClusterFromInstanceUri(String uri, String token) {
+        String instanceId = extractInstanceIdFromUri(uri);
+        if (instanceId.isEmpty()) {
+            return false;
+        }
+        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
+        }
+
+        String globalClusterId = ResourceManagerServiceUtils.getGlobalClusterId(instanceId);
+        if (globalClusterId == null || globalClusterId.isEmpty()) {
+            return false;
+        }
+        String globalEndpoint = ResourceManagerServiceUtils.describeGlobalClusterEndpoint(globalClusterId);
+        if (globalEndpoint == null || globalEndpoint.isEmpty()) {
+            return false;
+        }
+        populateGlobalClusterInfo(globalEndpoint, globalClusterId, token);
+        return true;
+    }
+
     public static void main(String[] args) {
         int exitCode = 0;
         try {
@@ -141,63 +233,44 @@ public class BaseTest {
             log.debug("***********customizeParams*********"+customizeParams);
             log.info("========== [阶段1] 参数解析完成, taskId={}, env={}, uri={} ==========", taskId, env, uri.isEmpty() ? "(空)" : uri);
             redisKey = "customize_task_" + taskId;
+            envEnum = EnvEnum.getEnvByName(env);
+            log.debug("EnvEnum:" + envEnum);
+            if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
+                envConfig = ConfigUtils.providerEnvConfig(envEnum);
+                log.info("当前环境信息:" + envConfig);
+            }
             if (!uri.equalsIgnoreCase("")) {
                 if (GlobalClusterUtils.isGlobalEndpoint(uri)) {
-                    // Global Endpoint: 解析 topology，填充 primary 和 secondaries
                     log.info("检测到 Global Endpoint: {}", uri);
-                    globalClusterInfo.setUri(uri);
-                    // 先获取 token 用于 fetchTopology
                     if (token.equals("")) {
                         token = MilvusConnect.provideToken(uri);
                         log.info("查询到token:" + token);
                     }
-                    GlobalTopology topology = GlobalClusterUtils.fetchTopology(uri, token);
-                    ClusterInfo primaryCluster = topology.getPrimary();
-                    String primaryEndpoint = primaryCluster.getEndpoint();
-                    if (!primaryEndpoint.startsWith("https://")) {
-                        primaryEndpoint = "https://" + primaryEndpoint;
-                    }
-                    newInstanceInfo.setUri(primaryEndpoint);
-                    newInstanceInfo.setInstanceId(primaryCluster.getClusterId());
-                    primaryInstanceInfo.setUri(primaryEndpoint);
-                    primaryInstanceInfo.setInstanceId(primaryCluster.getClusterId());
-                    log.info("Global Cluster primary: id={}, endpoint={}", primaryCluster.getClusterId(), primaryEndpoint);
-
-                    // 从 Global Endpoint URI 中提取 globalClusterId（格式: https://gdc-xxx.global-cluster...）
-                    try {
-                        String host = uri.replace("https://", "").replace("http://", "");
-                        String gcId = host.substring(0, host.indexOf("."));
-                        globalClusterInfo.setInstanceId(gcId);
-                        log.info("Global Cluster ID (from URI): {}", gcId);
-                    } catch (Exception e) {
-                        log.warn("从 Global Endpoint URI 提取 globalClusterId 失败: {}", e.getMessage());
-                    }
-
-                    secondaryInstanceInfoList.clear();
-                    for (ClusterInfo cluster : topology.getClusters()) {
-                        if (!cluster.isPrimary()) {
-                            InstanceInfo secInfo = new InstanceInfo();
-                            secInfo.setInstanceId(cluster.getClusterId());
-                            String secEndpoint = cluster.getEndpoint();
-                            if (!secEndpoint.startsWith("https://")) {
-                                secEndpoint = "https://" + secEndpoint;
-                            }
-                            secInfo.setUri(secEndpoint);
-                            secondaryInstanceInfoList.add(secInfo);
-                            log.info("Global Cluster secondary: id={}, endpoint={}", cluster.getClusterId(), secEndpoint);
-                        }
-                    }
+                    populateGlobalClusterInfo(uri, extractGlobalClusterIdFromEndpoint(uri), token);
+                    newInstanceInfo.setUri(primaryInstanceInfo.getUri());
+                    newInstanceInfo.setInstanceId(primaryInstanceInfo.getInstanceId());
                 } else {
-                    // 普通实例 URI
                     newInstanceInfo.setUri(uri);
-                    if (uri.contains("ali") || uri.contains("tc") || uri.contains("aws") || uri.contains("gcp") || uri.contains("az") || uri.contains("hwc")) {
-                        String substring = uri.substring(uri.indexOf("https://") + 8, 28);
-                        log.info("instance-id:" + substring);
-                        newInstanceInfo.setInstanceId(substring);
+                    String instanceId = extractInstanceIdFromUri(uri);
+                    if (!instanceId.isEmpty()) {
+                        log.info("instance-id:" + instanceId);
+                        newInstanceInfo.setInstanceId(instanceId);
                     }
                     if (token.equals("")) {
                         token = MilvusConnect.provideToken(uri);
                         log.info("查询到token:" + token);
+                    }
+                    try {
+                        boolean globalResolved = tryPopulateGlobalClusterFromInstanceUri(uri, token);
+                        if (globalResolved) {
+                            boolean isPrimary = instanceId.equals(primaryInstanceInfo.getInstanceId());
+                            boolean isSecondary = secondaryInstanceInfoList.stream()
+                                    .anyMatch(secInfo -> instanceId.equals(secInfo.getInstanceId()));
+                            log.info("输入实例属于 Global Cluster: instanceId={}, role={}", instanceId,
+                                    isPrimary ? "primary" : (isSecondary ? "secondary" : "unknown"));
+                        }
+                    } catch (Exception e) {
+                        log.warn("普通实例 URI 反查 Global Cluster 失败，按普通实例处理: {}", e.getMessage());
                     }
                 }
             }
@@ -206,14 +279,8 @@ public class BaseTest {
             if (primaryInstanceInfo.getUri() != null && !primaryInstanceInfo.getUri().isEmpty()) {
                 primaryInstanceInfo.setToken(token);
             }
-            envEnum = EnvEnum.getEnvByName(env);
             //先更新argo任务状态
             ComponentSchedule.updateArgoStatus(1);
-            log.debug("EnvEnum:"+envEnum);
-            if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
-                envConfig = ConfigUtils.providerEnvConfig(envEnum);
-                log.info("当前环境信息:" + envConfig);
-            }
             log.info("newInstanceInfo:" + newInstanceInfo.toString());
 
             log.info("========== [阶段2] 环境配置完成，准备连接Milvus ==========");

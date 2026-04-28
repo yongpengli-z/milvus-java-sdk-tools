@@ -569,6 +569,9 @@ public class ResourceManagerServiceUtils {
         header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("Authorization", "Bearer " + cloudServiceUserInfo.getToken());
+        if (cloudServiceUserInfo.getOrgIdList() != null && !cloudServiceUserInfo.getOrgIdList().isEmpty()) {
+            header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
+        }
         String resp = HttpClientUtils.doGet(url, header, null);
         log.info("[cloud-service][describe global cluster]: {}", resp);
         JSONObject jo = JSONObject.parseObject(resp);
