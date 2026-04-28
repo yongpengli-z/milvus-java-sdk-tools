@@ -14,6 +14,7 @@ import custom.pojo.RandomRangeParams;
 import custom.pojo.UpdateFieldName;
 import custom.utils.DatasetUtil;
 import custom.utils.PeriodicStatsReporter;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.UpsertReq;
@@ -31,6 +32,9 @@ import static custom.BaseTest.*;
 @Slf4j
 public class UpsertComp {
     public static UpsertResult upsertCollection(UpsertParams upsertParams) {
+        MilvusClientV2 client = getMilvusClient(upsertParams.getTargetEndpoint());
+        log.info("Upsert 使用 endpoint: {}", upsertParams.getTargetEndpoint() == null ? "primary(default)" : upsertParams.getTargetEndpoint());
+
         // 先search collection
         // 判断collection获取规则
         String collectionName = "";
@@ -75,7 +79,7 @@ public class UpsertComp {
         ExecutorService executorService = Executors.newFixedThreadPool(upsertParams.getNumConcurrency());
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
 
         // 预加载字段级数据集信息
         Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap = new HashMap<>();
@@ -164,7 +168,7 @@ public class UpsertComp {
                                 if (upsertParams.getPartitionName() != null && !upsertParams.getPartitionName().equalsIgnoreCase("")) {
                                     upsertReq.setPartitionName(upsertParams.getPartitionName());
                                 }
-                                upsertResp = milvusClientV2.upsert(upsertReq);
+                                upsertResp = client.upsert(upsertReq);
                                 if (upsertResp.getUpsertCnt() > 0) {
                                     retryCount = 0;
                                 }

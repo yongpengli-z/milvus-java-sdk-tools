@@ -21,6 +21,17 @@
 | `ignoreError` | boolean | 否 | `false` | 出错是否忽略继续 |
 | `lengthFactor` | double | 否 | `0` | 随机长度系数 0~1。>0 时长度固定为 `maxLength * lengthFactor` |
 | `nullableRatio` | double | 否 | `0.5` | nullable 字段的 null 值比例 0~1 |
+| `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
+
+## targetEndpoint
+
+用于 Global Cluster 场景选择 Insert 访问的 endpoint：
+
+- `""` / `primary`：使用 primary/default client
+- `global`：使用 GDN 统一入口
+- `secondary`：使用第一个 secondary
+- `secondary_0` / `secondary_1`：使用指定下标的 secondary
+- `https://...` / `http://...`：直接连接指定 URI
 
 ## fieldDataSourceList
 
@@ -62,7 +73,8 @@
 {
   "InsertParams_0": {
     "numEntries": 100000, "batchSize": 1000, "numConcurrency": 5,
-    "fieldDataSourceList": [], "generalDataRoleList": []
+    "fieldDataSourceList": [], "generalDataRoleList": [],
+    "targetEndpoint": ""
   }
 }
 ```

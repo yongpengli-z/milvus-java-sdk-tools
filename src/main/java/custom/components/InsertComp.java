@@ -12,6 +12,7 @@ import custom.pojo.FieldDataSource;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.InsertReq;
@@ -28,6 +29,9 @@ import static custom.BaseTest.*;
 @Slf4j
 public class InsertComp {
     public static InsertResult insertCollection(InsertParams insertParams) {
+        MilvusClientV2 client = getMilvusClient(insertParams.getTargetEndpoint());
+        log.info("Insert 使用 endpoint: {}", insertParams.getTargetEndpoint() == null ? "primary(default)" : insertParams.getTargetEndpoint());
+
         Random random = new Random();
         // 要循环insert的次数--insertRounds
         long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
@@ -54,7 +58,7 @@ public class InsertComp {
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
         ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
 
         // 预加载字段级数据集信息
         Map<String, FieldDatasetInfo> fieldDatasetInfoMap = new HashMap<>();
@@ -136,7 +140,7 @@ public class InsertComp {
                                 if (insertParams.getPartitionName() != null && !insertParams.getPartitionName().equalsIgnoreCase("")) {
                                     insertReq.setPartitionName(insertParams.getPartitionName());
                                 }
-                                insert = milvusClientV2.insert(insertReq);
+                                insert = client.insert(insertReq);
                                 endTime = System.currentTimeMillis();
                                 float costTimeItem = (float) ((endTime - startTime) / 1000.00);
                                 costTime.add(costTimeItem);
