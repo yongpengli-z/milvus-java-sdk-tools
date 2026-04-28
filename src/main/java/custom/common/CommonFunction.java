@@ -11,6 +11,7 @@ import custom.utils.DatasetUtil;
 import custom.utils.GenerateUtil;
 import custom.utils.JsonObjectUtil;
 import custom.utils.MathUtil;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.common.utils.Float16Utils;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.common.IndexBuildState;
@@ -1022,8 +1023,12 @@ public class CommonFunction {
      * @return VectorInfo
      */
     public static VectorInfo getCollectionVectorInfo(String collectionName, String annsField) {
+        return getCollectionVectorInfo(milvusClientV2, collectionName, annsField);
+    }
+
+    public static VectorInfo getCollectionVectorInfo(MilvusClientV2 client, String collectionName, String annsField) {
         VectorInfo vectorInfo = new VectorInfo();
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         
         // 检查是否是 struct 中的向量字段（格式：structFieldName[subFieldName]）
@@ -1090,8 +1095,12 @@ public class CommonFunction {
      * @return PKFieldInfo
      */
     public static PKFieldInfo getPKFieldInfo(String collectionName) {
+        return getPKFieldInfo(milvusClientV2, collectionName);
+    }
+
+    public static PKFieldInfo getPKFieldInfo(MilvusClientV2 client, String collectionName) {
         PKFieldInfo pkFieldInfo = new PKFieldInfo();
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
@@ -1115,10 +1124,14 @@ public class CommonFunction {
      * @return List<BaseVector>
      */
     public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum, String annsField) {
-        VectorInfo collectionVectorInfo = getCollectionVectorInfo(collection, annsField);
+        return providerSearchVectorDataset(milvusClientV2, collection, randomNum, annsField);
+    }
+
+    public static List<BaseVector> providerSearchVectorDataset(MilvusClientV2 client, String collection, int randomNum, String annsField) {
+        VectorInfo collectionVectorInfo = getCollectionVectorInfo(client, collection, annsField);
         DataType vectorDataType = collectionVectorInfo.getDataType();
         // 获取主键信息
-        PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
+        PKFieldInfo pkFieldInfo = getPKFieldInfo(client, collection);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
         QueryResp query = null;
         try {
@@ -1128,7 +1141,7 @@ public class CommonFunction {
             } else {
                 filterStr = pkFieldInfo.getFieldName() + " > 0 ";
             }
-            query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
+            query = client.query(QueryReq.builder().collectionName(collection)
                     .filter(filterStr)
                     .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
                     .limit(randomNum)
@@ -1302,8 +1315,12 @@ public class CommonFunction {
      * @return List<BaseVector>
      */
     public static List<BaseVector> providerSearchFunctionData(String collection, int randomNum, String inputFieldName) {
+        return providerSearchFunctionData(milvusClientV2, collection, randomNum, inputFieldName);
+    }
+
+    public static List<BaseVector> providerSearchFunctionData(MilvusClientV2 client, String collection, int randomNum, String inputFieldName) {
         // 获取主键信息
-        PKFieldInfo pkFieldInfo = getPKFieldInfo(collection);
+        PKFieldInfo pkFieldInfo = getPKFieldInfo(client, collection);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
         String filterStr;
         if (pkFieldInfo.getDataType() == DataType.VarChar) {
@@ -1321,7 +1338,7 @@ public class CommonFunction {
             int pageSize = Math.min(Math.max(remain * 2, 100), randomNum);
             QueryResp query;
             try {
-                query = milvusClientV2.query(QueryReq.builder().collectionName(collection)
+                query = client.query(QueryReq.builder().collectionName(collection)
                         .filter(filterStr)
                         .outputFields(Lists.newArrayList(inputFieldName))
                         .limit(pageSize)

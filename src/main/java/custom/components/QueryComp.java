@@ -10,6 +10,7 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.response.QueryResp;
@@ -29,6 +30,9 @@ import static custom.BaseTest.*;
 @Slf4j
 public class QueryComp {
     public static QueryResult queryCollection(QueryParams queryParams) {
+        MilvusClientV2 client = getMilvusClient(queryParams.getTargetEndpoint());
+        log.info("Query 使用 endpoint: {}", queryParams.getTargetEndpoint() == null ? "primary(default)" : queryParams.getTargetEndpoint());
+
         // 判断collection获取规则
         String collectionName = "";
         Random random=new Random();
@@ -119,7 +123,7 @@ public class QueryComp {
                         if (queryParams.getLimit() > 0) {
                             queryReq.setLimit(queryParams.getLimit());
                         }
-                        query = milvusClientV2.query(queryReq);
+                        query = client.query(queryReq);
                         log.debug("query result size: " + query.getQueryResults().size());
                         if (!query.getQueryResults().isEmpty()) {
                             log.debug("query first entity: " + query.getQueryResults().get(0).getEntity());

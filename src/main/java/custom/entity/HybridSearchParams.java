@@ -158,6 +158,19 @@ public class HybridSearchParams {
     private boolean ignoreError;
 
     /**
+     * 目标 endpoint（可选，用于 Global Cluster 场景）。
+     * <ul>
+     *   <li>"" / null / "primary" — 使用默认 primary client</li>
+     *   <li>"global" — 使用 GDN 统一入口</li>
+     *   <li>"secondary" — 使用第一个 secondary</li>
+     *   <li>"secondary_0" / "secondary_1" — 使用指定下标的 secondary</li>
+     *   <li>以 "https://" 或 "http://" 开头 — 直接连该 URI</li>
+     * </ul>
+     * 前端默认值：""（空字符串，使用 primary）
+     */
+    private String targetEndpoint;
+
+    /**
      * 单个混合搜索请求的参数。
      * <p>
      * 用于 {@link HybridSearchParams#searchRequests}。
@@ -212,4 +225,3 @@ public class HybridSearchParams {
         private String filter;
     }
 }
-

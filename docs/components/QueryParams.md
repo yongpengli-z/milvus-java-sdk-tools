@@ -18,6 +18,7 @@
 | `runningMinutes` | long | 是 | `10` | |
 | `targetQps` | double | **是** | `0` | **必须显式给 `0`** |
 | `generalFilterRoleList` | List | **是** | `[]` | **必须显式给 `[]`** |
+| `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
 
 ## 约束
 
@@ -35,6 +36,16 @@
 - `offset: 0`
 - `targetQps: 0`
 - `collectionRule: ""`
+
+## targetEndpoint
+
+用于 Global Cluster 场景选择 Query 访问的 endpoint：
+
+- `""` / `primary`：使用 primary/default client
+- `global`：使用 GDN 统一入口
+- `secondary`：使用第一个 secondary
+- `secondary_0` / `secondary_1`：使用指定下标的 secondary
+- `https://...` / `http://...`：直接连接指定 URI
 
 ## 注意事项
 
@@ -56,7 +67,8 @@
     "partitionNames": [],
     "offset": 0,
     "generalFilterRoleList": [],
-    "targetQps": 0
+    "targetQps": 0,
+    "targetEndpoint": ""
   }
 }
 ```

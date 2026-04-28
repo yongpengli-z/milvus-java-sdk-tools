@@ -23,6 +23,17 @@
 | `partitionNames` | List | 否 | `[]` | |
 | `ignoreError` | boolean | 否 | `false` | |
 | `timeout` | long | 否 | `800` | SDK 请求超时（ms），0=默认 800ms |
+| `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
+
+## targetEndpoint
+
+用于 Global Cluster 场景选择 Search 访问的 endpoint：
+
+- `""` / `primary`：使用 primary/default client
+- `global`：使用 GDN 统一入口
+- `secondary`：使用第一个 secondary
+- `secondary_0` / `secondary_1`：使用指定下标的 secondary
+- `https://...` / `http://...`：直接连接指定 URI
 
 ## Array of Struct 搜索
 
@@ -43,7 +54,8 @@
   "SearchParams_0": {
     "annsField": "vec", "nq": 1, "topK": 10, "outputs": ["*"],
     "numConcurrency": 10, "runningMinutes": 1, "randomVector": true,
-    "generalFilterRoleList": [], "partitionNames": []
+    "generalFilterRoleList": [], "partitionNames": [],
+    "targetEndpoint": ""
   }
 }
 ```

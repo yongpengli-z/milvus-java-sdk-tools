@@ -20,6 +20,17 @@
 | `targetQps` | double | 否 | `0` | |
 | `generalFilterRoleList` | List | 否 | `[]` | 不使用建议传 `[]` |
 | `ignoreError` | boolean | 否 | `false` | |
+| `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
+
+## targetEndpoint
+
+用于 Global Cluster 场景选择 HybridSearch 访问的 endpoint：
+
+- `""` / `primary`：使用 primary/default client
+- `global`：使用 GDN 统一入口
+- `secondary`：使用第一个 secondary
+- `secondary_0` / `secondary_1`：使用指定下标的 secondary
+- `https://...` / `http://...`：直接连接指定 URI
 
 ## searchRequests 子结构
 
@@ -44,7 +55,8 @@
     "ranker": "RRF", "rankerParams": {"k": 60},
     "topK": 10, "nq": 1, "randomVector": true, "outputs": ["*"],
     "numConcurrency": 10, "runningMinutes": 1,
-    "generalFilterRoleList": [], "ignoreError": true
+    "generalFilterRoleList": [], "ignoreError": true,
+    "targetEndpoint": ""
   }
 }
 ```

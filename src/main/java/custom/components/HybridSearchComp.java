@@ -10,6 +10,7 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -36,6 +37,9 @@ import static custom.BaseTest.*;
 @Slf4j
 public class HybridSearchComp {
     public static HybridSearchResult hybridSearchCollection(HybridSearchParams hybridSearchParams) {
+        MilvusClientV2 client = getMilvusClient(hybridSearchParams.getTargetEndpoint());
+        log.info("HybridSearch 使用 endpoint: {}", hybridSearchParams.getTargetEndpoint() == null ? "primary(default)" : hybridSearchParams.getTargetEndpoint());
+
         // 判断collection获取规则
         Random random = new Random();
         String collection;
@@ -82,7 +86,7 @@ public class HybridSearchComp {
         }
 
         // 判定是不是sparse向量，并且是由Function BM25生成
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
 
@@ -110,13 +114,13 @@ public class HybridSearchComp {
             if (functionFieldMap.containsKey(annsField)) {
                 String inputFieldName = functionFieldMap.get(annsField);
                 log.info("字段 {} 由BM25 Function生成，从collection里捞取input field {} 的文本数据: {}", annsField, inputFieldName, 1000);
-                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchFunctionData(client, collection, 1000, inputFieldName);
                 log.info("提供给hybridSearch使用的随机文本数量: {}", searchBaseVectors.size());
                 fieldVectorsMap.put(annsField, searchBaseVectors);
             } else {
                 // 从 collection 中采样向量
                 log.info("从collection里捞取向量字段 {} 的向量: {}", annsField, 1000);
-                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, annsField);
+                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(client, collection, 1000, annsField);
                 log.info("提供给hybridSearch使用的随机向量数: {}", searchBaseVectors.size());
                 fieldVectorsMap.put(annsField, searchBaseVectors);
             }
@@ -318,7 +322,7 @@ public class HybridSearchComp {
                     long startItemTime = System.currentTimeMillis();
                     SearchResp hybridSearchResp = null;
                     try {
-                        hybridSearchResp = milvusClientV2.hybridSearch(hybridSearchReq);
+                        hybridSearchResp = client.hybridSearch(hybridSearchReq);
                     } catch (Exception e) {
                         statsReporter.recordFailure();
                         log.error("线程[{}] hybridSearch error :{}", finalC, e.getMessage());
@@ -453,4 +457,3 @@ public class HybridSearchComp {
         private List<Integer> resultNum;
     }
 }
-
