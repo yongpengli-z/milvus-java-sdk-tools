@@ -548,11 +548,17 @@ public class ResourceManagerServiceUtils {
     public static String getGlobalClusterId(String instanceId) {
         String resp = describeInstance(instanceId);
         JSONObject jo = JSONObject.parseObject(resp);
-        if (jo.getInteger("Code") != null && jo.getInteger("Code") == 0) {
-            String gcId = jo.getJSONObject("Data").getString("GlobalClusterId");
+        Integer code = getResponseCode(jo);
+        JSONObject data = getResponseData(jo);
+        if (isSuccessCode(code) && data != null) {
+            String gcId = firstNonBlank(data.getString("GlobalClusterId"), data.getString("globalClusterId"));
+            log.info("describeInstance 反查 GlobalClusterId: instanceId={}, globalClusterId={}", instanceId, gcId);
             if (gcId != null && !gcId.isEmpty()) {
                 return gcId;
             }
+        } else {
+            log.warn("describeInstance 反查 GlobalClusterId 失败: instanceId={}, code={}, message={}",
+                    instanceId, code, getResponseMessage(jo));
         }
         return null;
     }
@@ -575,16 +581,50 @@ public class ResourceManagerServiceUtils {
         String resp = HttpClientUtils.doGet(url, header, null);
         log.info("[cloud-service][describe global cluster]: {}", resp);
         JSONObject jo = JSONObject.parseObject(resp);
-        if (jo.getInteger("Code") != null && jo.getInteger("Code") == 0) {
-            String connectAddress = jo.getJSONObject("Data").getString("ConnectAddress");
+        Integer code = getResponseCode(jo);
+        JSONObject data = getResponseData(jo);
+        if (isSuccessCode(code) && data != null) {
+            String connectAddress = firstNonBlank(data.getString("ConnectAddress"), data.getString("connectAddress"));
             if (connectAddress != null && !connectAddress.isEmpty()) {
                 if (!connectAddress.startsWith("https://")) {
                     connectAddress = "https://" + connectAddress;
                 }
+                log.info("describe global cluster endpoint success: globalClusterId={}, endpoint={}", globalClusterId, connectAddress);
                 return connectAddress;
+            }
+            log.warn("describe global cluster endpoint 为空: globalClusterId={}", globalClusterId);
+        } else {
+            log.warn("describe global cluster endpoint 失败: globalClusterId={}, code={}, message={}",
+                    globalClusterId, code, getResponseMessage(jo));
+        }
+        return null;
+    }
+
+    private static Integer getResponseCode(JSONObject jo) {
+        Integer code = jo.getInteger("Code");
+        return code != null ? code : jo.getInteger("code");
+    }
+
+    private static String getResponseMessage(JSONObject jo) {
+        String message = jo.getString("Message");
+        return message != null ? message : jo.getString("message");
+    }
+
+    private static JSONObject getResponseData(JSONObject jo) {
+        JSONObject data = jo.getJSONObject("Data");
+        return data != null ? data : jo.getJSONObject("data");
+    }
+
+    private static boolean isSuccessCode(Integer code) {
+        return code != null && (code == 0 || code == 200);
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isEmpty()) {
+                return value;
             }
         }
         return null;
     }
 }
-

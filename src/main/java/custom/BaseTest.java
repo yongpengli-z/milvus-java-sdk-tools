@@ -192,10 +192,12 @@ public class BaseTest {
 
         String globalClusterId = ResourceManagerServiceUtils.getGlobalClusterId(instanceId);
         if (globalClusterId == null || globalClusterId.isEmpty()) {
+            log.info("输入实例未反查到 GlobalClusterId，按普通实例处理: instanceId={}", instanceId);
             return false;
         }
         String globalEndpoint = ResourceManagerServiceUtils.describeGlobalClusterEndpoint(globalClusterId);
         if (globalEndpoint == null || globalEndpoint.isEmpty()) {
+            log.warn("输入实例已反查到 GlobalClusterId={}，但未获取到 Global Endpoint，按普通实例处理", globalClusterId);
             return false;
         }
         populateGlobalClusterInfo(globalEndpoint, globalClusterId, token);
