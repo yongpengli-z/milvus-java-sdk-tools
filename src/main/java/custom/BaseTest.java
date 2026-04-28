@@ -78,14 +78,18 @@ public class BaseTest {
             return milvusClientV2;
         }
         String uri;
+        String token = newInstanceInfo.getToken();
+        InstanceInfo targetInfo = null;
         if (targetEndpoint.equalsIgnoreCase("primary")) {
             // 如果 primaryInstanceInfo 有独立 URI，走缓存创建；否则回退到默认 client
             if (primaryInstanceInfo.getUri() != null && !primaryInstanceInfo.getUri().isEmpty()) {
+                targetInfo = primaryInstanceInfo;
                 uri = primaryInstanceInfo.getUri();
             } else {
                 return milvusClientV2;
             }
         } else if (targetEndpoint.equalsIgnoreCase("global")) {
+            targetInfo = globalClusterInfo;
             uri = globalClusterInfo.getUri();
         } else if (targetEndpoint.toLowerCase().startsWith("secondary")) {
             int index = 0;
@@ -96,7 +100,8 @@ public class BaseTest {
                 log.error("secondary index {} 超出范围，共 {} 个 secondary", index, secondaryInstanceInfoList.size());
                 return milvusClientV2;
             }
-            uri = secondaryInstanceInfoList.get(index).getUri();
+            targetInfo = secondaryInstanceInfoList.get(index);
+            uri = targetInfo.getUri();
         } else {
             uri = targetEndpoint;
         }
@@ -105,11 +110,56 @@ public class BaseTest {
             log.warn("targetEndpoint={} 对应的 URI 为空，回退到 primary client", targetEndpoint);
             return milvusClientV2;
         }
+        if (targetInfo != null && targetInfo.getToken() != null && !targetInfo.getToken().isEmpty()) {
+            token = targetInfo.getToken();
+        }
+
+        token = resolveTargetToken(uri, token, targetInfo);
+        final String finalToken = token == null ? "" : token;
 
         return clientCache.computeIfAbsent(uri, u -> {
             log.info("创建新的 MilvusClientV2，uri: {}", u);
-            return MilvusConnect.createMilvusClientV2(u, newInstanceInfo.getToken());
+            return MilvusConnect.createMilvusClientV2(u, finalToken);
         });
+    }
+
+    private static String resolveTargetToken(String uri, String currentToken, InstanceInfo targetInfo) {
+        String targetInstanceId = targetInfo != null && targetInfo.getInstanceId() != null && !targetInfo.getInstanceId().isEmpty()
+                ? targetInfo.getInstanceId()
+                : extractInstanceIdFromUri(uri);
+        String sourceInstanceId = newInstanceInfo.getInstanceId();
+        boolean differentPhysicalInstance = targetInstanceId != null
+                && !targetInstanceId.isEmpty()
+                && sourceInstanceId != null
+                && !sourceInstanceId.isEmpty()
+                && !targetInstanceId.equals(sourceInstanceId);
+        boolean tokenMissing = currentToken == null || currentToken.isEmpty();
+        boolean reusedSourceToken = currentToken != null
+                && newInstanceInfo.getToken() != null
+                && currentToken.equals(newInstanceInfo.getToken());
+
+        if (!isCloudInstanceUri(uri) || (!tokenMissing && (!differentPhysicalInstance || !reusedSourceToken))) {
+            return currentToken;
+        }
+
+        try {
+            String fetchedToken = MilvusConnect.provideToken(uri);
+            if (fetchedToken != null && !fetchedToken.isEmpty()) {
+                if (targetInfo != null) {
+                    targetInfo.setToken(fetchedToken);
+                }
+                log.info("targetEndpoint uri={} 使用目标实例 token", uri);
+                return fetchedToken;
+            }
+        } catch (Exception e) {
+            log.warn("获取目标实例 token 失败，继续使用当前 token: uri={}, error={}", uri, e.getMessage());
+        }
+        return currentToken;
+    }
+
+    private static boolean isCloudInstanceUri(String uri) {
+        return uri != null && (uri.contains("ali") || uri.contains("tc") || uri.contains("hwc")
+                || uri.contains("aws") || uri.contains("gcp") || uri.contains("az"));
     }
 
     private static String normalizeHttpsEndpoint(String endpoint) {
