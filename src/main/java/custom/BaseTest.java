@@ -309,9 +309,12 @@ public class BaseTest {
                     log.info("检测到 Global Endpoint: {}", uri);
                     if (token.equals("")) {
                         token = MilvusConnect.provideToken(uri);
-                        log.info("查询到token:" + token);
                     }
                     populateGlobalClusterInfo(uri, extractGlobalClusterIdFromEndpoint(uri), token);
+                    if (token.equals("")) {
+                        token = resolveGlobalEndpointToken(token);
+                        log.info("Global Endpoint 未直接查到 token，已尝试使用 primary endpoint token");
+                    }
                     newInstanceInfo.setUri(primaryInstanceInfo.getUri());
                     newInstanceInfo.setInstanceId(primaryInstanceInfo.getInstanceId());
                 } else {
