@@ -17,13 +17,11 @@ import static custom.BaseTest.cloudServiceUserInfo;
 @Slf4j
 public class RestartInstanceComp {
     public static RestartInstanceResult restartInstance(RestartInstanceParams restartInstanceParams) {
-// 检查账号
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
-            if (restartInstanceParams.getAccountEmail() == null || restartInstanceParams.getAccountEmail().equalsIgnoreCase("")) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-            } else {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(restartInstanceParams.getAccountEmail(), restartInstanceParams.getAccountPassword());
-            }
+        // 检查账号（如果指定了 accountEmail 则强制用该账号登录）
+        if (restartInstanceParams.getAccountEmail() != null && !restartInstanceParams.getAccountEmail().equalsIgnoreCase("")) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(restartInstanceParams.getAccountEmail(), restartInstanceParams.getAccountPassword());
+        } else if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
         // 检查实例状态
         String describeInstance = ResourceManagerServiceUtils.describeInstance(restartInstanceParams.getInstanceId());
