@@ -187,11 +187,13 @@ public class ComponentSchedule {
         }
         if (object instanceof LoopParams) {
             log.info("*********** < Loop Operator> ***********");
-            parentNodeName.add("LoopParams_" + index);
-            LoopResult loopResult = LoopComp.loopComp((LoopParams) object);
+            String loopNodeName = "LoopParams_" + index;
+            List<String> loopParentNodeName = new ArrayList<>(parentNodeName);
+            parentNodeName.add(loopNodeName);
+            LoopResult loopResult = LoopComp.loopComp((LoopParams) object, loopNodeName, loopParentNodeName);
             parentNodeName.remove(parentNodeName.size() - 1);
             jsonObject.put("Loop_" + index, loopResult);
-            reportStepResult(LoopParams.class.getSimpleName() + "_" + index, JSON.toJSONString(loopResult));
+            reportStepResult(loopNodeName, JSON.toJSONString(loopResult));
         }
         if (object instanceof CreateInstanceParams) {
             log.info("*********** < create instance> ***********");
@@ -555,6 +557,10 @@ public class ComponentSchedule {
     }
 
     public static void reportStepResult(String nodeName, String result) {
+        reportStepResult(nodeName, result, parentNodeName);
+    }
+
+    public static void reportStepResult(String nodeName, String result, List<String> parentNodeNames) {
         if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
             log.info("current env:" + envEnum);
             return;
@@ -563,10 +569,10 @@ public class ComponentSchedule {
         JSONObject params = new JSONObject();
         params.put("taskId", taskId);
         params.put("nodeName", nodeName);
-        params.put("parentNodeName", parentNodeName);
+        params.put("parentNodeName", parentNodeNames);
         params.put("result", result);
         String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
-        log.info(parentNodeName + "[" + nodeName + "]Insert result:" + s);
+        log.info(parentNodeNames + "[" + nodeName + "]Insert result:" + s);
         log.info("params " + "[" + params.toJSONString() + "]Insert result:" + s);
 
     }

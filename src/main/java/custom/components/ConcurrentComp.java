@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+import static custom.BaseTest.parentNodeName;
+
 @Slf4j
 public class ConcurrentComp {
 
@@ -124,7 +126,8 @@ public class ConcurrentComp {
         }
         if (object instanceof LoopParams) {
             log.info("*********** < [Concurrent] Loop Operator> ***********");
-            LoopResult loopResult = LoopComp.loopComp((LoopParams) object);
+            String loopNodeName = "LoopParams_" + index;
+            LoopResult loopResult = LoopComp.loopComp((LoopParams) object, loopNodeName, new ArrayList<>(parentNodeName));
             jsonObject.put("Loop_" + index,  JSON.toJSONString(loopResult));
         }
         return jsonObject;

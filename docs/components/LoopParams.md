@@ -19,6 +19,9 @@
 
 - `paramComb` 内部的 key 也必须是 `ClassName_index` 格式（内部也按 `_数字` 排序执行）
 - 搭配 `collectionRule` 使用：内部组件 `collectionRule: "random"` 或 `"sequence"` 可让每次循环操作不同的 collection
+- 返回结果会做摘要压缩：Loop 只保留 `runningNum`、`abnormalNum` 和每个内部步骤的聚合摘要，避免循环次数较多时生成超大结果
+- 压缩规则：重复值显示 `value + count`；数值显示 `count/min/max/avg/first/last`；长列表或复杂对象显示 `count/first/last` 或少量去重样本
+- 每轮循环结束后会把轻量进度结果上报到对应 Loop 节点：`LoopParams_<index>`，payload 包含 `loopNodeName`、`parentNodeName`、`loopPath`、`completedCycles`、`cycleNum`、`runningMinutes`、`abnormalNum` 等字段；最终结果也会上报到同一个节点，由上报接口替换
 
 ## JSON 示例（批量创建 50 个 collection 并插入数据）
 
