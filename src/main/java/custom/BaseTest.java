@@ -80,6 +80,7 @@ public class BaseTest {
         String uri;
         String token = newInstanceInfo.getToken();
         InstanceInfo targetInfo = null;
+        boolean globalTarget = false;
         if (targetEndpoint.equalsIgnoreCase("primary")) {
             // 如果 primaryInstanceInfo 有独立 URI，走缓存创建；否则回退到默认 client
             if (primaryInstanceInfo.getUri() != null && !primaryInstanceInfo.getUri().isEmpty()) {
@@ -89,6 +90,7 @@ public class BaseTest {
                 return milvusClientV2;
             }
         } else if (targetEndpoint.equalsIgnoreCase("global")) {
+            globalTarget = true;
             targetInfo = globalClusterInfo;
             uri = globalClusterInfo.getUri();
         } else if (targetEndpoint.toLowerCase().startsWith("secondary")) {
@@ -114,13 +116,24 @@ public class BaseTest {
             token = targetInfo.getToken();
         }
 
-        token = resolveTargetToken(uri, token, targetInfo);
+        token = globalTarget ? resolveGlobalEndpointToken(token) : resolveTargetToken(uri, token, targetInfo);
         final String finalToken = token == null ? "" : token;
 
         return clientCache.computeIfAbsent(uri, u -> {
             log.info("创建新的 MilvusClientV2，uri: {}", u);
             return MilvusConnect.createMilvusClientV2(u, finalToken);
         });
+    }
+
+    private static String resolveGlobalEndpointToken(String currentToken) {
+        if (primaryInstanceInfo.getUri() == null || primaryInstanceInfo.getUri().isEmpty()) {
+            return currentToken;
+        }
+        String token = resolveTargetToken(primaryInstanceInfo.getUri(), currentToken, primaryInstanceInfo);
+        if (token != null && !token.isEmpty()) {
+            globalClusterInfo.setToken(token);
+        }
+        return token;
     }
 
     private static String resolveTargetToken(String uri, String currentToken, InstanceInfo targetInfo) {
