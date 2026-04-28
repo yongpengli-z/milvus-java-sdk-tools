@@ -9,6 +9,7 @@ import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
 import io.milvus.orm.iterator.SearchIterator;
 import io.milvus.response.QueryResultsWrapper;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.common.IndexParam;
 import io.milvus.v2.service.vector.request.SearchIteratorReq;
@@ -27,13 +28,16 @@ import static custom.BaseTest.*;
 @Slf4j
 public class SearchIteratorComp {
     public static SearchIteratorResultA searchIteratorCollection(SearchIteratorParams searchIteratorParams) {
+        MilvusClientV2 client = getMilvusClient(searchIteratorParams.getTargetEndpoint());
+        log.info("SearchIterator 使用 endpoint: {}", searchIteratorParams.getTargetEndpoint() == null ? "primary(default)" : searchIteratorParams.getTargetEndpoint());
+
         // 先search collection
         String collection = (searchIteratorParams.getCollectionName() == null ||
                 searchIteratorParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size()-1) : searchIteratorParams.getCollectionName();
 
         // 随机向量，从数据库里筛选--暂定1000条
         log.info("从collection里捞取向量: " + 1000);
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000,searchIteratorParams.getAnnsFields());
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(client, collection, 1000,searchIteratorParams.getAnnsFields());
         log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         // 如果不随机，则随机一个
         List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchIteratorParams.getNq());
@@ -75,7 +79,7 @@ public class SearchIteratorComp {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchIteratorParams.getNq());
                             }
                             long startItemTime = System.currentTimeMillis();
-                            SearchIterator searchIterator = milvusClientV2.searchIterator(SearchIteratorReq.builder()
+                            SearchIterator searchIterator = client.searchIterator(SearchIteratorReq.builder()
                                     .topK(searchIteratorParams.getTopK())
                                     .outputFields(finalOutputs)
                                     .vectorFieldName(searchIteratorParams.getVectorFieldName())

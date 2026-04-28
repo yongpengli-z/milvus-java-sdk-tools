@@ -8,6 +8,7 @@ import custom.entity.result.DeleteResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
@@ -25,29 +26,31 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static custom.BaseTest.globalCollectionNames;
-import static custom.BaseTest.milvusClientV2;
+import static custom.BaseTest.*;
 
 @Data
 @Slf4j
 public class DeleteComp {
     public static DeleteResult delete(DeleteParams deleteParams) {
+        MilvusClientV2 client = getMilvusClient(deleteParams.getTargetEndpoint());
+        log.info("Delete 使用 endpoint: {}", deleteParams.getTargetEndpoint() == null ? "primary(default)" : deleteParams.getTargetEndpoint());
+
         String collection = (deleteParams.getCollectionName() == null ||
                 deleteParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : deleteParams.getCollectionName();
 
         // 如果 numConcurrency <= 1 且 runningMinutes <= 0，走单次删除（兼容旧行为）
         if (deleteParams.getNumConcurrency() <= 1 && deleteParams.getRunningMinutes() <= 0) {
-            return deleteSingle(deleteParams, collection);
+            return deleteSingle(client, deleteParams, collection);
         }
 
         // 并发持续删除模式：每轮先 query 出 PK，再按 PK 删除
-        return deleteConcurrent(deleteParams, collection);
+        return deleteConcurrent(client, deleteParams, collection);
     }
 
     /**
      * 单次删除（兼容旧行为）
      */
-    private static DeleteResult deleteSingle(DeleteParams deleteParams, String collection) {
+    private static DeleteResult deleteSingle(MilvusClientV2 client, DeleteParams deleteParams, String collection) {
         CommonResult commonResult = CommonResult.builder().build();
         List<String> assertMessages = new ArrayList<>();
 
@@ -63,7 +66,7 @@ public class DeleteComp {
             if (deleteParams.getFilter() != null && !deleteParams.getFilter().equalsIgnoreCase("")) {
                 deleteReq.setFilter(deleteParams.getFilter());
             }
-            DeleteResp deleteResp = milvusClientV2.delete(deleteReq);
+            DeleteResp deleteResp = client.delete(deleteReq);
             long deleteCnt = deleteResp.getDeleteCnt();
             commonResult.setResult(ResultEnum.SUCCESS.result);
             if (deleteCnt == 0) {
@@ -85,18 +88,18 @@ public class DeleteComp {
     /**
      * 并发持续删除模式：每轮用随机向量 search 出分散的 PK，再按 PK 删除
      */
-    private static DeleteResult deleteConcurrent(DeleteParams deleteParams, String collection) {
+    private static DeleteResult deleteConcurrent(MilvusClientV2 client, DeleteParams deleteParams, String collection) {
         int numConcurrency = Math.max(deleteParams.getNumConcurrency(), 1);
         long runningMinutes = Math.max(deleteParams.getRunningMinutes(), 1);
         int deleteNumPerRound = deleteParams.getDeleteNumPerRound() > 0 ? deleteParams.getDeleteNumPerRound() : 10;
 
         // 获取第一个向量字段名
-        String annsField = getFirstVectorField(collection);
+        String annsField = getFirstVectorField(client, collection);
         log.info("delete collection: {}, annsField: {}", collection, annsField);
 
         // 从 collection 中捞取随机向量用于 search
         log.info("从collection里捞取向量用于search-then-delete...");
-        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, annsField);
+        List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(client, collection, 1000, annsField);
         log.info("提供给search使用的随机向量数: {}", searchBaseVectors.size());
         if (searchBaseVectors.isEmpty()) {
             log.error("无法从collection中获取向量数据，无法执行持续删除");
@@ -151,7 +154,7 @@ public class DeleteComp {
                         if (deleteParams.getFilter() != null && !deleteParams.getFilter().isEmpty()) {
                             searchReqBuilder.filter(deleteParams.getFilter());
                         }
-                        SearchResp searchResp = milvusClientV2.search(searchReqBuilder.build());
+                        SearchResp searchResp = client.search(searchReqBuilder.build());
 
                         List<List<SearchResp.SearchResult>> searchResults = searchResp.getSearchResults();
                         if (searchResults == null || searchResults.isEmpty() || searchResults.get(0).isEmpty()) {
@@ -179,7 +182,7 @@ public class DeleteComp {
                         if (deleteParams.getPartitionName() != null && !deleteParams.getPartitionName().isEmpty()) {
                             deleteReq.setPartitionName(deleteParams.getPartitionName());
                         }
-                        DeleteResp deleteResp = milvusClientV2.delete(deleteReq);
+                        DeleteResp deleteResp = client.delete(deleteReq);
                         deleteCountList.add(deleteResp.getDeleteCnt());
                     } catch (Exception e) {
                         statsReporter.recordFailure();
@@ -277,8 +280,8 @@ public class DeleteComp {
     /**
      * 获取 collection 的第一个向量字段名
      */
-    private static String getFirstVectorField(String collectionName) {
-        DescribeCollectionResp resp = milvusClientV2.describeCollection(
+    private static String getFirstVectorField(MilvusClientV2 client, String collectionName) {
+        DescribeCollectionResp resp = client.describeCollection(
                 DescribeCollectionReq.builder().collectionName(collectionName).build());
         for (CreateCollectionReq.FieldSchema field : resp.getCollectionSchema().getFieldSchemaList()) {
             DataType dt = field.getDataType();

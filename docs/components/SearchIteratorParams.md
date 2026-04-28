@@ -21,6 +21,17 @@
 | `randomVector` | boolean | 是 | | |
 | `indexAlgo` | String | 否 | `""` | |
 | `useV1` | boolean | 否 | | 保留字段，当前未使用 |
+| `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
+
+## targetEndpoint
+
+用于 Global Cluster 场景选择 SearchIterator 访问的 endpoint：
+
+- `""` / `primary`：使用 primary/default client
+- `global`：使用 GDN 统一入口
+- `secondary`：使用第一个 secondary
+- `secondary_0` / `secondary_1`：使用指定下标的 secondary
+- `https://...` / `http://...`：直接连接指定 URI
 
 ## JSON 示例
 
@@ -29,7 +40,8 @@
   "SearchIteratorParams_0": {
     "annsFields": "vec", "vectorFieldName": "vec",
     "nq": 1, "topK": 100, "batchSize": 50, "outputs": ["*"],
-    "metricType": "L2", "numConcurrency": 5, "runningMinutes": 1, "randomVector": true
+    "metricType": "L2", "numConcurrency": 5, "runningMinutes": 1,
+    "randomVector": true, "targetEndpoint": ""
   }
 }
 ```

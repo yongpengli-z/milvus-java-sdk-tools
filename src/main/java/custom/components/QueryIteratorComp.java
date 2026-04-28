@@ -8,6 +8,7 @@ import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
 import io.milvus.orm.iterator.QueryIterator;
 import io.milvus.response.QueryResultsWrapper;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.vector.request.QueryIteratorReq;
 import lombok.Data;
@@ -23,6 +24,9 @@ import static custom.BaseTest.*;
 @Slf4j
 public class QueryIteratorComp {
     public static QueryIteratorResult queryIterator(QueryIteratorParams queryIteratorParams) {
+        MilvusClientV2 client = getMilvusClient(queryIteratorParams.getTargetEndpoint());
+        log.info("QueryIterator 使用 endpoint: {}", queryIteratorParams.getTargetEndpoint() == null ? "primary(default)" : queryIteratorParams.getTargetEndpoint());
+
         String collection = (queryIteratorParams.getCollectionName() == null ||
                 queryIteratorParams.getCollectionName().equalsIgnoreCase(""))
                 ? globalCollectionNames.get(globalCollectionNames.size() - 1)
@@ -69,7 +73,7 @@ public class QueryIteratorComp {
                     if (queryIteratorParams.getPartitionNames() != null && !queryIteratorParams.getPartitionNames().isEmpty()) {
                         builder.partitionNames(queryIteratorParams.getPartitionNames());
                     }
-                    QueryIterator queryIterator = milvusClientV2.queryIterator(builder.build());
+                    QueryIterator queryIterator = client.queryIterator(builder.build());
                     int totalCount = 0;
                     while (true) {
                         List<QueryResultsWrapper.RowRecord> res = queryIterator.next();

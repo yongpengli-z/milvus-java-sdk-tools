@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * SearchIterator 参数（迭代式搜索，用于大结果集分页拉取）。
  * <p>
- * 前端当前未提供对应的 Edit 表单（`customize/components/items/` 下无 searchIteratorEdit）。
+ * 对应前端组件：`searchIteratorEdit.vue`
  */
 @Data
 public class SearchIteratorParams {
@@ -119,4 +119,16 @@ public class SearchIteratorParams {
      * 默认值：""（空字符串）
      */
     private String annsFields;
+
+    /**
+     * 目标 endpoint（可选，用于 Global Cluster 场景）。
+     * <ul>
+     *   <li>"" / null / "primary" — 使用默认 primary client</li>
+     *   <li>"global" — 使用 GDN 统一入口</li>
+     *   <li>"secondary" — 使用第一个 secondary</li>
+     *   <li>"secondary_0" / "secondary_1" — 使用指定下标的 secondary</li>
+     *   <li>以 "https://" 或 "http://" 开头 — 直接连该 URI</li>
+     * </ul>
+     */
+    private String targetEndpoint;
 }

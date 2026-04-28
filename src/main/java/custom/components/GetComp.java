@@ -4,6 +4,7 @@ import custom.entity.GetParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.GetResult;
 import custom.entity.result.ResultEnum;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.vector.request.GetReq;
 import io.milvus.v2.service.vector.response.GetResp;
 import lombok.extern.slf4j.Slf4j;
@@ -11,12 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 
-import static custom.BaseTest.globalCollectionNames;
-import static custom.BaseTest.milvusClientV2;
+import static custom.BaseTest.*;
 
 @Slf4j
 public class GetComp {
     public static GetResult get(GetParams getParams) {
+        MilvusClientV2 client = getMilvusClient(getParams.getTargetEndpoint());
+        log.info("Get 使用 endpoint: {}", getParams.getTargetEndpoint() == null ? "primary(default)" : getParams.getTargetEndpoint());
+
         String collectionName = (getParams.getCollectionName() == null ||
                 getParams.getCollectionName().equalsIgnoreCase(""))
                 ? globalCollectionNames.get(globalCollectionNames.size() - 1)
@@ -29,7 +32,7 @@ public class GetComp {
             if (getParams.getOutputFields() != null && !getParams.getOutputFields().isEmpty()) {
                 builder.outputFields(getParams.getOutputFields());
             }
-            GetResp getResp = milvusClientV2.get(builder.build());
+            GetResp getResp = client.get(builder.build());
             log.info("Get entities success, result size: {}", getResp.getGetResults().size());
             // assertions
             List<String> assertMessages = new ArrayList<>();
