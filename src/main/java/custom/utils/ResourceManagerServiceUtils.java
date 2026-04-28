@@ -580,24 +580,60 @@ public class ResourceManagerServiceUtils {
         }
         String resp = HttpClientUtils.doGet(url, header, null);
         log.info("[cloud-service][describe global cluster]: {}", resp);
+        String connectAddress = parseGlobalEndpoint(resp, "ConnectAddress", "connectAddress");
+        if (connectAddress != null && !connectAddress.isEmpty()) {
+            log.info("describe global cluster endpoint success from cloud-service: globalClusterId={}, endpoint={}", globalClusterId, connectAddress);
+            return normalizeHttps(connectAddress);
+        }
+
+        log.warn("cloud-service describe global cluster 未返回 endpoint，尝试 cloud-ops fallback: globalClusterId={}", globalClusterId);
+        String opsEndpoint = describeGlobalClusterEndpointFromOps(globalClusterId);
+        if (opsEndpoint != null && !opsEndpoint.isEmpty()) {
+            return normalizeHttps(opsEndpoint);
+        }
+        return null;
+    }
+
+    private static String describeGlobalClusterEndpointFromOps(String globalClusterId) {
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/custInstance/globalCluster/" + globalClusterId;
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        String resp = HttpClientUtils.doGet(url, header, null);
+        log.info("[cloud-ops][describe global cluster]: {}", resp);
+        String connectAddress = parseGlobalEndpoint(resp, "globalEndpoint", "GlobalEndpoint", "ConnectAddress", "connectAddress");
+        if (connectAddress != null && !connectAddress.isEmpty()) {
+            log.info("describe global cluster endpoint success from cloud-ops: globalClusterId={}, endpoint={}", globalClusterId, connectAddress);
+            return connectAddress;
+        }
+        log.warn("cloud-ops describe global cluster endpoint 为空: globalClusterId={}", globalClusterId);
+        return null;
+    }
+
+    private static String parseGlobalEndpoint(String resp, String... endpointFields) {
+        if (resp == null || resp.isEmpty()) {
+            return null;
+        }
         JSONObject jo = JSONObject.parseObject(resp);
         Integer code = getResponseCode(jo);
         JSONObject data = getResponseData(jo);
         if (isSuccessCode(code) && data != null) {
-            String connectAddress = firstNonBlank(data.getString("ConnectAddress"), data.getString("connectAddress"));
-            if (connectAddress != null && !connectAddress.isEmpty()) {
-                if (!connectAddress.startsWith("https://")) {
-                    connectAddress = "https://" + connectAddress;
+            for (String field : endpointFields) {
+                String endpoint = data.getString(field);
+                if (endpoint != null && !endpoint.isEmpty()) {
+                    return endpoint;
                 }
-                log.info("describe global cluster endpoint success: globalClusterId={}, endpoint={}", globalClusterId, connectAddress);
-                return connectAddress;
             }
-            log.warn("describe global cluster endpoint 为空: globalClusterId={}", globalClusterId);
         } else {
-            log.warn("describe global cluster endpoint 失败: globalClusterId={}, code={}, message={}",
-                    globalClusterId, code, getResponseMessage(jo));
+            log.warn("describe global cluster response failed: code={}, message={}", code, getResponseMessage(jo));
         }
         return null;
+    }
+
+    private static String normalizeHttps(String endpoint) {
+        if (endpoint == null || endpoint.isEmpty() || endpoint.startsWith("https://") || endpoint.startsWith("http://")) {
+            return endpoint;
+        }
+        return "https://" + endpoint;
     }
 
     private static Integer getResponseCode(JSONObject jo) {
