@@ -26,7 +26,13 @@ public class LoopComp {
 
         while (runningCount < runningNum && LocalDateTime.now().isBefore(endTime)) {
             log.info("♻️ 第" + runningCount + "次循环 ♻️：");
-            List<JSONObject> jsonObjects = ComponentSchedule.runningSchedule(paramComb);
+            List<JSONObject> jsonObjects;
+            ComponentSchedule.pushLoopContext(loopNodeName, loopParentNodeName);
+            try {
+                jsonObjects = ComponentSchedule.runningSchedule(paramComb);
+            } finally {
+                ComponentSchedule.popLoopContext();
+            }
             if (JSONObject.toJSONString(jsonObjects).contains("exception")) {
                 exceptionNum++;
             }

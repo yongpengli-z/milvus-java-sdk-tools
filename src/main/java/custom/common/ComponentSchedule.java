@@ -17,6 +17,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
@@ -27,6 +30,8 @@ import static custom.BaseTest.*;
 @Slf4j
 public class ComponentSchedule {
     private static final ThreadLocal<List<String>> PARENT_NODE_NAMES = ThreadLocal.withInitial(ArrayList::new);
+    private static final ThreadLocal<List<LoopIterationContext>> LOOP_CONTEXTS = ThreadLocal.withInitial(ArrayList::new);
+    private static final Map<String, LoopAggregateState> LOOP_AGGREGATE_STATES = new ConcurrentHashMap<>();
 
     public static List<JSONObject> runningSchedule(String customizeParams) {
         log.info("--customizeParams--:" + customizeParams);
@@ -507,12 +512,20 @@ public class ComponentSchedule {
     }
 
     public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames) {
+        return callComponentSchedule(object, index, parentNodeNames, snapshotLoopContexts());
+    }
+
+    public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames,
+                                                   List<LoopIterationContext> loopContexts) {
         List<String> previousParentNodeNames = snapshotParentNodeName();
+        List<LoopIterationContext> previousLoopContexts = snapshotLoopContexts();
         setParentNodeNames(parentNodeNames);
+        setLoopContexts(loopContexts);
         try {
             return callComponentSchedule(object, index);
         } finally {
             setParentNodeNames(previousParentNodeNames);
+            setLoopContexts(previousLoopContexts);
         }
     }
 
@@ -582,7 +595,7 @@ public class ComponentSchedule {
         params.put("taskId", taskId);
         params.put("nodeName", nodeName);
         params.put("parentNodeName", parentNodeNames);
-        params.put("result", result);
+        params.put("result", buildReportResult(nodeName, result, parentNodeNames));
         String s = HttpClientUtils.doPostJson(uri, params.toJSONString());
         log.info(parentNodeNames + "[" + nodeName + "]Insert result:" + s);
         log.info("params " + "[" + params.toJSONString() + "]Insert result:" + s);
@@ -597,6 +610,28 @@ public class ComponentSchedule {
         PARENT_NODE_NAMES.set(new ArrayList<>(parentNodeNames));
     }
 
+    public static void pushLoopContext(String loopNodeName, List<String> loopParentNodeName) {
+        List<LoopIterationContext> loopContexts = snapshotLoopContexts();
+        loopContexts.add(new LoopIterationContext(loopNodeName, buildLoopPath(loopParentNodeName, loopNodeName)));
+        LOOP_CONTEXTS.set(loopContexts);
+    }
+
+    public static void popLoopContext() {
+        List<LoopIterationContext> loopContexts = snapshotLoopContexts();
+        if (!loopContexts.isEmpty()) {
+            loopContexts.remove(loopContexts.size() - 1);
+        }
+        LOOP_CONTEXTS.set(loopContexts);
+    }
+
+    public static List<LoopIterationContext> snapshotLoopContexts() {
+        return new ArrayList<>(LOOP_CONTEXTS.get());
+    }
+
+    private static void setLoopContexts(List<LoopIterationContext> loopContexts) {
+        LOOP_CONTEXTS.set(new ArrayList<>(loopContexts));
+    }
+
     private static void pushParentNodeName(String nodeName) {
         List<String> parentNodeNames = snapshotParentNodeName();
         parentNodeNames.add(nodeName);
@@ -609,6 +644,83 @@ public class ComponentSchedule {
             parentNodeNames.remove(parentNodeNames.size() - 1);
         }
         PARENT_NODE_NAMES.set(parentNodeNames);
+    }
+
+    private static String buildReportResult(String nodeName, String result, List<String> parentNodeNames) {
+        LoopIterationContext loopContext = findCurrentLoopContext(nodeName, parentNodeNames);
+        if (loopContext == null) {
+            return result;
+        }
+
+        String aggregateKey = taskId + "|" + loopContext.getLoopPath() + "|" + JSON.toJSONString(parentNodeNames) + "|" + nodeName;
+        LoopAggregateState state = LOOP_AGGREGATE_STATES.computeIfAbsent(aggregateKey, key -> new LoopAggregateState());
+        return state.update(loopContext, result).toJSONString();
+    }
+
+    private static LoopIterationContext findCurrentLoopContext(String nodeName, List<String> parentNodeNames) {
+        if (nodeName.startsWith("LoopParams_")) {
+            return null;
+        }
+        List<LoopIterationContext> loopContexts = snapshotLoopContexts();
+        for (int i = loopContexts.size() - 1; i >= 0; i--) {
+            LoopIterationContext loopContext = loopContexts.get(i);
+            if (parentNodeNames.contains(loopContext.getLoopNodeName())) {
+                return loopContext;
+            }
+        }
+        return null;
+    }
+
+    private static String buildLoopPath(List<String> loopParentNodeName, String loopNodeName) {
+        List<String> path = new ArrayList<>(loopParentNodeName);
+        path.add(loopNodeName);
+        return String.join("/", path);
+    }
+
+    private static Object parseResultPayload(String result) {
+        try {
+            return JSON.parse(result);
+        } catch (Exception e) {
+            return result;
+        }
+    }
+
+    public static class LoopIterationContext {
+        private final String loopNodeName;
+        private final String loopPath;
+
+        public LoopIterationContext(String loopNodeName, String loopPath) {
+            this.loopNodeName = loopNodeName;
+            this.loopPath = loopPath;
+        }
+
+        public String getLoopNodeName() {
+            return loopNodeName;
+        }
+
+        public String getLoopPath() {
+            return loopPath;
+        }
+    }
+
+    private static class LoopAggregateState {
+        private int completedCycles;
+        private int abnormalNum;
+
+        synchronized JSONObject update(LoopIterationContext loopContext, String result) {
+            completedCycles++;
+            if (Objects.toString(result, "").contains("exception")) {
+                abnormalNum++;
+            }
+
+            JSONObject loopAggregate = new JSONObject(true);
+            loopAggregate.put("loopAggregate", true);
+            loopAggregate.put("loopPath", loopContext.getLoopPath());
+            loopAggregate.put("completedCycles", completedCycles);
+            loopAggregate.put("abnormalNum", abnormalNum);
+            loopAggregate.put("lastResult", parseResultPayload(result));
+            return loopAggregate;
+        }
     }
 
     public static void initInstanceStatus(String instanceId, String instanceUri, String image, int status) {

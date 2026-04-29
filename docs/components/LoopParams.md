@@ -20,7 +20,8 @@
 - `paramComb` 内部的 key 也必须是 `ClassName_index` 格式（内部也按 `_数字` 排序执行）
 - 搭配 `collectionRule` 使用：内部组件 `collectionRule: "random"` 或 `"sequence"` 可让每次循环操作不同的 collection
 - Loop 最终结果只保留 `result`、`runningNum`、`abnormalNum`，不聚合内部子组件结果，避免循环次数较多时生成超大结果
-- Loop 内部子组件按自身节点上报结果；由于上报接口是替换语义，同一子组件节点最终只保留最近一次上报结果。需要跨轮次聚合时，应由对应子组件自己实现聚合
+- Loop 内部子组件按自身节点上报聚合快照；由于上报接口是替换语义，同一子组件节点会持续替换为当前聚合快照，避免按轮次生成大量节点
+- 子组件聚合快照包含 `loopAggregate`、`loopPath`、`completedCycles`、`abnormalNum`、`lastResult`，其中 `lastResult` 是该子组件最近一次原始结果
 - 每轮循环结束后会把轻量进度结果上报到对应 Loop 节点：`LoopParams_<index>`，payload 包含 `loopNodeName`、`parentNodeName`、`loopPath`、`completedCycles`、`cycleNum`、`runningMinutes`、`abnormalNum` 等字段；最终结果也会上报到同一个节点，由上报接口替换
 
 ## JSON 示例（批量创建 50 个 collection 并插入数据）

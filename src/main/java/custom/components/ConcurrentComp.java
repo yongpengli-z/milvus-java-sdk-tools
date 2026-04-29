@@ -42,6 +42,7 @@ public class ConcurrentComp {
         List<JSONObject> results = new ArrayList<>();
         List<Future<String>> futures = new ArrayList<>();
         List<String> parentNodeNameSnapshot = ComponentSchedule.snapshotParentNodeName();
+        List<ComponentSchedule.LoopIterationContext> loopContextSnapshot = ComponentSchedule.snapshotLoopContexts();
 
         for (int i = 0; i < operators.size(); i++) {
             final int threadNumber = i;
@@ -49,7 +50,7 @@ public class ConcurrentComp {
             log.info("🟰并行操作["+i+"]🟰");
             Callable<String> task = () -> {
                 JSONObject jsonObject = ComponentSchedule.callComponentSchedule(
-                        operators.get(threadNumber), finalI, parentNodeNameSnapshot);
+                        operators.get(threadNumber), finalI, parentNodeNameSnapshot, loopContextSnapshot);
                 return jsonObject.toJSONString();
             };
             futures.add(executorService.submit(task));
