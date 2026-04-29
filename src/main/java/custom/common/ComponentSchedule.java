@@ -26,6 +26,8 @@ import static custom.BaseTest.*;
  */
 @Slf4j
 public class ComponentSchedule {
+    private static final ThreadLocal<List<String>> PARENT_NODE_NAMES = ThreadLocal.withInitial(ArrayList::new);
+
     public static List<JSONObject> runningSchedule(String customizeParams) {
         log.info("--customizeParams--:" + customizeParams);
         // 获取params的所有根节点
@@ -96,7 +98,7 @@ public class ComponentSchedule {
     public static JSONObject callComponentSchedule(Object object, int index) {
         JSONObject jsonObject = new JSONObject();
         String componentName = object.getClass().getSimpleName();
-        log.info("当前父节点：" + parentNodeName.toString());
+        log.info("当前父节点：" + snapshotParentNodeName());
         log.info("执行组件: {} , 参数: {}", componentName, JSON.toJSONString(object));
         try {
         if (object instanceof CreateCollectionParams) {
@@ -166,9 +168,9 @@ public class ComponentSchedule {
         }
         if (object instanceof ConcurrentParams) {
             log.info("*********** < Concurrent Operator > ***********");
-            parentNodeName.add("ConcurrentParams_" + index);
+            pushParentNodeName("ConcurrentParams_" + index);
             List<JSONObject> jsonObjects = ConcurrentComp.concurrentComp((ConcurrentParams) object);
-            parentNodeName.remove(parentNodeName.size() - 1);
+            popParentNodeName();
             jsonObject.put("Concurrent_" + index, jsonObjects);
             reportStepResult(ConcurrentParams.class.getSimpleName() + "_" + index, JSON.toJSONString(jsonObjects));
         }
@@ -188,12 +190,12 @@ public class ComponentSchedule {
         if (object instanceof LoopParams) {
             log.info("*********** < Loop Operator> ***********");
             String loopNodeName = "LoopParams_" + index;
-            List<String> loopParentNodeName = new ArrayList<>(parentNodeName);
-            parentNodeName.add(loopNodeName);
+            List<String> loopParentNodeName = snapshotParentNodeName();
+            pushParentNodeName(loopNodeName);
             LoopResult loopResult = LoopComp.loopComp((LoopParams) object, loopNodeName, loopParentNodeName);
-            parentNodeName.remove(parentNodeName.size() - 1);
+            popParentNodeName();
             jsonObject.put("Loop_" + index, loopResult);
-            reportStepResult(loopNodeName, JSON.toJSONString(loopResult));
+            reportStepResult(loopNodeName, JSON.toJSONString(loopResult), loopParentNodeName);
         }
         if (object instanceof CreateInstanceParams) {
             log.info("*********** < create instance> ***********");
@@ -504,6 +506,16 @@ public class ComponentSchedule {
         return jsonObject;
     }
 
+    public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames) {
+        List<String> previousParentNodeNames = snapshotParentNodeName();
+        setParentNodeNames(parentNodeNames);
+        try {
+            return callComponentSchedule(object, index);
+        } finally {
+            setParentNodeNames(previousParentNodeNames);
+        }
+    }
+
     /**
      * 判断实例创建步骤是否失败（Cloud 实例或 Helm 实例）
      */
@@ -557,7 +569,7 @@ public class ComponentSchedule {
     }
 
     public static void reportStepResult(String nodeName, String result) {
-        reportStepResult(nodeName, result, parentNodeName);
+        reportStepResult(nodeName, result, snapshotParentNodeName());
     }
 
     public static void reportStepResult(String nodeName, String result, List<String> parentNodeNames) {
@@ -575,6 +587,28 @@ public class ComponentSchedule {
         log.info(parentNodeNames + "[" + nodeName + "]Insert result:" + s);
         log.info("params " + "[" + params.toJSONString() + "]Insert result:" + s);
 
+    }
+
+    public static List<String> snapshotParentNodeName() {
+        return new ArrayList<>(PARENT_NODE_NAMES.get());
+    }
+
+    private static void setParentNodeNames(List<String> parentNodeNames) {
+        PARENT_NODE_NAMES.set(new ArrayList<>(parentNodeNames));
+    }
+
+    private static void pushParentNodeName(String nodeName) {
+        List<String> parentNodeNames = snapshotParentNodeName();
+        parentNodeNames.add(nodeName);
+        PARENT_NODE_NAMES.set(parentNodeNames);
+    }
+
+    private static void popParentNodeName() {
+        List<String> parentNodeNames = snapshotParentNodeName();
+        if (!parentNodeNames.isEmpty()) {
+            parentNodeNames.remove(parentNodeNames.size() - 1);
+        }
+        PARENT_NODE_NAMES.set(parentNodeNames);
     }
 
     public static void initInstanceStatus(String instanceId, String instanceUri, String image, int status) {

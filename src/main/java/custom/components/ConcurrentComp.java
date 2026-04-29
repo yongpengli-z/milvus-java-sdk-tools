@@ -13,8 +13,6 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-import static custom.BaseTest.parentNodeName;
-
 @Slf4j
 public class ConcurrentComp {
 
@@ -43,13 +41,15 @@ public class ConcurrentComp {
         ExecutorService executorService = Executors.newFixedThreadPool(operators.size());
         List<JSONObject> results = new ArrayList<>();
         List<Future<String>> futures = new ArrayList<>();
+        List<String> parentNodeNameSnapshot = ComponentSchedule.snapshotParentNodeName();
 
         for (int i = 0; i < operators.size(); i++) {
             final int threadNumber = i;
             int finalI = i;
             log.info("🟰并行操作["+i+"]🟰");
             Callable<String> task = () -> {
-                JSONObject jsonObject = ComponentSchedule.callComponentSchedule(operators.get(threadNumber), finalI);
+                JSONObject jsonObject = ComponentSchedule.callComponentSchedule(
+                        operators.get(threadNumber), finalI, parentNodeNameSnapshot);
                 return jsonObject.toJSONString();
             };
             futures.add(executorService.submit(task));
@@ -127,7 +127,8 @@ public class ConcurrentComp {
         if (object instanceof LoopParams) {
             log.info("*********** < [Concurrent] Loop Operator> ***********");
             String loopNodeName = "LoopParams_" + index;
-            LoopResult loopResult = LoopComp.loopComp((LoopParams) object, loopNodeName, new ArrayList<>(parentNodeName));
+            LoopResult loopResult = LoopComp.loopComp(
+                    (LoopParams) object, loopNodeName, ComponentSchedule.snapshotParentNodeName());
             jsonObject.put("Loop_" + index,  JSON.toJSONString(loopResult));
         }
         return jsonObject;
