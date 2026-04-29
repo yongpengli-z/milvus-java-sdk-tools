@@ -197,6 +197,7 @@ public class CreateSecondaryComp {
                         log.info("Global Cluster secondary: id={}, endpoint={}", cluster.getClusterId(), secEndpoint);
                     }
                 }
+                logGlobalClusterInfoList("create secondary topology");
             }
         } catch (Exception e) {
             log.warn("获取 Global Cluster topology 失败，仅使用 create_secondary 响应数据: {}", e.getMessage());
@@ -207,6 +208,7 @@ public class CreateSecondaryComp {
                 secInfo.setUri(instanceUriMap.getOrDefault(secId, ""));
                 secondaryInstanceInfoList.add(secInfo);
             }
+            logGlobalClusterInfoList("create secondary fallback");
         }
 
         Map<String, String> newSecondaryUris = buildUriMap(newSecondaryIds, instanceUriMap);

@@ -242,6 +242,47 @@ public class BaseTest {
                 log.info("Global Cluster secondary: id={}, endpoint={}", cluster.getClusterId(), secEndpoint);
             }
         }
+        logGlobalClusterInfoList("populate global cluster info");
+    }
+
+    public static void logGlobalClusterInfoList(String source) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n========== Global Cluster 信息列表");
+        if (source != null && !source.isEmpty()) {
+            sb.append(" (").append(source).append(")");
+        }
+        sb.append(" ==========");
+        appendInstanceInfoLine(sb, "global", globalClusterInfo, 0);
+        appendInstanceInfoLine(sb, "primary", primaryInstanceInfo, 0);
+        if (secondaryInstanceInfoList == null || secondaryInstanceInfoList.isEmpty()) {
+            sb.append("\n- role=secondary, index=-, instanceId=(empty), uri=(empty)");
+        } else {
+            for (int i = 0; i < secondaryInstanceInfoList.size(); i++) {
+                appendInstanceInfoLine(sb, "secondary", secondaryInstanceInfoList.get(i), i);
+            }
+        }
+        sb.append("\n================================================");
+        log.info(sb.toString());
+    }
+
+    private static void appendInstanceInfoLine(StringBuilder sb, String role, InstanceInfo info, int index) {
+        String instanceId = info == null || info.getInstanceId() == null || info.getInstanceId().isEmpty()
+                ? "(empty)"
+                : info.getInstanceId();
+        String uri = info == null || info.getUri() == null || info.getUri().isEmpty()
+                ? "(empty)"
+                : info.getUri();
+        if ("secondary".equals(role)) {
+            sb.append("\n- role=").append(role)
+                    .append(", index=").append(index)
+                    .append(", instanceId=").append(instanceId)
+                    .append(", uri=").append(uri);
+        } else {
+            sb.append("\n- role=").append(role)
+                    .append(", index=-")
+                    .append(", instanceId=").append(instanceId)
+                    .append(", uri=").append(uri);
+        }
     }
 
     private static boolean tryPopulateGlobalClusterFromInstanceUri(String uri, String token) {
