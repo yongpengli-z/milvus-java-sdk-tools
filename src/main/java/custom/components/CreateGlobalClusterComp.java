@@ -65,14 +65,17 @@ public class CreateGlobalClusterComp {
         }
 
         // 4. 解析响应
-        JSONObject data = jsonObject.getJSONObject("Data");
-        String globalClusterId = data.getString("GlobalClusterId");
-        String primaryInstanceId = data.getString("InstanceId");
+        JSONObject data = getObjectIgnoreCase(jsonObject, "Data", "data");
+        String globalClusterId = getStringIgnoreCase(data, "globalClusterId", "GlobalClusterId");
+        String primaryInstanceId = getStringIgnoreCase(data, "instanceId", "InstanceId");
         List<String> secondaryInstanceIds = new ArrayList<>();
-        JSONArray secondariesArr = data.getJSONArray("SecondaryClusters");
+        JSONArray secondariesArr = getArrayIgnoreCase(data, "secondaryClusters", "SecondaryClusters");
         if (secondariesArr != null) {
             for (int i = 0; i < secondariesArr.size(); i++) {
-                secondaryInstanceIds.add(secondariesArr.getJSONObject(i).getString("instanceId"));
+                String secondaryId = getStringIgnoreCase(secondariesArr.getJSONObject(i), "instanceId", "InstanceId");
+                if (secondaryId != null && !secondaryId.isEmpty()) {
+                    secondaryInstanceIds.add(secondaryId);
+                }
             }
         }
 
@@ -200,5 +203,35 @@ public class CreateGlobalClusterComp {
             result.put(id, instanceUriMap.getOrDefault(id, ""));
         }
         return result;
+    }
+
+    private static JSONObject getObjectIgnoreCase(JSONObject object, String... keys) {
+        for (String key : keys) {
+            JSONObject value = object.getJSONObject(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return new JSONObject();
+    }
+
+    private static JSONArray getArrayIgnoreCase(JSONObject object, String... keys) {
+        for (String key : keys) {
+            JSONArray value = object.getJSONArray(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static String getStringIgnoreCase(JSONObject object, String... keys) {
+        for (String key : keys) {
+            String value = object.getString(key);
+            if (value != null && !value.isEmpty()) {
+                return value;
+            }
+        }
+        return null;
     }
 }
