@@ -21,10 +21,12 @@ public class CloudServiceUtils {
     public static CloudServiceUserInfo queryUserIdOfCloudService(String userName, String password) {
         // 先登录vdc，获取token
         String loginUrl = envConfig.getCloudServiceHost().replace("cloud-service", "cloud-account") + "/account/inner/v1/account/login";
-        if (userName == null || userName.equalsIgnoreCase("")) {
+        boolean usingDefaultAccount = userName == null || userName.equalsIgnoreCase("");
+        if (usingDefaultAccount) {
             userName = "vdc_default_test@linshiyouxiang.net";
             password = "LyXp9%Hnxhl";
         }
+        log.info("[cloudService][login] accountEmail={}, usingDefaultAccount={}", userName, usingDefaultAccount);
         String jsonParam = "{\"Email\":\"" + userName + "\",\"Password\":\"" + password + "\"}";
         Map<String, String> header = new HashMap<>();
         header.put("recaptcha-challenge-response", "[]");
@@ -54,6 +56,8 @@ public class CloudServiceUtils {
         // 获取default project
         String defaultProject = providerDefaultProject(token, strings.get(0));
         csUserInfo.setDefaultProjectId(defaultProject);
+        log.info("[cloudService][login user info]\n- accountEmail={}\n- accountName={}\n- userId={}\n- proxyUserId={}\n- orgId={}\n- defaultProjectId={}",
+                userName, accountName, userId, csUserInfo.getProxyUserId(), strings.get(0), defaultProject);
         return csUserInfo;
     }
 

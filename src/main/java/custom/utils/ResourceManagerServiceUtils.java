@@ -360,6 +360,32 @@ public class ResourceManagerServiceUtils {
     }
 
     /**
+     * Global cluster 创建类接口需要 UserId 使用实例归属的 proxy user，RealUserId 保留真实登录用户。
+     */
+    private static String postToRmAsProxyUser(String url, String body, String action) {
+        Map<String, String> header = new HashMap<>();
+        String requestId = "qtp-java-tools-" + MathUtil.genRandomString(10);
+        String realUserId = cloudServiceUserInfo.getUserId();
+        String proxyUserId = cloudServiceUserInfo.getProxyUserId();
+        String orgId = cloudServiceUserInfo.getOrgIdList() == null || cloudServiceUserInfo.getOrgIdList().isEmpty()
+                ? ""
+                : cloudServiceUserInfo.getOrgIdList().get(0);
+        if (proxyUserId == null || proxyUserId.isEmpty()) {
+            proxyUserId = realUserId;
+        }
+        header.put("RequestId", requestId);
+        header.put("UserId", proxyUserId);
+        header.put("RealUserId", realUserId);
+        header.put("SourceApp", "Cloud-Meta");
+        if (!orgId.isEmpty()) {
+            header.put("OrgId", orgId);
+        }
+        log.info("[rm-service][{} request user info]\n- requestId={}\n- UserId(proxyUserId)={}\n- RealUserId={}\n- OrgId={}\n- ProjectId={}",
+                action, requestId, proxyUserId, realUserId, orgId, cloudServiceUserInfo.getDefaultProjectId());
+        return HttpClientUtils.doPostJson(url, header, body);
+    }
+
+    /**
      * 修改指定 NodeCategory 的 pod 副本数。
      * <p>
      * 对应 RM 接口 POST /resource/v1/instance/milvus/update_replicas?InstanceId=xxx。
@@ -485,7 +511,7 @@ public class ResourceManagerServiceUtils {
         }
         body.put("enableChildJobCenter", params.isEnableChildJobCenter());
         String jsonBody = gson.toJson(body);
-        String resp = postToRm(url, jsonBody);
+        String resp = postToRmAsProxyUser(url, jsonBody, "create global cluster");
         log.info("[rm-service][create global cluster]: {}", resp);
         return resp;
     }
@@ -534,7 +560,7 @@ public class ResourceManagerServiceUtils {
         }
         body.put("enableChildJobCenter", params.isEnableChildJobCenter());
         String jsonBody = gson.toJson(body);
-        String resp = postToRm(url, jsonBody);
+        String resp = postToRmAsProxyUser(url, jsonBody, "create secondary");
         log.info("[rm-service][create secondary]: {}", resp);
         return resp;
     }

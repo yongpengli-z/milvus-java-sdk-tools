@@ -30,14 +30,12 @@ public class CreateGlobalClusterComp {
     public static CreateGlobalClusterResult createGlobalCluster(CreateGlobalClusterParams params) {
         LocalDateTime startTime = LocalDateTime.now();
 
-        // 1. 登录检查
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
-            if (params.getAccountEmail() == null || params.getAccountEmail().isEmpty()) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-            } else {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(
-                        params.getAccountEmail(), params.getAccountPassword());
-            }
+        // 1. 登录检查。用户显式传 accountEmail 时，始终以该账号为准，避免沿用前置步骤初始化的默认账号。
+        if (params.getAccountEmail() != null && !params.getAccountEmail().isEmpty()) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(
+                    params.getAccountEmail(), params.getAccountPassword());
+        } else if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
 
         // 2. image 版本解析
