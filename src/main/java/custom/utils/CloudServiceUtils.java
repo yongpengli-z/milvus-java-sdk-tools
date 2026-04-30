@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.config.CloudServiceUserInfo;
+import custom.entity.CreateGlobalClusterParams;
+import custom.entity.CreateSecondaryParams;
 import custom.entity.ResumeInstanceParams;
 import custom.entity.StopInstanceParams;
 import custom.pojo.InstanceInfo;
@@ -18,6 +20,17 @@ import static custom.BaseTest.*;
 
 @Slf4j
 public class CloudServiceUtils {
+    private static Map<String, String> buildCloudServiceHeader() {
+        Map<String, String> header = new HashMap<>();
+        header.put("authorization", "Bearer " + cloudServiceUserInfo.getToken());
+        header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
+        header.put("UserId", cloudServiceUserInfo.getProxyUserId());
+        header.put("RealUserId", cloudServiceUserInfo.getUserId());
+        header.put("sourceApp", "Cloud-Meta");
+        header.put("requestId", "milvus-java-tools-" + System.currentTimeMillis());
+        return header;
+    }
+
     public static CloudServiceUserInfo queryUserIdOfCloudService(String userName, String password) {
         // 先登录vdc，获取token
         String loginUrl = envConfig.getCloudServiceHost().replace("cloud-service", "cloud-account") + "/account/inner/v1/account/login";
@@ -64,9 +77,7 @@ public class CloudServiceUtils {
 
     public static List<InstanceInfo> listInstance() {
         String url = envConfig.getCloudServiceHost() + "/cloud/v1/instance/list?CurrentPage=1&PageSize=100&ProjectId=" + cloudServiceUserInfo.getDefaultProjectId();
-        Map<String, String> header = new HashMap<>();
-        header.put("authorization", "Bearer " + cloudServiceUserInfo.getToken());
-        header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
+        Map<String, String> header = buildCloudServiceHeader();
         log.info("authorization token: " + "Bearer " + cloudServiceUserInfo.getToken());
         log.info("使用的 orgid: " + cloudServiceUserInfo.getOrgIdList().get(0));
         String s = HttpClientUtils.doGet(url, header, null);
@@ -126,9 +137,7 @@ public class CloudServiceUtils {
         String instanceId = stopInstanceParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : stopInstanceParams.getInstanceId();
         String url = envConfig.getCloudServiceHost() + "/cloud/v1/instance/stop";
         String body = "{\"instanceId\":\"" + instanceId + "\"}";
-        Map<String, String> header = new HashMap<>();
-        header.put("authorization", "Bearer " + cloudServiceUserInfo.getToken());
-        header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
+        Map<String, String> header = buildCloudServiceHeader();
         String s = HttpClientUtils.doPostJson(url, header, body);
         log.info("[Cloud-Service]stop-instance:" + s);
         return s;
@@ -138,13 +147,77 @@ public class CloudServiceUtils {
         String instanceId = resumeInstanceParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : resumeInstanceParams.getInstanceId();
         String url = envConfig.getCloudServiceHost() + "/cloud/v1/instance/resume";
         String body = "{\"instanceId\":\"" + instanceId + "\"}";
-        Map<String, String> header = new HashMap<>();
-        header.put("authorization", "Bearer " + cloudServiceUserInfo.getToken());
-        header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
+        Map<String, String> header = buildCloudServiceHeader();
         String s = HttpClientUtils.doPostJson(url, header, body);
         log.info("[Cloud-Service]resume-instance:" + s);
         return s;
     }
 
+    /**
+     * 通过 cloud-service 创建 Global Cluster，保留 RM 创建方法用于兼容和对比。
+     */
+    public static String createGlobalCluster(CreateGlobalClusterParams params) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/global_cluster/create";
+        JSONObject body = new JSONObject();
+        body.put("classId", params.getClassId());
+        body.put("replica", params.getReplica());
+        body.put("instanceDescription", params.getInstanceDescription());
+        body.put("instanceName", params.getInstanceName());
+        body.put("regionId", params.getRegionId() != null ? params.getRegionId() : envConfig.getRegionId());
+        body.put("projectId", cloudServiceUserInfo.getDefaultProjectId());
+        body.put("dbVersion", params.getDbVersion());
+        body.put("globalClusterName", params.getInstanceName());
+        if (params.getRootPwd() != null && !params.getRootPwd().isEmpty()) {
+            body.put("rootPwd", params.getRootPwd());
+        }
+
+        JSONArray secondaryClusters = new JSONArray();
+        if (params.getSecondaryClusters() != null) {
+            for (CreateGlobalClusterParams.SecondaryCluster secondary : params.getSecondaryClusters()) {
+                JSONObject secondaryBody = new JSONObject();
+                secondaryBody.put("regionId", secondary.getRegionId());
+                secondaryBody.put("instanceName", secondary.getInstanceName());
+                secondaryClusters.add(secondaryBody);
+            }
+        }
+        body.put("secondaryClusters", secondaryClusters);
+
+        String resp = HttpClientUtils.doPostJson(url, buildCloudServiceHeader(), body.toJSONString());
+        log.info("[cloud-service][create global cluster] body={}, resp={}", body.toJSONString(), resp);
+        return resp;
+    }
+
+    /**
+     * 通过 cloud-service 添加 Secondary，cloud-service 会根据 primary/meta 推导 secondary 规格。
+     */
+    public static String createSecondary(CreateSecondaryParams params) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/global_cluster/create_secondary";
+        JSONObject body = new JSONObject();
+        body.put("projectId", cloudServiceUserInfo.getDefaultProjectId());
+        if (params.getInstanceId() != null && !params.getInstanceId().isEmpty()) {
+            body.put("instanceId", params.getInstanceId());
+        }
+        if (params.getGlobalClusterId() != null && !params.getGlobalClusterId().isEmpty()) {
+            body.put("globalClusterId", params.getGlobalClusterId());
+            body.put("globalClusterName", params.getGlobalClusterId());
+        }
+
+        JSONArray secondaryClusters = new JSONArray();
+        if (params.getSecondaryClusters() != null) {
+            for (CreateSecondaryParams.SecondaryCluster secondary : params.getSecondaryClusters()) {
+                JSONObject secondaryBody = new JSONObject();
+                secondaryBody.put("regionId", secondary.getRegionId());
+                if (secondary.getInstanceName() != null && !secondary.getInstanceName().isEmpty()) {
+                    secondaryBody.put("instanceName", secondary.getInstanceName());
+                }
+                secondaryClusters.add(secondaryBody);
+            }
+        }
+        body.put("secondaryClusters", secondaryClusters);
+
+        String resp = HttpClientUtils.doPostJson(url, buildCloudServiceHeader(), body.toJSONString());
+        log.info("[cloud-service][create secondary] body={}, resp={}", body.toJSONString(), resp);
+        return resp;
+    }
 
 }

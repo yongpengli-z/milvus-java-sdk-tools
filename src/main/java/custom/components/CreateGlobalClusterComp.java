@@ -49,8 +49,8 @@ public class CreateGlobalClusterComp {
             params.setDbVersion(latestImage.substring(0, latestImage.indexOf("(")));
         }
 
-        // 3. 调用 RM 创建 Global Cluster
-        String resp = ResourceManagerServiceUtils.createGlobalCluster(params);
+        // 3. 调用 cloud-service 创建 Global Cluster（RM 创建方法保留在工具类中用于兼容）
+        String resp = CloudServiceUtils.createGlobalCluster(params);
         log.info("create global cluster resp: {}", resp);
         JSONObject jsonObject = JSONObject.parseObject(resp);
         Integer code = jsonObject.getInteger("Code");

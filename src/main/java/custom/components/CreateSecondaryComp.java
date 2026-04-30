@@ -64,8 +64,8 @@ public class CreateSecondaryComp {
                     .createCostSeconds(costSeconds).build();
         }
 
-        // 3. 调用 RM create_secondary
-        String resp = ResourceManagerServiceUtils.createSecondary(params);
+        // 3. 调用 cloud-service create_secondary（RM 创建方法保留在工具类中用于兼容）
+        String resp = CloudServiceUtils.createSecondary(params);
         log.info("create secondary resp: {}", resp);
         JSONObject jsonObject = JSONObject.parseObject(resp);
         Integer code = jsonObject.getInteger("Code");
