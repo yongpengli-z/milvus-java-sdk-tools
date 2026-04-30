@@ -180,4 +180,13 @@ public class CreateInstanceParams {
      * 前端默认值：""（空字符串，表示不使用 CMEK）
      */
     String kmsIntegrationId;
+
+    /**
+     * 创建实例提交成功后，如果部署失败或等待 RUNNING 超时，是否调用 cloud-test 清理残留资源。
+     * <p>
+     * 清理接口：/cloud/v1/test/deleteInstanceNotInMeta，适用于实例未完整写入 meta 但底层资源已创建的场景。
+     * <p>
+     * 前端默认值：true
+     */
+    boolean cleanupResourceOnCreateFailed = true;
 }

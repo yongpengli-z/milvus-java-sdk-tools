@@ -21,6 +21,7 @@
 | `monopolized` | boolean | 否 | `false` | 是否独占模式 |
 | `qnBreakUp` | boolean | 否 | `false` | 是否打散 QN |
 | `kmsIntegrationId` | String | 否 | `""` | CMEK 集成 ID，留空不使用 |
+| `cleanupResourceOnCreateFailed` | boolean | 否 | `true` | 创建提交成功后，如果部署失败或等待 RUNNING 超时，调用 cloud-test 清理残留资源 |
 | `streamingNodeParams` | Object | 否 | `null` | **已废弃**，可省略 |
 
 ## cuType 规格
@@ -50,6 +51,9 @@
 
 - `replica > 1` 时 CU 必须 `≥ 8`
 - 创建时先用 `replica=1`，成功后通过 ScaleInstanceParams 调整
+- `cleanupResourceOnCreateFailed=true` 时会区分两类失败：
+  - 已返回 `instanceId`：部署失败或等待 RUNNING 超时后调用 cloud-test 清理残留资源
+  - 未返回 `instanceId`：只返回失败结果并标记 `cleanup skipped`，不会调用清理接口
 - `bizCritical`/`monopolized` 结果字段反映 API 调用是否成功，而非参数值
 
 ## JSON 示例
@@ -64,7 +68,8 @@
     "replica": 1,
     "rootPassword": "Milvus123",
     "roleUse": "root",
-    "useHours": 10
+    "useHours": 10,
+    "cleanupResourceOnCreateFailed": true
   }
 }
 ```

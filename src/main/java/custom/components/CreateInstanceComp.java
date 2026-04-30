@@ -10,6 +10,7 @@ import custom.entity.result.CreateInstanceResult;
 import custom.entity.result.ResultEnum;
 import custom.pojo.InstanceInfo;
 import custom.utils.CloudOpsServiceUtils;
+import custom.utils.CloudServiceTestUtils;
 import custom.utils.CloudServiceUtils;
 import custom.utils.InfraServiceUtils;
 import custom.utils.ResourceManagerServiceUtils;
@@ -68,14 +69,21 @@ public class CreateInstanceComp {
         Integer code = jsonObject.getInteger("Code");
         if (code != 0) {
             log.info("create instance failed: " + jsonObject.getString("Message"));
-            ComponentSchedule.initInstanceStatus("--", "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
-            int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
-            return CreateInstanceResult.builder().commonResult(CommonResult.builder()
-                    .message(jsonObject.getString("Message"))
-                    .result(ResultEnum.EXCEPTION.result).build())
-                    .createCostSeconds(costSeconds).build();
+            String failedInstanceId = extractInstanceId(jsonObject);
+            if (hasInstanceId(failedInstanceId)) {
+                ComponentSchedule.initInstanceStatus(failedInstanceId, "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
+            } else {
+                ComponentSchedule.initInstanceStatus("--", "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
+            }
+            return buildCreateFailedResult(createInstanceParams, failedInstanceId,
+                    "create instance failed: " + jsonObject.getString("Message"), startTime);
         }
-        String instanceId = jsonObject.getJSONObject("Data").getString("InstanceId");
+        String instanceId = extractInstanceId(jsonObject);
+        if (!hasInstanceId(instanceId)) {
+            ComponentSchedule.initInstanceStatus("--", "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
+            return buildCreateFailedResult(createInstanceParams, instanceId,
+                    "create instance failed: response does not contain instanceId", startTime);
+        }
         log.info("Submit create instance success!");
         ComponentSchedule.initInstanceStatus(instanceId, "", latestImageByKeywords, InstanceStatusEnum.CREATING.code);
         // 判断是否需要重保
@@ -121,16 +129,30 @@ public class CreateInstanceComp {
         int waitingTime = 30;
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(waitingTime);
         boolean createSuccess = false;
+        boolean deployFailed = false;
+        InstanceStatusEnum lastStatus = null;
         while (LocalDateTime.now().isBefore(endTime)) {
-            List<InstanceInfo> instanceInfos = CloudServiceUtils.listInstance();
-            if (instanceInfos.size() > 0) {
-                for (InstanceInfo instanceInfo : instanceInfos) {
-                    if (instanceInfo.getInstanceName().equalsIgnoreCase(createInstanceParams.getInstanceName())) {
-                        createSuccess = true;
-                        newInstanceInfo.setInstanceId(instanceInfo.getInstanceId());
-                        newInstanceInfo.setUri(instanceInfo.getUri());
-                        newInstanceInfo.setInstanceName(instanceInfo.getInstanceName());
-                        break;
+            InstanceStatusEnum status = describeStatus(instanceId);
+            if (status != null) {
+                lastStatus = status;
+            }
+            if (isCreateFailureStatus(status)) {
+                deployFailed = true;
+                break;
+            }
+            if (status == null || status == InstanceStatusEnum.RUNNING) {
+                List<InstanceInfo> instanceInfos = CloudServiceUtils.listInstance();
+                if (instanceInfos.size() > 0) {
+                    for (InstanceInfo instanceInfo : instanceInfos) {
+                        if (instanceInfo.getInstanceName().equalsIgnoreCase(createInstanceParams.getInstanceName())) {
+                            if (status == null || status == InstanceStatusEnum.RUNNING) {
+                                createSuccess = true;
+                                newInstanceInfo.setInstanceId(instanceInfo.getInstanceId());
+                                newInstanceInfo.setUri(instanceInfo.getUri());
+                                newInstanceInfo.setInstanceName(instanceInfo.getInstanceName());
+                            }
+                            break;
+                        }
                     }
                 }
             }
@@ -145,14 +167,13 @@ public class CreateInstanceComp {
             }
         }
         if (!createSuccess) {
-            log.info("轮询超时！未监测到实例创建成功！");
+            String failMessage = deployFailed
+                    ? "实例部署失败，当前状态：" + lastStatus
+                    : "轮询超时！未监测到实例创建成功，最后状态：" + (lastStatus == null ? "UNKNOWN" : lastStatus);
+            log.info(failMessage);
             // 上报结果
             ComponentSchedule.updateInstanceStatus(instanceId, "--", latestImageByKeywords, InstanceStatusEnum.CREATE_FAILED.code);
-            int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
-            return CreateInstanceResult.builder().commonResult(CommonResult.builder()
-                    .message("轮询超时！未监测到实例创建成功！")
-                    .result(ResultEnum.EXCEPTION.result).build())
-                    .createCostSeconds(costSeconds).build();
+            return buildCreateFailedResult(createInstanceParams, instanceId, failMessage, startTime);
         }
 
         int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
@@ -223,6 +244,78 @@ public class CreateInstanceComp {
             return jo != null && jo.getInteger("Code") != null && jo.getInteger("Code") == 0;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private static InstanceStatusEnum describeStatus(String instanceId) {
+        try {
+            String descResp = ResourceManagerServiceUtils.describeInstance(instanceId);
+            JSONObject jo = JSONObject.parseObject(descResp);
+            if (jo == null || jo.getJSONObject("Data") == null || jo.getJSONObject("Data").getInteger("Status") == null) {
+                return null;
+            }
+            InstanceStatusEnum status = InstanceStatusEnum.getInstanceStatusByCode(jo.getJSONObject("Data").getInteger("Status"));
+            log.info("[CreateInstance] instance status: {}", status);
+            return status;
+        } catch (Exception e) {
+            log.warn("[CreateInstance] describe instance status failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private static String cleanupCreateFailedResource(CreateInstanceParams params, String instanceId) {
+        if (!params.isCleanupResourceOnCreateFailed()) {
+            return null;
+        }
+        if (!hasInstanceId(instanceId)) {
+            return "cleanup skipped: no instanceId returned";
+        }
+        try {
+            String cleanupResp = CloudServiceTestUtils.deleteInstanceNotInMeta(instanceId);
+            return "cleanup response: " + cleanupResp;
+        } catch (Exception e) {
+            log.warn("[CreateInstance] cleanup failed resource exception: {}", e.getMessage());
+            return "cleanup exception: " + e.getMessage();
+        }
+    }
+
+    private static CreateInstanceResult buildCreateFailedResult(CreateInstanceParams params, String instanceId,
+                                                               String message, LocalDateTime startTime) {
+        String cleanupMessage = cleanupCreateFailedResource(params, instanceId);
+        int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
+        CreateInstanceResult result = CreateInstanceResult.builder()
+                .commonResult(CommonResult.builder()
+                        .message(appendCleanupMessage(message, cleanupMessage))
+                        .result(ResultEnum.EXCEPTION.result).build())
+                .createCostSeconds(costSeconds)
+                .build();
+        if (hasInstanceId(instanceId)) {
+            result.setInstanceId(instanceId);
+        }
+        return result;
+    }
+
+    private static String appendCleanupMessage(String message, String cleanupMessage) {
+        if (cleanupMessage == null || cleanupMessage.isEmpty()) {
+            return message;
+        }
+        return message + " " + cleanupMessage;
+    }
+
+    private static boolean isCreateFailureStatus(InstanceStatusEnum status) {
+        return status == InstanceStatusEnum.CREATE_FAILED || status == InstanceStatusEnum.ABNORMAL;
+    }
+
+    private static boolean hasInstanceId(String instanceId) {
+        return instanceId != null && !instanceId.isEmpty() && !instanceId.equalsIgnoreCase("--");
+    }
+
+    private static String extractInstanceId(JSONObject response) {
+        try {
+            JSONObject data = response.getJSONObject("Data");
+            return data == null ? null : data.getString("InstanceId");
+        } catch (Exception e) {
+            return null;
         }
     }
 }
