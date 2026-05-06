@@ -14,5 +14,6 @@ public class LoopResult {
     List<JSONObject> resultList;
     int runningNum;
     int abnormalNum;
+    double elapsedMinutes;
 
 }
