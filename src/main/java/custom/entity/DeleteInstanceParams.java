@@ -19,17 +19,13 @@ public class DeleteInstanceParams {
     String instanceId;
 
     /**
-     * 是否使用 OPS-Test API 删除实例。
-     * <p>
-     * 后端字段名：`useOPSTestApi`
-     * <p>
-     * 前端：`deleteInstanceEdit.vue` 使用的 JSON key 是 `useCloudTestApi`（注意与后端字段名不同）。
+     * 是否使用 Cloud-Test API 删除实例。
      * <p>
      * 前端必填：是（useCloudTestApi）
      * <p>
      * 前端默认值：false
      */
-    boolean useOPSTestApi;
+    boolean useCloudTestApi;
 
     /**
      * 账号邮箱（可选；用于指定“在哪个账号下”执行删除）。

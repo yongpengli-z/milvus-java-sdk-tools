@@ -41,10 +41,10 @@ public class DeleteInstanceComp {
             return buildResult(ResultEnum.EXCEPTION.result, e.getMessage(), 0);
         }
         if (globalDeleteContext != null) {
-            return deleteGlobalCluster(globalDeleteContext, targetInstanceId, deleteInstanceParams.isUseOPSTestApi());
+            return deleteGlobalCluster(globalDeleteContext, targetInstanceId, deleteInstanceParams.isUseCloudTestApi());
         }
 
-        if (deleteInstanceParams.isUseOPSTestApi()) {
+        if (deleteInstanceParams.isUseCloudTestApi()) {
             String s = CloudServiceTestUtils.deleteInstanceById(targetInstanceId);
             return handleDeleteResponse(s, List.of(targetInstanceId), "Delete instance");
         }
