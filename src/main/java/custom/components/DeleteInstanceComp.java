@@ -132,7 +132,7 @@ public class DeleteInstanceComp {
 
     private static String deleteSecondaryInstance(String instanceId, String globalClusterId, boolean useCloudTestApi) {
         if (useCloudTestApi) {
-            return CloudServiceTestUtils.deleteSecondaryInstance(instanceId, GLOBAL_ROLE_SECONDARY);
+            return CloudServiceTestUtils.deleteInstanceById(instanceId);
         }
         return ResourceManagerServiceUtils.deleteGlobalSecondaryInstance(instanceId, globalClusterId);
     }
