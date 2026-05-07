@@ -100,6 +100,12 @@ public class DeleteInstanceComp {
             }
         }
 
+        if (!waitForInstanceStatus(context.primaryInstanceId, InstanceStatusEnum.RUNNING.code)) {
+            return buildResult(ResultEnum.WARNING.result,
+                    "Wait primary instance [" + context.primaryInstanceId + "] active after deleting secondaries time out!",
+                    elapsedSeconds(startLoadTime));
+        }
+
         String disbandResp = ResourceManagerServiceUtils.disbandGlobalCluster(context.globalClusterId, context.primaryInstanceId);
         JSONObject disbandJO = JSON.parseObject(disbandResp);
         if (!isSuccess(disbandJO)) {
@@ -108,12 +114,6 @@ public class DeleteInstanceComp {
 
         if (context.role == GlobalDeleteRole.GLOBAL_CLUSTER) {
             return buildResult(ResultEnum.SUCCESS.result, null, elapsedSeconds(startLoadTime));
-        }
-
-        if (!waitForInstanceStatus(context.primaryInstanceId, InstanceStatusEnum.RUNNING.code)) {
-            return buildResult(ResultEnum.WARNING.result,
-                    "Wait primary instance [" + context.primaryInstanceId + "] active after disband time out!",
-                    elapsedSeconds(startLoadTime));
         }
 
         String deletePrimaryResp = ResourceManagerServiceUtils.deleteInstanceById(context.primaryInstanceId);
