@@ -508,6 +508,7 @@ public class RestfulHybridSearchComp {
         if (!assertMessages.isEmpty()) {
             log.warn("RestfulHybridSearch assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         hybridSearchResult = RestfulHybridSearchResult.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(hybridSearchParams.getNumConcurrency())

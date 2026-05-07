@@ -197,6 +197,7 @@ public class RecallComp {
             if (!assertMessages.isEmpty()) {
                 log.warn("Recall assertions: " + assertMessages);
             }
+            CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
 
             return RecallResult.builder()
                     .commonResult(commonResult)

@@ -66,6 +66,7 @@ public class CreateCollectionComp {
         if (!assertMessages.isEmpty()) {
             log.warn("CreateCollection assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         return CreateCollectionResult.builder()
                 .commonResult(commonResult)
                 .collectionName(collection)

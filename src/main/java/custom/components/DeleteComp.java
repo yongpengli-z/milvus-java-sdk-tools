@@ -255,6 +255,7 @@ public class DeleteComp {
         if (!assertMessages.isEmpty()) {
             log.warn("Delete assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         DeleteResult deleteResult = DeleteResult.builder()
                 .deletedCount(totalDeletedCount)
                 .rps(requestNum / deleteTotalTime)

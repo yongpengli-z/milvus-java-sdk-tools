@@ -253,6 +253,7 @@ public class InsertComp {
         if (!assertMessages.isEmpty()) {
             log.warn("Insert assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         insertResult = InsertResult.builder()
                 .commonResult(commonResult)
                 .rps(requestNum / insertTotalTime)

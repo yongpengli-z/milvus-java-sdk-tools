@@ -258,6 +258,7 @@ public class UpsertComp {
         if (!assertMessages.isEmpty()) {
             log.warn("Upsert assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         upsertResult = UpsertResult.builder()
                 .commonResult(commonResult)
                 .rps(requestNum / upsertTotalTime)

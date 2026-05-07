@@ -148,6 +148,7 @@ public class QueryIteratorComp {
         if (!assertMessages.isEmpty()) {
             log.warn("QueryIterator assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         queryIteratorResult = QueryIteratorResult.builder()
                 .rps(requestNum / queryTotalTime)
                 .concurrencyNum(queryIteratorParams.getNumConcurrency())

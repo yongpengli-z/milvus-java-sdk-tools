@@ -309,6 +309,7 @@ public class RestfulSearchComp {
         if (!assertMessages.isEmpty()) {
             log.warn("RestfulSearch assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         searchResultA = SearchResultA.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())

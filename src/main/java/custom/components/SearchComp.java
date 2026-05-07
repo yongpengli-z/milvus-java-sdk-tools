@@ -276,6 +276,7 @@ public class SearchComp {
         if (!assertMessages.isEmpty()) {
             log.warn("Search assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         searchResultA = SearchResultA.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())

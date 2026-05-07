@@ -419,6 +419,7 @@ public class HybridSearchComp {
         if (!assertMessages.isEmpty()) {
             log.warn("HybridSearch assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         hybridSearchResult = HybridSearchResult.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(hybridSearchParams.getNumConcurrency())

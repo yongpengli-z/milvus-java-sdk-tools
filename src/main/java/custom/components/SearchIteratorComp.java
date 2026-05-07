@@ -163,6 +163,7 @@ public class SearchIteratorComp {
         if (!assertMessages.isEmpty()) {
             log.warn("SearchIterator assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         searchIteratorResultA = SearchIteratorResultA.builder()
                 .rps(requestNum / searchTotalTime)
                 .concurrencyNum(searchIteratorParams.getNumConcurrency())

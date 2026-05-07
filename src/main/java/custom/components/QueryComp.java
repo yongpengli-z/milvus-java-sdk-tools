@@ -205,6 +205,7 @@ public class QueryComp {
         if (!assertMessages.isEmpty()) {
             log.warn("Query assertions: " + assertMessages);
         }
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         queryResult = QueryResult.builder()
                 .rps(requestNum / queryTotalTime)
                 .concurrencyNum(queryParams.getNumConcurrency())
