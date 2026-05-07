@@ -99,8 +99,14 @@ public class ResourceManagerServiceUtils {
     }
 
     public static String deleteInstance(DeleteInstanceParams deleteInstanceParams) {
+        String instanceId = deleteInstanceParams.getInstanceId() == null || deleteInstanceParams.getInstanceId().equalsIgnoreCase("")
+                ? newInstanceInfo.getInstanceId()
+                : deleteInstanceParams.getInstanceId();
+        return deleteInstanceById(instanceId);
+    }
+
+    public static String deleteInstanceById(String instanceId) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/delete";
-        String instanceId = deleteInstanceParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : deleteInstanceParams.getInstanceId();
         String body = "{\n" +
                 "  \"backupId\": \"\",\n" +
                 "  \"force\": true,\n" +
@@ -112,6 +118,44 @@ public class ResourceManagerServiceUtils {
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+    }
+
+    /**
+     * RM 层删除 Global Cluster secondary。
+     * <p>
+     * 对应接口 POST /resource/v1/global_cluster/milvus/delete_secondary。
+     */
+    public static String deleteGlobalSecondaryInstance(String instanceId, String globalClusterId) {
+        String url = envConfig.getRmHost() + "/resource/v1/global_cluster/milvus/delete_secondary";
+        Map<String, Object> body = new HashMap<>();
+        body.put("instanceId", instanceId);
+        if (globalClusterId != null && !globalClusterId.isEmpty()) {
+            body.put("globalClusterId", globalClusterId);
+        }
+        body.put("backupId", "");
+        body.put("force", true);
+        body.put("storageDelay", "0");
+        body.put("enableChildJobCenter", true);
+        String resp = postToRmAsProxyUser(url, new Gson().toJson(body), "delete global secondary");
+        log.info("[rm-service][delete global secondary] instanceId={}, globalClusterId={}, resp={}",
+                instanceId, globalClusterId, resp);
+        return resp;
+    }
+
+    /**
+     * RM 层 disband Global Cluster，把 primary 转回普通实例。
+     * <p>
+     * 对应接口 POST /resource/v1/global_cluster/milvus/disband。
+     */
+    public static String disbandGlobalCluster(String globalClusterId, String primaryInstanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/global_cluster/milvus/disband";
+        Map<String, Object> body = new HashMap<>();
+        body.put("globalClusterId", globalClusterId);
+        body.put("instanceId", primaryInstanceId);
+        String resp = postToRmAsProxyUser(url, new Gson().toJson(body), "disband global cluster");
+        log.info("[rm-service][disband global cluster] globalClusterId={}, primaryInstanceId={}, resp={}",
+                globalClusterId, primaryInstanceId, resp);
+        return resp;
     }
 
     public static void modifyParams(String instanceId, List<ModifyParams.Params> paramsList) {
@@ -596,16 +640,7 @@ public class ResourceManagerServiceUtils {
      * @return global endpoint（如 https://gdc-xxx.global-cluster.xxx.zilliz.com:19530），查询失败返回 null
      */
     public static String describeGlobalClusterEndpoint(String globalClusterId) {
-        String url = envConfig.getCloudServiceHost() + "/cloud/v1/global_cluster/describe?globalClusterId=" + globalClusterId;
-        Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
-        header.put("UserId", cloudServiceUserInfo.getUserId());
-        header.put("Authorization", "Bearer " + cloudServiceUserInfo.getToken());
-        if (cloudServiceUserInfo.getOrgIdList() != null && !cloudServiceUserInfo.getOrgIdList().isEmpty()) {
-            header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
-        }
-        String resp = HttpClientUtils.doGet(url, header, null);
-        log.info("[cloud-service][describe global cluster]: {}", resp);
+        String resp = describeGlobalCluster(globalClusterId);
         String connectAddress = parseGlobalEndpoint(resp, "ConnectAddress", "connectAddress");
         if (connectAddress != null && !connectAddress.isEmpty()) {
             log.info("describe global cluster endpoint success from cloud-service: globalClusterId={}, endpoint={}", globalClusterId, connectAddress);
@@ -618,6 +653,34 @@ public class ResourceManagerServiceUtils {
             return normalizeHttps(opsEndpoint);
         }
         return null;
+    }
+
+    public static String describeGlobalCluster(String globalClusterId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/global_cluster/describe?globalClusterId=" + globalClusterId;
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("Authorization", "Bearer " + cloudServiceUserInfo.getToken());
+        if (cloudServiceUserInfo.getOrgIdList() != null && !cloudServiceUserInfo.getOrgIdList().isEmpty()) {
+            header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
+        }
+        String resp = HttpClientUtils.doGet(url, header, null);
+        log.info("[cloud-service][describe global cluster]: {}", resp);
+        return resp;
+    }
+
+    public static String describeGlobalClusterTopology(String globalClusterId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/global_cluster/describe_topology?globalClusterId=" + globalClusterId;
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("Authorization", "Bearer " + cloudServiceUserInfo.getToken());
+        if (cloudServiceUserInfo.getOrgIdList() != null && !cloudServiceUserInfo.getOrgIdList().isEmpty()) {
+            header.put("orgid", cloudServiceUserInfo.getOrgIdList().get(0));
+        }
+        String resp = HttpClientUtils.doGet(url, header, null);
+        log.info("[cloud-service][describe global cluster topology]: {}", resp);
+        return resp;
     }
 
     private static String describeGlobalClusterEndpointFromOps(String globalClusterId) {
