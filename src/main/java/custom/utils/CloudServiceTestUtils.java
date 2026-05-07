@@ -5,14 +5,34 @@ import lombok.extern.slf4j.Slf4j;
 
 import static custom.BaseTest.envEnum;
 import static custom.BaseTest.envConfig;
+import static custom.BaseTest.cloudServiceUserInfo;
 import static custom.BaseTest.newInstanceInfo;
 
 @Slf4j
 public class CloudServiceTestUtils {
     public static String deleteInstance(DeleteInstanceParams deleteInstanceParams){
-        String instanceId = deleteInstanceParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : deleteInstanceParams.getInstanceId();
+        String inputInstanceId = deleteInstanceParams.getInstanceId();
+        String instanceId = inputInstanceId == null || inputInstanceId.equalsIgnoreCase("")
+                ? newInstanceInfo.getInstanceId()
+                : inputInstanceId;
+        return deleteInstanceById(instanceId);
+    }
+
+    public static String deleteInstanceById(String instanceId) {
         String url = envConfig.getCloudServiceTestHost() + "/cloud/v1/test/deleteInstance?instanceId="+instanceId+"";
         return HttpClientUtils.doGet(url);
+    }
+
+    public static String deleteSecondaryInstance(String instanceId, int globalClusterRole) {
+        String url = envConfig.getCloudServiceTestHost()
+                + "/cloud/v1/test/deleteSecondaryInstance?cloudId=" + resolveCloudId()
+                + "&userId=" + resolveUserId()
+                + "&instanceId=" + instanceId
+                + "&globalClusterRole=" + globalClusterRole;
+        String resp = HttpClientUtils.doGet(url);
+        log.info("[cloud-test][deleteSecondaryInstance] cloudId={}, userId={}, instanceId={}, globalClusterRole={}, resp={}",
+                resolveCloudId(), resolveUserId(), instanceId, globalClusterRole, resp);
+        return resp;
     }
 
     public static String deleteInstanceNotInMeta(String instanceId) {
@@ -50,5 +70,14 @@ public class CloudServiceTestUtils {
             return "az";
         }
         return "aws";
+    }
+
+    private static String resolveUserId() {
+        String proxyUserId = cloudServiceUserInfo == null ? null : cloudServiceUserInfo.getProxyUserId();
+        if (proxyUserId != null && !proxyUserId.isEmpty()) {
+            return proxyUserId;
+        }
+        String userId = cloudServiceUserInfo == null ? null : cloudServiceUserInfo.getUserId();
+        return userId == null ? "" : userId;
     }
 }

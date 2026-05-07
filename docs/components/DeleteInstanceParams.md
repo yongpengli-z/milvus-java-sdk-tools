@@ -20,6 +20,12 @@
 - Global Cluster ID：删除全部 secondary 后调用 RM `/resource/v1/global_cluster/milvus/disband`，保留 primary。
 - primary ID：删除全部 secondary，disband Global Cluster，再调用 RM `/resource/v1/instance/milvus/delete` 删除 primary。
 
+当 `useCloudTestApi=true` 时：
+
+- 普通实例 ID：调用 cloud-test `/cloud/v1/test/deleteInstance`。
+- secondary ID：调用 cloud-test `/cloud/v1/test/deleteSecondaryInstance`，携带 `cloudId`、`userId`、`instanceId`、`globalClusterRole=2`。
+- Global Cluster ID / primary ID：secondary 和 primary 删除走 cloud-test；disband 暂未找到 cloud-test 对应接口，仍调用 RM `/resource/v1/global_cluster/milvus/disband`。
+
 ## JSON 示例
 
 ```json

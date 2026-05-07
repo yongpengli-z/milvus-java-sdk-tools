@@ -33,10 +33,6 @@ public class DeleteInstanceComp {
         if (targetInstanceId == null || targetInstanceId.isEmpty()) {
             return buildResult(ResultEnum.EXCEPTION.result, "instanceId is empty, cannot delete instance", 0);
         }
-        if (deleteInstanceParams.isUseOPSTestApi()) {
-            String s = CloudServiceTestUtils.deleteInstance(deleteInstanceParams);
-            return handleDeleteResponse(s, List.of(targetInstanceId), "Delete instance");
-        }
 
         GlobalDeleteContext globalDeleteContext;
         try {
@@ -45,7 +41,12 @@ public class DeleteInstanceComp {
             return buildResult(ResultEnum.EXCEPTION.result, e.getMessage(), 0);
         }
         if (globalDeleteContext != null) {
-            return deleteGlobalClusterFromRm(globalDeleteContext, targetInstanceId);
+            return deleteGlobalCluster(globalDeleteContext, targetInstanceId, deleteInstanceParams.isUseOPSTestApi());
+        }
+
+        if (deleteInstanceParams.isUseOPSTestApi()) {
+            String s = CloudServiceTestUtils.deleteInstanceById(targetInstanceId);
+            return handleDeleteResponse(s, List.of(targetInstanceId), "Delete instance");
         }
 
         String s = ResourceManagerServiceUtils.deleteInstanceById(targetInstanceId);
@@ -62,14 +63,14 @@ public class DeleteInstanceComp {
         }
     }
 
-    private static DeleteInstanceResult deleteGlobalClusterFromRm(GlobalDeleteContext context, String targetInstanceId) {
+    private static DeleteInstanceResult deleteGlobalCluster(GlobalDeleteContext context, String targetInstanceId, boolean useCloudTestApi) {
         long startLoadTime = System.currentTimeMillis();
-        log.info("Delete global cluster target from RM: targetId={}, role={}, globalClusterId={}, primaryInstanceId={}, secondaryInstanceIds={}",
-                targetInstanceId, context.role, context.globalClusterId, context.primaryInstanceId, context.secondaryInstanceIds);
+        String deleteApi = useCloudTestApi ? "cloud-test" : "rm-service";
+        log.info("Delete global cluster target from {}: targetId={}, role={}, globalClusterId={}, primaryInstanceId={}, secondaryInstanceIds={}",
+                deleteApi, targetInstanceId, context.role, context.globalClusterId, context.primaryInstanceId, context.secondaryInstanceIds);
 
         if (context.role == GlobalDeleteRole.SECONDARY) {
-            String deleteSecondaryResp = ResourceManagerServiceUtils.deleteGlobalSecondaryInstance(
-                    targetInstanceId, context.globalClusterId);
+            String deleteSecondaryResp = deleteSecondaryInstance(targetInstanceId, context.globalClusterId, useCloudTestApi);
             JSONObject deleteSecondaryJO = JSON.parseObject(deleteSecondaryResp);
             if (!isSuccess(deleteSecondaryJO)) {
                 return buildResult(ResultEnum.WARNING.result, getMessage(deleteSecondaryJO), elapsedSeconds(startLoadTime));
@@ -87,8 +88,7 @@ public class DeleteInstanceComp {
         }
 
         for (String secondaryInstanceId : context.secondaryInstanceIds) {
-            String deleteSecondaryResp = ResourceManagerServiceUtils.deleteGlobalSecondaryInstance(
-                    secondaryInstanceId, context.globalClusterId);
+            String deleteSecondaryResp = deleteSecondaryInstance(secondaryInstanceId, context.globalClusterId, useCloudTestApi);
             JSONObject deleteSecondaryJO = JSON.parseObject(deleteSecondaryResp);
             if (!isSuccess(deleteSecondaryJO)) {
                 return buildResult(ResultEnum.WARNING.result, getMessage(deleteSecondaryJO), elapsedSeconds(startLoadTime));
@@ -116,7 +116,7 @@ public class DeleteInstanceComp {
             return buildResult(ResultEnum.SUCCESS.result, null, elapsedSeconds(startLoadTime));
         }
 
-        String deletePrimaryResp = ResourceManagerServiceUtils.deleteInstanceById(context.primaryInstanceId);
+        String deletePrimaryResp = deleteInstanceById(context.primaryInstanceId, useCloudTestApi);
         JSONObject deletePrimaryJO = JSON.parseObject(deletePrimaryResp);
         if (!isSuccess(deletePrimaryJO)) {
             return buildResult(ResultEnum.WARNING.result, getMessage(deletePrimaryJO), elapsedSeconds(startLoadTime));
@@ -128,6 +128,20 @@ public class DeleteInstanceComp {
         }
 
         return buildResult(ResultEnum.SUCCESS.result, null, elapsedSeconds(startLoadTime));
+    }
+
+    private static String deleteSecondaryInstance(String instanceId, String globalClusterId, boolean useCloudTestApi) {
+        if (useCloudTestApi) {
+            return CloudServiceTestUtils.deleteSecondaryInstance(instanceId, GLOBAL_ROLE_SECONDARY);
+        }
+        return ResourceManagerServiceUtils.deleteGlobalSecondaryInstance(instanceId, globalClusterId);
+    }
+
+    private static String deleteInstanceById(String instanceId, boolean useCloudTestApi) {
+        if (useCloudTestApi) {
+            return CloudServiceTestUtils.deleteInstanceById(instanceId);
+        }
+        return ResourceManagerServiceUtils.deleteInstanceById(instanceId);
     }
 
     private static DeleteInstanceResult handleDeleteResponse(String resp, List<String> instanceIds, String actionName) {
@@ -381,15 +395,52 @@ public class DeleteInstanceComp {
         if (code == null) {
             code = jsonObject.getInteger("code");
         }
-        return code != null && (code == 0 || code == 200);
+        if (code == null || (code != 0 && code != 200)) {
+            return false;
+        }
+        JSONObject innerResponse = getInnerResponse(jsonObject);
+        if (innerResponse == null) {
+            return true;
+        }
+        Integer innerCode = innerResponse.getInteger("Code");
+        if (innerCode == null) {
+            innerCode = innerResponse.getInteger("code");
+        }
+        return innerCode != null && (innerCode == 0 || innerCode == 200);
     }
 
     private static String getMessage(JSONObject jsonObject) {
+        JSONObject innerResponse = getInnerResponse(jsonObject);
+        if (innerResponse != null) {
+            String innerMessage = getMessage(innerResponse);
+            if (innerMessage != null && !innerMessage.isEmpty()) {
+                return innerMessage;
+            }
+        }
         String message = jsonObject.getString("Message");
         if (message == null) {
             message = jsonObject.getString("message");
         }
         return message;
+    }
+
+    private static JSONObject getInnerResponse(JSONObject jsonObject) {
+        String data = jsonObject.getString("Data");
+        if (data == null) {
+            data = jsonObject.getString("data");
+        }
+        if (data == null || !data.trim().startsWith("{")) {
+            return null;
+        }
+        try {
+            JSONObject innerResponse = JSON.parseObject(data);
+            if (innerResponse.containsKey("Code") || innerResponse.containsKey("code")) {
+                return innerResponse;
+            }
+        } catch (Exception e) {
+            log.warn("Ignore non-json response data: {}", data);
+        }
+        return null;
     }
 
     private static JSONObject getObjectIgnoreCase(JSONObject object, String... keys) {
