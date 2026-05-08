@@ -3,6 +3,7 @@ package custom.components;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import custom.common.ComponentSchedule;
+import custom.common.ImageType;
 import custom.common.InstanceStatusEnum;
 import custom.entity.CreateInstanceParams;
 import custom.entity.result.CommonResult;
@@ -59,7 +60,8 @@ public class CreateInstanceComp {
             latestImageByKeywords = strings.get(0);
             createInstanceParams.setDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
         } else {
-            latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(createInstanceParams.getDbVersion());
+            latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(
+                    createInstanceParams.getDbVersion(), ImageType.MILVUS.getInsType());
             createInstanceParams.setDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
         }
         // 调用rm-service（先用 replica=1 的 classId 创建，创建成功后再通过 modify 设置 replica）

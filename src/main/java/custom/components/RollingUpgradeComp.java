@@ -2,6 +2,7 @@ package custom.components;
 
 import com.alibaba.fastjson.JSONObject;
 import custom.common.ComponentSchedule;
+import custom.common.ImageType;
 import custom.common.InstanceStatusEnum;
 import custom.entity.RollingUpgradeParams;
 import custom.entity.result.CommonResult;
@@ -192,7 +193,8 @@ public class RollingUpgradeComp {
             List<String> strings = ComponentSchedule.queryReleaseImage();
             return strings.get(0).substring(0, strings.get(0).indexOf("("));
         }
-        String latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(input);
+        String latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(
+                input, ImageType.fromInsType(instanceType).getInsType());
         if (latestImageByKeywords != null && latestImageByKeywords.contains("(")) {
             return latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("("));
         }

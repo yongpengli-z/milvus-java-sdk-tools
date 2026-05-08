@@ -3,6 +3,7 @@ package custom.components;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.common.ComponentSchedule;
+import custom.common.ImageType;
 import custom.common.InstanceStatusEnum;
 import custom.entity.CreateGlobalClusterParams;
 import custom.entity.result.CommonResult;
@@ -45,7 +46,8 @@ public class CreateGlobalClusterComp {
             latestImage = releaseImages.get(0);
             params.setDbVersion(latestImage.substring(0, latestImage.indexOf("(")));
         } else {
-            latestImage = CloudOpsServiceUtils.getLatestImageByKeywords(params.getDbVersion());
+            latestImage = CloudOpsServiceUtils.getLatestImageByKeywords(
+                    params.getDbVersion(), ImageType.MILVUS.getInsType());
             params.setDbVersion(latestImage.substring(0, latestImage.indexOf("(")));
         }
 

@@ -2,6 +2,7 @@ package custom.components;
 
 import com.alibaba.fastjson.JSONObject;
 import custom.common.ComponentSchedule;
+import custom.common.ImageType;
 import custom.entity.UpdateIndexPoolParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
@@ -29,7 +30,8 @@ public class UpdateIndexPoolComp {
                 latestImageByKeywords = strings.get(0);
                 indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(") + 1, latestImageByKeywords.indexOf(")")));
             } else {
-                latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(updateIndexPoolParams.getWorkerImageTag());
+                latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(
+                        updateIndexPoolParams.getWorkerImageTag(), ImageType.INDEX_CLUSTER.getInsType());
                 indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(") + 1, latestImageByKeywords.indexOf(")")));
             }
             //  判断是2.6 还是2.5的image，worker role 用indexNode/dataNode

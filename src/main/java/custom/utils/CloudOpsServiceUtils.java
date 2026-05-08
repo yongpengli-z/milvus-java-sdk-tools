@@ -20,13 +20,14 @@ import static custom.BaseTest.newInstanceInfo;
 @Slf4j
 public class CloudOpsServiceUtils {
 
-    public static String listDBVersionByKeywords(String keywords) {
+    public static String listDBVersionByKeywords(String keywords,int insType) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
         Map<String, String> header = new HashMap<>();
         header.put("sa_token", envConfig.getCloudOpsServiceToken());
         Map<String, String> paramsDB = new HashMap<>();
         paramsDB.put("currentPage", "1");
         paramsDB.put("pageSize", "100");
+        paramsDB.put("insType", String.valueOf(insType));
         paramsDB.put("dbVersion", keywords);
         paramsDB.put("regionId", envConfig.getRegionId());
         String s = HttpClientUtils.doGet(url, header, paramsDB);
@@ -34,13 +35,14 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
-    public static String listTagByKeywords(String keywords) {
+    public static String listTagByKeywords(String keywords,int insType) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
         Map<String, String> header = new HashMap<>();
         header.put("sa_token", envConfig.getCloudOpsServiceToken());
         Map<String, String> paramsTag = new HashMap<>();
         paramsTag.put("currentPage", "1");
         paramsTag.put("pageSize", "100");
+        paramsTag.put("insType", String.valueOf(insType));
         paramsTag.put("tag", keywords);
         paramsTag.put("regionId", envConfig.getRegionId());
         String s = HttpClientUtils.doGet(url, header, paramsTag);
@@ -48,10 +50,10 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
-    public static String getLatestImageByKeywords(String keywords) {
+    public static String getLatestImageByKeywords(String keywords,int insType) {
         List<String> collect;
-        JSONObject jsonResponse = JSON.parseObject(listDBVersionByKeywords(keywords));
-        JSONObject jsonResponse2 = JSON.parseObject(listTagByKeywords(keywords));
+        JSONObject jsonResponse = JSON.parseObject(listDBVersionByKeywords(keywords,insType));
+        JSONObject jsonResponse2 = JSON.parseObject(listTagByKeywords(keywords,insType));
         List<String> lists = new ArrayList<>();
         // 获取data-list
         JSONArray jsonArray = jsonResponse.getJSONObject("data").getJSONArray("list");
