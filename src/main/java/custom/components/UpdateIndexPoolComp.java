@@ -31,7 +31,7 @@ public class UpdateIndexPoolComp {
                 indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(") + 1, latestImageByKeywords.indexOf(")")));
             } else {
                 latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(
-                        updateIndexPoolParams.getWorkerImageTag(), ImageType.INDEX_CLUSTER.getInsType());
+                        updateIndexPoolParams.getWorkerImageTag(), ImageType.MILVUS.getInsType());
                 indexPoolInfo.setWorkerImageTag(latestImageByKeywords.substring(latestImageByKeywords.indexOf("(") + 1, latestImageByKeywords.indexOf(")")));
             }
             //  判断是2.6 还是2.5的image，worker role 用indexNode/dataNode
