@@ -23,6 +23,10 @@ import static custom.BaseTest.*;
 
 @Slf4j
 public class ResourceManagerServiceUtils {
+    public static final int INSTANCE_TYPE_MILVUS = 1;
+    public static final int INSTANCE_TYPE_VECTOR_LAKE = 6;
+    public static final int INSTANCE_TYPE_QUERY_CLUSTER = 7;
+
     public static String createInstance(CreateInstanceParams createInstanceParams) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/create";
         String kmsField = "";
@@ -96,6 +100,41 @@ public class ResourceManagerServiceUtils {
         header.put("UserId", cloudServiceUserInfo.getUserId());
         header.put("SourceApp", "Cloud-Meta");
         return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+    }
+
+    public static String upgradeVectorLakeCoordinator(String instanceId, String dbVersion) {
+        String url = envConfig.getRmHost() + "/resource/v1/vectorlake/" + instanceId + "/upgrade";
+        JSONObject body = new JSONObject();
+        body.put("dbVersion", dbVersion);
+        return HttpClientUtils.doPostJson(url, buildDefaultHeaders(), body.toJSONString());
+    }
+
+    public static String getVectorLakeCoordinatorUpgradeStatus(String instanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/vectorlake/" + instanceId + "/upgrade/status";
+        return HttpClientUtils.doGet(url, buildDefaultHeaders(), null);
+    }
+
+    public static String upgradeQueryCluster(String qcInstanceId, String dbVersion, boolean force) {
+        String url = envConfig.getRmHost() + "/resource/v1/vectorlake/query-cluster/" + qcInstanceId + "/upgrade";
+        JSONObject body = new JSONObject();
+        if (dbVersion != null && !dbVersion.equalsIgnoreCase("")) {
+            body.put("dbVersion", dbVersion);
+        }
+        body.put("force", force);
+        return HttpClientUtils.doPostJson(url, buildDefaultHeaders(), body.toJSONString());
+    }
+
+    public static String getQueryClusterUpgradeStatus(String qcInstanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/vectorlake/query-cluster/" + qcInstanceId + "/upgrade/status";
+        return HttpClientUtils.doGet(url, buildDefaultHeaders(), null);
+    }
+
+    private static Map<String, String> buildDefaultHeaders() {
+        Map<String, String> header = new HashMap<>();
+        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+        header.put("UserId", cloudServiceUserInfo.getUserId());
+        header.put("SourceApp", "Cloud-Meta");
+        return header;
     }
 
     public static String deleteInstance(DeleteInstanceParams deleteInstanceParams) {

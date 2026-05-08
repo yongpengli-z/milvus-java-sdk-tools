@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static custom.BaseTest.cloudServiceUserInfo;
+import static custom.BaseTest.newInstanceInfo;
 
 @Slf4j
 public class RollingUpgradeComp {
@@ -24,65 +25,74 @@ public class RollingUpgradeComp {
         if(cloudServiceUserInfo.getUserId()==null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("") ){
             cloudServiceUserInfo= CloudServiceUtils.queryUserIdOfCloudService(null,null);
         }
+        String instanceId = newInstanceInfo.getInstanceId();
+        if (instanceId == null || instanceId.equalsIgnoreCase("")) {
+            return warningResult("instanceId is required for rolling upgrade");
+        }
         // 先查询当前实例状态 ----需要修改，不用cloud-service获取，改ops-service获取状态
-        String s = ResourceManagerServiceUtils.describeInstance(null);
+        String s = ResourceManagerServiceUtils.describeInstance(instanceId);
         log.info("describe instance:"+s);
         JSONObject jsonObject = JSONObject.parseObject(s);
-        Integer status = jsonObject.getJSONObject("Data").getInteger("Status");
+        JSONObject data = getData(jsonObject);
+        if (data == null) {
+            return warningResult("describe instance failed: " + s);
+        }
+        Integer status = getInteger(data, "Status", "status");
+        if (status == null) {
+            return warningResult("describe instance response missing status: " + s);
+        }
+        int instanceType = resolveInstanceType(data, instanceId);
         InstanceStatusEnum instanceStatusByCode = InstanceStatusEnum.getInstanceStatusByCode(status);
-        log.info("Current status:"+ instanceStatusByCode.toString());
-        if (instanceStatusByCode.code !=InstanceStatusEnum.RUNNING.code){
-            return RollingUpgradeResult.builder()
-                    .commonResult(CommonResult.builder()
-                            .result(ResultEnum.WARNING.result)
-                            .message("instance status can't upgrade!").build()).build();
+        log.info("Current status:"+ instanceStatusByCode.toString() + ", instanceType:" + instanceType);
+        if (!canUpgrade(instanceType, instanceStatusByCode)){
+            return warningResult("instance status can't upgrade! Current status:" + instanceStatusByCode);
         }
-        // image重新获取
-        String latestImageByKeywords;
-        if (rollingUpgradeParams.getTargetDbVersion().equalsIgnoreCase("latest-release")) {
-            List<String> strings = ComponentSchedule.queryReleaseImage();
-            latestImageByKeywords = strings.get(0);
-            rollingUpgradeParams.setTargetDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
+        String targetDbVersion = resolveTargetDbVersion(rollingUpgradeParams.getTargetDbVersion(), instanceType);
+        if (targetDbVersion == null) {
+            return warningResult("targetDbVersion is required. For VectorLake(in06), pass an exact ins_type=6 dbVersion.");
+        }
+        rollingUpgradeParams.setTargetDbVersion(targetDbVersion);
+
+        String rollingUpgradeResult;
+        if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_MILVUS) {
+            rollingUpgradeResult = ResourceManagerServiceUtils.rollingUpgrade(rollingUpgradeParams);
+        } else if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE) {
+            rollingUpgradeResult = ResourceManagerServiceUtils.upgradeVectorLakeCoordinator(instanceId, targetDbVersion);
+        } else if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_QUERY_CLUSTER) {
+            rollingUpgradeResult = ResourceManagerServiceUtils.upgradeQueryCluster(instanceId, targetDbVersion,
+                    rollingUpgradeParams.isForceRestart());
         } else {
-            latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(rollingUpgradeParams.getTargetDbVersion());
-            rollingUpgradeParams.setTargetDbVersion(latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("(")));
+            return warningResult("unsupported instance type for rolling upgrade: " + instanceType);
         }
-        // 滚动升级
-        String rollingUpgradeResult = ResourceManagerServiceUtils.rollingUpgrade(rollingUpgradeParams);
         JSONObject jsonObjectResult=JSONObject.parseObject(rollingUpgradeResult);
-        if (jsonObjectResult.getInteger("Code")!=0){
+        Integer responseCode = getInteger(jsonObjectResult, "Code", "code");
+        if (responseCode == null || responseCode != 0){
+            String message = jsonObjectResult == null ? rollingUpgradeResult : jsonObjectResult.getString("Message");
+            if (message == null && jsonObjectResult != null) {
+                message = jsonObjectResult.getString("message");
+            }
             return RollingUpgradeResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.EXCEPTION.result)
-                            .message(jsonObjectResult.getString("Message")).build()).build();
+                            .message(message).build()).build();
         }
-        String  taskId=jsonObjectResult.getJSONObject("Data").getString("taskId");
-        // 轮询结果
-        int ruStatus=0;
         long startLoadTime = System.currentTimeMillis();
         try {
             Thread.sleep(1000*20);
         } catch (InterruptedException e) {
             log.error(e.getMessage());
         }
-        LocalDateTime endTime=LocalDateTime.now().plusMinutes(30);
-        while(ruStatus!=InstanceStatusEnum.RUNNING.code && LocalDateTime.now().isBefore(endTime)){
-            String describeInstance = ResourceManagerServiceUtils.describeInstance(null);
-            JSONObject descJO = JSONObject.parseObject(describeInstance);
-            ruStatus = descJO.getJSONObject("Data").getInteger("Status");
-            log.info("[RollingUpgrade] current status:"+ InstanceStatusEnum.getInstanceStatusByCode(ruStatus).toString());
-            try {
-                if(ruStatus!=InstanceStatusEnum.RUNNING.code) {
-                    Thread.sleep(1000 * 10);
-                }
-            } catch (InterruptedException e) {
-                log.error(e.getMessage());
-            }
-
+        boolean success;
+        if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_MILVUS) {
+            success = waitInstanceRunning(instanceId);
+        } else if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE) {
+            success = waitVectorLakeRolloutComplete(instanceId);
+        } else {
+            success = waitQueryClusterRolloutComplete(instanceId);
         }
         long endLoadTime = System.currentTimeMillis();
         log.info("RollingUpgrade cost " + (endLoadTime - startLoadTime) / 1000.00 + " seconds");
-        if (ruStatus == InstanceStatusEnum.RUNNING.code){
+        if (success){
             return RollingUpgradeResult.builder()
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result).build())
@@ -93,5 +103,159 @@ public class RollingUpgradeComp {
                         .result(ResultEnum.WARNING.result)
                         .message("RollingUpgrade time out！").build())
                 .build();
+    }
+
+    private static boolean waitInstanceRunning(String instanceId) {
+        int ruStatus=0;
+        LocalDateTime endTime=LocalDateTime.now().plusMinutes(30);
+        while(ruStatus!=InstanceStatusEnum.RUNNING.code && LocalDateTime.now().isBefore(endTime)){
+            String describeInstance = ResourceManagerServiceUtils.describeInstance(instanceId);
+            JSONObject descJO = JSONObject.parseObject(describeInstance);
+            JSONObject data = getData(descJO);
+            if (data == null || getInteger(data, "Status", "status") == null) {
+                log.warn("[RollingUpgrade] describe response missing status:" + describeInstance);
+                return false;
+            }
+            ruStatus = getInteger(data, "Status", "status");
+            log.info("[RollingUpgrade] current status:"+ InstanceStatusEnum.getInstanceStatusByCode(ruStatus).toString());
+            try {
+                if(ruStatus!=InstanceStatusEnum.RUNNING.code) {
+                    Thread.sleep(1000 * 10);
+                }
+            } catch (InterruptedException e) {
+                log.error(e.getMessage());
+            }
+
+        }
+        return ruStatus == InstanceStatusEnum.RUNNING.code;
+    }
+
+    private static boolean waitVectorLakeRolloutComplete(String instanceId) {
+        return waitRolloutComplete(instanceId, true);
+    }
+
+    private static boolean waitQueryClusterRolloutComplete(String instanceId) {
+        return waitRolloutComplete(instanceId, false);
+    }
+
+    private static boolean waitRolloutComplete(String instanceId, boolean vectorLake) {
+        LocalDateTime endTime=LocalDateTime.now().plusMinutes(30);
+        while (LocalDateTime.now().isBefore(endTime)) {
+            String resp = vectorLake
+                    ? ResourceManagerServiceUtils.getVectorLakeCoordinatorUpgradeStatus(instanceId)
+                    : ResourceManagerServiceUtils.getQueryClusterUpgradeStatus(instanceId);
+            JSONObject jo = JSONObject.parseObject(resp);
+            JSONObject data = getData(jo);
+            if (data != null) {
+                Boolean complete = getBoolean(data, "rolloutComplete", "RolloutComplete");
+                log.info("[RollingUpgrade] rollout status:" + data.toJSONString());
+                if (Boolean.TRUE.equals(complete)) {
+                    return true;
+                }
+            }
+            try {
+                Thread.sleep(1000 * 10);
+            } catch (InterruptedException e) {
+                log.error(e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    private static boolean canUpgrade(int instanceType, InstanceStatusEnum status) {
+        if (status == null) {
+            return false;
+        }
+        if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE
+                || instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_QUERY_CLUSTER) {
+            return status == InstanceStatusEnum.RUNNING
+                    || status == InstanceStatusEnum.ABNORMAL
+                    || status == InstanceStatusEnum.STOPPED;
+        }
+        return status == InstanceStatusEnum.RUNNING;
+    }
+
+    private static String resolveTargetDbVersion(String input, int instanceType) {
+        if (input == null || input.equalsIgnoreCase("")) {
+            if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_QUERY_CLUSTER) {
+                return "";
+            }
+            return null;
+        }
+        if (input.equalsIgnoreCase("latest-release")) {
+            if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_QUERY_CLUSTER) {
+                return "";
+            }
+            if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE) {
+                return null;
+            }
+            List<String> strings = ComponentSchedule.queryReleaseImage();
+            return strings.get(0).substring(0, strings.get(0).indexOf("("));
+        }
+        String latestImageByKeywords = CloudOpsServiceUtils.getLatestImageByKeywords(input);
+        if (latestImageByKeywords != null && latestImageByKeywords.contains("(")) {
+            return latestImageByKeywords.substring(0, latestImageByKeywords.indexOf("("));
+        }
+        return input;
+    }
+
+    private static int resolveInstanceType(JSONObject data, String instanceId) {
+        Integer instanceType = getInteger(data, "InstanceType", "instanceType", "InsType", "insType");
+        if (instanceType != null) {
+            return instanceType;
+        }
+        if (instanceId != null) {
+            if (instanceId.startsWith("in06-")) {
+                return ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE;
+            }
+            if (instanceId.startsWith("in07-")) {
+                return ResourceManagerServiceUtils.INSTANCE_TYPE_QUERY_CLUSTER;
+            }
+        }
+        return ResourceManagerServiceUtils.INSTANCE_TYPE_MILVUS;
+    }
+
+    private static JSONObject getData(JSONObject jo) {
+        if (jo == null) {
+            return null;
+        }
+        JSONObject data = jo.getJSONObject("Data");
+        if (data == null) {
+            data = jo.getJSONObject("data");
+        }
+        return data;
+    }
+
+    private static Integer getInteger(JSONObject jo, String... keys) {
+        if (jo == null) {
+            return null;
+        }
+        for (String key : keys) {
+            Integer value = jo.getInteger(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static Boolean getBoolean(JSONObject jo, String... keys) {
+        if (jo == null) {
+            return null;
+        }
+        for (String key : keys) {
+            Boolean value = jo.getBoolean(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static RollingUpgradeResult warningResult(String message) {
+        return RollingUpgradeResult.builder()
+                .commonResult(CommonResult.builder()
+                        .result(ResultEnum.WARNING.result)
+                        .message(message).build()).build();
     }
 }
