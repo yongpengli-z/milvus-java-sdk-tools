@@ -16,7 +16,6 @@ public class CreateQueryClusterParams {
 
     String vectorLakeDbVersion;
     boolean autoCreateVectorLake = true;
-    boolean autoUpgradeVectorLake = false;
 
     String queryClusterDbVersion;
     boolean autoUpgradeQueryCluster = false;

@@ -16,9 +16,8 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
 | `sessionTTL` | String | No | `60s` | VectorLake session TTL if a new `in06` is created |
 | `maxQueryNodeCU` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created |
 | `maxQueryNodeReplicas` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created |
-| `vectorLakeDbVersion` | String | No | `""` | Expected `in06` version. If set, the component validates or upgrades `in06` before creating `in07` |
-| `autoCreateVectorLake` | boolean | No | `true` | Create `in06` when absent |
-| `autoUpgradeVectorLake` | boolean | No | `false` | Allow creating/upgrading `in06` to `vectorLakeDbVersion` before `in07` |
+| `vectorLakeDbVersion` | String | No | `""` | Expected `in06` version. If set, the component creates `in06` when absent and upgrades it before creating `in07` |
+| `autoCreateVectorLake` | boolean | No | `true` | Create `in06` through the QueryCluster endpoint when `vectorLakeDbVersion` is empty and `in06` is absent |
 | `queryClusterDbVersion` | String | No | `""` | Optional `in07` QueryNode version to apply after creation |
 | `autoUpgradeQueryCluster` | boolean | No | `false` | Upgrade `in07` after creation |
 | `forceUpgradeQueryCluster` | boolean | No | `true` | Force live QN upgrade |
@@ -35,9 +34,9 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
   streams. `vectorLakeDbVersion` is resolved with `ins_type=6`; 
   `queryClusterDbVersion` is resolved with `ins_type=7`.
 - cloud-service cannot pin the `in06` image when it implicitly creates VectorLake.
-  If `vectorLakeDbVersion` is set and no `in06` exists, set
-  `autoUpgradeVectorLake=true`; the component creates `in06`, waits for RUNNING,
-  upgrades it, then creates `in07`.
+  If `vectorLakeDbVersion` is set, the component creates `in06` when absent,
+  waits for RUNNING, upgrades it, then creates `in07`. If `in06` already exists,
+  the component upgrades it directly before creating `in07`.
 - cloud-service also cannot pin the `in07` image at create time. Use
   `queryClusterDbVersion` + `autoUpgradeQueryCluster=true` to upgrade after create.
 - Existing API keys usually cannot be recovered as plaintext. If the API key list
@@ -54,7 +53,6 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
     "sessionTTL": "60s",
     "vectorLakeDbVersion": "vectorlake-20260509-xxxxxxx",
     "autoCreateVectorLake": true,
-    "autoUpgradeVectorLake": true,
     "queryClusterDbVersion": "querycluster-20260509-yyyyyyy",
     "autoUpgradeQueryCluster": true,
     "apiKey": "",

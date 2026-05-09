@@ -144,14 +144,11 @@ public class CreateQueryClusterComp {
         JSONObject vectorLakeData = getData(vectorLakeStatus);
         boolean exists = vectorLakeData != null && Boolean.TRUE.equals(getBoolean(vectorLakeData, "exists", "Exists"));
         if (!exists) {
-            if (!params.isAutoCreateVectorLake()) {
-                return null;
-            }
             if (!hasText(params.getVectorLakeDbVersion())) {
+                if (!params.isAutoCreateVectorLake()) {
+                    return null;
+                }
                 return IMPLICIT_VECTOR_LAKE_CREATE;
-            }
-            if (hasText(params.getVectorLakeDbVersion()) && !params.isAutoUpgradeVectorLake()) {
-                return null;
             }
             String createResp = CloudServiceUtils.createVectorLake(projectId, regionId, params.getSessionTTL(),
                     params.getMaxQueryNodeCU(), params.getMaxQueryNodeReplicas());
@@ -182,14 +179,12 @@ public class CreateQueryClusterComp {
             throw new IllegalStateException("VectorLake is not RUNNING: " + status);
         }
         if (hasText(params.getVectorLakeDbVersion())) {
-            ensureVectorLakeVersion(vectorLakeId, params.getVectorLakeDbVersion(),
-                    params.isAutoUpgradeVectorLake(), startTime);
+            ensureVectorLakeVersion(vectorLakeId, params.getVectorLakeDbVersion(), startTime);
         }
         return vectorLakeId;
     }
 
-    private static void ensureVectorLakeVersion(String vectorLakeId, String expectedVersion, boolean allowUpgrade,
-            LocalDateTime startTime) {
+    private static void ensureVectorLakeVersion(String vectorLakeId, String expectedVersion, LocalDateTime startTime) {
         String targetVersion = resolveVectorLakeDbVersion(expectedVersion);
         if (!hasText(targetVersion)) {
             throw new IllegalStateException("vectorLakeDbVersion must be an exact ins_type=6 dbVersion.");
@@ -199,10 +194,6 @@ public class CreateQueryClusterComp {
         String currentVersion = getString(data, "DBVersion", "dbVersion");
         if (targetVersion.equals(currentVersion)) {
             return;
-        }
-        if (!allowUpgrade) {
-            throw new IllegalStateException("VectorLake dbVersion mismatch. current=" + currentVersion
-                    + ", expected=" + targetVersion + ". Set autoUpgradeVectorLake=true to upgrade in06.");
         }
         String upgradeResp = ResourceManagerServiceUtils.upgradeVectorLakeCoordinator(vectorLakeId, targetVersion);
         JSONObject upgradeJO = JSONObject.parseObject(upgradeResp);
