@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.config.CloudServiceUserInfo;
 import custom.entity.CreateGlobalClusterParams;
+import custom.entity.CreateQueryClusterParams;
 import custom.entity.CreateSecondaryParams;
 import custom.entity.ResumeInstanceParams;
 import custom.entity.StopInstanceParams;
@@ -113,6 +114,140 @@ public class CloudServiceUtils {
             }
         }
         return dfProject;
+    }
+
+    public static String resolveProjectId(String projectId, String projectName) {
+        if (projectId != null && !projectId.isEmpty()) {
+            return projectId;
+        }
+        if (projectName == null || projectName.isEmpty()) {
+            return cloudServiceUserInfo.getDefaultProjectId();
+        }
+        JSONArray projects = listProjects();
+        if (projects == null) {
+            return null;
+        }
+        for (int i = 0; i < projects.size(); i++) {
+            JSONObject project = projects.getJSONObject(i);
+            if (projectName.equalsIgnoreCase(project.getString("ProjectName"))) {
+                return project.getString("ProjectId");
+            }
+        }
+        return null;
+    }
+
+    public static JSONArray listProjects() {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/project/list";
+        String s = HttpClientUtils.doGet(url, buildCloudServiceHeader(), null);
+        log.info("[cloudService][listProject]:" + s);
+        JSONObject data = JSONObject.parseObject(s).getJSONObject("Data");
+        if (data == null || data.getJSONArray("Projects") == null) {
+            return new JSONArray();
+        }
+        return data.getJSONArray("Projects");
+    }
+
+    public static String describeVectorLake(String projectId, String regionId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/vectorlake?projectId=" + projectId
+                + "&regionId=" + regionId;
+        String resp = HttpClientUtils.doGet(url, buildCloudServiceHeader(), null);
+        log.info("[cloud-service][describe vectorlake] projectId={}, regionId={}, resp={}",
+                projectId, regionId, resp);
+        return resp;
+    }
+
+    public static String createVectorLake(String projectId, String regionId, String sessionTTL,
+            Integer maxQueryNodeCU, Integer maxQueryNodeReplicas) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/vectorlake";
+        JSONObject body = new JSONObject();
+        body.put("projectId", projectId);
+        body.put("regionId", regionId);
+        body.put("sessionTTL", sessionTTL == null || sessionTTL.isEmpty() ? "60s" : sessionTTL);
+        if (maxQueryNodeCU != null) {
+            body.put("maxQueryNodeCU", maxQueryNodeCU);
+        }
+        if (maxQueryNodeReplicas != null) {
+            body.put("maxQueryNodeReplicas", maxQueryNodeReplicas);
+        }
+        String resp = HttpClientUtils.doPostJson(url, buildCloudServiceHeader(), body.toJSONString());
+        log.info("[cloud-service][create vectorlake] body={}, resp={}", body.toJSONString(), resp);
+        return resp;
+    }
+
+    public static String createQueryCluster(CreateQueryClusterParams params, String projectId, String regionId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/vectorlake/query-cluster";
+        JSONObject body = new JSONObject();
+        body.put("projectId", projectId);
+        body.put("regionId", regionId);
+        body.put("clusterName", params.getClusterName());
+        body.put("cuSize", params.getCuSize());
+        body.put("sessionTTL", params.getSessionTTL() == null || params.getSessionTTL().isEmpty()
+                ? "60s" : params.getSessionTTL());
+        if (params.getMaxQueryNodeCU() != null) {
+            body.put("maxQueryNodeCU", params.getMaxQueryNodeCU());
+        }
+        if (params.getMaxQueryNodeReplicas() != null) {
+            body.put("maxQueryNodeReplicas", params.getMaxQueryNodeReplicas());
+        }
+        String resp = HttpClientUtils.doPostJson(url, buildCloudServiceHeader(), body.toJSONString());
+        log.info("[cloud-service][create query cluster] body={}, resp={}", body.toJSONString(), resp);
+        return resp;
+    }
+
+    public static String getQueryCluster(String projectId, String regionId, String clusterId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/vectorlake/query-cluster/" + clusterId
+                + "?projectId=" + projectId + "&regionId=" + regionId;
+        String resp = HttpClientUtils.doGet(url, buildCloudServiceHeader(), null);
+        log.info("[cloud-service][get query cluster] projectId={}, regionId={}, clusterId={}, resp={}",
+                projectId, regionId, clusterId, resp);
+        return resp;
+    }
+
+    public static String listQueryClusters(String projectId, String regionId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/vectorlake/query-cluster?projectId=" + projectId;
+        if (regionId != null && !regionId.isEmpty()) {
+            url += "&regionId=" + regionId;
+        }
+        String resp = HttpClientUtils.doGet(url, buildCloudServiceHeader(), null);
+        log.info("[cloud-service][list query cluster] projectId={}, regionId={}, resp={}",
+                projectId, regionId, resp);
+        return resp;
+    }
+
+    public static String listManagedApiKeys() {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/apikey/list-managed-key";
+        String resp = HttpClientUtils.doGet(url, buildCloudServiceHeader(), null);
+        log.info("[cloud-service][list managed api keys] resp={}", maskApiKeyResponse(resp));
+        return resp;
+    }
+
+    private static String maskApiKeyResponse(String response) {
+        try {
+            JSONObject root = JSONObject.parseObject(response);
+            JSONObject data = root.getJSONObject("Data");
+            if (data == null) {
+                return response;
+            }
+            JSONArray keys = data.getJSONArray("keys");
+            if (keys == null) {
+                keys = data.getJSONArray("Keys");
+            }
+            if (keys == null) {
+                return response;
+            }
+            for (int i = 0; i < keys.size(); i++) {
+                JSONObject key = keys.getJSONObject(i);
+                if (key.containsKey("key")) {
+                    key.put("key", "***");
+                }
+                if (key.containsKey("Key")) {
+                    key.put("Key", "***");
+                }
+            }
+            return root.toJSONString();
+        } catch (Exception e) {
+            return response;
+        }
     }
 
     public static List<String> listOrg(String token) {

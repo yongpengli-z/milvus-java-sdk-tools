@@ -208,6 +208,12 @@ public class ComponentSchedule {
             jsonObject.put("CreateInstance_" + index, createInstanceResult);
             reportStepResult(CreateInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createInstanceResult));
         }
+        if (object instanceof CreateQueryClusterParams) {
+            log.info("*********** < create query cluster> ***********");
+            CreateInstanceResult createInstanceResult = CreateQueryClusterComp.createQueryCluster((CreateQueryClusterParams) object);
+            jsonObject.put("CreateQueryCluster_" + index, createInstanceResult);
+            reportStepResult(CreateQueryClusterParams.class.getSimpleName() + "_" + index, JSON.toJSONString(createInstanceResult));
+        }
         if (object instanceof RollingUpgradeParams) {
             log.info("*********** < rolling upgrade > ***********");
             RollingUpgradeResult rollingUpgradeResult = RollingUpgradeComp.rollingUpgradeInstance((RollingUpgradeParams) object);
@@ -536,6 +542,11 @@ public class ComponentSchedule {
         CommonResult commonResult = null;
         if (operator instanceof CreateInstanceParams) {
             Object obj = stepResult.get("CreateInstance_" + index);
+            if (obj instanceof CreateInstanceResult) {
+                commonResult = ((CreateInstanceResult) obj).getCommonResult();
+            }
+        } else if (operator instanceof CreateQueryClusterParams) {
+            Object obj = stepResult.get("CreateQueryCluster_" + index);
             if (obj instanceof CreateInstanceResult) {
                 commonResult = ((CreateInstanceResult) obj).getCommonResult();
             }
