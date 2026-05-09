@@ -15,16 +15,7 @@ public class CreateQueryClusterParams {
     Integer maxQueryNodeReplicas;
 
     String vectorLakeDbVersion;
-    boolean autoCreateVectorLake = true;
-
     String queryClusterDbVersion;
-    boolean autoUpgradeQueryCluster = false;
-    boolean forceUpgradeQueryCluster = true;
-
-    @JSONField(serialize = false)
-    String apiKey;
-    boolean usePersonalApiKey = true;
-    boolean connectAfterCreate = true;
 
     String accountEmail;
     @JSONField(serialize = false)

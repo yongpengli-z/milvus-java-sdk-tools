@@ -17,13 +17,7 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
 | `maxQueryNodeCU` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created |
 | `maxQueryNodeReplicas` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created |
 | `vectorLakeDbVersion` | String | No | `""` | Expected `in06` version. If set, the component creates `in06` when absent and upgrades it before creating `in07` |
-| `autoCreateVectorLake` | boolean | No | `true` | Create `in06` through the QueryCluster endpoint when `vectorLakeDbVersion` is empty and `in06` is absent |
 | `queryClusterDbVersion` | String | No | `""` | Optional `in07` QueryNode version to apply after creation |
-| `autoUpgradeQueryCluster` | boolean | No | `false` | Upgrade `in07` after creation |
-| `forceUpgradeQueryCluster` | boolean | No | `true` | Force live QN upgrade |
-| `apiKey` | String | No | `""` | API key token for client initialization |
-| `usePersonalApiKey` | boolean | No | `true` | Try to use current account's personal API key if `apiKey` is empty |
-| `connectAfterCreate` | boolean | No | `true` | Initialize Milvus clients after creation |
 | `accountEmail` | String | No | default account | Cloud account email |
 | `accountPassword` | String | No | default account | Cloud account password |
 
@@ -38,9 +32,10 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
   waits for RUNNING, upgrades it, then creates `in07`. If `in06` already exists,
   the component upgrades it directly before creating `in07`.
 - cloud-service also cannot pin the `in07` image at create time. Use
-  `queryClusterDbVersion` + `autoUpgradeQueryCluster=true` to upgrade after create.
-- Existing API keys usually cannot be recovered as plaintext. If the API key list
-  returns only metadata, pass `apiKey` explicitly or set `connectAfterCreate=false`.
+  `queryClusterDbVersion` to upgrade after create.
+- The component always initializes clients after creation by resolving the current
+  account's personal API key and using the QueryCluster endpoint returned by
+  cloud-service.
 
 ## Example
 
@@ -52,11 +47,9 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
     "regionId": "aws-us-west-2",
     "sessionTTL": "60s",
     "vectorLakeDbVersion": "vectorlake-20260509-xxxxxxx",
-    "autoCreateVectorLake": true,
     "queryClusterDbVersion": "querycluster-20260509-yyyyyyy",
-    "autoUpgradeQueryCluster": true,
-    "apiKey": "",
-    "connectAfterCreate": true
+    "accountEmail": "",
+    "accountPassword": ""
   }
 }
 ```

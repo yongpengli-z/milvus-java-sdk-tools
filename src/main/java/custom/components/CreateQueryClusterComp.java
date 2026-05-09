@@ -55,8 +55,7 @@ public class CreateQueryClusterComp {
 
         String vectorLakeId = prepareVectorLake(params, projectId, regionId, startTime);
         if (vectorLakeId == null) {
-            return fail("VectorLake is required before creating QueryCluster. Set autoCreateVectorLake=true to create it.",
-                    startTime, null);
+            return fail("VectorLake is required before creating QueryCluster.", startTime, null);
         }
 
         String createResp = CloudServiceUtils.createQueryCluster(params, projectId, regionId);
@@ -77,10 +76,9 @@ public class CreateQueryClusterComp {
             return fail("QueryCluster create timeout or failed.", startTime, instanceId);
         }
 
-        if (params.isAutoUpgradeQueryCluster() && hasText(params.getQueryClusterDbVersion())) {
+        if (hasText(params.getQueryClusterDbVersion())) {
             String targetVersion = resolveQueryClusterDbVersion(params.getQueryClusterDbVersion());
-            String upgradeResp = ResourceManagerServiceUtils.upgradeQueryCluster(instanceId, targetVersion,
-                    params.isForceUpgradeQueryCluster());
+            String upgradeResp = ResourceManagerServiceUtils.upgradeQueryCluster(instanceId, targetVersion, true);
             JSONObject upgradeJO = JSONObject.parseObject(upgradeResp);
             if (!isApiSuccess(upgradeJO)) {
                 return fail("upgrade query cluster failed: " + getMessage(upgradeJO, upgradeResp), startTime, instanceId);
@@ -98,23 +96,21 @@ public class CreateQueryClusterComp {
         }
         newInstanceInfo.setUri(endpoint);
 
-        String token = resolveToken(params);
+        String token = resolveToken();
         if (hasText(token)) {
             newInstanceInfo.setToken(token);
         }
-        if (params.isConnectAfterCreate()) {
-            if (!hasText(endpoint)) {
-                return fail("QueryCluster endpoint is empty.", startTime, instanceId);
-            }
-            if (!hasText(newInstanceInfo.getToken())) {
-                ComponentSchedule.updateInstanceStatus(instanceId, endpoint, resolveDisplayVersion(params),
-                        InstanceStatusEnum.RUNNING.code);
-                return warning(instanceId, endpoint, startTime,
-                        "QueryCluster created, but no API key was available for client initialization.");
-            }
-            milvusClientV2 = MilvusConnect.createMilvusClientV2(endpoint, newInstanceInfo.getToken());
-            milvusClientV1 = MilvusConnect.createMilvusClientV1(endpoint, newInstanceInfo.getToken());
+        if (!hasText(endpoint)) {
+            return fail("QueryCluster endpoint is empty.", startTime, instanceId);
         }
+        if (!hasText(newInstanceInfo.getToken())) {
+            ComponentSchedule.updateInstanceStatus(instanceId, endpoint, resolveDisplayVersion(params),
+                    InstanceStatusEnum.RUNNING.code);
+            return warning(instanceId, endpoint, startTime,
+                    "QueryCluster created, but no personal API key was available for client initialization.");
+        }
+        milvusClientV2 = MilvusConnect.createMilvusClientV2(endpoint, newInstanceInfo.getToken());
+        milvusClientV1 = MilvusConnect.createMilvusClientV1(endpoint, newInstanceInfo.getToken());
 
         ComponentSchedule.updateInstanceStatus(instanceId, endpoint, resolveDisplayVersion(params),
                 InstanceStatusEnum.RUNNING.code);
@@ -145,9 +141,6 @@ public class CreateQueryClusterComp {
         boolean exists = vectorLakeData != null && Boolean.TRUE.equals(getBoolean(vectorLakeData, "exists", "Exists"));
         if (!exists) {
             if (!hasText(params.getVectorLakeDbVersion())) {
-                if (!params.isAutoCreateVectorLake()) {
-                    return null;
-                }
                 return IMPLICIT_VECTOR_LAKE_CREATE;
             }
             String createResp = CloudServiceUtils.createVectorLake(projectId, regionId, params.getSessionTTL(),
@@ -308,13 +301,7 @@ public class CreateQueryClusterComp {
         return false;
     }
 
-    private static String resolveToken(CreateQueryClusterParams params) {
-        if (hasText(params.getApiKey())) {
-            return params.getApiKey();
-        }
-        if (!params.isUsePersonalApiKey()) {
-            return "";
-        }
+    private static String resolveToken() {
         String resp = CloudServiceUtils.listManagedApiKeys();
         JSONObject data = getData(JSONObject.parseObject(resp));
         JSONArray keys = data == null ? null : data.getJSONArray("keys");
@@ -327,9 +314,9 @@ public class CreateQueryClusterComp {
         for (int i = 0; i < keys.size(); i++) {
             JSONObject key = keys.getJSONObject(i);
             Integer type = getInteger(key, "type", "Type");
-            String apiKey = getString(key, "key", "Key");
-            if (type != null && type == 1 && hasText(apiKey)) {
-                return apiKey;
+            String personalKey = getString(key, "key", "Key");
+            if (type != null && type == 1 && hasText(personalKey)) {
+                return personalKey;
             }
         }
         return "";
