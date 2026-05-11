@@ -10,7 +10,7 @@ public class CreateQueryClusterParams {
     String projectId;
     String projectName;
     String regionId;
-    String sessionTTL = "60s";
+    String sessionTTL = "30m";
     Integer maxQueryNodeCU;
     Integer maxQueryNodeReplicas;
 

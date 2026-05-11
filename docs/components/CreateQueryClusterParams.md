@@ -13,7 +13,7 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
 | `projectId` | String | No | default project | Target project ID |
 | `projectName` | String | No | `""` | Used only when `projectId` is empty |
 | `regionId` | String | No | env region | Target region |
-| `sessionTTL` | String | No | `60s` | VectorLake session TTL if a new `in06` is created |
+| `sessionTTL` | String | No | `30m` | VectorLake session TTL if a new `in06` is created |
 | `maxQueryNodeCU` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created |
 | `maxQueryNodeReplicas` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created |
 | `vectorLakeDbVersion` | String | No | `""` | Expected `in06` version. If set, the component creates `in06` when absent and upgrades it before creating `in07` |
@@ -45,7 +45,7 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
     "clusterName": "qc-test",
     "cuSize": 8,
     "regionId": "aws-us-west-2",
-    "sessionTTL": "60s",
+    "sessionTTL": "30m",
     "vectorLakeDbVersion": "vectorlake-20260509-xxxxxxx",
     "queryClusterDbVersion": "querycluster-20260509-yyyyyyy",
     "accountEmail": "",

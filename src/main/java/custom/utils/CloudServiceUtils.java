@@ -162,7 +162,7 @@ public class CloudServiceUtils {
         JSONObject body = new JSONObject();
         body.put("projectId", projectId);
         body.put("regionId", regionId);
-        body.put("sessionTTL", sessionTTL == null || sessionTTL.isEmpty() ? "60s" : sessionTTL);
+        body.put("sessionTTL", sessionTTL == null || sessionTTL.isEmpty() ? "30m" : sessionTTL);
         if (maxQueryNodeCU != null) {
             body.put("maxQueryNodeCU", maxQueryNodeCU);
         }
@@ -182,7 +182,7 @@ public class CloudServiceUtils {
         body.put("clusterName", params.getClusterName());
         body.put("cuSize", params.getCuSize());
         body.put("sessionTTL", params.getSessionTTL() == null || params.getSessionTTL().isEmpty()
-                ? "60s" : params.getSessionTTL());
+                ? "30m" : params.getSessionTTL());
         if (params.getMaxQueryNodeCU() != null) {
             body.put("maxQueryNodeCU", params.getMaxQueryNodeCU());
         }
