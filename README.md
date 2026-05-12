@@ -113,6 +113,7 @@
 | 组件 | 功能 | 详情 |
 |------|------|------|
 | WaitParams | 等待（按分钟） | [详情](docs/components/WaitParams.md) |
+| PauseParams | 主动暂停当前任务，等待页面恢复后继续 | [详情](docs/components/PauseParams.md) |
 | LoopParams | 循环执行（批量创建 collection 必须用此组件） | [详情](docs/components/LoopParams.md) |
 | ConcurrentParams | 并发执行（paramComb 内步骤并行） | [详情](docs/components/ConcurrentParams.md) |
 

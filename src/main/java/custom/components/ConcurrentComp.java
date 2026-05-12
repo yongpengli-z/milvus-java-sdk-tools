@@ -120,6 +120,11 @@ public class ConcurrentComp {
             WaitResult waitResult = WaitComp.wait((WaitParams) object);
             jsonObject.put("Wait_" + index, waitResult);
         }
+        if (object instanceof PauseParams) {
+            log.info("--------------- < [Concurrent] pause > ---------------");
+            PauseResult pauseResult = PauseComp.pause((PauseParams) object);
+            jsonObject.put("Pause_" + index, pauseResult);
+        }
         if (object instanceof DropIndexParams) {
             log.info("--------------- < [Concurrent] drop index > ---------------");
             DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);

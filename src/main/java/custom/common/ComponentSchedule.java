@@ -68,19 +68,7 @@ public class ComponentSchedule {
         List<JSONObject> results = new ArrayList<>();
         for (int i = 0; i < operators.size(); i++) {
             log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
-            int taskStatus = queryTaskRedisValue();
-
-            if (taskStatus == TaskStatusEnum.STOPPING.status) {
-                do {
-                    log.info("监测到暂停...");
-                    try {
-                        Thread.sleep(1000 * 5);
-                    } catch (InterruptedException e) {
-                        log.error(e.getMessage());
-                    }
-                    taskStatus = queryTaskRedisValue();
-                } while (taskStatus == TaskStatusEnum.STOPPING.status);
-            }
+            int taskStatus = waitIfTaskPaused();
 
             if (taskStatus == TaskStatusEnum.TERMINATE.status) {
                 log.info("监测到任务终止...");
@@ -164,6 +152,12 @@ public class ComponentSchedule {
             WaitResult waitResult = WaitComp.wait((WaitParams) object);
             jsonObject.put("Wait" + index, waitResult);
             reportStepResult(WaitParams.class.getSimpleName() + "_" + index, JSON.toJSONString(waitResult));
+        }
+        if (object instanceof PauseParams) {
+            log.info("*********** < Pause > ***********");
+            PauseResult pauseResult = PauseComp.pause((PauseParams) object);
+            jsonObject.put("Pause_" + index, pauseResult);
+            reportStepResult(PauseParams.class.getSimpleName() + "_" + index, JSON.toJSONString(pauseResult));
         }
         if (object instanceof UpsertParams) {
             log.info("*********** < upsert data > ***********");
@@ -569,6 +563,35 @@ public class ComponentSchedule {
         log.debug("request qtp:" + s);
         JSONObject jsonObject = JSON.parseObject(s);
         return jsonObject.getInteger("data");
+    }
+
+    public static int waitIfTaskPaused() {
+        int taskStatus = queryTaskRedisValue();
+        if (taskStatus == TaskStatusEnum.STOPPING.status) {
+            do {
+                log.info("监测到暂停...");
+                try {
+                    Thread.sleep(1000 * 5);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error(e.getMessage());
+                    break;
+                }
+                taskStatus = queryTaskRedisValue();
+            } while (taskStatus == TaskStatusEnum.STOPPING.status);
+        }
+        return taskStatus;
+    }
+
+    public static String pauseTaskByQtpServer() {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            log.info("current env:" + envEnum);
+            return "";
+        }
+        String uri = "http://qtp-server.zilliz.cc/customize-task/task/stop?id=" + taskId;
+        String s = HttpClientUtils.doPost(uri);
+        log.info("Pause task by qtp-server: {}", s);
+        return s;
     }
 
     public static void updateArgoStatus(int status) {
