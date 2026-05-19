@@ -69,6 +69,8 @@ public class RestfulHybridSearchComp {
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : hybridSearchParams.getCollectionName();
         }
 
+        String databaseName = hybridSearchParams.getDatabaseName();
+
         // 验证 searchRequests 不为空
         if (hybridSearchParams.getSearchRequests() == null || hybridSearchParams.getSearchRequests().isEmpty()) {
             log.error("RestfulHybridSearch searchRequests 不能为空");
@@ -96,7 +98,11 @@ public class RestfulHybridSearchComp {
         }
 
         // 判定是不是sparse向量，并且是由Function BM25生成
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
+        DescribeCollectionReq.DescribeCollectionReqBuilder describeBuilder = DescribeCollectionReq.builder().collectionName(collection);
+        if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+            describeBuilder.databaseName(databaseName);
+        }
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(describeBuilder.build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
 
@@ -124,13 +130,13 @@ public class RestfulHybridSearchComp {
             if (functionFieldMap.containsKey(annsField)) {
                 String inputFieldName = functionFieldMap.get(annsField);
                 log.info("字段 {} 由BM25 Function生成，从collection里捞取input field {} 的文本数据: {}", annsField, inputFieldName, 1000);
-                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName, databaseName);
                 log.info("提供给restfulHybridSearch使用的随机文本数量: {}", searchBaseVectors.size());
                 fieldVectorsMap.put(annsField, searchBaseVectors);
             } else {
                 // 从 collection 中采样向量
                 log.info("从collection里捞取向量字段 {} 的向量: {}", annsField, 1000);
-                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, annsField);
+                List<BaseVector> searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, annsField, databaseName);
                 log.info("提供给restfulHybridSearch使用的随机向量数: {}", searchBaseVectors.size());
                 fieldVectorsMap.put(annsField, searchBaseVectors);
             }
@@ -239,6 +245,7 @@ public class RestfulHybridSearchComp {
         final Map<String, Object> finalRankerParams = rankerParams;
         final String finalRankerType = rankerType;
         final String finalHybridSearchUrl = hybridSearchUrl;
+        final String finalDatabaseName = databaseName;
 
         PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("RestfulHybridSearch");
         statsReporter.start();
@@ -346,6 +353,9 @@ public class RestfulHybridSearchComp {
                     // 构建顶层请求体
                     JSONObject requestBody = new JSONObject();
                     requestBody.put("collectionName", finalCollection);
+                    if (finalDatabaseName != null && !finalDatabaseName.equalsIgnoreCase("")) {
+                        requestBody.put("dbName", finalDatabaseName);
+                    }
                     requestBody.put("search", subSearchArray);
                     requestBody.put("limit", hybridSearchParams.getTopK());
                     if (!finalOutputs.isEmpty()) {

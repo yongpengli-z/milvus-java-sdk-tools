@@ -9,6 +9,7 @@
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
 | `collectionName` | String | 否 | `""` | |
+| `databaseName` | String | 否 | `""` | 目标 database；REST 请求体中映射为 `dbName` |
 | `collectionRule` | String | 是 | `""` | |
 | `searchRequests` | List | 是 | | 同 HybridSearchParams |
 | `ranker` | String | 是 | `"RRF"` | |
@@ -35,6 +36,7 @@
 ```json
 {
   "RestfulHybridSearchParams_0": {
+    "databaseName": "",
     "searchRequests": [
       {"annsField": "float_vec", "topK": 10, "searchParams": {"level": 1}, "filter": ""},
       {"annsField": "sparse_vec", "topK": 10, "searchParams": {}, "filter": ""}

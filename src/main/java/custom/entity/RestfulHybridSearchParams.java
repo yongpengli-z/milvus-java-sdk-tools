@@ -22,6 +22,11 @@ public class RestfulHybridSearchParams {
     private String collectionName;
 
     /**
+     * Database 名称。为空时使用当前/default database。
+     */
+    private String databaseName;
+
+    /**
      * Collection 选择规则：""=默认, "random"=随机, "sequence"=轮询。
      */
     private String collectionRule;

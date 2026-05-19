@@ -1023,12 +1023,24 @@ public class CommonFunction {
      * @return VectorInfo
      */
     public static VectorInfo getCollectionVectorInfo(String collectionName, String annsField) {
-        return getCollectionVectorInfo(milvusClientV2, collectionName, annsField);
+        return getCollectionVectorInfo(milvusClientV2, collectionName, annsField, "");
+    }
+
+    public static VectorInfo getCollectionVectorInfo(String collectionName, String annsField, String databaseName) {
+        return getCollectionVectorInfo(milvusClientV2, collectionName, annsField, databaseName);
     }
 
     public static VectorInfo getCollectionVectorInfo(MilvusClientV2 client, String collectionName, String annsField) {
+        return getCollectionVectorInfo(client, collectionName, annsField, "");
+    }
+
+    public static VectorInfo getCollectionVectorInfo(MilvusClientV2 client, String collectionName, String annsField, String databaseName) {
         VectorInfo vectorInfo = new VectorInfo();
-        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        DescribeCollectionReq.DescribeCollectionReqBuilder describeBuilder = DescribeCollectionReq.builder().collectionName(collectionName);
+        if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+            describeBuilder.databaseName(databaseName);
+        }
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(describeBuilder.build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         
         // 检查是否是 struct 中的向量字段（格式：structFieldName[subFieldName]）
@@ -1095,12 +1107,24 @@ public class CommonFunction {
      * @return PKFieldInfo
      */
     public static PKFieldInfo getPKFieldInfo(String collectionName) {
-        return getPKFieldInfo(milvusClientV2, collectionName);
+        return getPKFieldInfo(milvusClientV2, collectionName, "");
+    }
+
+    public static PKFieldInfo getPKFieldInfo(String collectionName, String databaseName) {
+        return getPKFieldInfo(milvusClientV2, collectionName, databaseName);
     }
 
     public static PKFieldInfo getPKFieldInfo(MilvusClientV2 client, String collectionName) {
+        return getPKFieldInfo(client, collectionName, "");
+    }
+
+    public static PKFieldInfo getPKFieldInfo(MilvusClientV2 client, String collectionName, String databaseName) {
         PKFieldInfo pkFieldInfo = new PKFieldInfo();
-        DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        DescribeCollectionReq.DescribeCollectionReqBuilder describeBuilder = DescribeCollectionReq.builder().collectionName(collectionName);
+        if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+            describeBuilder.databaseName(databaseName);
+        }
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(describeBuilder.build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
@@ -1124,14 +1148,22 @@ public class CommonFunction {
      * @return List<BaseVector>
      */
     public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum, String annsField) {
-        return providerSearchVectorDataset(milvusClientV2, collection, randomNum, annsField);
+        return providerSearchVectorDataset(milvusClientV2, collection, randomNum, annsField, "");
+    }
+
+    public static List<BaseVector> providerSearchVectorDataset(String collection, int randomNum, String annsField, String databaseName) {
+        return providerSearchVectorDataset(milvusClientV2, collection, randomNum, annsField, databaseName);
     }
 
     public static List<BaseVector> providerSearchVectorDataset(MilvusClientV2 client, String collection, int randomNum, String annsField) {
-        VectorInfo collectionVectorInfo = getCollectionVectorInfo(client, collection, annsField);
+        return providerSearchVectorDataset(client, collection, randomNum, annsField, "");
+    }
+
+    public static List<BaseVector> providerSearchVectorDataset(MilvusClientV2 client, String collection, int randomNum, String annsField, String databaseName) {
+        VectorInfo collectionVectorInfo = getCollectionVectorInfo(client, collection, annsField, databaseName);
         DataType vectorDataType = collectionVectorInfo.getDataType();
         // 获取主键信息
-        PKFieldInfo pkFieldInfo = getPKFieldInfo(client, collection);
+        PKFieldInfo pkFieldInfo = getPKFieldInfo(client, collection, databaseName);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
         QueryResp query = null;
         try {
@@ -1141,11 +1173,14 @@ public class CommonFunction {
             } else {
                 filterStr = pkFieldInfo.getFieldName() + " > 0 ";
             }
-            query = client.query(QueryReq.builder().collectionName(collection)
+            QueryReq.QueryReqBuilder queryBuilder = QueryReq.builder().collectionName(collection)
                     .filter(filterStr)
                     .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
-                    .limit(randomNum)
-                    .build());
+                    .limit(randomNum);
+            if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+                queryBuilder.databaseName(databaseName);
+            }
+            query = client.query(queryBuilder.build());
             // 清空下 recallBaseIdList
             recallBaseIdList.clear();
         } catch (Exception e) {
@@ -1315,12 +1350,20 @@ public class CommonFunction {
      * @return List<BaseVector>
      */
     public static List<BaseVector> providerSearchFunctionData(String collection, int randomNum, String inputFieldName) {
-        return providerSearchFunctionData(milvusClientV2, collection, randomNum, inputFieldName);
+        return providerSearchFunctionData(milvusClientV2, collection, randomNum, inputFieldName, "");
+    }
+
+    public static List<BaseVector> providerSearchFunctionData(String collection, int randomNum, String inputFieldName, String databaseName) {
+        return providerSearchFunctionData(milvusClientV2, collection, randomNum, inputFieldName, databaseName);
     }
 
     public static List<BaseVector> providerSearchFunctionData(MilvusClientV2 client, String collection, int randomNum, String inputFieldName) {
+        return providerSearchFunctionData(client, collection, randomNum, inputFieldName, "");
+    }
+
+    public static List<BaseVector> providerSearchFunctionData(MilvusClientV2 client, String collection, int randomNum, String inputFieldName, String databaseName) {
         // 获取主键信息
-        PKFieldInfo pkFieldInfo = getPKFieldInfo(client, collection);
+        PKFieldInfo pkFieldInfo = getPKFieldInfo(client, collection, databaseName);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
         String filterStr;
         if (pkFieldInfo.getDataType() == DataType.VarChar) {
@@ -1338,12 +1381,15 @@ public class CommonFunction {
             int pageSize = Math.min(Math.max(remain * 2, 100), randomNum);
             QueryResp query;
             try {
-                query = client.query(QueryReq.builder().collectionName(collection)
+                QueryReq.QueryReqBuilder queryBuilder = QueryReq.builder().collectionName(collection)
                         .filter(filterStr)
                         .outputFields(Lists.newArrayList(inputFieldName))
                         .limit(pageSize)
-                        .offset(offset)
-                        .build());
+                        .offset(offset);
+                if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+                    queryBuilder.databaseName(databaseName);
+                }
+                query = client.query(queryBuilder.build());
             } catch (Exception e) {
                 log.error("providerSearchFunctionData query 异常: {}, collection={}, inputField={}, offset={}",
                         e.getMessage(), collection, inputFieldName, offset);
