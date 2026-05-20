@@ -59,9 +59,14 @@ public class RestfulSearchComp {
                     searchParams.getCollectionName().equalsIgnoreCase(""))
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
         }
+        String databaseName = searchParams.getDatabaseName();
 
         // 判定是不是sparse向量，并且是由Function BM25生成
-        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
+        DescribeCollectionReq.DescribeCollectionReqBuilder describeBuilder = DescribeCollectionReq.builder().collectionName(collection);
+        if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+            describeBuilder.databaseName(databaseName);
+        }
+        DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(describeBuilder.build());
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
         List<CreateCollectionReq.Function> functionList = collectionSchema.getFunctionList();
         boolean isUseFunction = false;
@@ -90,11 +95,11 @@ public class RestfulSearchComp {
         List<BaseVector> searchBaseVectors;
         if (isUseFunction) {
             log.info("从collection里捞取input filed num: " + 1000);
-            searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName);
+            searchBaseVectors = CommonFunction.providerSearchFunctionData(collection, 1000, inputFieldName, databaseName);
             log.info("提供给search使用的随机文本数量: " + searchBaseVectors.size());
         } else {
             log.info("从collection里捞取向量: " + 1000);
-            searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField());
+            searchBaseVectors = CommonFunction.providerSearchVectorDataset(collection, 1000, searchParams.getAnnsField(), databaseName);
             log.info("提供给search使用的随机向量数: " + searchBaseVectors.size());
         }
 
@@ -140,6 +145,7 @@ public class RestfulSearchComp {
             RateLimiter finalRateLimiter = rateLimiter;
             List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
             String finalCollection = collection;
+            String finalDatabaseName = databaseName;
             String finalSearchUrl = searchUrl;
             Callable<RestfulSearchResult> callable =
                     () -> {
@@ -179,6 +185,9 @@ public class RestfulSearchComp {
                             // 构建RESTful请求体
                             JSONObject requestBody = new JSONObject();
                             requestBody.put("collectionName", finalCollection);
+                            if (finalDatabaseName != null && !finalDatabaseName.equalsIgnoreCase("")) {
+                                requestBody.put("dbName", finalDatabaseName);
+                            }
                             requestBody.put("limit", searchParams.getTopK());
                             requestBody.put("annsField", searchParams.getAnnsField());
 

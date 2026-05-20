@@ -19,6 +19,11 @@ public class RestfulSearchParams {
     private String collectionName;
 
     /**
+     * Database 名称。为空时使用当前/default database。
+     */
+    private String databaseName;
+
+    /**
      * NQ（query 向量数量）。默认值：1
      */
     private int nq;
