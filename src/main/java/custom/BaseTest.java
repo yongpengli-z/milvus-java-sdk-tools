@@ -404,8 +404,10 @@ public class BaseTest {
                 milvusClientV1 = MilvusConnect.createMilvusClientV1(newInstanceInfo.getUri(), newInstanceInfo.getToken());
                 importUrl = uri;
                 // 初始化环境
-                InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
-                InitialComp.initialRunning(initialParamsObj);
+                if (!initialParams.isEmpty()) {
+                    InitialParams initialParamsObj = JSONObject.parseObject(initialParams, InitialParams.class);
+                    InitialComp.initialRunning(initialParamsObj);
+                }
             }
             // 日志级别设置：只对本项目 custom.* 包生效，第三方库固定 INFO 防止刷屏
             if (!initialParams.isEmpty()) {
