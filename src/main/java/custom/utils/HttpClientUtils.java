@@ -48,6 +48,19 @@ import java.util.*;
  */
 @Slf4j
 public class HttpClientUtils {
+    private static final int QTP_SERVER_TIMEOUT_MS = 3000;
+
+    private static boolean isQtpServerUrl(String url) {
+        return url != null && url.contains("qtp-server.zilliz.cc");
+    }
+
+    private static RequestConfig qtpServerRequestConfig() {
+        return RequestConfig.custom()
+                .setConnectTimeout(QTP_SERVER_TIMEOUT_MS)
+                .setConnectionRequestTimeout(QTP_SERVER_TIMEOUT_MS)
+                .setSocketTimeout(QTP_SERVER_TIMEOUT_MS)
+                .build();
+    }
 
     /**
      * 设置请求头和参数 post提交
@@ -157,6 +170,9 @@ public class HttpClientUtils {
 
             // 创建http GET请求
             HttpGet httpGet = new HttpGet(uri);
+            if (isQtpServerUrl(url)) {
+                httpGet.setConfig(qtpServerRequestConfig());
+            }
 
             // 执行请求
             response = httpclient.execute(httpGet);
@@ -167,7 +183,12 @@ public class HttpClientUtils {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
             }
         } catch (Exception e) {
-            log.error("系统错误:",e);
+            if (isQtpServerUrl(url)) {
+                log.warn("QTP server request failed, ignored: url={}, error={}: {}",
+                        url, e.getClass().getSimpleName(), e.getMessage());
+            } else {
+                log.error("系统错误:",e);
+            }
         } finally {
             try {
                 if (response != null) {
@@ -206,6 +227,9 @@ public class HttpClientUtils {
 
             // 创建http GET请求
             HttpGet httpGet = new HttpGet(uri);
+            if (isQtpServerUrl(url)) {
+                httpGet.setConfig(qtpServerRequestConfig());
+            }
 
             if (headMap != null && !headMap.isEmpty()) {
                 for (String key : headMap.keySet()) {
@@ -221,7 +245,12 @@ public class HttpClientUtils {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
             }
         } catch (Exception e) {
-            log.error("系统错误:",e);
+            if (isQtpServerUrl(url)) {
+                log.warn("QTP server request failed, ignored: url={}, error={}: {}",
+                        url, e.getClass().getSimpleName(), e.getMessage());
+            } else {
+                log.error("系统错误:",e);
+            }
         } finally {
             try {
                 if (response != null) {
@@ -255,6 +284,9 @@ public class HttpClientUtils {
         try {
             // 创建Http Post请求
             HttpPost httpPost = new HttpPost(url);
+            if (isQtpServerUrl(url)) {
+                httpPost.setConfig(qtpServerRequestConfig());
+            }
             if(headers != null) {
                 for (String key : headers.keySet()) {
                     httpPost.setHeader(key, headers.get(key));
@@ -276,12 +308,18 @@ public class HttpClientUtils {
             response = httpClient.execute(httpPost);
             resultString = EntityUtils.toString(response.getEntity(), "utf-8");
         } catch (Exception e) {
-            log.error("系统错误:",e);
+            if (isQtpServerUrl(url)) {
+                log.warn("QTP server request failed, ignored: url={}, error={}: {}",
+                        url, e.getClass().getSimpleName(), e.getMessage());
+            } else {
+                log.error("系统错误:",e);
+            }
         } finally {
             try {
                 if (response!=null) {
                     response.close();
                 }
+                httpClient.close();
             } catch (IOException e) {
                 log.error("系统错误:",e);
             }
@@ -310,6 +348,9 @@ public class HttpClientUtils {
         try {
             // 创建Http Post请求
             HttpPost httpPost = new HttpPost(url);
+            if (isQtpServerUrl(url)) {
+                httpPost.setConfig(qtpServerRequestConfig());
+            }
             // 创建请求内容
             log.debug("=====请求参数:"+json);
             StringEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
@@ -319,7 +360,12 @@ public class HttpClientUtils {
             log.debug("=====响应参数:"+response);
             resultString = EntityUtils.toString(response.getEntity(), "utf-8");
         } catch (Exception e) {
-            log.error("系统错误:",e);
+            if (isQtpServerUrl(url)) {
+                log.warn("QTP server request failed, ignored: url={}, error={}: {}",
+                        url, e.getClass().getSimpleName(), e.getMessage());
+            } else {
+                log.error("系统错误:",e);
+            }
         } finally {
             try {
                 if (response!=null) {
@@ -981,4 +1027,3 @@ public class HttpClientUtils {
         return resultString;
     }
 }
-
