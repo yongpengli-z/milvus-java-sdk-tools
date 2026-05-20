@@ -342,8 +342,16 @@ public class BaseTest {
             envEnum = EnvEnum.getEnvByName(env);
             log.debug("EnvEnum:" + envEnum);
             if (!env.equalsIgnoreCase("devops") && !env.equalsIgnoreCase("fouram")) {
-                envConfig = ConfigUtils.providerEnvConfig(envEnum);
-                log.info("当前环境信息:" + envConfig);
+                try {
+                    envConfig = ConfigUtils.providerEnvConfig(envEnum);
+                    log.info("当前环境信息:" + envConfig);
+                } catch (IllegalArgumentException configEx) {
+                    if (uri.equalsIgnoreCase("")) {
+                        throw configEx;
+                    }
+                    System.setProperty("qtp.report.disabled", "true");
+                    log.warn("加载环境配置失败，当前任务已传入 uri，继续按已有实例执行: {}", configEx.getMessage());
+                }
             }
             if (!uri.equalsIgnoreCase("")) {
                 if (GlobalClusterUtils.isGlobalEndpoint(uri)) {

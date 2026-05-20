@@ -473,13 +473,16 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
     public static String providerConfigFile(String vdcConfigPath){
         StringBuilder contentBuilder = new StringBuilder();
         File file = new File(vdcConfigPath);
+        if (!file.exists() || !file.isFile()) {
+            throw new IllegalArgumentException("VDC config file does not exist: " + vdcConfigPath);
+        }
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
                 contentBuilder.append(line).append(System.lineSeparator()); // 添加每一行
             }
         } catch (IOException e) {
-            e.printStackTrace(); // 处理异常
+            throw new IllegalArgumentException("Failed to read VDC config file: " + vdcConfigPath, e);
         }
         return contentBuilder.toString();
     }

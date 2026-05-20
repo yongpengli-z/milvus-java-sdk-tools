@@ -33,6 +33,18 @@ public class ComponentSchedule {
     private static final ThreadLocal<List<LoopIterationContext>> LOOP_CONTEXTS = ThreadLocal.withInitial(ArrayList::new);
     private static final Map<String, LoopAggregateState> LOOP_AGGREGATE_STATES = new ConcurrentHashMap<>();
 
+    private static boolean skipQtpServer() {
+        if (Boolean.getBoolean("qtp.report.disabled")) {
+            log.info("qtp.report.disabled=true, skip qtp-server request");
+            return true;
+        }
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+            log.info("current env:" + envEnum);
+            return true;
+        }
+        return false;
+    }
+
     public static List<JSONObject> runningSchedule(String customizeParams) {
         log.info("--customizeParams--:" + customizeParams);
         // 获取params的所有根节点
@@ -554,8 +566,7 @@ public class ComponentSchedule {
     }
 
     public static int queryTaskRedisValue() {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
-            log.info("current env:" + envEnum);
+        if (skipQtpServer()) {
             return 1;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/query/status?redisKey=" + redisKey;
@@ -584,8 +595,7 @@ public class ComponentSchedule {
     }
 
     public static String pauseTaskByQtpServer() {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
-            log.info("current env:" + envEnum);
+        if (skipQtpServer()) {
             return "";
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/stop?id=" + taskId;
@@ -595,8 +605,7 @@ public class ComponentSchedule {
     }
 
     public static void updateArgoStatus(int status) {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
-            log.info("current env:" + envEnum);
+        if (skipQtpServer()) {
             return;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/argo/status?id=" + taskId + "&argoStatus=" + status;
@@ -605,9 +614,7 @@ public class ComponentSchedule {
     }
 
     public static void updateCaseStatus(int status) {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
-            log.info("current env:" + envEnum);
-
+        if (skipQtpServer()) {
             return;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task/task/case/status?id=" + taskId + "&caseStatus=" + status;
@@ -620,8 +627,7 @@ public class ComponentSchedule {
     }
 
     public static void reportStepResult(String nodeName, String result, List<String> parentNodeNames) {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
-            log.info("current env:" + envEnum);
+        if (skipQtpServer()) {
             return;
         }
         String uri = "http://qtp-server.zilliz.cc/customize-task-details/result/insert";
@@ -758,7 +764,7 @@ public class ComponentSchedule {
     }
 
     public static void initInstanceStatus(String instanceId, String instanceUri, String image, int status) {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+        if (skipQtpServer()) {
             return;
         }
         try {
@@ -773,7 +779,7 @@ public class ComponentSchedule {
     }
 
     public static void updateInstanceStatus(String instanceId, String instanceUri, String image, int status) {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+        if (skipQtpServer()) {
             return;
         }
         try {
@@ -788,7 +794,7 @@ public class ComponentSchedule {
     }
 
     public static List<String> queryReleaseImage() {
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_NJ || envEnum == EnvEnum.HWC) {
+        if (skipQtpServer()) {
             return Lists.newArrayList("v2.6.7-hotfix3-8d95e4417-2971(2.6.7-hotfix3-20251211-8d95e4417-78bee5c)"); //适配访问不通qtp环境
         }
         String uri = "http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/release";
