@@ -9,7 +9,7 @@ public enum EnvEnum {
     GCP_WEST("gcpwest", "/test/qtp/config/vdcConfig.json", "UAT3-GCP","gcp-vdc-dev-test","/root/.kube/config","/src/helm/charts/milvus"),
     AZURE_WEST("azurewest", "/test/qtp/config/vdcConfig.json", "UAT3-AZURE","uat-az-milvus-westus3-1","/root/.kube/config","/src/helm/charts/milvus"),
     ALI_HZ("alihz", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config","/src/helm/charts/milvus"),
-    TC_NJ("tcnj", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config","/src/helm/charts/milvus"),
+    TC_BJ("tcbj", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config","/src/helm/charts/milvus"),
     HWC("hwc", "/test/qtp/config/vdcConfig.json", "UAT","","/root/.kube/config","/src/helm/charts/milvus");
 
     public final String region;

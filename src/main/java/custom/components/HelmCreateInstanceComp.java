@@ -739,7 +739,7 @@ public class HelmCreateInstanceComp {
      * - GCP_WEST -> gcp
      * - AZURE_WEST -> azure
      * - ALI_HZ -> aliyun
-     * - TC_NJ -> tencent
+     * - TC_BJ -> tencent
      * - HWC -> huaweicloud
      * - 其他 -> minio (默认)
      */
@@ -756,7 +756,7 @@ public class HelmCreateInstanceComp {
                 return "azure";
             case ALI_HZ:
                 return "aliyun";
-            case TC_NJ:
+            case TC_BJ:
                 return "tencent";
             case HWC:
                 return "huaweicloud";
