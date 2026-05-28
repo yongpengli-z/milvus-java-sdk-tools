@@ -38,7 +38,7 @@ public class ComponentSchedule {
             log.info("qtp.report.disabled=true, skip qtp-server request");
             return true;
         }
-        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.TC_BJ || envEnum == EnvEnum.HWC) {
+        if (envEnum == EnvEnum.ALI_HZ || envEnum == EnvEnum.HWC) {
             log.info("current env:" + envEnum);
             return true;
         }
