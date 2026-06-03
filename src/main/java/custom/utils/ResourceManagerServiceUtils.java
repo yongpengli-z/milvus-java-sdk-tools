@@ -152,11 +152,7 @@ public class ResourceManagerServiceUtils {
                 "  \"instanceId\": \"" + instanceId + "\",\n" +
                 "  \"storageDelay\": 0\n" +
                 "}";
-        Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
-        header.put("UserId", cloudServiceUserInfo.getUserId());
-        header.put("SourceApp", "Cloud-Meta");
-        return HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
+        return postToRmAsProxyUser(url, JSONObject.parseObject(body).toJSONString(), "delete instance");
     }
 
     /**
