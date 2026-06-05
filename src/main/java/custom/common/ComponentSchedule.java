@@ -516,11 +516,24 @@ public class ComponentSchedule {
             // 构造异常结果，让上层能感知到失败
             JSONObject errorResult = new JSONObject();
             errorResult.put("result", "exception");
-            errorResult.put("errorMsg", e.getClass().getName() + ": " + e.getMessage());
+            errorResult.put("errorMsg", buildReadableErrorMessage(componentName, e));
             jsonObject.put(errorKey, errorResult);
             reportStepResult(errorKey, JSON.toJSONString(errorResult));
         }
         return jsonObject;
+    }
+
+    private static String buildReadableErrorMessage(String componentName, Exception e) {
+        String rawMessage = e.getMessage();
+        if (e instanceof IndexOutOfBoundsException
+                && rawMessage != null
+                && rawMessage.contains("Index -1 out of bounds for length 0")) {
+            return e.getClass().getName() + ": No default collection is available for " + componentName
+                    + ". collectionName is empty, but no collection has been created successfully. "
+                    + "Check previous CreateCollectionParams result before running this component. "
+                    + "Original error: " + rawMessage;
+        }
+        return e.getClass().getName() + ": " + rawMessage;
     }
 
     public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames) {
