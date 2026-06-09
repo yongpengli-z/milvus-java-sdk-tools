@@ -262,6 +262,9 @@ public class MathUtil {
 
     // 计算平均值
     public static double calculateAverage(List<Float> data) {
+        if (data == null || data.isEmpty()) {
+            return 0.0;
+        }
         double sum = 0.0;
         for (double num : data) {
             sum += num;
@@ -273,9 +276,13 @@ public class MathUtil {
 
     // 计算99百分位数
     public static double calculateTP99(List<Float> data, float percent) {
-        Collections.sort(data);
-        int index = (int) Math.ceil(percent * data.size()) - 1; // 99%索引
-        Float aFloat = data.get(index);
+        if (data == null || data.isEmpty()) {
+            return 0.0;
+        }
+        List<Float> sorted = new ArrayList<>(data);
+        Collections.sort(sorted);
+        int index = (int) Math.ceil(percent * sorted.size()) - 1; // 99%索引
+        Float aFloat = sorted.get(index);
         String formattedNumber = String.format("%.4f", aFloat);
         return Double.parseDouble(formattedNumber);
     }

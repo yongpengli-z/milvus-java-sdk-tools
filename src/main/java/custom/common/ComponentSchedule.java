@@ -527,13 +527,34 @@ public class ComponentSchedule {
         String rawMessage = e.getMessage();
         if (e instanceof IndexOutOfBoundsException
                 && rawMessage != null
-                && rawMessage.contains("Index -1 out of bounds for length 0")) {
+                && rawMessage.contains("Index -1 out of bounds for length 0")
+                && isDefaultCollectionLookupError(e)) {
             return e.getClass().getName() + ": No default collection is available for " + componentName
                     + ". collectionName is empty, but no collection has been created successfully. "
                     + "Check previous CreateCollectionParams result before running this component. "
                     + "Original error: " + rawMessage;
         }
         return e.getClass().getName() + ": " + rawMessage;
+    }
+
+    private static boolean isDefaultCollectionLookupError(Exception e) {
+        for (StackTraceElement element : e.getStackTrace()) {
+            String className = element.getClassName();
+            int line = element.getLineNumber();
+            if ("custom.components.InsertComp".equals(className) && line >= 40 && line <= 55) {
+                return true;
+            }
+            if ("custom.components.CreateIndexComp".equals(className) && line >= 15 && line <= 22) {
+                return true;
+            }
+            if ("custom.components.LoadCollectionComp".equals(className) && line >= 68 && line <= 72) {
+                return true;
+            }
+            if ("custom.common.CommonFunction".equals(className) && line >= 220 && line <= 305) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames) {
