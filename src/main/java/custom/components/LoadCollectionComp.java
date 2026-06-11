@@ -17,6 +17,8 @@ import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class LoadCollectionComp {
+    private static final long LOAD_COLLECTION_TIMEOUT_MS = 30 * 60 * 1000L;
+
     public static LoadResult loadCollection(LoadParams loadParams) {
         List<LoadResult.LoadResultItem> loadResultList = new ArrayList<>();
 
@@ -33,7 +35,7 @@ public class LoadCollectionComp {
                             .collectionName(collectionName)
                             .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
                             .async(false)
-                            .timeout(600000L);
+                            .timeout(LOAD_COLLECTION_TIMEOUT_MS);
                     if (loadParams.getReplicaNum() > 0) {
                         reqBuilder.numReplicas(loadParams.getReplicaNum());
                     }
@@ -78,7 +80,7 @@ public class LoadCollectionComp {
                         .collectionName(collectionName)
                         .skipLoadDynamicField(loadParams.isSkipLoadDynamicField())
                         .async(false)
-                        .timeout(600000L);
+                        .timeout(LOAD_COLLECTION_TIMEOUT_MS);
                 if (loadParams.getReplicaNum() > 0) {
                     reqBuilder.numReplicas(loadParams.getReplicaNum());
                 }
