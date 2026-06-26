@@ -8,6 +8,8 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.utils.MathUtil;
 import io.milvus.grpc.QueryResults;
 import io.milvus.param.R;
@@ -136,7 +138,8 @@ public class DebugTest {
         try {
             latch.await();
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new CustomException(CustomExceptionCode.INTERRUPTED, e);
         }
         log.info("result" + list);
         log.info("upsert done !");

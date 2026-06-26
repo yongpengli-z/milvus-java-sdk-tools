@@ -8,6 +8,8 @@ import custom.entity.DeleteInstanceParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.DeleteInstanceResult;
 import custom.entity.result.ResultEnum;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.pojo.InstanceInfo;
 import custom.utils.CloudServiceTestUtils;
 import custom.utils.CloudServiceUtils;
@@ -37,7 +39,7 @@ public class DeleteInstanceComp {
         GlobalDeleteContext globalDeleteContext;
         try {
             globalDeleteContext = resolveGlobalDeleteContext(targetInstanceId);
-        } catch (IllegalArgumentException e) {
+        } catch (CustomException e) {
             return buildResult(ResultEnum.EXCEPTION.result, e.getMessage(), 0);
         }
         if (globalDeleteContext != null) {
@@ -190,7 +192,8 @@ public class DeleteInstanceComp {
             context.role = resolveRoleFromDescribe(targetId);
         }
         if (context.role == null) {
-            throw new IllegalArgumentException("Cannot determine global cluster member role for instanceId: " + targetId);
+            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                    "Cannot determine global cluster member role for instanceId: " + targetId);
         }
         return context;
     }

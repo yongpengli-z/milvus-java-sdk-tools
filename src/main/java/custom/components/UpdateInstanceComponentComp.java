@@ -10,6 +10,8 @@ import custom.entity.result.RestartInstanceResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.UpdateInstanceComponentResult;
 import custom.entity.result.UpdateInstanceComponentResult.ChangeRecord;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.utils.CloudServiceUtils;
 import custom.utils.ResourceManagerServiceUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -233,11 +235,11 @@ public class UpdateInstanceComponentComp {
         JSONObject respJo = JSONObject.parseObject(descResp);
         if (respJo == null || respJo.getInteger("Code") == null || respJo.getInteger("Code") != 0) {
             String msg = respJo == null ? "null response" : respJo.getString("Message");
-            throw new RuntimeException("describe code != 0: " + msg);
+            throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR, "describe code != 0: " + msg);
         }
         JSONObject data = respJo.getJSONObject("Data");
         if (data == null) {
-            throw new RuntimeException("describe Data is null");
+            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, "describe Data is null");
         }
         JSONArray nodes = data.getJSONArray("Nodes");
         Map<NodeKey, JSONObject> out = new HashMap<>();
@@ -277,7 +279,7 @@ public class UpdateInstanceComponentComp {
      *   <li>两个都没指定 → 从 describe 全量回填 cpu + memory，照样调 RM 接口
      *       （配合后续 restart 把配置重新推到 pod）</li>
      * </ul>
-     * describe 里找不到对应 node / 资源字段时抛 RuntimeException，由调用方走快速失败路径。
+     * describe 里找不到对应 node / 资源字段时抛 CustomException，由调用方走快速失败路径。
      *
      * @param readFrom "Requests" 或 "Limits"，对应 describe node 里的 map 字段名
      */
@@ -294,20 +296,20 @@ public class UpdateInstanceComponentComp {
         if (cpu == null || memory == null) {
             JSONObject node = nodeMap.get(new NodeKey(category, replicaIndex));
             if (node == null) {
-                throw new RuntimeException(String.format(
+                throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, String.format(
                         "can not locate node for category=%s replicaIndex=%s when building %s",
                         category, replicaIndex, readFrom));
             }
             JSONObject resourceMap = node.getJSONObject(readFrom);
             if (resourceMap == null) {
-                throw new RuntimeException(String.format(
+                throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, String.format(
                         "describe node has no %s field for category=%s replicaIndex=%s",
                         readFrom, category, replicaIndex));
             }
             if (cpu == null) {
                 String currentCpu = resourceMap.getString("cpu");
                 if (currentCpu == null) {
-                    throw new RuntimeException(String.format(
+                    throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, String.format(
                             "describe has no current cpu in %s for category=%s replicaIndex=%s",
                             readFrom, category, replicaIndex));
                 }
@@ -316,7 +318,7 @@ public class UpdateInstanceComponentComp {
             if (memory == null) {
                 String currentMem = resourceMap.getString("memory");
                 if (currentMem == null) {
-                    throw new RuntimeException(String.format(
+                    throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, String.format(
                             "describe has no current memory in %s for category=%s replicaIndex=%s",
                             readFrom, category, replicaIndex));
                 }

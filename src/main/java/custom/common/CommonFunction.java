@@ -5,6 +5,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import custom.components.InsertComp;
 import custom.entity.*;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.DatasetUtil;
@@ -1256,17 +1258,19 @@ public class CommonFunction {
             // 处理正常的向量字段
             if (query != null && query.getQueryResults() != null) {
                 for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
-                Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
+                    Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
                 if (vectorDataType == DataType.FloatVector) {
                     if (!(o instanceof List)) {
-                        throw new IllegalArgumentException("Expected List for FloatVector field: " + collectionVectorInfo.getFieldName()
+                        throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                                "Expected List for FloatVector field: " + collectionVectorInfo.getFieldName()
                                 + ", but got: " + (o == null ? "null" : o.getClass().getName()));
                     }
                     List<?> rawList = (List<?>) o;
                     List<Float> floatList = new ArrayList<>(rawList.size());
                     for (Object item : rawList) {
                         if (!(item instanceof Number)) {
-                            throw new IllegalArgumentException("Expected numeric elements for FloatVector field: " + collectionVectorInfo.getFieldName()
+                            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                                    "Expected numeric elements for FloatVector field: " + collectionVectorInfo.getFieldName()
                                     + ", but got element: " + (item == null ? "null" : item.getClass().getName()));
                         }
                         floatList.add(((Number) item).floatValue());
@@ -1287,7 +1291,8 @@ public class CommonFunction {
                 }
                 if (vectorDataType == DataType.SparseFloatVector) {
                     if (!(o instanceof Map)) {
-                        throw new IllegalArgumentException("Expected Map for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
+                        throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                                "Expected Map for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
                                 + ", but got: " + (o == null ? "null" : o.getClass().getName()));
                     }
                     Map<?, ?> rawMap = (Map<?, ?>) o;
@@ -1296,11 +1301,13 @@ public class CommonFunction {
                         Object k = entry.getKey();
                         Object v = entry.getValue();
                         if (!(k instanceof Number)) {
-                            throw new IllegalArgumentException("Expected numeric key for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
+                            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                                    "Expected numeric key for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
                                     + ", but got key: " + (k == null ? "null" : k.getClass().getName()));
                         }
                         if (!(v instanceof Number)) {
-                            throw new IllegalArgumentException("Expected numeric value for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
+                            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                                    "Expected numeric value for SparseFloatVector field: " + collectionVectorInfo.getFieldName()
                                     + ", but got value: " + (v == null ? "null" : v.getClass().getName()));
                         }
                         sortedMap.put(((Number) k).longValue(), ((Number) v).floatValue());

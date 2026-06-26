@@ -7,6 +7,8 @@ import com.google.common.collect.Lists;
 import custom.components.*;
 import custom.config.EnvEnum;
 import custom.entity.*;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.entity.result.*;
 import custom.entity.result.HelmCreateInstanceResult;
 import custom.entity.result.HelmDeleteInstanceResult;
@@ -70,10 +72,12 @@ public class ComponentSchedule {
                 operators.add(o);
             } catch (ClassNotFoundException e) {
                 log.error("找不到实体类 custom.entity.{}, key={}", paramName, keyString, e);
-                throw new RuntimeException("找不到实体类 custom.entity." + paramName + ", 请检查步骤key: " + keyString, e);
+                throw new CustomException(CustomExceptionCode.CLASS_NOT_FOUND,
+                        "找不到实体类 custom.entity." + paramName + ", 请检查步骤key: " + keyString, e);
             } catch (Exception e) {
                 log.error("JSON反序列化失败, key={}, className=custom.entity.{}, json={}", keyString, paramName, item, e);
-                throw new RuntimeException("JSON反序列化失败, key=" + keyString + ", class=" + paramName + ": " + e.getMessage(), e);
+                throw new CustomException(CustomExceptionCode.JSON_PARSE_ERROR,
+                        "JSON反序列化失败, key=" + keyString + ", class=" + paramName + ": " + e.getMessage(), e);
             }
         }
         // 收集结果

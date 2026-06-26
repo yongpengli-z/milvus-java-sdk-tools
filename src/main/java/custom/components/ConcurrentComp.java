@@ -5,6 +5,8 @@ import com.alibaba.fastjson.JSONObject;
 import custom.common.ComponentSchedule;
 import custom.entity.*;
 import custom.entity.result.*;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ public class ConcurrentComp {
                 Object o = JSONObject.parseObject(itemParam, Class.forName("custom.entity." + keyString.split("_")[0]));
                 operators.add(o);
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                throw new CustomException(CustomExceptionCode.CLASS_NOT_FOUND, e);
             }
         }
         // 先起线程

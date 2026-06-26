@@ -9,6 +9,8 @@ import custom.entity.RestfulHybridSearchParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.RestfulHybridSearchResult;
 import custom.entity.result.ResultEnum;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
@@ -388,7 +390,8 @@ public class RestfulHybridSearchComp {
                                 returnNum.add(0);
                                 continue;
                             }
-                            throw new RuntimeException("restful hybridSearch empty response");
+                            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                                    "restful hybridSearch empty response");
                         }
                         JSONObject responseJson;
                         try {
@@ -401,7 +404,8 @@ public class RestfulHybridSearchComp {
                                 returnNum.add(0);
                                 continue;
                             }
-                            throw parseEx;
+                            throw new CustomException(CustomExceptionCode.JSON_PARSE_ERROR,
+                                    "restful hybridSearch response parse failed: " + parseEx.getMessage(), parseEx);
                         }
                         if (responseJson == null) {
                             statsReporter.recordFailure();
@@ -410,7 +414,8 @@ public class RestfulHybridSearchComp {
                                 returnNum.add(0);
                                 continue;
                             }
-                            throw new RuntimeException("restful hybridSearch response parsed to null");
+                            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                                    "restful hybridSearch response parsed to null");
                         }
                         int code = responseJson.getIntValue("code");
                         if (code == 0 || code == 200) {
@@ -438,7 +443,11 @@ public class RestfulHybridSearchComp {
                             returnNum.add(0);
                             continue;
                         }
-                        throw e;
+                        if (e instanceof CustomException) {
+                            throw (CustomException) e;
+                        }
+                        throw new CustomException(CustomExceptionCode.HTTP_REQUEST_FAILED,
+                                "restful hybridSearch request failed: " + e.getMessage(), e);
                     }
 
                     if (System.currentTimeMillis() - lastPrintTime >= 60000) {

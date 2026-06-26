@@ -3,6 +3,8 @@ package custom.utils;
 import com.alibaba.fastjson.JSONObject;
 import custom.config.EnvConfig;
 import custom.config.EnvEnum;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -11,24 +13,26 @@ import java.io.File;
 public class ConfigUtils {
     public static EnvConfig providerEnvConfig(EnvEnum envEnum){
         if (envEnum == null) {
-            throw new IllegalArgumentException("Unknown env, cannot load VDC config");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "Unknown env, cannot load VDC config");
         }
         EnvConfig envConfig=new EnvConfig();
         if (envEnum.vdcConfigPath == null || envEnum.vdcConfigPath.trim().isEmpty()) {
-            throw new IllegalArgumentException("VDC config path is empty for env: " + envEnum.region);
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                    "VDC config path is empty for env: " + envEnum.region);
         }
         if (!new File(envEnum.vdcConfigPath).isFile()) {
-            throw new IllegalArgumentException("VDC config file does not exist for env "
+            throw new CustomException(CustomExceptionCode.RESOURCE_NOT_FOUND, "VDC config file does not exist for env "
                     + envEnum.region + ": " + envEnum.vdcConfigPath);
         }
         String s = DatasetUtil.providerConfigFile(envEnum.vdcConfigPath);
         JSONObject configJO=JSONObject.parseObject(s);
         if (configJO == null || configJO.getJSONObject("ENV") == null) {
-            throw new IllegalArgumentException("Invalid VDC config, missing ENV node: " + envEnum.vdcConfigPath);
+            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                    "Invalid VDC config, missing ENV node: " + envEnum.vdcConfigPath);
         }
         JSONObject envJO = configJO.getJSONObject("ENV");
         if (envJO.getJSONObject(envEnum.envNodeName) == null) {
-            throw new IllegalArgumentException("Invalid VDC config, missing env node "
+            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, "Invalid VDC config, missing env node "
                     + envEnum.envNodeName + " in " + envEnum.vdcConfigPath);
         }
         String rmHost = envJO.getJSONObject(envEnum.envNodeName).getString("rm_host");

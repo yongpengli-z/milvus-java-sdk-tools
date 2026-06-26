@@ -6,6 +6,8 @@ import custom.entity.HybridSearchParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.HybridSearchResult;
 import custom.entity.result.ResultEnum;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
@@ -331,7 +333,11 @@ public class HybridSearchComp {
                             returnNum.add(0);
                             continue;
                         }
-                        throw e;
+                        if (e instanceof CustomException) {
+                            throw (CustomException) e;
+                        }
+                        throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
+                                "hybridSearch request failed: " + e.getMessage(), e);
                     }
                     long endItemTime = System.currentTimeMillis();
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);

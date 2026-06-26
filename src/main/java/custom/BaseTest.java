@@ -8,6 +8,7 @@ import custom.config.CloudServiceUserInfo;
 import custom.config.EnvConfig;
 import custom.config.EnvEnum;
 import custom.entity.InitialParams;
+import custom.exception.CustomException;
 import custom.pojo.InstanceInfo;
 import custom.utils.CloudServiceUtils;
 import custom.utils.ConfigUtils;
@@ -345,7 +346,7 @@ public class BaseTest {
                 try {
                     envConfig = ConfigUtils.providerEnvConfig(envEnum);
                     log.info("当前环境信息:" + envConfig);
-                } catch (IllegalArgumentException configEx) {
+                } catch (CustomException configEx) {
                     System.setProperty("qtp.report.disabled", "true");
                     log.warn("加载环境配置失败，继续执行不依赖 VDC 配置的步骤: {}", configEx.getMessage());
                 }

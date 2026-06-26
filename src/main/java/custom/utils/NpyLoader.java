@@ -1,8 +1,10 @@
 package custom.utils;
 
 import com.google.common.io.LittleEndianDataInputStream;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
+import custom.exception.CustomIOException;
 
-import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.File;
@@ -25,7 +27,8 @@ public class NpyLoader {
     public static long readFirstDimensionSize(FileInputStream fis) throws IOException {
         NpyHeader header = readHeader(fis);
         if (header.shape.length < 1) {
-            throw new IOException("Invalid NPY header: shape is empty");
+            throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                    "Invalid NPY header: shape is empty");
         }
         return header.shape[0];
     }
@@ -42,7 +45,8 @@ public class NpyLoader {
         // validate magic
         for (byte b : MAGIC) {
             if (di.readByte() != b) {
-                throw new IOException("Invalid NPY file (bad magic header)");
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Invalid NPY file (bad magic header)");
             }
         }
 
@@ -58,11 +62,13 @@ public class NpyLoader {
             headerLen = Integer.toUnsignedLong(di.readInt());
             headerLenFieldSize = 4;
         } else {
-            throw new IOException("Unsupported NPY version: " + major + "." + minor);
+            throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                    "Unsupported NPY version: " + major + "." + minor);
         }
 
         if (headerLen > Integer.MAX_VALUE) {
-            throw new IOException("NPY header too large: " + headerLen);
+            throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                    "NPY header too large: " + headerLen);
         }
 
         byte[] headerBytes = new byte[(int) headerLen];
@@ -80,19 +86,21 @@ public class NpyLoader {
 
     public static FloatMatrixSlice readFloatMatrixSlice(File npyFile, long startRow, int rowCount) throws IOException {
         if (rowCount < 0) {
-            throw new IllegalArgumentException("rowCount must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "rowCount must be >= 0");
         }
         if (startRow < 0) {
-            throw new IllegalArgumentException("startRow must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "startRow must be >= 0");
         }
 
         try (FileInputStream fis = new FileInputStream(npyFile)) {
             NpyHeader header = readHeader(fis);
             if (header.fortranOrder) {
-                throw new IOException("Fortran-order NPY arrays are not supported for row slicing: " + npyFile.getAbsolutePath());
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Fortran-order NPY arrays are not supported for row slicing: " + npyFile.getAbsolutePath());
             }
             if (header.shape.length < 2) {
-                throw new IOException("Expected 2D NPY array (rows, dim), but got shape=" + header.shapeToString()
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Expected 2D NPY array (rows, dim), but got shape=" + header.shapeToString()
                         + " for file: " + npyFile.getAbsolutePath());
             }
 
@@ -100,11 +108,13 @@ public class NpyLoader {
             int dim = safeInt(header.shape[1], "dim");
 
             if (startRow > totalRows) {
-                throw new IOException("startRow out of range: startRow=" + startRow + ", rows=" + totalRows);
+                throw new CustomIOException(CustomExceptionCode.INVALID_PARAMS,
+                        "startRow out of range: startRow=" + startRow + ", rows=" + totalRows);
             }
             long available = totalRows - startRow;
             if (rowCount > available) {
-                throw new IOException("rowCount out of range: startRow=" + startRow + ", rowCount=" + rowCount + ", rows=" + totalRows);
+                throw new CustomIOException(CustomExceptionCode.INVALID_PARAMS,
+                        "rowCount out of range: startRow=" + startRow + ", rowCount=" + rowCount + ", rows=" + totalRows);
             }
 
             if (rowCount == 0) {
@@ -113,12 +123,14 @@ public class NpyLoader {
 
             DType dtype = DType.parse(header.descr);
             if (dtype.kind != 'f' || (dtype.itemSize != 2 && dtype.itemSize != 4 && dtype.itemSize != 8)) {
-                throw new IOException("Unsupported dtype for float vectors: " + header.descr + " (file: " + npyFile.getAbsolutePath() + ")");
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Unsupported dtype for float vectors: " + header.descr + " (file: " + npyFile.getAbsolutePath() + ")");
             }
 
             long elementCountLong = (long) rowCount * (long) dim;
             if (elementCountLong > Integer.MAX_VALUE) {
-                throw new IOException("Requested slice too large: elements=" + elementCountLong + " (rowCount=" + rowCount + ", dim=" + dim + ")");
+                throw new CustomIOException(CustomExceptionCode.INVALID_PARAMS,
+                        "Requested slice too large: elements=" + elementCountLong + " (rowCount=" + rowCount + ", dim=" + dim + ")");
             }
             int elementCount = (int) elementCountLong;
 
@@ -132,7 +144,8 @@ public class NpyLoader {
             readAsFloats(channel, dtype.order, dtype.itemSize, byteCount, out);
             return new FloatMatrixSlice(out, rowCount, dim);
         } catch (FileNotFoundException e) {
-            throw new FileNotFoundException("NPY file not found: " + npyFile.getAbsolutePath());
+            throw new CustomIOException(CustomExceptionCode.RESOURCE_NOT_FOUND,
+                    "NPY file not found: " + npyFile.getAbsolutePath(), e);
         }
     }
 
@@ -154,7 +167,8 @@ public class NpyLoader {
             while (buf.hasRemaining()) {
                 int n = channel.read(buf);
                 if (n < 0) {
-                    throw new EOFException("Unexpected EOF while reading NPY data (remaining=" + remaining + ")");
+                    throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                            "Unexpected EOF while reading NPY data (remaining=" + remaining + ")");
                 }
             }
 
@@ -166,7 +180,8 @@ public class NpyLoader {
                     out[outOffset++] = halfToFloat(h);
                 }
                 if (buf.hasRemaining()) {
-                    throw new EOFException("Misaligned float16 chunk: remainingBytes=" + buf.remaining());
+                    throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                            "Misaligned float16 chunk: remainingBytes=" + buf.remaining());
                 }
             } else if (itemSize == 4) {
                 FloatBuffer fb = buf.asFloatBuffer();
@@ -179,7 +194,8 @@ public class NpyLoader {
                     out[outOffset++] = (float) db.get();
                 }
             } else {
-                throw new IOException("Unsupported itemSize: " + itemSize);
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Unsupported itemSize: " + itemSize);
             }
 
             remaining -= want;
@@ -222,7 +238,8 @@ public class NpyLoader {
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(text);
         if (!m.find()) {
-            throw new IOException("NPY header missing field: " + fieldName);
+            throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                    "NPY header missing field: " + fieldName);
         }
         return m.group(1);
     }
@@ -253,7 +270,7 @@ public class NpyLoader {
 
     private static int safeInt(long v, String name) throws IOException {
         if (v > Integer.MAX_VALUE) {
-            throw new IOException(name + " too large: " + v);
+            throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED, name + " too large: " + v);
         }
         return (int) v;
     }
@@ -271,7 +288,8 @@ public class NpyLoader {
 
         static DType parse(String descr) throws IOException {
             if (descr == null || descr.length() < 3) {
-                throw new IOException("Invalid NPY descr: " + descr);
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Invalid NPY descr: " + descr);
             }
             char endian = descr.charAt(0);
             char kind = descr.charAt(1);
@@ -279,7 +297,8 @@ public class NpyLoader {
             try {
                 itemSize = Integer.parseInt(descr.substring(2));
             } catch (NumberFormatException e) {
-                throw new IOException("Invalid NPY descr itemSize: " + descr, e);
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Invalid NPY descr itemSize: " + descr, e);
             }
 
             ByteOrder order;
@@ -293,7 +312,8 @@ public class NpyLoader {
                 // not applicable (e.g. 1-byte types). For floats it should not happen, but choose a default.
                 order = ByteOrder.LITTLE_ENDIAN;
             } else {
-                throw new IOException("Unsupported NPY descr endianness: " + descr);
+                throw new CustomIOException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "Unsupported NPY descr endianness: " + descr);
             }
             return new DType(kind, itemSize, order);
         }

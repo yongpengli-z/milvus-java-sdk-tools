@@ -1,6 +1,8 @@
 package custom.components;
 
 import custom.entity.DebugTestParams;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.test.DebugTest;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,7 +16,7 @@ public class DebugTestComp {
         try {
             s = DebugTest.upsertRandomTenant();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new CustomException(CustomExceptionCode.INTERNAL_ERROR, e);
         }
         return s;
     }

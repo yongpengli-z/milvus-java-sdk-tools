@@ -6,6 +6,8 @@ import custom.entity.DeleteParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.DeleteResult;
 import custom.entity.result.ResultEnum;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
 import io.milvus.v2.client.MilvusClientV2;
@@ -292,7 +294,8 @@ public class DeleteComp {
                 return field.getName();
             }
         }
-        throw new RuntimeException("collection [" + collectionName + "] 没有向量字段");
+        throw new CustomException(CustomExceptionCode.VECTOR_FIELD_NOT_FOUND,
+                "collection [" + collectionName + "] 没有向量字段");
     }
 
     @Data

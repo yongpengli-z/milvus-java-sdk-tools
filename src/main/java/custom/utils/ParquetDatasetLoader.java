@@ -1,5 +1,7 @@
 package custom.utils;
 
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -42,7 +44,7 @@ public class ParquetDatasetLoader {
             return Collections.emptyList();
         }
         if (startRow < 0) {
-            throw new IllegalArgumentException("startRow must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "startRow must be >= 0");
         }
 
         List<String> result = new ArrayList<>(rowCount);

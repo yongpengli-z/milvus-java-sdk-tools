@@ -2,6 +2,8 @@ package custom.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -36,7 +38,7 @@ public class JsonDatasetLoader {
             return Collections.emptyList();
         }
         if (startRow < 0) {
-            throw new IllegalArgumentException("startRow must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "startRow must be >= 0");
         }
 
         List<JsonObject> result = new ArrayList<>(rowCount);

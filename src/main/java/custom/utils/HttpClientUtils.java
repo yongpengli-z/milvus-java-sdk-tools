@@ -2,6 +2,8 @@ package custom.utils;
 
 
 import com.google.gson.Gson;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
@@ -886,7 +888,7 @@ public class HttpClientUtils {
             }
         } catch (Exception e) {
             log.info("报错咯:" + e.getMessage());
-            throw new RuntimeException(e);
+            throw new CustomException(CustomExceptionCode.HTTP_REQUEST_FAILED, e);
         }
         log.info("响应参数:" + charset);
         return charset;

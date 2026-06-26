@@ -6,6 +6,8 @@ import custom.common.ComponentSchedule;
 import custom.common.ImageType;
 import custom.common.InstanceStatusEnum;
 import custom.entity.CreateQueryClusterParams;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.entity.result.CommonResult;
 import custom.entity.result.CreateInstanceResult;
 import custom.entity.result.ResultEnum;
@@ -147,18 +149,20 @@ public class CreateQueryClusterComp {
                     params.getMaxQueryNodeCU(), params.getMaxQueryNodeReplicas());
             JSONObject createJO = JSONObject.parseObject(createResp);
             if (!isApiSuccess(createJO)) {
-                throw new IllegalStateException("create vectorlake failed: " + getMessage(createJO, createResp));
+                throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
+                        "create vectorlake failed: " + getMessage(createJO, createResp));
             }
             String vectorLakeId = getString(getData(createJO), "instanceId", "InstanceId");
             if (!hasText(vectorLakeId)) {
-                throw new IllegalStateException("create vectorlake failed: response does not contain instanceId");
+                throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                        "create vectorlake failed: response does not contain instanceId");
             }
             ComponentSchedule.initInstanceStatus(vectorLakeId, "", params.getVectorLakeDbVersion(),
                     InstanceStatusEnum.CREATING.code);
             if (!waitInstanceRunning(vectorLakeId)) {
                 ComponentSchedule.updateInstanceStatus(vectorLakeId, "--", params.getVectorLakeDbVersion(),
                         InstanceStatusEnum.CREATE_FAILED.code);
-                throw new IllegalStateException("VectorLake create timeout.");
+                throw new CustomException(CustomExceptionCode.TIMEOUT, "VectorLake create timeout.");
             }
             exists = true;
             vectorLakeData = getData(describeVectorLake(projectId, regionId));
@@ -169,7 +173,7 @@ public class CreateQueryClusterComp {
         String vectorLakeId = getString(vectorLakeData, "instanceId", "InstanceId");
         String status = getString(vectorLakeData, "status", "Status");
         if (!"RUNNING".equalsIgnoreCase(status) && !waitInstanceRunning(vectorLakeId)) {
-            throw new IllegalStateException("VectorLake is not RUNNING: " + status);
+            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, "VectorLake is not RUNNING: " + status);
         }
         if (hasText(params.getVectorLakeDbVersion())) {
             ensureVectorLakeVersion(vectorLakeId, params.getVectorLakeDbVersion(), startTime);
@@ -180,7 +184,8 @@ public class CreateQueryClusterComp {
     private static void ensureVectorLakeVersion(String vectorLakeId, String expectedVersion, LocalDateTime startTime) {
         String targetVersion = resolveVectorLakeDbVersion(expectedVersion);
         if (!hasText(targetVersion)) {
-            throw new IllegalStateException("vectorLakeDbVersion must be an exact ins_type=6 dbVersion.");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                    "vectorLakeDbVersion must be an exact ins_type=6 dbVersion.");
         }
         String describeResp = ResourceManagerServiceUtils.describeInstance(vectorLakeId);
         JSONObject data = getData(JSONObject.parseObject(describeResp));
@@ -191,10 +196,11 @@ public class CreateQueryClusterComp {
         String upgradeResp = ResourceManagerServiceUtils.upgradeVectorLakeCoordinator(vectorLakeId, targetVersion);
         JSONObject upgradeJO = JSONObject.parseObject(upgradeResp);
         if (!isApiSuccess(upgradeJO)) {
-            throw new IllegalStateException("upgrade vectorlake failed: " + getMessage(upgradeJO, upgradeResp));
+            throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
+                    "upgrade vectorlake failed: " + getMessage(upgradeJO, upgradeResp));
         }
         if (!waitVectorLakeUpgradeComplete(vectorLakeId)) {
-            throw new IllegalStateException("VectorLake upgrade timeout after "
+            throw new CustomException(CustomExceptionCode.TIMEOUT, "VectorLake upgrade timeout after "
                     + ChronoUnit.SECONDS.between(startTime, LocalDateTime.now()) + " seconds.");
         }
     }
@@ -203,7 +209,8 @@ public class CreateQueryClusterComp {
         String resp = CloudServiceUtils.describeVectorLake(projectId, regionId);
         JSONObject jo = JSONObject.parseObject(resp);
         if (!isApiSuccess(jo)) {
-            throw new IllegalStateException("describe vectorlake failed: " + getMessage(jo, resp));
+            throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
+                    "describe vectorlake failed: " + getMessage(jo, resp));
         }
         return jo;
     }

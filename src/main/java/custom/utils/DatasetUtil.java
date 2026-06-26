@@ -2,6 +2,8 @@ package custom.utils;
 
 import com.google.gson.JsonObject;
 import custom.common.DatasetEnum;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -117,10 +119,10 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             return Collections.emptyList();
         }
         if (count > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("count is too large for List: " + count);
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "count is too large for List: " + count);
         }
         if (index < 0) {
-            throw new IllegalArgumentException("index must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "index must be >= 0");
         }
         if (fileNames == null || fileNames.isEmpty()) {
             log.warn("Dataset fileNames is empty");
@@ -174,7 +176,8 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
                 vectors.addAll(splitArray(slice.data, slice.cols));
             } catch (IOException e) {
                 log.error("读取npy文件失败: {} (localStart={}, rowsToRead={})", npyDataPath, localStart, rowsToRead, e);
-                throw new RuntimeException("读取npy文件失败: " + npyDataPath + ", cause: " + e.getMessage(), e);
+                throw new CustomException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "读取npy文件失败: " + npyDataPath + ", cause: " + e.getMessage(), e);
             }
 
             remaining -= rowsToRead;
@@ -192,10 +195,10 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             return Collections.emptyList();
         }
         if (count > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("count is too large for List: " + count);
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "count is too large for List: " + count);
         }
         if (index < 0) {
-            throw new IllegalArgumentException("index must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "index must be >= 0");
         }
         if (fileNames == null || fileNames.isEmpty()) {
             log.warn("Dataset fileNames is empty");
@@ -245,7 +248,8 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
                 result.addAll(slice);
             } catch (IOException e) {
                 log.error("读取JSON文件失败: {} (localStart={}, rowsToRead={})", jsonDataPath, localStart, rowsToRead, e);
-                throw new RuntimeException("读取JSON文件失败: " + jsonDataPath + ", cause: " + e.getMessage(), e);
+                throw new CustomException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "读取JSON文件失败: " + jsonDataPath + ", cause: " + e.getMessage(), e);
             }
 
             remaining -= rowsToRead;
@@ -263,10 +267,10 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             return Collections.emptyList();
         }
         if (count > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("count is too large for List: " + count);
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "count is too large for List: " + count);
         }
         if (index < 0) {
-            throw new IllegalArgumentException("index must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "index must be >= 0");
         }
         if (fileNames == null || fileNames.isEmpty()) {
             log.warn("Dataset fileNames is empty");
@@ -327,7 +331,8 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
                 }
             } catch (IOException e) {
                 log.error("读取TXT文件失败: {} (localStart={}, rowsToRead={})", txtDataPath, localStart, rowsToRead, e);
-                throw new RuntimeException("读取TXT文件失败: " + txtDataPath + ", cause: " + e.getMessage(), e);
+                throw new CustomException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "读取TXT文件失败: " + txtDataPath + ", cause: " + e.getMessage(), e);
             }
 
             remaining -= rowsToRead;
@@ -345,10 +350,10 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             return Collections.emptyList();
         }
         if (count > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("count is too large for List: " + count);
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "count is too large for List: " + count);
         }
         if (index < 0) {
-            throw new IllegalArgumentException("index must be >= 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "index must be >= 0");
         }
         if (fileNames == null || fileNames.isEmpty()) {
             log.warn("Dataset fileNames is empty");
@@ -398,7 +403,8 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
                 result.addAll(slice);
             } catch (java.io.IOException e) {
                 log.error("读取Parquet文件失败: {} (localStart={}, rowsToRead={})", parquetDataPath, localStart, rowsToRead, e);
-                throw new RuntimeException("读取Parquet文件失败: " + parquetDataPath + ", cause: " + e.getMessage(), e);
+                throw new CustomException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                        "读取Parquet文件失败: " + parquetDataPath + ", cause: " + e.getMessage(), e);
             }
 
             remaining -= rowsToRead;
@@ -429,7 +435,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
             return Collections.emptyList();
         }
         if (chunkSize <= 0) {
-            throw new IllegalArgumentException("chunkSize must be > 0");
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "chunkSize must be > 0");
         }
 
         int chunkCount = (array.length + chunkSize - 1) / chunkSize;
@@ -459,7 +465,7 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
         @Override
         public Float get(int index) {
             if (index < 0 || index >= size) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+                throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "index=" + index + ", size=" + size);
             }
             return data[offset + index];
         }
@@ -474,7 +480,8 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
         StringBuilder contentBuilder = new StringBuilder();
         File file = new File(vdcConfigPath);
         if (!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException("VDC config file does not exist: " + vdcConfigPath);
+            throw new CustomException(CustomExceptionCode.RESOURCE_NOT_FOUND,
+                    "VDC config file does not exist: " + vdcConfigPath);
         }
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -482,7 +489,8 @@ public static List<Long> providerFileSize(List<String> fileNames, DatasetEnum da
                 contentBuilder.append(line).append(System.lineSeparator()); // 添加每一行
             }
         } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to read VDC config file: " + vdcConfigPath, e);
+            throw new CustomException(CustomExceptionCode.DATASET_LOAD_FAILED,
+                    "Failed to read VDC config file: " + vdcConfigPath, e);
         }
         return contentBuilder.toString();
     }
