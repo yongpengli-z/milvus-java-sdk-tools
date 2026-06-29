@@ -206,10 +206,7 @@ public class ResourceManagerServiceUtils {
                     "  \"paramValue\": \"" + params.getParamValue() + "\",\n" +
                     "  \"switchType\": 0\n" +
                     "}";
-            Map<String, String> header = new HashMap<>();
-            header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
-            header.put("UserId", cloudServiceUserInfo.getUserId());
-            header.put("SourceApp", "Cloud-Meta");
+            Map<String, String> header = buildRmProxyUserHeader("modify param");
             String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
             log.info("Modify [" + params + "] response:" + s);
             String error = parseRmError("modify", params.getParamName(), s);
@@ -223,10 +220,7 @@ public class ResourceManagerServiceUtils {
     public static List<ParamInfo> listParams(String instanceId) {
         String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
         String url = envConfig.getRmHost() + "/resource/v1/param/milvus/list?all=true&InstanceId=" + instanceIdTemp;
-        Map<String, String> header = new HashMap<>();
-        header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
-        header.put("UserId", cloudServiceUserInfo.getUserId());
-        header.put("SourceApp", "Cloud-Meta");
+        Map<String, String> header = buildRmProxyUserHeader("list param");
         String resp = HttpClientUtils.doGet(url, header, null);
         List<ParamInfo> paramInfoList = new ArrayList<>();
         JSONObject respJO = JSON.parseObject(resp);
@@ -260,10 +254,7 @@ public class ResourceManagerServiceUtils {
                     "  \"paramPropertyRestart\": false,\n" +
                     "  \"paramValue\": \"" + params.getParamValue() + "\"\n" +
                     "}";
-            Map<String, String> header = new HashMap<>();
-            header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
-            header.put("UserId", cloudServiceUserInfo.getUserId());
-            header.put("SourceApp", "Cloud-Meta");
+            Map<String, String> header = buildRmProxyUserHeader("add param");
             String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
             log.info("Add [" + params + "] response:" + s);
             String error = parseRmError("add", params.getParamName(), s);
@@ -471,6 +462,11 @@ public class ResourceManagerServiceUtils {
      * Global cluster 创建类接口需要 UserId 使用实例归属的 proxy user，RealUserId 保留真实登录用户。
      */
     private static String postToRmAsProxyUser(String url, String body, String action) {
+        Map<String, String> header = buildRmProxyUserHeader(action);
+        return HttpClientUtils.doPostJson(url, header, body);
+    }
+
+    private static Map<String, String> buildRmProxyUserHeader(String action) {
         Map<String, String> header = new HashMap<>();
         String requestId = "qtp-java-tools-" + MathUtil.genRandomString(10);
         String realUserId = cloudServiceUserInfo.getUserId();
@@ -490,7 +486,7 @@ public class ResourceManagerServiceUtils {
         }
         log.info("[rm-service][{} request user info]\n- requestId={}\n- UserId(proxyUserId)={}\n- RealUserId={}\n- OrgId={}\n- ProjectId={}",
                 action, requestId, proxyUserId, realUserId, orgId, cloudServiceUserInfo.getDefaultProjectId());
-        return HttpClientUtils.doPostJson(url, header, body);
+        return header;
     }
 
     /**
