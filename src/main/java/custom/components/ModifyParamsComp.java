@@ -20,13 +20,12 @@ import static custom.BaseTest.cloudServiceUserInfo;
 @Slf4j
 public class ModifyParamsComp {
     public static ModifyParamsResult modifyParams(ModifyParams modifyParams) {
-        // 检查账号
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
-            if (modifyParams.getAccountEmail() == null || modifyParams.getAccountEmail().equalsIgnoreCase("")) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-            } else {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(modifyParams.getAccountEmail(), modifyParams.getAccountPassword());
-            }
+        // 如果指定了 accountEmail，强制切换到该账号，避免沿用 BaseTest 初始化的默认账号。
+        if (modifyParams.getAccountEmail() != null && !modifyParams.getAccountEmail().equalsIgnoreCase("")) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(
+                    modifyParams.getAccountEmail(), modifyParams.getAccountPassword());
+        } else if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
         // 筛选出修改的参数还是需要新增的参数
         List<ParamInfo> paramInfoList
