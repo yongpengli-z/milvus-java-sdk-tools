@@ -63,7 +63,7 @@ public class LoadCollectionComp {
                     loadResultList.add(LoadResult.LoadResultItem.builder()
                             .collectionName(collectionName)
                             .commonResult(CommonResult.builder()
-                                    .result(ResultEnum.EXCEPTION.result)
+                                    .result(ResultEnum.FAIL.result)
                                     .message(e.getMessage()).build())
                             .build());
                 }
@@ -107,7 +107,7 @@ public class LoadCollectionComp {
                 loadResultList.add(LoadResult.LoadResultItem.builder()
                         .collectionName(collectionName)
                         .commonResult(CommonResult.builder()
-                                .result(ResultEnum.EXCEPTION.result)
+                                .result(ResultEnum.FAIL.result)
                                 .message(e.getMessage()).build())
                         .build());
             }
@@ -118,7 +118,7 @@ public class LoadCollectionComp {
             assertMessages.add("[ASSERT FAIL] loadCollection: no collection was loaded");
         }
         for (LoadResult.LoadResultItem item : loadResultList) {
-            if (item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result)) {
+            if (item.getCommonResult().getResult().equals(ResultEnum.FAIL.result)) {
                 assertMessages.add("[ASSERT FAIL] loadCollection [" + item.getCollectionName() + "] failed: " + item.getCommonResult().getMessage());
             }
         }

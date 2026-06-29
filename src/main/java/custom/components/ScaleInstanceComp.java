@@ -39,7 +39,7 @@ public class ScaleInstanceComp {
         if (currentStatus.code != InstanceStatusEnum.RUNNING.code) {
             return ScaleInstanceResult.builder()
                     .commonResult(CommonResult.builder()
-                            .result(ResultEnum.WARNING.result)
+                            .result(ResultEnum.FAIL.result)
                             .message("instance status is not RUNNING, can't scale!").build()).build();
         }
         String currentClassId = dataJO.getString("ClassId");
@@ -64,7 +64,7 @@ public class ScaleInstanceComp {
             if (targetCu < 8) {
                 return ScaleInstanceResult.builder()
                         .commonResult(CommonResult.builder()
-                                .result(ResultEnum.WARNING.result)
+                                .result(ResultEnum.FAIL.result)
                                 .message("replica > 1 requires CU >= 8, but target CU is " + targetCu).build()).build();
             }
         }
@@ -152,12 +152,12 @@ public class ScaleInstanceComp {
         if (errMsg.contains("time out")) {
             return ScaleInstanceResult.builder()
                     .commonResult(CommonResult.builder()
-                            .result(ResultEnum.WARNING.result)
+                            .result(ResultEnum.FAIL.result)
                             .message("Wait for " + operation + " change timeout: " + errMsg).build()).build();
         }
         return ScaleInstanceResult.builder()
                 .commonResult(CommonResult.builder()
-                        .result(ResultEnum.EXCEPTION.result)
+                        .result(ResultEnum.FAIL.result)
                         .message("modify " + operation + " failed: " + errMsg).build()).build();
     }
 

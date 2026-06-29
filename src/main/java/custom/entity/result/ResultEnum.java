@@ -2,6 +2,7 @@ package custom.entity.result;
 
 public enum ResultEnum {
     SUCCESS("success", 0),
+    FAIL("fail", -2),
     EXCEPTION("exception", -1),
     WARNING("warning", 1);
     public final String result;

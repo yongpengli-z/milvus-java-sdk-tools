@@ -31,12 +31,12 @@ public class CreateIndexComp {
             createIndexResult.setCostTimes(indexCost);
         } catch (Exception e) {
             log.error(e.getMessage());
-            commonResult = CommonResult.builder().result(ResultEnum.EXCEPTION.result)
+            commonResult = CommonResult.builder().result(ResultEnum.FAIL.result)
                     .message(e.getMessage()).build();
         }
         // assertions
         List<String> assertMessages = new ArrayList<>();
-        if (commonResult.getResult().equals(ResultEnum.EXCEPTION.result)) {
+        if (commonResult.getResult().equals(ResultEnum.FAIL.result)) {
             assertMessages.add("[ASSERT FAIL] createIndex exception: " + commonResult.getMessage());
         }
         if (commonResult.getResult().equals(ResultEnum.SUCCESS.result) && createIndexResult.getCostTimes() <= 0) {

@@ -423,11 +423,11 @@ public class BaseTest {
             log.info("========== [阶段3] Milvus连接完成，开始执行调度 ==========");
 //        // 自动调度
             List<JSONObject> results = ComponentSchedule.runningSchedule(customizeParams);
-            // 检查是否有步骤失败（result为exception）
+            // 检查是否有步骤失败（result 为 fail/exception）
             boolean hasFailed = false;
             for (JSONObject result : results) {
                 String resultStr = result.toJSONString();
-                if (resultStr.contains("\"result\":\"exception\"")) {
+                if (ComponentSchedule.containsFailureResult(resultStr)) {
                     hasFailed = true;
                     break;
                 }

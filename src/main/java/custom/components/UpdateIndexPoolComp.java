@@ -48,7 +48,7 @@ public class UpdateIndexPoolComp {
         if (code == 0) {
             commonResultBuilder.result(ResultEnum.SUCCESS.result);
         } else {
-            commonResultBuilder.result(ResultEnum.EXCEPTION.result).message(jsonObject.getString("message"));
+            commonResultBuilder.result(ResultEnum.FAIL.result).message(jsonObject.getString("message"));
         }
         return UpdateIndexPoolResult.builder()
                 .commonResult(commonResultBuilder.build())

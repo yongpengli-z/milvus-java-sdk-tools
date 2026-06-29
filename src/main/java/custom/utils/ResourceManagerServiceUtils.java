@@ -193,9 +193,10 @@ public class ResourceManagerServiceUtils {
         return resp;
     }
 
-    public static void modifyParams(String instanceId, List<ModifyParams.Params> paramsList) {
+    public static List<String> modifyParams(String instanceId, List<ModifyParams.Params> paramsList) {
         String url = envConfig.getRmHost() + "/resource/v1/param/milvus/modify";
         String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        List<String> errors = new ArrayList<>();
         for (ModifyParams.Params params : paramsList) {
             String body = "{\n" +
                     "\n" +
@@ -211,7 +212,12 @@ public class ResourceManagerServiceUtils {
             header.put("SourceApp", "Cloud-Meta");
             String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
             log.info("Modify [" + params + "] response:" + s);
+            String error = parseRmError("modify", params.getParamName(), s);
+            if (error != null) {
+                errors.add(error);
+            }
         }
+        return errors;
     }
 
     public static List<ParamInfo> listParams(String instanceId) {
@@ -239,9 +245,10 @@ public class ResourceManagerServiceUtils {
         return paramInfoList;
     }
 
-    public static void addParams(String instanceId, List<ModifyParams.Params> paramsList) {
+    public static List<String> addParams(String instanceId, List<ModifyParams.Params> paramsList) {
         String url = envConfig.getRmHost() + "/resource/v1/param/milvus/add";
         String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        List<String> errors = new ArrayList<>();
         for (ModifyParams.Params params : paramsList) {
             String body = "{\n" +
                     "  \"backendModify\": true,\n" +
@@ -259,6 +266,28 @@ public class ResourceManagerServiceUtils {
             header.put("SourceApp", "Cloud-Meta");
             String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
             log.info("Add [" + params + "] response:" + s);
+            String error = parseRmError("add", params.getParamName(), s);
+            if (error != null) {
+                errors.add(error);
+            }
+        }
+        return errors;
+    }
+
+    private static String parseRmError(String operation, String paramName, String resp) {
+        try {
+            JSONObject respJO = JSON.parseObject(resp);
+            Integer code = respJO.getInteger("Code");
+            if (code != null && code == 0) {
+                return null;
+            }
+            String message = respJO.getString("Message");
+            if (message == null || message.equalsIgnoreCase("")) {
+                message = respJO.getString("message");
+            }
+            return operation + " param " + paramName + " failed, Code=" + code + ", Message=" + message + ", response=" + resp;
+        } catch (Exception e) {
+            return operation + " param " + paramName + " failed, invalid RM response: " + resp;
         }
     }
 

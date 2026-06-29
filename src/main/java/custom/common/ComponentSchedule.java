@@ -93,9 +93,8 @@ public class ComponentSchedule {
             JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
             results.add(jsonObject);
 
-            // 如果实例创建失败，直接退出，不再执行后续步骤
-            if (isInstanceCreateFailed(operators.get(i), jsonObject, i)) {
-                log.error("实例创建失败，终止后续步骤执行！");
+            if (containsFailResult(jsonObject.toJSONString())) {
+                log.error("步骤返回 fail 状态，终止后续步骤执行！");
                 break;
             }
         }
@@ -579,28 +578,19 @@ public class ComponentSchedule {
         }
     }
 
-    /**
-     * 判断实例创建步骤是否失败（Cloud 实例或 Helm 实例）
-     */
-    private static boolean isInstanceCreateFailed(Object operator, JSONObject stepResult, int index) {
-        CommonResult commonResult = null;
-        if (operator instanceof CreateInstanceParams) {
-            Object obj = stepResult.get("CreateInstance_" + index);
-            if (obj instanceof CreateInstanceResult) {
-                commonResult = ((CreateInstanceResult) obj).getCommonResult();
-            }
-        } else if (operator instanceof CreateQueryClusterParams) {
-            Object obj = stepResult.get("CreateQueryCluster_" + index);
-            if (obj instanceof CreateInstanceResult) {
-                commonResult = ((CreateInstanceResult) obj).getCommonResult();
-            }
-        } else if (operator instanceof HelmCreateInstanceParams) {
-            Object obj = stepResult.get("HelmCreateInstance_" + index);
-            if (obj instanceof HelmCreateInstanceResult) {
-                commonResult = ((HelmCreateInstanceResult) obj).getCommonResult();
-            }
-        }
-        return commonResult != null && ResultEnum.EXCEPTION.result.equals(commonResult.getResult());
+    public static boolean containsFailureResult(String result) {
+        String resultText = Objects.toString(result, "");
+        return containsResult(resultText, ResultEnum.FAIL.result)
+                || containsResult(resultText, ResultEnum.EXCEPTION.result);
+    }
+
+    public static boolean containsFailResult(String result) {
+        return containsResult(Objects.toString(result, ""), ResultEnum.FAIL.result);
+    }
+
+    private static boolean containsResult(String resultText, String result) {
+        return resultText.contains("\"result\":\"" + result + "\"")
+                || resultText.contains("result=" + result);
     }
 
     public static int queryTaskRedisValue() {
@@ -787,7 +777,7 @@ public class ComponentSchedule {
 
         synchronized JSONObject update(LoopIterationContext loopContext, String result) {
             completedCycles++;
-            if (Objects.toString(result, "").contains("exception")) {
+            if (containsFailureResult(result)) {
                 abnormalNum++;
             }
 

@@ -35,7 +35,7 @@ public class LoopComp {
             } finally {
                 ComponentSchedule.popLoopContext();
             }
-            if (JSONObject.toJSONString(jsonObjects).contains("exception")) {
+            if (ComponentSchedule.containsFailureResult(JSONObject.toJSONString(jsonObjects))) {
                 exceptionNum++;
             }
 
@@ -45,7 +45,7 @@ public class LoopComp {
         }
         CommonResult commonResult = CommonResult.builder().build();
         if (exceptionNum > 0) {
-            commonResult.setResult(ResultEnum.EXCEPTION.result);
+            commonResult.setResult(ResultEnum.FAIL.result);
         } else {
             commonResult.setResult(ResultEnum.SUCCESS.result);
         }

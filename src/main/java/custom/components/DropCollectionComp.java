@@ -45,7 +45,7 @@ public class DropCollectionComp {
         // assertions
         List<String> assertMessages = new ArrayList<>();
         for (DropCollectionResult.DropCollectionResultItem item : dropCollectionResultList) {
-            if (item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result)) {
+            if (item.getCommonResult().getResult().equals(ResultEnum.FAIL.result)) {
                 assertMessages.add("[ASSERT FAIL] dropCollection [" + item.getCollectionName() + "] failed: " + item.getCommonResult().getMessage());
             }
         }
@@ -77,7 +77,7 @@ public class DropCollectionComp {
             dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
                     .collectionName(collectionName)
                     .commonResult(CommonResult.builder()
-                            .result(ResultEnum.EXCEPTION.result)
+                            .result(ResultEnum.FAIL.result)
                             .message(e.getMessage())
                             .build())
                     .build());

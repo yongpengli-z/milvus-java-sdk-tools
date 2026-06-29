@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static custom.BaseTest.cloudServiceUserInfo;
 
@@ -46,20 +45,27 @@ public class ModifyParamsComp {
         }
 
         // 修改参数
+        List<String> rmErrors = new ArrayList<>();
         if (needModifyParams.size() > 0) {
-            ResourceManagerServiceUtils.modifyParams(modifyParams.getInstanceId(), needModifyParams);
+            rmErrors.addAll(ResourceManagerServiceUtils.modifyParams(modifyParams.getInstanceId(), needModifyParams));
         }
         if (needAddParams.size() > 0) {
-            ResourceManagerServiceUtils.addParams(modifyParams.getInstanceId(), needAddParams);
+            rmErrors.addAll(ResourceManagerServiceUtils.addParams(modifyParams.getInstanceId(), needAddParams));
+        }
+        if (!rmErrors.isEmpty()) {
+            return ModifyParamsResult.builder()
+                    .commonResult(CommonResult.builder()
+                            .result(ResultEnum.FAIL.result)
+                            .message(String.join("; ", rmErrors)).build()).build();
         }
 
         if (modifyParams.isNeedRestart()) {
             String s = ResourceManagerServiceUtils.restartInstance(modifyParams.getInstanceId());
             JSONObject sJO = JSONObject.parseObject(s);
-            if (sJO.getInteger("Code") != 0) {
+            if (sJO.getInteger("Code") == null || sJO.getInteger("Code") != 0) {
                 return ModifyParamsResult.builder()
                         .commonResult(CommonResult.builder()
-                                .result(ResultEnum.WARNING.result)
+                                .result(ResultEnum.FAIL.result)
                                 .message(sJO.getString("Message")).build()).build();
             }
             // 轮询结果
@@ -95,19 +101,53 @@ public class ModifyParamsComp {
         List<ModifyParamsResult.Params> currentParams = new ArrayList<>();
         List<ParamInfo> currentParamList
                 = ResourceManagerServiceUtils.listParams(modifyParams.getInstanceId());
+        List<String> unmatchedParams = new ArrayList<>();
+        List<String> pendingParams = new ArrayList<>();
         for (ModifyParams.Params params : paramsList) {
             ParamInfo paramInfo = currentParamList.stream().filter(x -> x.getParamName().equalsIgnoreCase(params.getParamName())).findFirst().orElse(null);
-            Optional.ofNullable(paramInfo).ifPresent(x -> {
+            if (paramInfo == null) {
+                unmatchedParams.add(params.getParamName() + " not found after modify");
                 currentParams.add(ModifyParamsResult.Params.builder().paramName(params.getParamName())
-                        .currentValue(x.getCurrentValue()).build());
-            });
+                        .expectedValue(params.getParamValue()).build());
+                continue;
+            }
+            currentParams.add(ModifyParamsResult.Params.builder().paramName(params.getParamName())
+                    .expectedValue(params.getParamValue())
+                    .currentValue(paramInfo.getCurrentValue())
+                    .finalValue(paramInfo.getFinalValue()).build());
+
+            boolean currentMatched = valuesEqual(paramInfo.getCurrentValue(), params.getParamValue());
+            boolean finalMatched = valuesEqual(paramInfo.getFinalValue(), params.getParamValue());
+            if (!currentMatched && !finalMatched) {
+                unmatchedParams.add(params.getParamName() + " expected=" + params.getParamValue()
+                        + ", current=" + paramInfo.getCurrentValue() + ", final=" + paramInfo.getFinalValue());
+            } else if (!currentMatched) {
+                pendingParams.add(params.getParamName() + " finalValue=" + paramInfo.getFinalValue()
+                        + ", currentValue=" + paramInfo.getCurrentValue());
+            }
 
         }
 
-        return ModifyParamsResult.builder().commonResult(CommonResult.builder()
-                        .result(ResultEnum.SUCCESS.result).build())
+        CommonResult.CommonResultBuilder commonResult = CommonResult.builder();
+        if (!unmatchedParams.isEmpty()) {
+            commonResult.result(ResultEnum.FAIL.result)
+                    .message("Modify result mismatch: " + String.join("; ", unmatchedParams));
+        } else if (!pendingParams.isEmpty()) {
+            commonResult.result(ResultEnum.WARNING.result)
+                    .message("Param value was written to finalValue but currentValue is not effective yet: "
+                            + String.join("; ", pendingParams));
+        } else {
+            commonResult.result(ResultEnum.SUCCESS.result);
+        }
+
+        CommonResult finalCommonResult = commonResult.build();
+        return ModifyParamsResult.builder().commonResult(finalCommonResult)
                 .paramsList(currentParams).build();
 
 
+    }
+
+    private static boolean valuesEqual(String actual, String expected) {
+        return actual != null && expected != null && actual.trim().equals(expected.trim());
     }
 }

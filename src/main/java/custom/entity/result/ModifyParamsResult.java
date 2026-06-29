@@ -15,7 +15,9 @@ public class ModifyParamsResult {
     @Builder
     public static class Params{
         String paramName;
+        String expectedValue;
         String currentValue;
+        String finalValue;
 
     }
 }

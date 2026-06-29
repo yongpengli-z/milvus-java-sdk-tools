@@ -34,7 +34,7 @@ public class CreateCollectionComp {
         } catch (Exception e) {
             log.error("create collection failed!", e);
             commonResult = CommonResult.builder()
-                    .result(ResultEnum.EXCEPTION.result)
+                    .result(ResultEnum.FAIL.result)
                     .message(e.getMessage())
                     .build();
             List<String> assertMessages = new ArrayList<>();
@@ -57,7 +57,7 @@ public class CreateCollectionComp {
         }
         // assertions
         List<String> assertMessages = new ArrayList<>();
-        if (commonResult.getResult().equals(ResultEnum.EXCEPTION.result)) {
+        if (commonResult.getResult().equals(ResultEnum.FAIL.result)) {
             assertMessages.add("[ASSERT FAIL] createCollection exception: " + commonResult.getMessage());
         }
         if (collection == null || collection.isEmpty()) {

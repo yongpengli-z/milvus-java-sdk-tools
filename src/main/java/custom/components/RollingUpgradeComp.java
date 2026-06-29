@@ -28,7 +28,7 @@ public class RollingUpgradeComp {
         }
         String instanceId = newInstanceInfo.getInstanceId();
         if (instanceId == null || instanceId.equalsIgnoreCase("")) {
-            return warningResult("instanceId is required for rolling upgrade");
+            return failResult("instanceId is required for rolling upgrade");
         }
         // 先查询当前实例状态 ----需要修改，不用cloud-service获取，改ops-service获取状态
         String s = ResourceManagerServiceUtils.describeInstance(instanceId);
@@ -36,21 +36,21 @@ public class RollingUpgradeComp {
         JSONObject jsonObject = JSONObject.parseObject(s);
         JSONObject data = getData(jsonObject);
         if (data == null) {
-            return warningResult("describe instance failed: " + s);
+            return failResult("describe instance failed: " + s);
         }
         Integer status = getInteger(data, "Status", "status");
         if (status == null) {
-            return warningResult("describe instance response missing status: " + s);
+            return failResult("describe instance response missing status: " + s);
         }
         int instanceType = resolveInstanceType(data, instanceId);
         InstanceStatusEnum instanceStatusByCode = InstanceStatusEnum.getInstanceStatusByCode(status);
         log.info("Current status:"+ instanceStatusByCode.toString() + ", instanceType:" + instanceType);
         if (!canUpgrade(instanceType, instanceStatusByCode)){
-            return warningResult("instance status can't upgrade! Current status:" + instanceStatusByCode);
+            return failResult("instance status can't upgrade! Current status:" + instanceStatusByCode);
         }
         String targetDbVersion = resolveTargetDbVersion(rollingUpgradeParams.getTargetDbVersion(), instanceType);
         if (targetDbVersion == null) {
-            return warningResult("targetDbVersion is required. For VectorLake(in06), pass an exact ins_type=6 dbVersion.");
+            return failResult("targetDbVersion is required. For VectorLake(in06), pass an exact ins_type=6 dbVersion.");
         }
         rollingUpgradeParams.setTargetDbVersion(targetDbVersion);
 
@@ -63,7 +63,7 @@ public class RollingUpgradeComp {
             rollingUpgradeResult = ResourceManagerServiceUtils.upgradeQueryCluster(instanceId, targetDbVersion,
                     rollingUpgradeParams.isForceRestart());
         } else {
-            return warningResult("unsupported instance type for rolling upgrade: " + instanceType);
+            return failResult("unsupported instance type for rolling upgrade: " + instanceType);
         }
         JSONObject jsonObjectResult=JSONObject.parseObject(rollingUpgradeResult);
         Integer responseCode = getInteger(jsonObjectResult, "Code", "code");
@@ -74,7 +74,7 @@ public class RollingUpgradeComp {
             }
             return RollingUpgradeResult.builder()
                     .commonResult(CommonResult.builder()
-                            .result(ResultEnum.EXCEPTION.result)
+                            .result(ResultEnum.FAIL.result)
                             .message(message).build()).build();
         }
         long startLoadTime = System.currentTimeMillis();
@@ -101,7 +101,7 @@ public class RollingUpgradeComp {
         }
         return RollingUpgradeResult.builder()
                 .commonResult(CommonResult.builder()
-                        .result(ResultEnum.WARNING.result)
+                        .result(ResultEnum.FAIL.result)
                         .message("RollingUpgrade time out！").build())
                 .build();
     }
@@ -254,10 +254,10 @@ public class RollingUpgradeComp {
         return null;
     }
 
-    private static RollingUpgradeResult warningResult(String message) {
+    private static RollingUpgradeResult failResult(String message) {
         return RollingUpgradeResult.builder()
                 .commonResult(CommonResult.builder()
-                        .result(ResultEnum.WARNING.result)
+                        .result(ResultEnum.FAIL.result)
                         .message(message).build()).build();
     }
 }

@@ -50,7 +50,7 @@ public class CreateInstanceComp {
             int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());
             return CreateInstanceResult.builder().commonResult(CommonResult.builder()
                     .message("The specified instance name already exists.")
-                    .result(ResultEnum.EXCEPTION.result).build())
+                    .result(ResultEnum.FAIL.result).build())
                     .createCostSeconds(costSeconds).build();
         }
         // image重新获取
@@ -210,6 +210,12 @@ public class CreateInstanceComp {
             JSONObject modifyJO = JSONObject.parseObject(modifyResp);
             if (modifyJO.getInteger("Code") == null || modifyJO.getInteger("Code") != 0) {
                 log.warn("Modify replica failed: " + modifyJO.getString("Message"));
+                createInstanceResult.setCommonResult(CommonResult.builder()
+                        .result(ResultEnum.FAIL.result)
+                        .message("Modify replica failed: " + modifyJO.getString("Message")).build());
+                createInstanceResult.setInstanceId(newInstanceInfo.getInstanceId());
+                createInstanceResult.setUri(newInstanceInfo.getUri());
+                return createInstanceResult;
             } else {
                 log.info("Submit modify replica success, waiting for RUNNING...");
                 // 等待 replica 变更完成
@@ -227,6 +233,12 @@ public class CreateInstanceComp {
                 }
                 if (replicaStatus != InstanceStatusEnum.RUNNING.code) {
                     log.warn("Modify replica timeout!");
+                    createInstanceResult.setCommonResult(CommonResult.builder()
+                            .result(ResultEnum.FAIL.result)
+                            .message("Modify replica timeout!").build());
+                    createInstanceResult.setInstanceId(newInstanceInfo.getInstanceId());
+                    createInstanceResult.setUri(newInstanceInfo.getUri());
+                    return createInstanceResult;
                 } else {
                     log.info("Modify replica completed, instance is RUNNING.");
                 }
@@ -288,7 +300,7 @@ public class CreateInstanceComp {
         CreateInstanceResult result = CreateInstanceResult.builder()
                 .commonResult(CommonResult.builder()
                         .message(appendCleanupMessage(message, cleanupMessage))
-                        .result(ResultEnum.EXCEPTION.result).build())
+                        .result(ResultEnum.FAIL.result).build())
                 .createCostSeconds(costSeconds)
                 .build();
         if (hasInstanceId(instanceId)) {
