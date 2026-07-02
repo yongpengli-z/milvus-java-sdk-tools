@@ -39,4 +39,11 @@ public class CompactParams {
      * 前端默认值：false
      */
     boolean isClustering;
+
+    /**
+     * Compaction 目标 segment 大小，单位 MB（可选）。
+     * <p>
+     * 不传或小于等于 0 时使用 Milvus 默认值。
+     */
+    Long targetSize;
 }

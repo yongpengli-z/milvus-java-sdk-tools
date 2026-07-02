@@ -37,10 +37,13 @@ public class CompactComp {
             log.info("compact collection [" + collectionName + "]");
             long startCompactTime = System.currentTimeMillis();
             LocalDateTime startTime = LocalDateTime.now();
-            CompactResp compactResult = milvusClientV2.compact(CompactReq.builder()
+            CompactReq.CompactReqBuilder compactReqBuilder = CompactReq.builder()
                     .collectionName(collectionName)
-                    .isClustering(compactParams.isClustering())
-                    .build());
+                    .isClustering(compactParams.isClustering());
+            if (compactParams.getTargetSize() != null && compactParams.getTargetSize() > 0) {
+                compactReqBuilder.targetSize(compactParams.getTargetSize());
+            }
+            CompactResp compactResult = milvusClientV2.compact(compactReqBuilder.build());
             boolean compactState = false;
             do {
                 GetCompactionStateResp compactionState = milvusClientV2.getCompactionState(GetCompactionStateReq.builder()
