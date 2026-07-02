@@ -14,11 +14,43 @@ public class RestoreBackupParams {
      * <p>
      * 前端：`restoreBackupEdit.vue` -> "BackupId"
      * <p>
-     * 前端必填：是
+     * 前端必填：与 backupPreset 或 backupDataset/backupDim/backupRowCount 二选一
      * <p>
      * 前端默认值：""（空字符串）
      */
     private String backupId;
+
+    /**
+     * 预置备份名称（可选）。
+     * <p>
+     * 页面推荐传环境无关的下拉值，后端会按当前环境从 BackupDatasetEnum 自动解析 backupId。
+     * <p>
+     * 示例："laion_768d_1m" 或 "laion_768d_8m"
+     */
+    private String backupPreset;
+
+    /**
+     * 预置备份的数据集名称（可选）。
+     * <p>
+     * 页面推荐使用该字段配合 backupDim、backupRowCount，由后端按当前环境自动选择 backupId。
+     * <p>
+     * 示例："laion"
+     */
+    private String backupDataset;
+
+    /**
+     * 预置备份的向量维度（可选）。
+     * <p>
+     * 示例：768
+     */
+    private int backupDim;
+
+    /**
+     * 预置备份的数据量（可选）。
+     * <p>
+     * 示例：1000000 表示 1m。
+     */
+    private long backupRowCount;
 
     /**
      * 源实例 ID（可选）。

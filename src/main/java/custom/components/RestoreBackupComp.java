@@ -3,6 +3,7 @@ package custom.components;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import custom.common.BackupDatasetEnum;
 import custom.entity.RestoreBackupParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.RestoreBackupResult;
@@ -14,36 +15,21 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static custom.BaseTest.envEnum;
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class RestoreBackupComp {
     public static RestoreBackupResult restoreBackup(RestoreBackupParams restoreBackupParams) {
-        // 先查询backup from instance ID
-        String s1 = CloudOpsServiceUtils.queryInstanceIdByBackupId(restoreBackupParams.getBackupId());
-        JSONObject jsonObject1 = JSONObject.parseObject(s1);
-        Integer code1 = jsonObject1.getInteger("code");
-        if (code1 == 0) {
-            JSONArray jsonArray = jsonObject1.getJSONObject("data").getJSONArray("list");
-            if (jsonArray.size() == 0) {
-                return RestoreBackupResult.builder()
-                        .commonResult(CommonResult.builder()
-                                .message("未找到该备份文件对应的实例Id")
-                                .result(ResultEnum.WARNING.result)
-                                .build())
-                        .build();
-            }
-            JSONObject jsonObject = jsonArray.getJSONObject(0);
-            String fromInstanceId = jsonObject.getString("instanceId");
-            restoreBackupParams.setFromInstanceId(fromInstanceId);
-        } else {
-            return RestoreBackupResult.builder()
-                    .commonResult(CommonResult.builder()
-                            .message("查询备份文件对应的实例Id失败:" + jsonObject1.getString("message"))
-                            .result(ResultEnum.WARNING.result)
-                            .build())
-                    .build();
+        RestoreBackupResult resolveResult = resolveBackupId(restoreBackupParams);
+        if (resolveResult != null) {
+            return resolveResult;
+        }
+
+        RestoreBackupResult fromInstanceResult = resolveFromInstanceId(restoreBackupParams);
+        if (fromInstanceResult != null) {
+            return fromInstanceResult;
         }
 
         String s = CloudOpsServiceUtils.restoreBackup(restoreBackupParams);
@@ -108,5 +94,106 @@ public class RestoreBackupComp {
             return RestoreBackupResult.builder().commonResult(commonResult).build();
         }
 
+    }
+
+    private static RestoreBackupResult resolveBackupId(RestoreBackupParams restoreBackupParams) {
+        if (restoreBackupParams.getBackupId() != null && !restoreBackupParams.getBackupId().isEmpty()) {
+            return null;
+        }
+
+        BackupDatasetEnum backupDatasetEnum = null;
+        String backupPreset = restoreBackupParams.getBackupPreset();
+        if (backupPreset != null && !backupPreset.isEmpty()) {
+            backupDatasetEnum = BackupDatasetEnum.findBySelectName(envEnum, backupPreset);
+            if (backupDatasetEnum == null) {
+                backupDatasetEnum = BackupDatasetEnum.fromName(backupPreset);
+            }
+            if (backupDatasetEnum == null) {
+                return warningResult("未找到预置备份: env=" + (envEnum == null ? "" : envEnum.region)
+                        + ", backupPreset=" + backupPreset);
+            }
+        } else if (hasDatasetBackupSelection(restoreBackupParams)) {
+            if (envEnum == null) {
+                return warningResult("当前环境为空，无法按数据集自动选择 backupId");
+            }
+            if (!isCompleteDatasetBackupSelection(restoreBackupParams)) {
+                return warningResult("请完整填写 backupDataset、backupDim、backupRowCount");
+            }
+            backupDatasetEnum = BackupDatasetEnum.find(
+                    envEnum,
+                    restoreBackupParams.getBackupDataset(),
+                    restoreBackupParams.getBackupDim(),
+                    restoreBackupParams.getBackupRowCount());
+            if (backupDatasetEnum == null) {
+                return warningResult("未找到当前环境的预置备份: env=" + envEnum.region
+                        + ", dataset=" + restoreBackupParams.getBackupDataset()
+                        + ", dim=" + restoreBackupParams.getBackupDim()
+                        + ", rowCount=" + restoreBackupParams.getBackupRowCount());
+            }
+        }
+
+        if (backupDatasetEnum != null) {
+            restoreBackupParams.setBackupId(backupDatasetEnum.backupId);
+            if (backupDatasetEnum.fromInstanceId != null && !backupDatasetEnum.fromInstanceId.isEmpty()) {
+                restoreBackupParams.setFromInstanceId(backupDatasetEnum.fromInstanceId);
+            }
+            log.info("使用预置备份: preset={}, selectName={}, env={}, dataset={}, dim={}, rowCount={}, backupId={}, fromInstanceId={}",
+                    backupDatasetEnum.presetName,
+                    backupDatasetEnum.selectName,
+                    backupDatasetEnum.env.region,
+                    backupDatasetEnum.datasetName,
+                    backupDatasetEnum.dim,
+                    backupDatasetEnum.rowCount,
+                    backupDatasetEnum.backupId,
+                    backupDatasetEnum.fromInstanceId);
+        }
+
+        if (restoreBackupParams.getBackupId() == null || restoreBackupParams.getBackupId().isEmpty()) {
+            return warningResult("backupId 为空，请填写 backupId、backupPreset 或 backupDataset/backupDim/backupRowCount");
+        }
+        return null;
+    }
+
+    private static RestoreBackupResult resolveFromInstanceId(RestoreBackupParams restoreBackupParams) {
+        if (restoreBackupParams.getFromInstanceId() != null && !restoreBackupParams.getFromInstanceId().isEmpty()) {
+            return null;
+        }
+
+        // 兜底兼容手填 backupId，或枚举里暂未记录 fromInstanceId 的备份。
+        String s1 = CloudOpsServiceUtils.queryInstanceIdByBackupId(restoreBackupParams.getBackupId());
+        JSONObject jsonObject1 = JSONObject.parseObject(s1);
+        Integer code1 = jsonObject1.getInteger("code");
+        if (code1 == 0) {
+            JSONArray jsonArray = jsonObject1.getJSONObject("data").getJSONArray("list");
+            if (jsonArray.size() == 0) {
+                return warningResult("未找到该备份文件对应的实例Id");
+            }
+            JSONObject jsonObject = jsonArray.getJSONObject(0);
+            String fromInstanceId = jsonObject.getString("instanceId");
+            restoreBackupParams.setFromInstanceId(fromInstanceId);
+            return null;
+        }
+        return warningResult("查询备份文件对应的实例Id失败:" + jsonObject1.getString("message"));
+    }
+
+    private static boolean hasDatasetBackupSelection(RestoreBackupParams restoreBackupParams) {
+        return (restoreBackupParams.getBackupDataset() != null && !restoreBackupParams.getBackupDataset().isEmpty())
+                || restoreBackupParams.getBackupDim() > 0
+                || restoreBackupParams.getBackupRowCount() > 0;
+    }
+
+    private static boolean isCompleteDatasetBackupSelection(RestoreBackupParams restoreBackupParams) {
+        return restoreBackupParams.getBackupDataset() != null
+                && !restoreBackupParams.getBackupDataset().isEmpty()
+                && restoreBackupParams.getBackupDim() > 0
+                && restoreBackupParams.getBackupRowCount() > 0;
+    }
+
+    private static RestoreBackupResult warningResult(String message) {
+        CommonResult commonResult = CommonResult.builder()
+                .result(ResultEnum.WARNING.result)
+                .message(message)
+                .build();
+        return RestoreBackupResult.builder().commonResult(commonResult).build();
     }
 }

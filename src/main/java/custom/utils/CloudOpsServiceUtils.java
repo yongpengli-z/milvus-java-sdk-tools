@@ -181,7 +181,8 @@ public class CloudOpsServiceUtils {
     }
 
     public static String restoreBackup(RestoreBackupParams restoreBackupParams) {
-        String instanceId = restoreBackupParams.getToInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : restoreBackupParams.getToInstanceId();
+        String toInstanceId = restoreBackupParams.getToInstanceId();
+        String instanceId = (toInstanceId == null || toInstanceId.isEmpty()) ? newInstanceInfo.getInstanceId() : toInstanceId;
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/restore/restore_backup";
         Map<String, String> header = new HashMap<>();
         header.put("sa_token", envConfig.getCloudOpsServiceToken());
