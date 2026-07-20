@@ -56,7 +56,7 @@ public class RollingUpgradeComp {
 
         String rollingUpgradeResult;
         if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_MILVUS) {
-            rollingUpgradeResult = ResourceManagerServiceUtils.rollingUpgrade(rollingUpgradeParams);
+            rollingUpgradeResult = CloudOpsServiceUtils.rollingUpgrade(instanceId, rollingUpgradeParams);
         } else if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE) {
             rollingUpgradeResult = ResourceManagerServiceUtils.upgradeVectorLakeCoordinator(instanceId, targetDbVersion);
         } else if (instanceType == ResourceManagerServiceUtils.INSTANCE_TYPE_QUERY_CLUSTER) {
@@ -206,6 +206,16 @@ public class RollingUpgradeComp {
         if (instanceType != null) {
             return instanceType;
         }
+        String instanceTypeName = getString(data, "InstanceType", "instanceType", "InsType", "insType");
+        if ("Milvus".equalsIgnoreCase(instanceTypeName)) {
+            return ResourceManagerServiceUtils.INSTANCE_TYPE_MILVUS;
+        }
+        if ("VectorLake".equalsIgnoreCase(instanceTypeName)) {
+            return ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE;
+        }
+        if ("QueryCluster".equalsIgnoreCase(instanceTypeName)) {
+            return ResourceManagerServiceUtils.INSTANCE_TYPE_QUERY_CLUSTER;
+        }
         if (instanceId != null) {
             if (instanceId.startsWith("in06-")) {
                 return ResourceManagerServiceUtils.INSTANCE_TYPE_VECTOR_LAKE;
@@ -233,9 +243,29 @@ public class RollingUpgradeComp {
             return null;
         }
         for (String key : keys) {
-            Integer value = jo.getInteger(key);
+            Object value = jo.get(key);
+            if (value instanceof Number) {
+                return ((Number) value).intValue();
+            }
+            if (value instanceof String) {
+                try {
+                    return Integer.valueOf((String) value);
+                } catch (NumberFormatException ignored) {
+                    // Cloud Ops may return a named instance type such as "Milvus".
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String getString(JSONObject jo, String... keys) {
+        if (jo == null) {
+            return null;
+        }
+        for (String key : keys) {
+            Object value = jo.get(key);
             if (value != null) {
-                return value;
+                return String.valueOf(value);
             }
         }
         return null;

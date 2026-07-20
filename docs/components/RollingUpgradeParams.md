@@ -4,7 +4,7 @@
 
 组件会先查询实例类型，再选择升级入口：
 
-- `in01` / `InstanceType=1`：调用 RM `/resource/v1/instance/rolling/upgrade/add/task`
+- `in01` / `InstanceType=1`：调用 Cloud Ops `/api/v1/ops/resource/custInstance/rolling_upgrade/{instanceId}/{targetDbVersion}`
 - `in06` / `InstanceType=6`：调用 RM `/resource/v1/vectorlake/{instanceId}/upgrade`
 - `in07` / `InstanceType=7`：调用 RM `/resource/v1/vectorlake/query-cluster/{qcInstanceId}/upgrade`
 

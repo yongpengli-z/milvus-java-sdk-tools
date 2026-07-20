@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.entity.AlterInstanceIndexClusterParams;
 import custom.entity.RestoreBackupParams;
+import custom.entity.RollingUpgradeParams;
 import custom.pojo.IndexPoolInfo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,6 +20,26 @@ import static custom.BaseTest.newInstanceInfo;
 
 @Slf4j
 public class CloudOpsServiceUtils {
+
+    /**
+     * Submit a rolling upgrade through the same Cloud Ops endpoint used by the Ops console.
+     */
+    public static String rollingUpgrade(String instanceId, RollingUpgradeParams rollingUpgradeParams) {
+        String url = envConfig.getCloudOpsServiceHost()
+                + "/api/v1/ops/resource/custInstance/rolling_upgrade/"
+                + instanceId + "/" + rollingUpgradeParams.getTargetDbVersion()
+                + "?needBackup=false"
+                + "&force=true"
+                + "&forceRestart=" + rollingUpgradeParams.isForceRestart()
+                + "&syncMilvusConfig=true"
+                + "&syncHookConfig=true"
+                + "&syncDeploymentConfig=true";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        String response = HttpClientUtils.doPost(url, header, null);
+        log.info("rolling upgrade instance {}: {}", instanceId, response);
+        return response;
+    }
 
     public static String listDBVersionByKeywords(String keywords,int insType) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
