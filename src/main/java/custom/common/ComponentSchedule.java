@@ -168,6 +168,12 @@ public class ComponentSchedule {
             jsonObject.put("Wait" + index, waitResult);
             reportStepResult(WaitParams.class.getSimpleName() + "_" + index, JSON.toJSONString(waitResult));
         }
+        if (object instanceof ChaosMeshParams) {
+            log.info("*********** < Chaos Mesh > ***********");
+            ChaosMeshResult chaosMeshResult = ChaosMeshComp.execute((ChaosMeshParams) object);
+            jsonObject.put("ChaosMesh_" + index, chaosMeshResult);
+            reportStepResult(ChaosMeshParams.class.getSimpleName() + "_" + index, JSON.toJSONString(chaosMeshResult));
+        }
         if (object instanceof PauseParams) {
             log.info("*********** < Pause > ***********");
             PauseResult pauseResult = PauseComp.pause((PauseParams) object);
