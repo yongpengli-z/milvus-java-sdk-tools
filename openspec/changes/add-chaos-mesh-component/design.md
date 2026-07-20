@@ -37,24 +37,20 @@ Create operations will require a namespace, a non-empty name, a supported kind, 
 
 `ChaosMeshParams` accepts an optional `instanceId`. The component resolves its namespace in this order: an explicitly supplied namespace, an explicit instance ID converted to `milvus-<instanceId>`, then `BaseTest.newInstanceInfo.instanceId` converted to the same convention. If none are available, validation fails before a Kubernetes request. This mirrors existing instance-management components and lets a `CreateInstanceParams` step be followed directly by a Chaos Mesh step.
 
-### Provide no-mutation validation mode
-
-`dryRun=true` performs all local validation and returns the generated resource body without contacting the Kubernetes API.  It is intentionally a local dry run because the Kubernetes client version's custom-object server-side dry-run overload is not consistently available across the project's supported client methods.
-
 ### Dispatch and report like existing components
 
 `ComponentSchedule` will dispatch `ChaosMeshParams`, store a `ChaosMeshResult`, and report it under the numbered component name.  Kubernetes API errors are captured as an exception result rather than escaping without a scenario report entry.
 
 ## Risks / Trade-offs
 
-- [Chaos action disrupts an incorrect workload] → namespace, selector, duration, and supported kind are mandatory; dry-run is available for configuration review.
+- [Chaos action disrupts an incorrect workload] → namespace, selector, duration, and supported kind are mandatory.
 - [A test exits before its cleanup step] → documentation requires a paired delete step and reports the resource name needed for manual deletion.
 - [Chaos Mesh CRD schema changes] → the component leaves type-specific fields in an extensible attributes map and limits its contract to the common envelope.
 - [Kubeconfig does not point at a Chaos Mesh-enabled cluster] → Kubernetes API errors are returned with actionable messages; no install attempt is made.
 
 ## Migration Plan
 
-This is additive.  Deploy the new runner, first run a `dryRun` configuration, then create a short-duration experiment followed by a delete operation.  Rolling back only requires using a prior runner; any active experiment must be deleted explicitly with the resource identity reported by the component.
+This is additive. Deploy the new runner, then create a short-duration experiment followed by a delete operation. Rolling back only requires using a prior runner; any active experiment must be deleted explicitly with the resource identity reported by the component.
 
 ## Open Questions
 

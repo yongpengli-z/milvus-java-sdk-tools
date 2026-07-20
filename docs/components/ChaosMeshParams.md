@@ -2,7 +2,7 @@
 
 在有 Chaos Mesh CRD 的 Kubernetes 集群中创建或删除一次受限的故障实验。对应组件：`custom.components.ChaosMeshComp`。
 
-组件使用当前 `env` 的 kubeconfig；也可以通过 JVM 参数 `-Dkubeconfig=/path/to/config` 覆盖。首次执行建议使用 `dryRun: true`，它只验证参数并返回将要创建的 Custom Resource，不会访问 Kubernetes API。
+组件使用当前 `env` 的 kubeconfig；也可以通过 JVM 参数 `-Dkubeconfig=/path/to/config` 覆盖。
 
 ## 安全约束
 
@@ -24,11 +24,10 @@
 | `duration` | String | create 时是 | — | Go duration，例如 `60s`、`2m`、`1h30m`。 |
 | `labelSelectors` | Map<String, String> | create 时是 | `{}` | 目标 Pod 标签；至少填写一项。 |
 | `attributes` | Map<String, Object> | 否 | `{}` | 类型专属的 `spec` 字段，例如 PodChaos 的 `action`，NetworkChaos 的 `delay` / `loss`。不能覆盖组件生成的 `duration`、`selector`。 |
-| `dryRun` | boolean | 否 | `false` | 为 `true` 时仅返回生成的资源体，不会修改集群。 |
 
 ## PodChaos 示例
 
-以下场景先预览，再对标签为 `app.kubernetes.io/component=querynode` 的一个 Pod 注入 60 秒故障，最后显式删除实验。执行前请确认目标 Pod 所在节点已运行 `chaos-daemon`。
+以下场景对标签为 `app.kubernetes.io/component=querynode` 的一个 Pod 注入 60 秒故障，最后显式删除实验。执行前请确认目标 Pod 所在节点已运行 `chaos-daemon`。
 
 ```json
 {
@@ -44,27 +43,12 @@
     "attributes": {
       "action": "pod-failure",
       "mode": "one"
-    },
-    "dryRun": true
-  },
-  "ChaosMeshParams_1": {
-    "operation": "create",
-    "kind": "PodChaos",
-    "name": "querynode-pod-failure-smoke",
-    "instanceId": "in01-example",
-    "duration": "60s",
-    "labelSelectors": {
-      "app.kubernetes.io/component": "querynode"
-    },
-    "attributes": {
-      "action": "pod-failure",
-      "mode": "one"
     }
   },
-  "WaitParams_2": {
+  "WaitParams_1": {
     "waitMinutes": 2
   },
-  "ChaosMeshParams_3": {
+  "ChaosMeshParams_2": {
     "operation": "delete",
     "kind": "PodChaos",
     "name": "querynode-pod-failure-smoke",

@@ -38,12 +38,6 @@ public class ChaosMeshComp {
             Map<String, Object> resource = "create".equals(operation)
                     ? buildResource(params) : buildIdentity(params);
 
-            if (params.isDryRun()) {
-                log.info("Chaos Mesh dry run: operation={}, kind={}, namespace={}, name={}",
-                        operation, params.getKind(), params.getNamespace(), params.getName());
-                return success(params, operation, resource);
-            }
-
             ApiClient client = KubernetesUtils.createApiClient(resolveKubeConfigPath());
             CustomObjectsApi customObjectsApi = new CustomObjectsApi(client);
             Object response;
@@ -63,7 +57,6 @@ public class ChaosMeshComp {
                     .kind(params == null ? null : params.getKind())
                     .namespace(params == null ? null : params.getNamespace())
                     .name(params == null ? null : params.getName())
-                    .dryRun(params != null && params.isDryRun())
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.FAIL.result)
                             .message(e.getMessage())
@@ -79,7 +72,6 @@ public class ChaosMeshComp {
                     .kind(params == null ? null : params.getKind())
                     .namespace(params == null ? null : params.getNamespace())
                     .name(params == null ? null : params.getName())
-                    .dryRun(params != null && params.isDryRun())
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.EXCEPTION.result)
                             .message(e.getMessage())
@@ -203,7 +195,6 @@ public class ChaosMeshComp {
                 .kind(params.getKind())
                 .namespace(params.getNamespace())
                 .name(params.getName())
-                .dryRun(params.isDryRun())
                 .resource(resource)
                 .commonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build())
                 .build();

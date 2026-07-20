@@ -11,7 +11,6 @@ public class ChaosMeshResult {
     String kind;
     String namespace;
     String name;
-    boolean dryRun;
     Object resource;
     CommonResult commonResult;
 }

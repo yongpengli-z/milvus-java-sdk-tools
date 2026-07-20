@@ -21,13 +21,6 @@ The test runner SHALL delete the custom resource identified by a valid `ChaosMes
 - **WHEN** a scenario supplies a delete operation with the kind, namespace, and name of a created experiment
 - **THEN** the runner SHALL delete that custom resource so Chaos Mesh can stop the injected fault.
 
-### Requirement: Dry run does not mutate the cluster
-When `dryRun` is true, the component SHALL validate the supplied create operation and return the generated custom-resource body without calling the Kubernetes API.
-
-#### Scenario: Preview a NetworkChaos experiment
-- **WHEN** a scenario supplies a valid NetworkChaos create operation with `dryRun` enabled
-- **THEN** the result SHALL be successful and contain the generated resource body, and no Kubernetes custom resource SHALL be created.
-
 ### Requirement: Component results are usable in a test report
 The component SHALL report its operation, kind, namespace, resource name, generated or returned resource body, and a success or exception outcome through the existing component result path.
 

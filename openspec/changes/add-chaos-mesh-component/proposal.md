@@ -6,7 +6,7 @@ The test runner can create and manage Milvus workloads but cannot inject a contr
 
 - Add a `ChaosMeshParams` scenario component that creates one namespaced Chaos Mesh custom resource through the Kubernetes Java client.
 - Support the initial Chaos Mesh experiment types needed for safe, targeted smoke tests: Pod, Network, Stress, Time, and IO chaos.
-- Require an explicit target namespace and selector; provide an optional duration and a dry-run mode that validates without mutating the cluster.
+- Require an explicit target namespace and selector with an optional duration.
 - Allow callers to omit an Instance ID and resolve the target namespace from the globally tracked instance created earlier in the same scenario.
 - Return the created custom resource identity and observed status so a scenario report records the injected fault.
 - Add documentation and an example configuration for a bounded PodChaos experiment.

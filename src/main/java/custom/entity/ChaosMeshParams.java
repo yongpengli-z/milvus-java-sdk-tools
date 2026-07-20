@@ -43,6 +43,4 @@ public class ChaosMeshParams {
     /** Type-specific Chaos Mesh spec fields, for example {@code action: pod-failure}. */
     private Map<String, Object> attributes = new LinkedHashMap<>();
 
-    /** Validate and return the generated resource without contacting Kubernetes. */
-    private boolean dryRun;
 }

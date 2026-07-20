@@ -11,27 +11,12 @@
     "attributes": {
       "action": "pod-failure",
       "mode": "one"
-    },
-    "dryRun": true
-  },
-  "ChaosMeshParams_1": {
-    "operation": "create",
-    "kind": "PodChaos",
-    "name": "querynode-pod-failure-smoke",
-    "instanceId": "in01-example",
-    "duration": "60s",
-    "labelSelectors": {
-      "app.kubernetes.io/component": "querynode"
-    },
-    "attributes": {
-      "action": "pod-failure",
-      "mode": "one"
     }
   },
-  "WaitParams_2": {
+  "WaitParams_1": {
     "waitMinutes": 2
   },
-  "ChaosMeshParams_3": {
+  "ChaosMeshParams_2": {
     "operation": "delete",
     "kind": "PodChaos",
     "name": "querynode-pod-failure-smoke",
