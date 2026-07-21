@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /** Creates and deletes bounded namespaced Chaos Mesh custom resources. */
 @Slf4j
@@ -34,6 +35,7 @@ public class ChaosMeshComp {
         String operation = normalizeOperation(params == null ? null : params.getOperation());
         try {
             resolveNamespace(params);
+            generateName(params, operation);
             validate(params, operation);
             Map<String, Object> resource = "create".equals(operation)
                     ? buildResource(params) : buildIdentity(params);
@@ -183,6 +185,14 @@ public class ChaosMeshComp {
         params.setInstanceId(normalizedInstanceId);
         params.setNamespace(normalizedInstanceId.startsWith("milvus-")
                 ? normalizedInstanceId : "milvus-" + normalizedInstanceId);
+    }
+
+    private static void generateName(ChaosMeshParams params, String operation) {
+        if (params == null || !"create".equals(operation) || hasText(params.getName())) {
+            return;
+        }
+        String kind = hasText(params.getKind()) ? params.getKind().trim().toLowerCase(Locale.ROOT) : "experiment";
+        params.setName("chaos-" + kind + "-" + UUID.randomUUID().toString().substring(0, 8));
     }
 
     private static boolean hasText(String value) {

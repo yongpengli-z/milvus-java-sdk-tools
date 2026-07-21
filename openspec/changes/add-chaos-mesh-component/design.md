@@ -10,19 +10,20 @@ The runner turns numbered JSON entries into `custom.entity.*Params` classes and 
 - Make the target and lifetime explicit in JSON so a test report identifies exactly which fault was requested.
 - Use the existing kubeconfig selection and Kubernetes Java client.
 - Keep failure recovery simple: deleting the experiment resource stops the injected fault.
+- Generate an experiment name when callers omit it and delete every created resource when the outer scenario finishes.
 
 **Non-Goals:**
 
 - Installing, upgrading, or configuring Chaos Mesh.
 - Creating a dashboard UI, workflows, schedules, or cluster-scoped experiments.
-- Automatically selecting a production target or silently cleaning up an experiment outside the requested scenario.
+- Automatically selecting a production target.
 - Implementing typed Java models for every Chaos Mesh CRD.
 
 ## Decisions
 
 ### Use a generic custom-resource envelope
 
-`ChaosMeshParams` will contain `operation`, `kind`, `name`, `namespace`, `duration`, `selector`, and an `attributes` map.  The component constructs the CR body and invokes `CustomObjectsApi`; `kind` is constrained to PodChaos, NetworkChaos, StressChaos, TimeChaos, and IOChaos.  This gives the scenario schema stable safety fields while allowing type-specific Chaos Mesh fields such as `action`, `delay`, `loss`, or `stressors` to pass through in `attributes`.
+`ChaosMeshParams` will contain `operation`, `kind`, `name`, `namespace`, `duration`, `selector`, and an `attributes` map.  The component constructs the CR body and invokes `CustomObjectsApi`; `kind` is constrained to PodChaos, NetworkChaos, StressChaos, TimeChaos, and IOChaos.  This gives the scenario schema stable safety fields while allowing type-specific Chaos Mesh fields such as `action`, `delay`, `loss`, or `stressors` to pass through in `attributes`. A create operation without `name` receives a unique Kubernetes-safe name.
 
 Alternatives considered:
 
@@ -41,16 +42,20 @@ Create operations will require a namespace, a non-empty name, a supported kind, 
 
 `ComponentSchedule` will dispatch `ChaosMeshParams`, store a `ChaosMeshResult`, and report it under the numbered component name.  Kubernetes API errors are captured as an exception result rather than escaping without a scenario report entry.
 
+### Clean up resources at the end of the outer scenario
+
+The outer `ComponentSchedule.runningSchedule` call owns a cleanup context. Every successful create is registered using its resolved kind, namespace, and name; a successful manual delete removes that entry. In `finally`, the owner deletes remaining resources and reports each cleanup result. Nested loops reuse the same context, and concurrent child components receive the parent context explicitly, so cleanup happens once after the enclosing scenario ends.
+
 ## Risks / Trade-offs
 
 - [Chaos action disrupts an incorrect workload] → namespace, selector, duration, and supported kind are mandatory.
-- [A test exits before its cleanup step] → documentation requires a paired delete step and reports the resource name needed for manual deletion.
+- [A test exits before its normal completion] → the outer scheduler `finally` block deletes registered resources; cleanup failures are reported as failed cleanup results.
 - [Chaos Mesh CRD schema changes] → the component leaves type-specific fields in an extensible attributes map and limits its contract to the common envelope.
 - [Kubeconfig does not point at a Chaos Mesh-enabled cluster] → Kubernetes API errors are returned with actionable messages; no install attempt is made.
 
 ## Migration Plan
 
-This is additive. Deploy the new runner, then create a short-duration experiment followed by a delete operation. Rolling back only requires using a prior runner; any active experiment must be deleted explicitly with the resource identity reported by the component.
+This is additive. Deploy the new runner, then create a short-duration experiment and run verification steps while it is active. The runner deletes the experiment at scenario completion. Rolling back only requires using a prior runner; any active experiment can be deleted explicitly with the resource identity reported by the component.
 
 ## Open Questions
 

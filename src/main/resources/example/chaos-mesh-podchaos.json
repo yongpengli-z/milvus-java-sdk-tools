@@ -2,7 +2,6 @@
   "ChaosMeshParams_0": {
     "operation": "create",
     "kind": "PodChaos",
-    "name": "querynode-pod-failure-smoke",
     "instanceId": "in01-example",
     "duration": "60s",
     "labelSelectors": {
@@ -15,11 +14,5 @@
   },
   "WaitParams_1": {
     "waitMinutes": 2
-  },
-  "ChaosMeshParams_2": {
-    "operation": "delete",
-    "kind": "PodChaos",
-    "name": "querynode-pod-failure-smoke",
-    "instanceId": "in01-example"
   }
 }

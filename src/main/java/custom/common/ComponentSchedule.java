@@ -33,6 +33,7 @@ import static custom.BaseTest.*;
 public class ComponentSchedule {
     private static final ThreadLocal<List<String>> PARENT_NODE_NAMES = ThreadLocal.withInitial(ArrayList::new);
     private static final ThreadLocal<List<LoopIterationContext>> LOOP_CONTEXTS = ThreadLocal.withInitial(ArrayList::new);
+    private static final ThreadLocal<ChaosCleanupContext> CHAOS_CLEANUP_CONTEXT = new ThreadLocal<>();
     private static final Map<String, LoopAggregateState> LOOP_AGGREGATE_STATES = new ConcurrentHashMap<>();
 
     private static boolean skipQtpServer() {
@@ -80,22 +81,34 @@ public class ComponentSchedule {
                         "JSON反序列化失败, key=" + keyString + ", class=" + paramName + ": " + e.getMessage(), e);
             }
         }
-        // 收集结果
         List<JSONObject> results = new ArrayList<>();
-        for (int i = 0; i < operators.size(); i++) {
-            log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
-            int taskStatus = waitIfTaskPaused();
+        ChaosCleanupContext cleanupContext = CHAOS_CLEANUP_CONTEXT.get();
+        boolean cleanupOwner = cleanupContext == null;
+        if (cleanupOwner) {
+            cleanupContext = new ChaosCleanupContext();
+            CHAOS_CLEANUP_CONTEXT.set(cleanupContext);
+        }
+        try {
+            for (int i = 0; i < operators.size(); i++) {
+                log.warn("Step--[ " + operators.size() + " , " + (i + 1) + " ]:");
+                int taskStatus = waitIfTaskPaused();
 
-            if (taskStatus == TaskStatusEnum.TERMINATE.status) {
-                log.info("监测到任务终止...");
-                break;
+                if (taskStatus == TaskStatusEnum.TERMINATE.status) {
+                    log.info("监测到任务终止...");
+                    break;
+                }
+                JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
+                results.add(jsonObject);
+
+                if (containsFailResult(jsonObject.toJSONString())) {
+                    log.error("步骤返回 fail 状态，终止后续步骤执行！");
+                    break;
+                }
             }
-            JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
-            results.add(jsonObject);
-
-            if (containsFailResult(jsonObject.toJSONString())) {
-                log.error("步骤返回 fail 状态，终止后续步骤执行！");
-                break;
+        } finally {
+            if (cleanupOwner) {
+                cleanupChaosResources(results, cleanupContext);
+                CHAOS_CLEANUP_CONTEXT.remove();
             }
         }
         log.info("[结果汇总]： " +
@@ -170,7 +183,9 @@ public class ComponentSchedule {
         }
         if (object instanceof ChaosMeshParams) {
             log.info("*********** < Chaos Mesh > ***********");
-            ChaosMeshResult chaosMeshResult = ChaosMeshComp.execute((ChaosMeshParams) object);
+            ChaosMeshParams chaosMeshParams = (ChaosMeshParams) object;
+            ChaosMeshResult chaosMeshResult = ChaosMeshComp.execute(chaosMeshParams);
+            trackChaosResource(chaosMeshParams, chaosMeshResult);
             jsonObject.put("ChaosMesh_" + index, chaosMeshResult);
             reportStepResult(ChaosMeshParams.class.getSimpleName() + "_" + index, JSON.toJSONString(chaosMeshResult));
         }
@@ -567,21 +582,100 @@ public class ComponentSchedule {
     }
 
     public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames) {
-        return callComponentSchedule(object, index, parentNodeNames, snapshotLoopContexts());
+        return callComponentSchedule(object, index, parentNodeNames, snapshotLoopContexts(), snapshotChaosCleanupContext());
     }
 
     public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames,
                                                    List<LoopIterationContext> loopContexts) {
+        return callComponentSchedule(object, index, parentNodeNames, loopContexts, snapshotChaosCleanupContext());
+    }
+
+    public static JSONObject callComponentSchedule(Object object, int index, List<String> parentNodeNames,
+                                                   List<LoopIterationContext> loopContexts,
+                                                   ChaosCleanupContext chaosCleanupContext) {
         List<String> previousParentNodeNames = snapshotParentNodeName();
         List<LoopIterationContext> previousLoopContexts = snapshotLoopContexts();
+        ChaosCleanupContext previousChaosCleanupContext = CHAOS_CLEANUP_CONTEXT.get();
         setParentNodeNames(parentNodeNames);
         setLoopContexts(loopContexts);
+        if (chaosCleanupContext == null) {
+            CHAOS_CLEANUP_CONTEXT.remove();
+        } else {
+            CHAOS_CLEANUP_CONTEXT.set(chaosCleanupContext);
+        }
         try {
             return callComponentSchedule(object, index);
         } finally {
             setParentNodeNames(previousParentNodeNames);
             setLoopContexts(previousLoopContexts);
+            if (previousChaosCleanupContext == null) {
+                CHAOS_CLEANUP_CONTEXT.remove();
+            } else {
+                CHAOS_CLEANUP_CONTEXT.set(previousChaosCleanupContext);
+            }
         }
+    }
+
+    public static ChaosCleanupContext snapshotChaosCleanupContext() {
+        return CHAOS_CLEANUP_CONTEXT.get();
+    }
+
+    private static void trackChaosResource(ChaosMeshParams params, ChaosMeshResult result) {
+        ChaosCleanupContext cleanupContext = CHAOS_CLEANUP_CONTEXT.get();
+        if (cleanupContext == null || result == null || result.getCommonResult() == null
+                || !ResultEnum.SUCCESS.result.equals(result.getCommonResult().getResult())) {
+            return;
+        }
+        if ("create".equals(result.getOperation())) {
+            cleanupContext.add(result.getKind(), result.getNamespace(), result.getName());
+        } else if ("delete".equals(result.getOperation())) {
+            cleanupContext.remove(result.getKind(), result.getNamespace(), result.getName());
+        }
+    }
+
+    private static void cleanupChaosResources(List<JSONObject> results, ChaosCleanupContext cleanupContext) {
+        int index = 0;
+        for (ChaosResource resource : cleanupContext.resources.values()) {
+            ChaosMeshParams params = new ChaosMeshParams();
+            params.setOperation("delete");
+            params.setKind(resource.kind);
+            params.setNamespace(resource.namespace);
+            params.setName(resource.name);
+            ChaosMeshResult result = ChaosMeshComp.execute(params);
+            String stepName = "ChaosMeshCleanup_" + index++;
+            JSONObject cleanupResult = new JSONObject();
+            cleanupResult.put(stepName, result);
+            results.add(cleanupResult);
+            reportStepResult(stepName, JSON.toJSONString(result));
+        }
+    }
+
+    public static final class ChaosCleanupContext {
+        private final Map<String, ChaosResource> resources = new ConcurrentHashMap<>();
+
+        private void add(String kind, String namespace, String name) {
+            resources.putIfAbsent(resourceKey(kind, namespace, name), new ChaosResource(kind, namespace, name));
+        }
+
+        private void remove(String kind, String namespace, String name) {
+            resources.remove(resourceKey(kind, namespace, name));
+        }
+    }
+
+    private static final class ChaosResource {
+        private final String kind;
+        private final String namespace;
+        private final String name;
+
+        private ChaosResource(String kind, String namespace, String name) {
+            this.kind = kind;
+            this.namespace = namespace;
+            this.name = name;
+        }
+    }
+
+    private static String resourceKey(String kind, String namespace, String name) {
+        return kind + "\\n" + namespace + "\\n" + name;
     }
 
     public static boolean containsFailureResult(String result) {

@@ -4,7 +4,7 @@
 The test runner SHALL accept `ChaosMeshParams` as an ordered scenario step and SHALL create a namespaced Chaos Mesh custom resource in API group `chaos-mesh.org`, version `v1alpha1`, when `operation` is `create`.
 
 #### Scenario: Create a bounded PodChaos experiment
-- **WHEN** a scenario supplies a valid `ChaosMeshParams` create operation for `PodChaos` with a namespace, name, positive duration, and label selector
+- **WHEN** a scenario supplies a valid `ChaosMeshParams` create operation for `PodChaos` with a namespace, positive duration, and label selector
 - **THEN** the runner SHALL create a `podchaos` custom resource in that namespace and report its identity and requested status.
 
 ### Requirement: Experiment target is explicitly bounded
@@ -20,6 +20,13 @@ The test runner SHALL delete the custom resource identified by a valid `ChaosMes
 #### Scenario: Delete an experiment after a test step
 - **WHEN** a scenario supplies a delete operation with the kind, namespace, and name of a created experiment
 - **THEN** the runner SHALL delete that custom resource so Chaos Mesh can stop the injected fault.
+
+### Requirement: Create operations receive an identity and are cleaned up
+When a create operation omits `name`, the runner SHALL generate a unique Kubernetes-safe resource name and report it in the result. The outer scenario scheduler SHALL delete every Chaos Mesh resource created successfully during its execution when the scenario completes, fails, or is terminated. A successful explicit delete SHALL remove that resource from automatic cleanup.
+
+#### Scenario: Clean up a generated experiment after a failed step
+- **WHEN** a create operation with no name succeeds and a later scenario step fails
+- **THEN** the runner SHALL report the generated name and attempt to delete the created resource before returning the scenario results.
 
 ### Requirement: Component results are usable in a test report
 The component SHALL report its operation, kind, namespace, resource name, generated or returned resource body, and a success or exception outcome through the existing component result path.
