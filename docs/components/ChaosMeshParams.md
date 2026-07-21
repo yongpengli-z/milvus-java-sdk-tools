@@ -1,6 +1,6 @@
 # ChaosMeshParams
 
-在有 Chaos Mesh CRD 的 Kubernetes 集群中创建或删除一次受限的故障实验。对应组件：`custom.components.ChaosMeshComp`。创建成功的实验会在当前场景最外层执行结束时自动删除；无论场景正常结束、步骤失败还是任务终止，调度器都会尝试清理。
+在有 Chaos Mesh CRD 的 Kubernetes 集群中创建或删除一次受限的故障实验。对应组件：`custom.components.ChaosMeshComp`。创建成功的实验至少会保留 `duration + 30 秒`；当前场景最外层执行结束后，调度器会等待剩余时间再自动删除。无论场景正常结束、步骤失败还是任务终止，都会尝试清理。
 
 组件使用当前 `env` 的 kubeconfig；也可以通过 JVM 参数 `-Dkubeconfig=/path/to/config` 覆盖。
 
@@ -10,7 +10,7 @@
 - 未传 `namespace` 时，组件使用 `milvus-<instanceId>`；未传 `instanceId` 时，会使用前序 `CreateInstanceParams` 写入的全局 instance ID。
 - 组件将 `spec.selector.namespaces` 固定为最终解析出的 namespace，不能跨 namespace 注入故障。
 - 初始支持 `PodChaos`、`NetworkChaos`、`StressChaos`、`TimeChaos` 和 `IOChaos`。
-- 测试场景结束时会自动删除本场景成功创建的 CR；如需提前停止故障，仍可追加 `delete` 步骤。
+- 测试场景结束时会自动删除本场景成功创建的 CR，但不会早于创建后 `duration + 30 秒`；如需提前停止故障，仍可追加 `delete` 步骤。
 
 ## 参数
 
@@ -27,7 +27,7 @@
 
 ## PodChaos 示例
 
-以下场景对标签为 `app.kubernetes.io/component=querynode` 的一个 Pod 注入 60 秒故障，等待期间可执行验证步骤。场景结束时会自动删除实验 CR；执行前请确认目标 Pod 所在节点已运行 `chaos-daemon`。
+以下场景对标签为 `app.kubernetes.io/component=querynode` 的一个 Pod 注入 60 秒故障，等待期间可执行验证步骤。实验 CR 至少会保留 90 秒，之后在场景结束时自动删除；执行前请确认目标 Pod 所在节点已运行 `chaos-daemon`。
 
 ```json
 {

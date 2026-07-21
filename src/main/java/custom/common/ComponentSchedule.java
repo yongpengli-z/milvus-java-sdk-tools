@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
@@ -35,6 +38,8 @@ public class ComponentSchedule {
     private static final ThreadLocal<List<LoopIterationContext>> LOOP_CONTEXTS = ThreadLocal.withInitial(ArrayList::new);
     private static final ThreadLocal<ChaosCleanupContext> CHAOS_CLEANUP_CONTEXT = new ThreadLocal<>();
     private static final Map<String, LoopAggregateState> LOOP_AGGREGATE_STATES = new ConcurrentHashMap<>();
+    private static final Pattern GO_DURATION_PART = Pattern.compile("(\\d+)(ms|h|m|s)");
+    private static final long CHAOS_CLEANUP_GRACE_MILLIS = TimeUnit.SECONDS.toMillis(30);
 
     private static boolean skipQtpServer() {
         if (Boolean.getBoolean("qtp.report.disabled")) {
@@ -627,7 +632,7 @@ public class ComponentSchedule {
             return;
         }
         if ("create".equals(result.getOperation())) {
-            cleanupContext.add(result.getKind(), result.getNamespace(), result.getName());
+            cleanupContext.add(result.getKind(), result.getNamespace(), result.getName(), params.getDuration());
         } else if ("delete".equals(result.getOperation())) {
             cleanupContext.remove(result.getKind(), result.getNamespace(), result.getName());
         }
@@ -636,6 +641,7 @@ public class ComponentSchedule {
     private static void cleanupChaosResources(List<JSONObject> results, ChaosCleanupContext cleanupContext) {
         int index = 0;
         for (ChaosResource resource : cleanupContext.resources.values()) {
+            waitForChaosCleanupWindow(resource);
             ChaosMeshParams params = new ChaosMeshParams();
             params.setOperation("delete");
             params.setKind(resource.kind);
@@ -650,11 +656,63 @@ public class ComponentSchedule {
         }
     }
 
+    private static void waitForChaosCleanupWindow(ChaosResource resource) {
+        long remainingMillis = resource.cleanupAfterMillis - System.currentTimeMillis();
+        if (remainingMillis <= 0) {
+            return;
+        }
+        log.info("Chaos Mesh resource {}/{}/{} will be retained for another {} ms before cleanup",
+                resource.kind, resource.namespace, resource.name, remainingMillis);
+        try {
+            Thread.sleep(remainingMillis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Chaos Mesh cleanup wait interrupted for {}/{}/{}; deleting it now",
+                    resource.kind, resource.namespace, resource.name);
+        }
+    }
+
+    private static long cleanupAfterMillis(String duration) {
+        long durationMillis = 0;
+        Matcher matcher = GO_DURATION_PART.matcher(duration);
+        while (matcher.find()) {
+            long value;
+            try {
+                value = Long.parseLong(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return Long.MAX_VALUE;
+            }
+            long unitMillis;
+            switch (matcher.group(2)) {
+                case "h":
+                    unitMillis = TimeUnit.HOURS.toMillis(1);
+                    break;
+                case "m":
+                    unitMillis = TimeUnit.MINUTES.toMillis(1);
+                    break;
+                case "s":
+                    unitMillis = TimeUnit.SECONDS.toMillis(1);
+                    break;
+                default:
+                    unitMillis = 1;
+            }
+            if (value > Long.MAX_VALUE / unitMillis || durationMillis > Long.MAX_VALUE - value * unitMillis) {
+                return Long.MAX_VALUE;
+            }
+            durationMillis += value * unitMillis;
+        }
+        long cleanupDelay = durationMillis > Long.MAX_VALUE - CHAOS_CLEANUP_GRACE_MILLIS
+                ? Long.MAX_VALUE : durationMillis + CHAOS_CLEANUP_GRACE_MILLIS;
+        long now = System.currentTimeMillis();
+        return cleanupDelay > Long.MAX_VALUE - now ? Long.MAX_VALUE : now + cleanupDelay;
+    }
+
     public static final class ChaosCleanupContext {
         private final Map<String, ChaosResource> resources = new ConcurrentHashMap<>();
 
-        private void add(String kind, String namespace, String name) {
-            resources.putIfAbsent(resourceKey(kind, namespace, name), new ChaosResource(kind, namespace, name));
+        private void add(String kind, String namespace, String name, String duration) {
+            resources.putIfAbsent(resourceKey(kind, namespace, name),
+                    new ChaosResource(kind, namespace, name, cleanupAfterMillis(duration)));
         }
 
         private void remove(String kind, String namespace, String name) {
@@ -666,11 +724,13 @@ public class ComponentSchedule {
         private final String kind;
         private final String namespace;
         private final String name;
+        private final long cleanupAfterMillis;
 
-        private ChaosResource(String kind, String namespace, String name) {
+        private ChaosResource(String kind, String namespace, String name, long cleanupAfterMillis) {
             this.kind = kind;
             this.namespace = namespace;
             this.name = name;
+            this.cleanupAfterMillis = cleanupAfterMillis;
         }
     }
 

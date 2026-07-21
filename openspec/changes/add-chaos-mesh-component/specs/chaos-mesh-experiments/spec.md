@@ -22,11 +22,11 @@ The test runner SHALL delete the custom resource identified by a valid `ChaosMes
 - **THEN** the runner SHALL delete that custom resource so Chaos Mesh can stop the injected fault.
 
 ### Requirement: Create operations receive an identity and are cleaned up
-When a create operation omits `name`, the runner SHALL generate a unique Kubernetes-safe resource name and report it in the result. The outer scenario scheduler SHALL delete every Chaos Mesh resource created successfully during its execution when the scenario completes, fails, or is terminated. A successful explicit delete SHALL remove that resource from automatic cleanup.
+When a create operation omits `name`, the runner SHALL generate a unique Kubernetes-safe resource name and report it in the result. The outer scenario scheduler SHALL retain every Chaos Mesh resource created successfully for at least its requested duration plus 30 seconds, then delete it when the scenario completes, fails, or is terminated. A successful explicit delete SHALL remove that resource from automatic cleanup.
 
 #### Scenario: Clean up a generated experiment after a failed step
 - **WHEN** a create operation with no name succeeds and a later scenario step fails
-- **THEN** the runner SHALL report the generated name and attempt to delete the created resource before returning the scenario results.
+- **THEN** the runner SHALL report the generated name, wait until duration plus 30 seconds has elapsed, and attempt to delete the created resource before returning the scenario results.
 
 ### Requirement: Component results are usable in a test report
 The component SHALL report its operation, kind, namespace, resource name, generated or returned resource body, and a success or exception outcome through the existing component result path.

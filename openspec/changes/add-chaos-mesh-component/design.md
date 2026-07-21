@@ -10,7 +10,7 @@ The runner turns numbered JSON entries into `custom.entity.*Params` classes and 
 - Make the target and lifetime explicit in JSON so a test report identifies exactly which fault was requested.
 - Use the existing kubeconfig selection and Kubernetes Java client.
 - Keep failure recovery simple: deleting the experiment resource stops the injected fault.
-- Generate an experiment name when callers omit it and delete every created resource when the outer scenario finishes.
+- Generate an experiment name when callers omit it and delete every created resource only after it has remained active for at least its duration plus 30 seconds.
 
 **Non-Goals:**
 
@@ -44,7 +44,7 @@ Create operations will require a namespace, a non-empty name, a supported kind, 
 
 ### Clean up resources at the end of the outer scenario
 
-The outer `ComponentSchedule.runningSchedule` call owns a cleanup context. Every successful create is registered using its resolved kind, namespace, and name; a successful manual delete removes that entry. In `finally`, the owner deletes remaining resources and reports each cleanup result. Nested loops reuse the same context, and concurrent child components receive the parent context explicitly, so cleanup happens once after the enclosing scenario ends.
+The outer `ComponentSchedule.runningSchedule` call owns a cleanup context. Every successful create is registered using its resolved kind, namespace, name, and a cleanup timestamp of creation time plus `duration + 30 seconds`; a successful manual delete removes that entry. In `finally`, the owner waits only for any remaining time, then deletes the resource and reports the cleanup result. Nested loops reuse the same context, and concurrent child components receive the parent context explicitly, so cleanup happens once after the enclosing scenario ends without cutting short the requested fault duration.
 
 ## Risks / Trade-offs
 
@@ -55,7 +55,7 @@ The outer `ComponentSchedule.runningSchedule` call owns a cleanup context. Every
 
 ## Migration Plan
 
-This is additive. Deploy the new runner, then create a short-duration experiment and run verification steps while it is active. The runner deletes the experiment at scenario completion. Rolling back only requires using a prior runner; any active experiment can be deleted explicitly with the resource identity reported by the component.
+This is additive. Deploy the new runner, then create a short-duration experiment and run verification steps while it is active. The runner retains the experiment for at least its duration plus 30 seconds, then deletes it at scenario completion. Rolling back only requires using a prior runner; any active experiment can be deleted explicitly with the resource identity reported by the component.
 
 ## Open Questions
 
