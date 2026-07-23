@@ -3,6 +3,7 @@ package custom.components;
 import custom.entity.DescribeCollectionParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.DescribeCollectionResult;
+import custom.entity.result.DescribeCollectionResponse;
 import custom.entity.result.ResultEnum;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -26,7 +27,7 @@ public class DescribeCollectionComp {
 
         try {
             DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(describeCollectionReq);
-            describeCollectionResult.setDescribeCollectionResp(describeCollectionResp);
+            describeCollectionResult.setDescribeCollectionResp(DescribeCollectionResponse.from(describeCollectionResp));
             describeCollectionResult.setCommonResult(CommonResult.builder()
                     .result(ResultEnum.SUCCESS.result)
                     .build());
