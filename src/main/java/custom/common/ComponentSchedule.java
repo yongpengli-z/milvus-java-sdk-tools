@@ -399,6 +399,12 @@ public class ComponentSchedule {
             jsonObject.put("RestfulHybridSearch_" + index, restfulHybridSearchResult);
             reportStepResult(RestfulHybridSearchParams.class.getSimpleName() + "_" + index, JSON.toJSONString(restfulHybridSearchResult));
         }
+        if (object instanceof QueryClusterMetricsParams) {
+            log.info("*********** < query cluster metrics > ***********");
+            QueryClusterMetricsResult queryClusterMetricsResult = QueryClusterMetricsComp.query((QueryClusterMetricsParams) object);
+            jsonObject.put("QueryClusterMetrics_" + index, queryClusterMetricsResult);
+            reportStepResult(QueryClusterMetricsParams.class.getSimpleName() + "_" + index, JSON.toJSONString(queryClusterMetricsResult));
+        }
         if (object instanceof ScaleInstanceParams) {
             log.info("*********** < scale instance > ***********");
             ScaleInstanceResult scaleInstanceResult = ScaleInstanceComp.scaleInstance((ScaleInstanceParams) object);

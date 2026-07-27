@@ -63,6 +63,7 @@
 | HybridSearchParams | 多向量混合搜索（RRF / WeightedRanker） | [详情](docs/components/HybridSearchParams.md) |
 | RestfulHybridSearchParams | REST 版多向量混合搜索 | [详情](docs/components/RestfulHybridSearchParams.md) |
 | RestfulSearchParams | REST 版向量搜索 | [详情](docs/components/RestfulSearchParams.md) |
+| QueryClusterMetricsParams | REST 查询实例 metrics（Control Plane V2） | [详情](docs/components/QueryClusterMetricsParams.md) |
 | RecallParams | 召回率测试 | [详情](docs/components/RecallParams.md) |
 | QuerySegmentInfoParams | 查询 Segment 信息（V1） | [详情](docs/components/QuerySegmentInfoParams.md) |
 | PersistentSegmentInfoParams | 持久 Segment 信息（V1） | [详情](docs/components/PersistentSegmentInfoParams.md) |
