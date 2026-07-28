@@ -7,6 +7,7 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.QueryClusterMetricsResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.CloudServiceUtils;
+import custom.utils.CloudUserServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -20,6 +21,7 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -188,23 +190,18 @@ public class QueryClusterMetricsComp {
     private static String resolveManagedApiKey(QueryClusterMetricsParams params) {
         try {
             ensureCloudServiceLogin(params);
-            String resp = CloudServiceUtils.listManagedApiKeys();
-            JSONObject data = getData(JSONObject.parseObject(resp));
-            JSONArray keys = data == null ? null : data.getJSONArray("keys");
-            if (keys == null && data != null) {
-                keys = data.getJSONArray("Keys");
+            String personalKey = resolveManagedApiKeyFromCurrentOrg();
+            if (hasText(personalKey)) {
+                return personalKey;
             }
-            if (keys == null) {
-                log.warn("QueryClusterMetrics auto api key failed: response does not contain keys");
-                return "";
-            }
-            for (int i = 0; i < keys.size(); i++) {
-                JSONObject key = keys.getJSONObject(i);
-                Integer type = getInteger(key, "type", "Type");
-                String personalKey = getString(key, "key", "Key");
-                if (type != null && type == 1 && hasText(personalKey)) {
-                    log.info("QueryClusterMetrics auto api key resolved from current account");
-                    return personalKey;
+            if (cloudServiceUserInfo != null && cloudServiceUserInfo.getOrgIdList() != null) {
+                for (String orgId : cloudServiceUserInfo.getOrgIdList()) {
+                    switchCloudServiceOrg(orgId);
+                    personalKey = resolveManagedApiKeyFromCurrentOrg();
+                    if (hasText(personalKey)) {
+                        log.info("QueryClusterMetrics auto api key resolved from org={}", orgId);
+                        return personalKey;
+                    }
                 }
             }
             log.warn("QueryClusterMetrics auto api key failed: no type=1 managed key found");
@@ -212,6 +209,51 @@ public class QueryClusterMetricsComp {
             log.warn("QueryClusterMetrics auto api key failed: {}", e.getMessage());
         }
         return "";
+    }
+
+    private static String resolveManagedApiKeyFromCurrentOrg() {
+        String resp = CloudServiceUtils.listManagedApiKeys();
+        JSONObject data = getData(JSONObject.parseObject(resp));
+        JSONArray keys = data == null ? null : data.getJSONArray("keys");
+        if (keys == null && data != null) {
+            keys = data.getJSONArray("Keys");
+        }
+        if (keys == null) {
+            log.warn("QueryClusterMetrics auto api key failed: response does not contain keys");
+            return "";
+        }
+        for (int i = 0; i < keys.size(); i++) {
+            JSONObject key = keys.getJSONObject(i);
+            Integer type = getInteger(key, "type", "Type");
+            String personalKey = getString(key, "key", "Key");
+            if (type != null && type == 1 && hasText(personalKey)) {
+                log.info("QueryClusterMetrics auto api key resolved from current org");
+                return personalKey;
+            }
+        }
+        return "";
+    }
+
+    private static void switchCloudServiceOrg(String orgId) {
+        if (cloudServiceUserInfo == null || !hasText(orgId)) {
+            return;
+        }
+        try {
+            String respCUS = CloudUserServiceUtils.getProxyUserId(orgId);
+            JSONObject respJson = JSONObject.parseObject(respCUS);
+            if (respJson != null && respJson.getIntValue("Code") == 0 && respJson.getJSONObject("Data") != null) {
+                String proxyUserId = respJson.getJSONObject("Data").getString("proxyUserId");
+                if (hasText(proxyUserId)) {
+                    cloudServiceUserInfo.setProxyUserId(proxyUserId);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("QueryClusterMetrics switch org failed to resolve proxyUserId: orgId={}, error={}",
+                    orgId, e.getMessage());
+        }
+        cloudServiceUserInfo.setOrgIdList(Collections.singletonList(orgId));
+        cloudServiceUserInfo.setDefaultProjectId(CloudServiceUtils.providerDefaultProject(
+                cloudServiceUserInfo.getToken(), orgId));
     }
 
     private static void ensureCloudServiceLogin(QueryClusterMetricsParams params) {
