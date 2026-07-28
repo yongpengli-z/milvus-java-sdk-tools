@@ -18,17 +18,22 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static custom.BaseTest.cloudServiceUserInfo;
+import static custom.BaseTest.envConfig;
+import static custom.BaseTest.envEnum;
 import static custom.BaseTest.newInstanceInfo;
 
 @Slf4j
 public class QueryClusterMetricsComp {
-    private static final String DEFAULT_BASE_URL = "https://api.cloud.zilliz.com";
+    private static final String UAT3_BASE_URL = "https://api.cloud-uat3.zilliz.com";
+    private static final String UAT_BASE_URL = "https://api.cloud-uat.zilliz.com";
+    private static final String DEFAULT_BASE_URL = UAT3_BASE_URL;
 
     private QueryClusterMetricsComp() {
     }
@@ -39,7 +44,7 @@ public class QueryClusterMetricsComp {
             validate(params);
             String clusterId = firstText(params.getClusterId(),
                     newInstanceInfo == null ? null : newInstanceInfo.getInstanceId());
-            String baseUrl = trimTrailingSlash(firstText(params.getBaseUrl(), DEFAULT_BASE_URL));
+            String baseUrl = resolveBaseUrl(params);
             String url = baseUrl + "/v2/clusters/" + clusterId + "/metrics/query";
             JSONObject requestBody = buildRequestBody(params);
             Map<String, String> headers = buildHeaders(params);
@@ -113,6 +118,51 @@ public class QueryClusterMetricsComp {
         }
         body.put("metricQueries", metricQueries);
         return body;
+    }
+
+    private static String resolveBaseUrl(QueryClusterMetricsParams params) {
+        if (params != null && hasText(params.getBaseUrl())) {
+            log.warn("QueryClusterMetrics ignores params.baseUrl. Metrics baseUrl is resolved from env only.");
+        }
+        String resolvedBaseUrl = firstText(resolveBaseUrlFromCloudServiceHost(),
+                resolveBaseUrlFromEnvName(), DEFAULT_BASE_URL);
+        log.info("QueryClusterMetrics resolved baseUrl={}, env={}", resolvedBaseUrl,
+                firstText(envEnum == null ? null : envEnum.region, System.getProperty("env"), ""));
+        return resolvedBaseUrl;
+    }
+
+    private static String resolveBaseUrlFromCloudServiceHost() {
+        String cloudServiceHost = envConfig == null ? null : envConfig.getCloudServiceHost();
+        if (!hasText(cloudServiceHost)) {
+            return "";
+        }
+        try {
+            URI uri = URI.create(trimTrailingSlash(cloudServiceHost.trim()));
+            String host = uri.getHost();
+            if (!hasText(host) || !host.startsWith("cloud-service.")) {
+                return "";
+            }
+            String apiHost = "api." + host.substring("cloud-service.".length());
+            String scheme = firstText(uri.getScheme(), "https");
+            return scheme + "://" + apiHost + (uri.getPort() > 0 ? ":" + uri.getPort() : "");
+        } catch (Exception e) {
+            log.warn("QueryClusterMetrics failed to resolve baseUrl from cloudServiceHost={}, error={}",
+                    cloudServiceHost, e.getMessage());
+            return "";
+        }
+    }
+
+    private static String resolveBaseUrlFromEnvName() {
+        String envName = firstText(envEnum == null ? null : envEnum.region, System.getProperty("env"));
+        if (!hasText(envName)) {
+            return DEFAULT_BASE_URL;
+        }
+        if ("alihz".equalsIgnoreCase(envName)
+                || "tcbj".equalsIgnoreCase(envName)
+                || "hwc".equalsIgnoreCase(envName)) {
+            return UAT_BASE_URL;
+        }
+        return DEFAULT_BASE_URL;
     }
 
     private static Map<String, String> buildHeaders(QueryClusterMetricsParams params) {

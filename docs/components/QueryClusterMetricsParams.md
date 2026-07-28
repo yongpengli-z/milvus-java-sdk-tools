@@ -8,7 +8,7 @@
 
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
-| `baseUrl` | String | 否 | `https://api.cloud.zilliz.com` | Control plane API base URL |
+| `baseUrl` | String | 否 | 忽略 | 已废弃；组件不会使用传入值，Control Plane API host 必须按当前运行环境自动解析 |
 | `clusterId` | String | 否 | `newInstanceInfo.instanceId` | 目标 cluster/instance ID |
 | `apiKey` | String | 否 | 自动获取 | 推荐显式传 Zilliz Cloud API key；为空时会按账号自动查询 managed API key；发送为 `Authorization: Bearer <apiKey>` |
 | `apiKeySystemProperty` | String | 否 | `zilliz.apiKey` | 从 JVM property 读取 API key 的 key 名 |
@@ -99,3 +99,10 @@
 3. `ZILLIZ_API_KEY`
 4. 使用 `accountEmail/accountPassword` 或当前登录态调用 `/cloud/v1/apikey/list-managed-key` 获取 `type=1` 的 managed key
 5. 已有实例 token / cloud-service token 兜底
+
+Base URL 解析：
+
+1. 显式传 `baseUrl` 会被忽略，避免测试任务误打 prod
+2. 优先从当前环境的 `cloud_service_host` 推导，例如 `https://cloud-service.cloud-uat3.zilliz.com` -> `https://api.cloud-uat3.zilliz.com`
+3. `awswest/gcpwest/azurewest/devops/fouram` 默认 `https://api.cloud-uat3.zilliz.com`
+4. `alihz/tcbj/hwc` 默认 `https://api.cloud-uat.zilliz.com`

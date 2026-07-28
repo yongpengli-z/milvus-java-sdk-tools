@@ -11,7 +11,7 @@ import java.util.Map;
 @Data
 public class QueryClusterMetricsParams {
     /**
-     * Control plane base URL. Defaults to https://api.cloud.zilliz.com.
+     * Deprecated. Ignored by QueryClusterMetricsComp; base URL is resolved from current env.
      */
     private String baseUrl;
 
