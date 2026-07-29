@@ -201,6 +201,22 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
+    public static String restartInstance(String instanceId) {
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        String url = envConfig.getCloudOpsServiceHost()
+                + "/api/v1/ops/resource/custInstance/rolling_restart/"
+                + instanceIdTemp
+                + "?force=true"
+                + "&syncMilvusConfig=true"
+                + "&syncHookConfig=true"
+                + "&syncDeploymentConfig=true";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        String s = HttpClientUtils.doPost(url, header, null);
+        log.info("ops restart instance {}: {}", instanceIdTemp, s);
+        return s;
+    }
+
     public static String restoreBackup(RestoreBackupParams restoreBackupParams) {
         String toInstanceId = restoreBackupParams.getToInstanceId();
         String instanceId = (toInstanceId == null || toInstanceId.isEmpty()) ? newInstanceInfo.getInstanceId() : toInstanceId;
