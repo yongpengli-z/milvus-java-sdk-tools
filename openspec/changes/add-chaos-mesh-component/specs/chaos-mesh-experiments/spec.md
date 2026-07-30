@@ -14,6 +14,13 @@ The component SHALL accept only PodChaos, NetworkChaos, StressChaos, TimeChaos, 
 - **WHEN** a create operation omits its duration or label selector
 - **THEN** the component SHALL return a failed result without creating a Kubernetes resource.
 
+### Requirement: Container-kill names its target containers
+When a PodChaos create operation uses `attributes.action: container-kill`, it SHALL require a non-empty `attributes.containerNames` list. The component SHALL return Kubernetes API status and response details in an exception result when Kubernetes rejects a custom resource.
+
+#### Scenario: Reject a container-kill without container names
+- **WHEN** a PodChaos create operation uses `container-kill` without a container name
+- **THEN** the component SHALL return a failed result before making a Kubernetes request.
+
 ### Requirement: Scenario can remove a Chaos Mesh experiment
 The test runner SHALL delete the custom resource identified by a valid `ChaosMeshParams` delete operation and SHALL report the deletion result.
 
@@ -29,7 +36,11 @@ When a create operation omits `name`, the runner SHALL generate a unique Kuberne
 - **THEN** the runner SHALL report the generated name, wait until duration plus 30 seconds has elapsed, and attempt to delete the created resource before returning the scenario results.
 
 ### Requirement: Component results are usable in a test report
-The component SHALL report its operation, kind, namespace, resource name, generated or returned resource body, and a success or exception outcome through the existing component result path.
+The component SHALL report its operation, kind, namespace, resource name, actual affected Pod names when available, and a success or exception outcome through the existing component result path. It SHALL not embed the complete Kubernetes custom-resource response in the result.
+
+#### Scenario: Report an injected Pod after cleanup
+- **WHEN** Chaos Mesh records a selected Pod in `status.experiment.containerRecords` before automatic cleanup
+- **THEN** the cleanup result SHALL contain that Pod name in `affectedPods`.
 
 #### Scenario: Kubernetes API rejects an experiment
 - **WHEN** Kubernetes rejects a validly structured create or delete request

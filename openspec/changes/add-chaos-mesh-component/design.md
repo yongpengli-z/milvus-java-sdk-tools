@@ -25,6 +25,8 @@ The runner turns numbered JSON entries into `custom.entity.*Params` classes and 
 
 `ChaosMeshParams` will contain `operation`, `kind`, `name`, `namespace`, `duration`, `selector`, and an `attributes` map.  The component constructs the CR body and invokes `CustomObjectsApi`; `kind` is constrained to PodChaos, NetworkChaos, StressChaos, TimeChaos, and IOChaos.  This gives the scenario schema stable safety fields while allowing type-specific Chaos Mesh fields such as `action`, `delay`, `loss`, or `stressors` to pass through in `attributes`. A create operation without `name` receives a unique Kubernetes-safe name.
 
+For PodChaos `container-kill`, `attributes.containerNames` is required and is rendered as a comma-separated form input. The backend repeats this validation for API callers. Kubernetes `ApiException` response bodies are included in the exception result so invalid CRDs are diagnosable from the task report.
+
 Alternatives considered:
 
 - A raw YAML string would avoid mapping work but would be difficult to validate and easy to target outside the intended namespace.
@@ -40,7 +42,7 @@ Create operations will require a namespace, a non-empty name, a supported kind, 
 
 ### Dispatch and report like existing components
 
-`ComponentSchedule` will dispatch `ChaosMeshParams`, store a `ChaosMeshResult`, and report it under the numbered component name.  Kubernetes API errors are captured as an exception result rather than escaping without a scenario report entry.
+`ComponentSchedule` will dispatch `ChaosMeshParams`, store a `ChaosMeshResult`, and report it under the numbered component name. The result extracts Pod names from Chaos Mesh `status.experiment.containerRecords` as `affectedPods` instead of embedding the full custom-resource response. Kubernetes API errors are captured as an exception result rather than escaping without a scenario report entry.
 
 ### Clean up resources at the end of the outer scenario
 

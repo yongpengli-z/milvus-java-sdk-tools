@@ -9,7 +9,8 @@ The test runner can create and manage Milvus workloads but cannot inject a contr
 - Require an explicit target namespace and selector with an optional duration.
 - Allow callers to omit an Instance ID and resolve the target namespace from the globally tracked instance created earlier in the same scenario.
 - Generate a resource name when callers omit one, and clean up successfully created resources after they have remained active for at least their duration plus 30 seconds.
-- Return the created custom resource identity and observed status so a scenario report records the injected fault.
+- Return the created custom resource identity and the affected Pod names so a scenario report records the injected fault without embedding the full CR response.
+- Require container names for PodChaos `container-kill` experiments and preserve Kubernetes API rejection details in the reported error.
 - Add documentation and an example configuration for a bounded PodChaos experiment.
 
 ## Capabilities

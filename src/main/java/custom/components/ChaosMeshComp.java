@@ -7,13 +7,17 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.KubernetesUtils;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -76,7 +80,7 @@ public class ChaosMeshComp {
                     .name(params == null ? null : params.getName())
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.EXCEPTION.result)
-                            .message(e.getMessage())
+                            .message(exceptionMessage(e))
                             .build())
                     .build();
         }
@@ -142,6 +146,10 @@ public class ChaosMeshComp {
             if (params.getLabelSelectors() == null || params.getLabelSelectors().isEmpty()) {
                 throw new IllegalArgumentException("labelSelectors must contain at least one target label");
             }
+            if ("PodChaos".equals(params.getKind()) && "container-kill".equals(attributeText(params, "action"))
+                    && !hasContainerNames(params)) {
+                throw new IllegalArgumentException("attributes.containerNames must contain at least one container for container-kill");
+            }
         }
     }
 
@@ -199,14 +207,79 @@ public class ChaosMeshComp {
         return value != null && !value.trim().isEmpty();
     }
 
-    private static ChaosMeshResult success(ChaosMeshParams params, String operation, Object resource) {
+    private static String attributeText(ChaosMeshParams params, String key) {
+        if (params.getAttributes() == null) {
+            return null;
+        }
+        Object value = params.getAttributes().get(key);
+        return value instanceof String ? (String) value : null;
+    }
+
+    private static boolean hasContainerNames(ChaosMeshParams params) {
+        Object containerNames = params.getAttributes() == null ? null : params.getAttributes().get("containerNames");
+        if (!(containerNames instanceof Iterable)) {
+            return false;
+        }
+        for (Object containerName : (Iterable<?>) containerNames) {
+            if (containerName instanceof String && hasText((String) containerName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String exceptionMessage(Exception e) {
+        if (e instanceof ApiException) {
+            ApiException apiException = (ApiException) e;
+            String responseBody = apiException.getResponseBody();
+            if (hasText(responseBody)) {
+                return "Kubernetes API " + apiException.getCode() + ": " + responseBody;
+            }
+            return "Kubernetes API " + apiException.getCode() + ": " + apiException.getMessage();
+        }
+        return hasText(e.getMessage()) ? e.getMessage() : e.toString();
+    }
+
+    private static ChaosMeshResult success(ChaosMeshParams params, String operation, Object response) {
         return ChaosMeshResult.builder()
                 .operation(operation)
                 .kind(params.getKind())
                 .namespace(params.getNamespace())
                 .name(params.getName())
-                .resource(resource)
+                .affectedPods(extractAffectedPods(response))
                 .commonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build())
                 .build();
+    }
+
+    private static List<String> extractAffectedPods(Object response) {
+        if (!(response instanceof Map)) {
+            return Collections.emptyList();
+        }
+        Object status = ((Map<?, ?>) response).get("status");
+        if (!(status instanceof Map)) {
+            return Collections.emptyList();
+        }
+        Object experiment = ((Map<?, ?>) status).get("experiment");
+        if (!(experiment instanceof Map)) {
+            return Collections.emptyList();
+        }
+        Object containerRecords = ((Map<?, ?>) experiment).get("containerRecords");
+        if (!(containerRecords instanceof Iterable)) {
+            return Collections.emptyList();
+        }
+        LinkedHashSet<String> affectedPods = new LinkedHashSet<>();
+        for (Object record : (Iterable<?>) containerRecords) {
+            if (!(record instanceof Map)) {
+                continue;
+            }
+            Object id = ((Map<?, ?>) record).get("id");
+            if (!(id instanceof String) || ((String) id).trim().isEmpty()) {
+                continue;
+            }
+            String podIdentifier = ((String) id).trim();
+            int separator = podIdentifier.lastIndexOf('/');
+            affectedPods.add(separator >= 0 ? podIdentifier.substring(separator + 1) : podIdentifier);
+        }
+        return new ArrayList<>(affectedPods);
     }
 }

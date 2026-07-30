@@ -25,6 +25,8 @@
 | `labelSelectors` | Map<String, String> | create 时是 | `{}` | 目标 Pod 标签；至少填写一项。 |
 | `attributes` | Map<String, Object> | 否 | `{}` | 类型专属的 `spec` 字段，例如 PodChaos 的 `action`，NetworkChaos 的 `delay` / `loss`。不能覆盖组件生成的 `duration`、`selector`。 |
 
+当 PodChaos 的 `attributes.action` 为 `container-kill` 时，必须同时提供 `attributes.containerNames` 字符串数组，例如 `{"action":"container-kill","containerNames":["milvus"]}`。页面会提供对应的容器名输入框。
+
 ## PodChaos 示例
 
 以下场景对标签为 `app.kubernetes.io/component=querynode` 的一个 Pod 注入 60 秒故障，等待期间可执行验证步骤。实验 CR 至少会保留 90 秒，之后在场景结束时自动删除；执行前请确认目标 Pod 所在节点已运行 `chaos-daemon`。
@@ -51,3 +53,7 @@
 ```
 
 > `attributes` 会直接合并到 Chaos Mesh `spec`。请按对应 Chaos Mesh CRD 的 schema 传递类型专属字段。
+
+## 结果
+
+结果会返回 `operation`、`kind`、`namespace`、`name`、`affectedPods` 和执行状态。`affectedPods` 是 Chaos Mesh 在 `status.experiment.containerRecords` 中记录的实际命中 Pod 名称；创建刚返回时该列表可能尚未填充，自动清理步骤 `ChaosMeshCleanup_*` 会在实验运行后返回最终命中的 Pod。为避免报告膨胀，结果不再附带完整的 Kubernetes CR 原始响应。

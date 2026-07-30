@@ -11,6 +11,8 @@
 - [x] 2.4 Remove the local dry-run option from the UI, API contract, results, documentation, and examples.
 - [x] 2.5 Generate a name when a create operation omits one, and clean up successful Chaos Mesh resources at the end of the outer scenario.
 - [x] 2.6 Keep automatically cleaned Chaos Mesh resources alive for at least their duration plus 30 seconds.
+- [x] 2.7 Report affected Pod names and omit the full Kubernetes CR response from Chaos Mesh results.
+- [x] 2.8 Require container names for PodChaos container-kill and preserve Kubernetes API error details.
 
 ## 3. Documentation and verification
 
