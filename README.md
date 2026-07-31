@@ -133,6 +133,7 @@
 | ScaleInstanceParams | 升降配（CU / replica） | [详情](docs/components/ScaleInstanceParams.md) |
 | UpdateIndexPoolParams | 更新索引池 | [详情](docs/components/UpdateIndexPoolParams.md) |
 | AlterInstanceIndexClusterParams | 修改索引集群 | [详情](docs/components/AlterInstanceIndexClusterParams.md) |
+| SwitchInstanceMqParams | 切换实例 MQ（Kafka/Pulsar/Woodpecker） | [详情](docs/components/SwitchInstanceMqParams.md) |
 | UpdateInstanceComponentParams | 更新节点组件资源 | [详情](docs/components/UpdateInstanceComponentParams.md) |
 | RestoreBackupParams | 恢复备份 | [详情](docs/components/RestoreBackupParams.md) |
 | CreateSecondaryParams | 创建 Secondary 集群（GDN） | [详情](docs/components/CreateSecondaryParams.md) |

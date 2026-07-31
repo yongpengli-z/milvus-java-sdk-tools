@@ -333,6 +333,12 @@ public class ComponentSchedule {
             jsonObject.put("AlterInstanceIndexCluster_" + index, alterInstanceIndexClusterResult);
             reportStepResult(AlterInstanceIndexClusterParams.class.getSimpleName() + "_" + index, JSON.toJSONString(alterInstanceIndexClusterResult));
         }
+        if (object instanceof SwitchInstanceMqParams) {
+            log.info("*********** < Switch Instance MQ > ***********");
+            SwitchInstanceMqResult switchInstanceMqResult = SwitchInstanceMqComp.switchMq((SwitchInstanceMqParams) object);
+            jsonObject.put("SwitchInstanceMq_" + index, switchInstanceMqResult);
+            reportStepResult(SwitchInstanceMqParams.class.getSimpleName() + "_" + index, JSON.toJSONString(switchInstanceMqResult));
+        }
         if (object instanceof AddCollectionFieldParams) {
             log.info("*********** < Add Collection Field > ***********");
             AddCollectionFieldResult addCollectionFieldResult = AddCollectionFieldComp.addCollectionField((AddCollectionFieldParams) object);

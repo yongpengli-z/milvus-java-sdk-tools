@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import custom.entity.AlterInstanceIndexClusterParams;
 import custom.entity.RestoreBackupParams;
 import custom.entity.RollingUpgradeParams;
+import custom.entity.SwitchInstanceMqParams;
 import custom.pojo.IndexPoolInfo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -214,6 +215,24 @@ public class CloudOpsServiceUtils {
         header.put("sa_token", envConfig.getCloudOpsServiceToken());
         String s = HttpClientUtils.doPost(url, header, null);
         log.info("ops restart instance {}: {}", instanceIdTemp, s);
+        return s;
+    }
+
+    public static String switchInstanceMq(String instanceId, String regionId, SwitchInstanceMqParams params) {
+        String url = envConfig.getCloudOpsServiceHost()
+                + "/api/v1/ops/resource/instance/mq-transfer/switch";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, Object> body = new HashMap<>();
+        body.put("instanceId", instanceId);
+        body.put("regionId", regionId);
+        body.put("targetMqType", params.getTargetMqType());
+        if (params.getTargetWoodpeckerId() != null && !params.getTargetWoodpeckerId().isEmpty()) {
+            body.put("targetWoodpeckerId", params.getTargetWoodpeckerId());
+        }
+        log.info("switch instance mq req:" + JSON.toJSONString(body));
+        String s = HttpClientUtils.doPostJson(url, header, JSON.toJSONString(body));
+        log.info("switch instance mq:" + s);
         return s;
     }
 
