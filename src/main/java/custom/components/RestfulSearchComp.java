@@ -175,7 +175,7 @@ public class RestfulSearchComp {
                                     } else {
                                         replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
                                     }
-                                    filter = filter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                                    filter = CommonFunction.replaceFilterPlaceholder(filter, generalFilterRole, replaceFilterParams);
                                 }
                                 if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                     log.info("线程[" + finalC + "] restful search filter:{}", filter);

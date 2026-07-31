@@ -104,7 +104,7 @@ public class QueryComp {
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("query random:{}", replaceFilterParams);
                             }
-                            filterParams = filterParams.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                            filterParams = CommonFunction.replaceFilterPlaceholder(filterParams, generalFilterRole, replaceFilterParams);
                         }
                         if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                             log.info("query filter:{}", filterParams);

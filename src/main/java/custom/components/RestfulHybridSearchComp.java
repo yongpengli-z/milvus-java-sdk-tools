@@ -321,7 +321,7 @@ public class RestfulHybridSearchComp {
                                     } else {
                                         replaceFilterParams = CommonFunction.advanceRandom(generalFilterRole.getRandomRangeParamsList());
                                     }
-                                    processedFilter = processedFilter.replaceAll("\\$" + generalFilterRole.getFieldName(), generalFilterRole.getPrefix() + replaceFilterParams);
+                                    processedFilter = CommonFunction.replaceFilterPlaceholder(processedFilter, generalFilterRole, replaceFilterParams);
                                 }
                                 filter = processedFilter;
                                 if (System.currentTimeMillis() - lastPrintTime >= 60000) {

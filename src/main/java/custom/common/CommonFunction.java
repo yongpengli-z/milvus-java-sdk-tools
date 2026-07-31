@@ -1512,6 +1512,16 @@ public class CommonFunction {
         return (searchCount % perConcurrencyDataNum) + start + (perConcurrencyDataNum * concurrencyIndex);
     }
 
+    public static String replaceFilterPlaceholder(String filter, GeneralDataRole generalFilterRole, int replaceFilterParams) {
+        if (filter == null || generalFilterRole == null
+                || generalFilterRole.getFieldName() == null
+                || generalFilterRole.getFieldName().equalsIgnoreCase("")) {
+            return filter;
+        }
+        String prefix = generalFilterRole.getPrefix() == null ? "" : generalFilterRole.getPrefix();
+        return filter.replace("$" + generalFilterRole.getFieldName(), prefix + replaceFilterParams);
+    }
+
     /**
      * 随机生成geo-polygon
      *
