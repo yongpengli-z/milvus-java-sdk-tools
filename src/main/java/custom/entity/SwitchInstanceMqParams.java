@@ -18,14 +18,14 @@ public class SwitchInstanceMqParams {
     String regionId;
 
     /**
-     * 目标 MQ 类型：woodpecker / kafka / pulsar。
+     * 目标 MQ 类型：woodpecker / pulsar。
      */
     String targetMqType;
 
     /**
      * 目标 Woodpecker 集群 ID。
      * <p>
-     * 当 targetMqType=woodpecker 时必填；切回 kafka/pulsar 时不需要。
+     * 当 targetMqType=woodpecker 时必填；切回 pulsar 时不需要。
      */
     String targetWoodpeckerId;
 }

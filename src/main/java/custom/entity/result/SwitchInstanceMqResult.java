@@ -11,6 +11,8 @@ public class SwitchInstanceMqResult {
     String regionId;
     String targetMqType;
     String targetWoodpeckerId;
+    String cleanupTaskId;
+    Long cleanupProcessInstanceId;
     String taskId;
     Long processInstanceId;
 }

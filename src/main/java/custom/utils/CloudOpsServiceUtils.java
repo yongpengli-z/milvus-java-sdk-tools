@@ -236,6 +236,39 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
+    public static String previewSwitchInstanceMq(String instanceId, String regionId, SwitchInstanceMqParams params) {
+        String url = envConfig.getCloudOpsServiceHost()
+                + "/api/v1/ops/resource/instance/mq-transfer/preview";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, Object> body = new HashMap<>();
+        body.put("instanceId", instanceId);
+        body.put("regionId", regionId);
+        body.put("targetMqType", params.getTargetMqType());
+        if (params.getTargetWoodpeckerId() != null && !params.getTargetWoodpeckerId().isEmpty()) {
+            body.put("targetWoodpeckerId", params.getTargetWoodpeckerId());
+        }
+        log.info("preview switch instance mq req:" + JSON.toJSONString(body));
+        String s = HttpClientUtils.doPostJson(url, header, JSON.toJSONString(body));
+        log.info("preview switch instance mq:" + s);
+        return s;
+    }
+
+    public static String cleanupInstanceMqTopics(String instanceId, String regionId, String transferTaskId) {
+        String url = envConfig.getCloudOpsServiceHost()
+                + "/api/v1/ops/resource/instance/mq-transfer/cleanup";
+        Map<String, String> header = new HashMap<>();
+        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, Object> body = new HashMap<>();
+        body.put("instanceId", instanceId);
+        body.put("regionId", regionId);
+        body.put("transferTaskId", transferTaskId);
+        log.info("cleanup instance mq topics req:" + JSON.toJSONString(body));
+        String s = HttpClientUtils.doPostJson(url, header, JSON.toJSONString(body));
+        log.info("cleanup instance mq topics:" + s);
+        return s;
+    }
+
     public static String restoreBackup(RestoreBackupParams restoreBackupParams) {
         String toInstanceId = restoreBackupParams.getToInstanceId();
         String instanceId = (toInstanceId == null || toInstanceId.isEmpty()) ? newInstanceInfo.getInstanceId() : toInstanceId;

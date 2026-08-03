@@ -12,13 +12,14 @@
 |------|------|:----:|--------|------|
 | `instanceId` | String | 否 | 当前任务实例 | Milvus 实例 ID |
 | `regionId` | String | 否 | 当前环境 `regionId` | 实例所在 Region |
-| `targetMqType` | String | 是 | `""` | 目标 MQ 类型：`woodpecker` / `kafka` / `pulsar` |
+| `targetMqType` | String | 是 | `""` | 目标 MQ 类型：`woodpecker` / `pulsar` |
 | `targetWoodpeckerId` | String | 条件必填 | `""` | `targetMqType=woodpecker` 时填写目标 Woodpecker 集群 ID |
 
 ## 注意事项
 
-- 最新 zilliz-cloud 实现只支持 `kafka -> woodpecker`、`pulsar -> woodpecker`、`woodpecker -> 历史 kafka/pulsar`、`woodpecker A -> woodpecker B`。
-- `kafka <-> pulsar`、`kafka A -> kafka B`、`pulsar A -> pulsar B` 不支持。
+- QTP 组件只暴露 `woodpecker` / `pulsar` 目标类型。
+- 切回 `pulsar` 前会先通过 Cloud Ops preview 检查历史 topic residue；如果需要清理，会先提交 cleanup workflow，等待历史 topic 删除后再提交 switch workflow。
+- 最新 zilliz-cloud 实现支持 `pulsar -> woodpecker`、`woodpecker -> 历史 pulsar`、`woodpecker A -> woodpecker B`。
 - 组件只提交 workflow 并返回 `taskId` / `processInstanceId`，不等待 workflow 完成。
 
 ## JSON 示例
