@@ -21,6 +21,13 @@ import static custom.BaseTest.newInstanceInfo;
 
 @Slf4j
 public class CloudOpsServiceUtils {
+    private static Map<String, String> buildCloudOpsAuthHeader() {
+        Map<String, String> header = new HashMap<>();
+        String token = envConfig.getCloudOpsServiceToken();
+        header.put("sa_token", token);
+        header.put("cookie", "sa_token=" + token);
+        return header;
+    }
 
     /**
      * Submit a rolling upgrade through the same Cloud Ops endpoint used by the Ops console.
@@ -221,8 +228,7 @@ public class CloudOpsServiceUtils {
     public static String switchInstanceMq(String instanceId, String regionId, SwitchInstanceMqParams params) {
         String url = envConfig.getCloudOpsServiceHost()
                 + "/api/v1/ops/resource/instance/mq-transfer/switch";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, Object> body = new HashMap<>();
         body.put("instanceId", instanceId);
         body.put("regionId", regionId);
@@ -239,8 +245,7 @@ public class CloudOpsServiceUtils {
     public static String previewSwitchInstanceMq(String instanceId, String regionId, SwitchInstanceMqParams params) {
         String url = envConfig.getCloudOpsServiceHost()
                 + "/api/v1/ops/resource/instance/mq-transfer/preview";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, Object> body = new HashMap<>();
         body.put("instanceId", instanceId);
         body.put("regionId", regionId);
@@ -257,8 +262,7 @@ public class CloudOpsServiceUtils {
     public static String cleanupInstanceMqTopics(String instanceId, String regionId, String transferTaskId) {
         String url = envConfig.getCloudOpsServiceHost()
                 + "/api/v1/ops/resource/instance/mq-transfer/cleanup";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, Object> body = new HashMap<>();
         body.put("instanceId", instanceId);
         body.put("regionId", regionId);
