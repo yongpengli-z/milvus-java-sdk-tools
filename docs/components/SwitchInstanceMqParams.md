@@ -18,7 +18,8 @@
 ## 注意事项
 
 - QTP 组件只暴露 `woodpecker` / `pulsar` 目标类型。
-- 切回 `pulsar` 前会先通过 Cloud Ops preview 检查历史 topic residue；如果需要清理，会先提交 cleanup workflow，等待历史 topic 删除后再提交 switch workflow。
+- 切回 `pulsar` 前会先通过 Cloud Ops preview 检查历史 topic residue；如果需要清理，会先提交 cleanup workflow。
+- cleanup workflow 提交后不会立刻生效，组件会重复 preview 并等待历史 topic 不再阻塞后，才提交 switch workflow。
 - 最新 zilliz-cloud 实现支持 `pulsar -> woodpecker`、`woodpecker -> 历史 pulsar`、`woodpecker A -> woodpecker B`。
 - 组件只提交 workflow 并返回 `taskId` / `processInstanceId`，不等待 workflow 完成。
 
