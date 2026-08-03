@@ -9,6 +9,7 @@ public enum ImageType {
     SPARK(4, "Spark"),
     VECTOR_LAKE(6, "VectorLake"),
     QUERY_CLUSTER(7, "QueryCluster"),
+    WOODPECKER(8, "Woodpecker"),
     IMPORT(100, "Import"),
     BACKUP(101, "Backup");
 

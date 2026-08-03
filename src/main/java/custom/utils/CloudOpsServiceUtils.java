@@ -7,9 +7,12 @@ import custom.entity.AlterInstanceIndexClusterParams;
 import custom.entity.RestoreBackupParams;
 import custom.entity.RollingUpgradeParams;
 import custom.entity.SwitchInstanceMqParams;
+import custom.entity.UpdateWoodpeckerImageParams;
 import custom.pojo.IndexPoolInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -271,6 +274,24 @@ public class CloudOpsServiceUtils {
         String s = HttpClientUtils.doPostJson(url, header, JSON.toJSONString(body));
         log.info("cleanup instance mq topics:" + s);
         return s;
+    }
+
+    public static String upgradeWoodpeckerImage(String regionId, UpdateWoodpeckerImageParams params) {
+        String url = envConfig.getCloudOpsServiceHost()
+                + "/api/v1/ops/resource/woodpecker/cluster/upgrade"
+                + "?regionId=" + urlEncode(regionId)
+                + "&woodpeckerId=" + urlEncode(params.getWoodpeckerId())
+                + "&newImageTag=" + urlEncode(params.getNewImageTag());
+        Map<String, String> header = buildCloudOpsAuthHeader();
+        log.info("upgrade woodpecker image req: regionId={}, woodpeckerId={}, newImageTag={}",
+                regionId, params.getWoodpeckerId(), params.getNewImageTag());
+        String s = HttpClientUtils.doPost(url, header, null);
+        log.info("upgrade woodpecker image:" + s);
+        return s;
+    }
+
+    private static String urlEncode(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
     }
 
     public static String restoreBackup(RestoreBackupParams restoreBackupParams) {

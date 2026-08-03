@@ -339,6 +339,14 @@ public class ComponentSchedule {
             jsonObject.put("SwitchInstanceMq_" + index, switchInstanceMqResult);
             reportStepResult(SwitchInstanceMqParams.class.getSimpleName() + "_" + index, JSON.toJSONString(switchInstanceMqResult));
         }
+        if (object instanceof UpdateWoodpeckerImageParams) {
+            log.info("*********** < Update Woodpecker Image > ***********");
+            UpdateWoodpeckerImageResult updateWoodpeckerImageResult =
+                    UpdateWoodpeckerImageComp.updateImage((UpdateWoodpeckerImageParams) object);
+            jsonObject.put("UpdateWoodpeckerImage_" + index, updateWoodpeckerImageResult);
+            reportStepResult(UpdateWoodpeckerImageParams.class.getSimpleName() + "_" + index,
+                    JSON.toJSONString(updateWoodpeckerImageResult));
+        }
         if (object instanceof AddCollectionFieldParams) {
             log.info("*********** < Add Collection Field > ***********");
             AddCollectionFieldResult addCollectionFieldResult = AddCollectionFieldComp.addCollectionField((AddCollectionFieldParams) object);
