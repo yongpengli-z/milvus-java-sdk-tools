@@ -262,6 +262,12 @@ public class QueryClusterMetricsComp {
                     params.getAccountEmail(), params.getAccountPassword());
             return;
         }
+        if (cloudServiceUserInfo != null && hasText(cloudServiceUserInfo.getToken())
+                && cloudServiceUserInfo.getOrgIdList() != null && !cloudServiceUserInfo.getOrgIdList().isEmpty()) {
+            log.info("QueryClusterMetrics reuse current cloud-service login account={}",
+                    firstText(cloudServiceUserInfo.getAccountName(), ""));
+            return;
+        }
         cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
     }
 
