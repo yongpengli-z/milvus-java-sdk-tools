@@ -221,6 +221,12 @@ public class ComponentSchedule {
             jsonObject.put("Query_" + index, queryResult);
             reportStepResult(QueryParams.class.getSimpleName() + "_" + index, JSON.toJSONString(queryResult));
         }
+        if (object instanceof AssertParams) {
+            log.info("*********** < assert once > ***********");
+            AssertResult assertResult = AssertComp.assertOnce((AssertParams) object);
+            jsonObject.put("Assert_" + index, assertResult);
+            reportStepResult(AssertParams.class.getSimpleName() + "_" + index, JSON.toJSONString(assertResult));
+        }
         if (object instanceof DropIndexParams) {
             log.info("*********** < drop index > ***********");
             DropIndexResult dropIndexResult = DropIndexComp.dropIndex((DropIndexParams) object);

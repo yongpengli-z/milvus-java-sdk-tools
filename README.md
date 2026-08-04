@@ -49,6 +49,7 @@
 | RestfulInsertParams | 通过 REST API 插入数据 | [详情](docs/components/RestfulInsertParams.md) |
 | SearchParams | 向量搜索（支持 filter、并发、按时间运行） | [详情](docs/components/SearchParams.md) |
 | QueryParams | 标量查询（filter / ids） | [详情](docs/components/QueryParams.md) |
+| AssertParams | 一次性业务断言（可集中断言 query count、search 返回数量等） | [详情](docs/components/AssertParams.md) |
 | UpsertParams | 更新插入（支持 Partial Update） | [详情](docs/components/UpsertParams.md) |
 | DeleteParams | 删除数据（filter / ids） | [详情](docs/components/DeleteParams.md) |
 | FlushParams | Flush 落盘 | [详情](docs/components/FlushParams.md) |
@@ -333,6 +334,7 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 - **Search 必填**：`annsField`、`nq`、`topK`、`randomVector`
 - **Load 必填**：`loadAll`
 - **QueryParams 全套字段**（缺失会 NPE）：`ids:[]`、`partitionNames:[]`、`generalFilterRoleList:[]`、`limit:0`、`offset:0`、`targetQps:0`、`collectionRule:""`
+- **AssertParams 必填**：`assertions` 且至少包含 1 条 assertion
 
 ### 7.4 禁止事项
 
