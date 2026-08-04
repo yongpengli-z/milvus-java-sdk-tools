@@ -19,7 +19,6 @@ public class AssertResult {
     @Data
     @Builder
     public static class AssertItemResult {
-        private String name;
         private String type;
         private String metric;
         private String operator;

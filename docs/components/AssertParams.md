@@ -9,28 +9,40 @@
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
 | `failFast` | boolean | 否 | `false` | 第一条断言失败后是否停止执行后续 assertion |
-| `targetEndpoint` | String | 否 | `""` | 默认 endpoint；每条 assertion 可用自己的 `targetEndpoint` 覆盖 |
+| `targetEndpoint` | String | 否 | `""` | 该 AssertParams 下所有 assertion 使用的 endpoint |
 | `assertions` | List | 是 | `[]` | 断言列表，前端可动态添加/删除 |
 
 ## AssertionItem
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| `name` | String | 否 | 展示名称 |
 | `type` | String | 是 | `query` 或 `search` |
 | `metric` | String | 是 | 要断言的指标 |
 | `operator` | String | 是 | `eq` / `ne` / `gt` / `gte` / `lt` / `lte` / `between` |
 | `expected` | Object | 是 | 预期值；`between` 使用 `[min, max]` |
 | `collectionName` | String | 否 | 为空时使用最近一次创建/记录的 collection |
 | `collectionRule` | String | 否 | `random` / `sequence` / 空 |
-| `targetEndpoint` | String | 否 | 覆盖组件级 `targetEndpoint` |
 | `filter` | String | 否 | Milvus expr |
 | `outputs` | List | 否 | Query/Search output fields；query `count` metric 未配置时自动使用 `["count(*)"]` |
-| `ids` | List | 否 | query 按 ID 查询 |
 | `partitionNames` | List | 否 | 分区列表 |
+| `generalFilterRoleList` | List | 否 | filter 占位符替换规则 |
+
+## QueryAssertion
+
+`type = "query"` 时使用。
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| `ids` | List | 否 | 按 ID 查询 |
 | `limit` | long | 否 | query limit |
 | `offset` | long | 否 | query offset |
-| `generalFilterRoleList` | List | 否 | filter 占位符替换规则 |
+
+## SearchAssertion
+
+`type = "search"` 时使用。
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
 | `annsField` | String | search 必填 | search 向量字段名 |
 | `nq` | int | search 可选 | 默认 `1` |
 | `topK` | int | search 可选 | 默认 `1` |
@@ -63,7 +75,6 @@
     "targetEndpoint": "",
     "assertions": [
       {
-        "name": "query count should match inserted rows",
         "type": "query",
         "metric": "count",
         "operator": "eq",
@@ -72,28 +83,34 @@
         "collectionRule": "",
         "filter": "id_pk >= 0",
         "outputs": ["count(*)"],
-        "ids": [],
         "partitionNames": [],
-        "limit": 0,
-        "offset": 0,
-        "generalFilterRoleList": []
+        "generalFilterRoleList": [],
+        "query": {
+          "ids": [],
+          "limit": 0,
+          "offset": 0
+        }
       },
       {
-        "name": "search should return topK",
         "type": "search",
         "metric": "returnCount",
         "operator": "eq",
         "expected": 10,
         "collectionName": "Collection_xxx",
         "collectionRule": "",
-        "annsField": "vec",
-        "nq": 1,
-        "topK": 10,
         "filter": "",
         "outputs": [],
         "partitionNames": [],
         "generalFilterRoleList": [],
-        "timeout": 800
+        "search": {
+          "annsField": "vec",
+          "nq": 1,
+          "topK": 10,
+          "searchLevel": 1,
+          "indexAlgo": "",
+          "timeout": 800,
+          "vectorSampleSize": 1000
+        }
       }
     ]
   }

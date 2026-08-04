@@ -101,7 +101,6 @@ public class AssertComp {
             boolean passed = compare(metricValue.actual, assertion.getExpected(), operator);
             String message = buildMessage(assertion, metricValue.actual, operator, passed);
             return AssertResult.AssertItemResult.builder()
-                    .name(assertion.getName())
                     .type(type)
                     .metric(metric)
                     .operator(operator)
@@ -115,7 +114,6 @@ public class AssertComp {
             String message = buildAssertionName(assertion) + " exception: " + e.getMessage();
             log.error("Assert item failed with exception: {}", message, e);
             return AssertResult.AssertItemResult.builder()
-                    .name(assertion.getName())
                     .type(type)
                     .metric(metric)
                     .operator(operator)
@@ -127,7 +125,8 @@ public class AssertComp {
     }
 
     private static MetricValue queryMetric(AssertParams assertParams, AssertParams.AssertionItem assertion, String metric) {
-        MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams, assertion));
+        MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams));
+        AssertParams.QueryAssertion query = queryParams(assertion);
         String collectionName = resolveCollectionName(assertion.getCollectionName(), assertion.getCollectionRule());
         String filter = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
         List<String> outputs = normalizeOutputs(assertion.getOutputs());
@@ -138,14 +137,14 @@ public class AssertComp {
         QueryReq queryReq = QueryReq.builder()
                 .collectionName(collectionName)
                 .outputFields(outputs)
-                .ids(assertion.getIds() == null || assertion.getIds().isEmpty() ? null : assertion.getIds())
+                .ids(query.getIds() == null || query.getIds().isEmpty() ? null : query.getIds())
                 .filter(isBlank(filter) ? null : filter)
                 .consistencyLevel(ConsistencyLevel.BOUNDED)
                 .partitionNames(assertion.getPartitionNames() == null ? new ArrayList<>() : assertion.getPartitionNames())
-                .offset(assertion.getOffset())
+                .offset(query.getOffset())
                 .build();
-        if (assertion.getLimit() > 0) {
-            queryReq.setLimit(assertion.getLimit());
+        if (query.getLimit() > 0) {
+            queryReq.setLimit(query.getLimit());
         }
 
         long startTime = System.currentTimeMillis();
@@ -173,13 +172,14 @@ public class AssertComp {
     }
 
     private static MetricValue searchMetric(AssertParams assertParams, AssertParams.AssertionItem assertion, String metric) {
-        MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams, assertion));
+        MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams));
+        AssertParams.SearchAssertion search = searchParams(assertion);
         String collectionName = resolveCollectionName(assertion.getCollectionName(), assertion.getCollectionRule());
         String filter = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
-        int nq = assertion.getNq() > 0 ? assertion.getNq() : 1;
-        int topK = assertion.getTopK() > 0 ? assertion.getTopK() : 1;
-        int sampleSize = assertion.getVectorSampleSize() > 0 ? assertion.getVectorSampleSize() : Math.max(1000, nq);
-        String annsField = assertion.getAnnsField();
+        int nq = search.getNq() > 0 ? search.getNq() : 1;
+        int topK = search.getTopK() > 0 ? search.getTopK() : 1;
+        int sampleSize = search.getVectorSampleSize() > 0 ? search.getVectorSampleSize() : Math.max(1000, nq);
+        String annsField = search.getAnnsField();
         if (isBlank(annsField)) {
             throw new IllegalArgumentException("search assertion requires annsField");
         }
@@ -197,9 +197,9 @@ public class AssertComp {
         }
 
         Map<String, Object> searchLevel = new HashMap<>();
-        searchLevel.put("level", assertion.getSearchLevel() == 0 ? 1 : assertion.getSearchLevel());
-        if (!isBlank(assertion.getIndexAlgo())) {
-            searchLevel.put("index_algo", assertion.getIndexAlgo());
+        searchLevel.put("level", search.getSearchLevel() == 0 ? 1 : search.getSearchLevel());
+        if (!isBlank(search.getIndexAlgo())) {
+            searchLevel.put("index_algo", search.getIndexAlgo());
         }
 
         SearchReq searchReq = SearchReq.builder()
@@ -214,7 +214,7 @@ public class AssertComp {
                 .partitionNames(assertion.getPartitionNames() == null ? new ArrayList<>() : assertion.getPartitionNames())
                 .build();
 
-        long timeoutMs = assertion.getTimeout() > 0 ? assertion.getTimeout() : 800;
+        long timeoutMs = search.getTimeout() > 0 ? search.getTimeout() : 800;
         long startTime = System.currentTimeMillis();
         SearchResp searchResp = client.withTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
                 .withRetry(RetryConfig.builder().maxRetryTimes(1).build())
@@ -366,17 +366,19 @@ public class AssertComp {
     }
 
     private static String buildAssertionName(AssertParams.AssertionItem assertion) {
-        if (!isBlank(assertion.getName())) {
-            return assertion.getName();
-        }
         return normalize(assertion.getType()) + "." + normalize(assertion.getMetric());
     }
 
-    private static String resolveTargetEndpoint(AssertParams assertParams, AssertParams.AssertionItem assertion) {
-        if (!isBlank(assertion.getTargetEndpoint())) {
-            return assertion.getTargetEndpoint();
-        }
+    private static String resolveTargetEndpoint(AssertParams assertParams) {
         return assertParams == null ? "" : assertParams.getTargetEndpoint();
+    }
+
+    private static AssertParams.QueryAssertion queryParams(AssertParams.AssertionItem assertion) {
+        return assertion.getQuery() == null ? new AssertParams.QueryAssertion() : assertion.getQuery();
+    }
+
+    private static AssertParams.SearchAssertion searchParams(AssertParams.AssertionItem assertion) {
+        return assertion.getSearch() == null ? new AssertParams.SearchAssertion() : assertion.getSearch();
     }
 
     private static String resolveCollectionName(String collectionName, String collectionRule) {

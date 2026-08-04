@@ -19,7 +19,7 @@ public class AssertParams {
     private boolean failFast;
 
     /**
-     * Default target endpoint for assertions that do not set their own.
+     * Target endpoint used by all assertions in this component.
      */
     private String targetEndpoint;
 
@@ -30,11 +30,6 @@ public class AssertParams {
 
     @Data
     public static class AssertionItem {
-        /**
-         * Optional display name.
-         */
-        private String name;
-
         /**
          * Assertion type: query or search.
          */
@@ -61,15 +56,78 @@ public class AssertParams {
 
         private String collectionName;
         private String collectionRule;
-        private String targetEndpoint;
         private String filter;
         private List<String> outputs;
-        private List<Object> ids;
         private List<String> partitionNames;
-        private long limit;
-        private long offset;
         private List<GeneralDataRole> generalFilterRoleList;
 
+        private QueryAssertion query;
+        private SearchAssertion search;
+
+        public void setIds(List<Object> ids) {
+            ensureQuery().setIds(ids);
+        }
+
+        public void setLimit(long limit) {
+            ensureQuery().setLimit(limit);
+        }
+
+        public void setOffset(long offset) {
+            ensureQuery().setOffset(offset);
+        }
+
+        public void setAnnsField(String annsField) {
+            ensureSearch().setAnnsField(annsField);
+        }
+
+        public void setNq(int nq) {
+            ensureSearch().setNq(nq);
+        }
+
+        public void setTopK(int topK) {
+            ensureSearch().setTopK(topK);
+        }
+
+        public void setSearchLevel(int searchLevel) {
+            ensureSearch().setSearchLevel(searchLevel);
+        }
+
+        public void setIndexAlgo(String indexAlgo) {
+            ensureSearch().setIndexAlgo(indexAlgo);
+        }
+
+        public void setTimeout(long timeout) {
+            ensureSearch().setTimeout(timeout);
+        }
+
+        public void setVectorSampleSize(int vectorSampleSize) {
+            ensureSearch().setVectorSampleSize(vectorSampleSize);
+        }
+
+        private QueryAssertion ensureQuery() {
+            if (query == null) {
+                query = new QueryAssertion();
+            }
+            return query;
+        }
+
+        private SearchAssertion ensureSearch() {
+            if (search == null) {
+                search = new SearchAssertion();
+            }
+            return search;
+        }
+    }
+
+    @Data
+    public static class QueryAssertion {
+        private List<Object> ids;
+        private long limit;
+        private long offset;
+    }
+
+    @Data
+    public static class SearchAssertion {
         private String annsField;
         private int nq;
         private int topK;
