@@ -10,6 +10,8 @@
 |------|------|:----:|--------|------|
 | `failFast` | boolean | 否 | `false` | 第一条断言失败后是否停止执行后续 assertion |
 | `targetEndpoint` | String | 否 | `""` | 该 AssertParams 下所有 assertion 使用的 endpoint |
+| `collectionName` | String | 否 | `""` | 该 AssertParams 下所有 assertion 使用的 collection；为空时使用最近一次创建/记录的 collection |
+| `collectionRule` | String | 否 | `""` | `random` / `sequence` / 空 |
 | `assertions` | List | 是 | `[]` | 断言列表，前端可动态添加/删除 |
 
 ## AssertionItem
@@ -20,8 +22,6 @@
 | `metric` | String | 是 | 要断言的指标 |
 | `operator` | String | 是 | `eq` / `ne` / `gt` / `gte` / `lt` / `lte` / `between` |
 | `expected` | Object | 是 | 预期值；`between` 使用 `[min, max]` |
-| `collectionName` | String | 否 | 为空时使用最近一次创建/记录的 collection |
-| `collectionRule` | String | 否 | `random` / `sequence` / 空 |
 | `filter` | String | 否 | Milvus expr |
 | `outputs` | List | 否 | Query/Search output fields；query `count` metric 未配置时自动使用 `["count(*)"]` |
 | `partitionNames` | List | 否 | 分区列表 |
@@ -73,14 +73,14 @@
   "AssertParams_0": {
     "failFast": false,
     "targetEndpoint": "",
+    "collectionName": "Collection_xxx",
+    "collectionRule": "",
     "assertions": [
       {
         "type": "query",
         "metric": "count",
         "operator": "eq",
         "expected": 10000,
-        "collectionName": "Collection_xxx",
-        "collectionRule": "",
         "filter": "id_pk >= 0",
         "outputs": ["count(*)"],
         "partitionNames": [],
@@ -96,8 +96,6 @@
         "metric": "returnCount",
         "operator": "eq",
         "expected": 10,
-        "collectionName": "Collection_xxx",
-        "collectionRule": "",
         "filter": "",
         "outputs": [],
         "partitionNames": [],

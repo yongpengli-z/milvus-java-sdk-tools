@@ -127,7 +127,7 @@ public class AssertComp {
     private static MetricValue queryMetric(AssertParams assertParams, AssertParams.AssertionItem assertion, String metric) {
         MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams));
         AssertParams.QueryAssertion query = queryParams(assertion);
-        String collectionName = resolveCollectionName(assertion.getCollectionName(), assertion.getCollectionRule());
+        String collectionName = resolveCollectionName(assertParams.getCollectionName(), assertParams.getCollectionRule());
         String filter = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
         List<String> outputs = normalizeOutputs(assertion.getOutputs());
         if ("count".equals(metric) && outputs.isEmpty()) {
@@ -174,7 +174,7 @@ public class AssertComp {
     private static MetricValue searchMetric(AssertParams assertParams, AssertParams.AssertionItem assertion, String metric) {
         MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams));
         AssertParams.SearchAssertion search = searchParams(assertion);
-        String collectionName = resolveCollectionName(assertion.getCollectionName(), assertion.getCollectionRule());
+        String collectionName = resolveCollectionName(assertParams.getCollectionName(), assertParams.getCollectionRule());
         String filter = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
         int nq = search.getNq() > 0 ? search.getNq() : 1;
         int topK = search.getTopK() > 0 ? search.getTopK() : 1;

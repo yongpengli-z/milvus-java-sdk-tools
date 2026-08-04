@@ -24,6 +24,12 @@ public class AssertParams {
     private String targetEndpoint;
 
     /**
+     * Collection used by all assertions in this component.
+     */
+    private String collectionName;
+    private String collectionRule;
+
+    /**
      * Assertion definitions. Frontend can add/remove items from this list.
      */
     private List<AssertionItem> assertions;
@@ -54,8 +60,6 @@ public class AssertParams {
          */
         private Object expected;
 
-        private String collectionName;
-        private String collectionRule;
         private String filter;
         private List<String> outputs;
         private List<String> partitionNames;
@@ -102,6 +106,14 @@ public class AssertParams {
 
         public void setVectorSampleSize(int vectorSampleSize) {
             ensureSearch().setVectorSampleSize(vectorSampleSize);
+        }
+
+        public void setCollectionName(String collectionName) {
+            // Legacy per-assertion field. Collection is now configured on AssertParams.
+        }
+
+        public void setCollectionRule(String collectionRule) {
+            // Legacy per-assertion field. Collection is now configured on AssertParams.
         }
 
         private QueryAssertion ensureQuery() {
