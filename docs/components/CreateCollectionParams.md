@@ -20,6 +20,7 @@
 - **numPartitions 与 partitionKey**：`numPartitions > 0` 时，`fieldParamsList` 中**必须至少有一个字段 `partitionKey: true`**，否则报错 `num_partitions should only be specified with partition key field enabled`。`numPartitions = 0` 时所有字段 `partitionKey` 都应为 `false`。
 - **向量字段**：一个 collection **必须至少包含一个向量字段**（可以是顶层字段或 Array of Struct 中的向量子字段）。
 - **最多 4 个向量列**（包含 Struct 里的向量列）。
+- **Text 字段**：`dataType: "Text"` 用于顶层长文本字段，通常配合 `enableAnalyzer: true` 和 BM25 function 使用；不能作为主键、partition key、Array elementType 或 Struct 子字段。
 
 ## enableDynamic 与 $meta
 
@@ -38,7 +39,7 @@
 | `primaryKey` | boolean | 是否主键。**建议显式给值** |
 | `autoId` | boolean | 仅主键可用。**建议显式给 `false`** |
 | `dim` | int | 向量维度（vector 类型必填） |
-| `maxLength` | int | VarChar/String 必填（1~65535）；Array elementType=VarChar 也需要 |
+| `maxLength` | int | VarChar/String 必填（1~65535）；Array elementType=VarChar 也需要；Text 不需要 |
 | `maxCapacity` | int | Array 必填 |
 | `elementType` | enum | Array 元素类型。`Struct` 时需同时设 `structSchema` |
 | `structSchema` | List | Array of Struct 的子字段定义（见 StructFieldParams） |
@@ -140,7 +141,7 @@
         "nullable": false, "enableMatch": false, "enableAnalyzer": false, "analyzerParamsList": []
       },
       {
-        "dataType": "VarChar", "fieldName": "text_content", "maxLength": 65535,
+        "dataType": "Text", "fieldName": "text_content",
         "primaryKey": false, "autoId": false, "partitionKey": false,
         "nullable": false, "enableMatch": false, "enableAnalyzer": true,
         "analyzerParamsList": [{"paramsKey": "type", "paramsValue": "standard"}]

@@ -310,7 +310,7 @@ public class MathUtil {
             if (dataType == DataType.Bool) {
                 list.add(random.nextBoolean());
             }
-            if (dataType == DataType.String || dataType == DataType.VarChar) {
+            if (dataType == DataType.String || dataType == DataType.VarChar || dataType == DataType.Text) {
                 list.add(getRandomString(length));
             }
         }

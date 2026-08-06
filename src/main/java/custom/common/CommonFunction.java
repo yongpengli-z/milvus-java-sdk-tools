@@ -45,6 +45,13 @@ import static custom.BaseTest.*;
 
 @Slf4j
 public class CommonFunction {
+    private static boolean isTextDataType(DataType dataType) {
+        return dataType == DataType.String || dataType == DataType.VarChar || dataType == DataType.Text;
+    }
+
+    private static boolean isMaxLengthDataType(DataType dataType) {
+        return dataType == DataType.String || dataType == DataType.VarChar;
+    }
 
     /**
      * 创建通用的collection方法，支持多个filed，多个向量
@@ -146,7 +153,7 @@ public class CommonFunction {
                         structFieldBuilder.dimension(structFieldParam.getDim());
                     }
                     // 设置 VarChar/String 最大长度
-                    if (structFieldParam.getDataType() == DataType.String || structFieldParam.getDataType() == DataType.VarChar) {
+                    if (isMaxLengthDataType(structFieldParam.getDataType())) {
                         structFieldBuilder.maxLength(structFieldParam.getMaxLength());
                     }
 
@@ -187,13 +194,13 @@ public class CommonFunction {
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     addFieldBuilder.dimension(fieldParams.getDim());
                 }
-                if (dataType == DataType.String || dataType == DataType.VarChar) {
+                if (isMaxLengthDataType(dataType)) {
                     addFieldBuilder.maxLength(fieldParams.getMaxLength());
                 }
                 if (dataType == DataType.Array) {
                     addFieldBuilder.maxCapacity(fieldParams.getMaxCapacity());
                     addFieldBuilder.elementType(fieldParams.getElementType());
-                    if (fieldParams.getElementType() == DataType.VarChar) {
+                    if (isMaxLengthDataType(fieldParams.getElementType())) {
                         addFieldBuilder.maxLength(fieldParams.getMaxLength());
                     }
                 }
@@ -525,10 +532,11 @@ public class CommonFunction {
                     jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.SparseFloatVector) {
                     jsonObject = generalJsonObjectByDataType(name, dataType, random.nextInt(768) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
-                } else if (dataType == DataType.VarChar || dataType == DataType.String) {
+                } else if (isTextDataType(dataType)) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    int effectiveMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (maxLength * lengthFactor)) : maxLength;
+                    int baseMaxLength = maxLength == null || maxLength <= 1 ? 1024 : maxLength;
+                    int effectiveMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (baseMaxLength * lengthFactor)) : baseMaxLength;
                     int varcharLen = (lengthFactor > 0) ? effectiveMaxLen : random.nextInt(effectiveMaxLen - 1) + 1;
                     jsonObject = (isNullable && random.nextDouble() < nullableRatio) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, varcharLen, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.Array) {
@@ -609,8 +617,9 @@ public class CommonFunction {
                             } else if (subFieldType == DataType.Int8Vector) {
                                 ByteBuffer int8Buffer = generateInt8Vector(subFieldDim);
                                 structObj.add(subFieldName, gson.toJsonTree(int8Buffer.array()));
-                            } else if (subFieldType == DataType.VarChar || subFieldType == DataType.String) {
-                                int effectiveSubMaxLen = (lengthFactor > 0) ? Math.max(1, (int) (subFieldMaxLength * lengthFactor)) : subFieldMaxLength;
+                            } else if (isTextDataType(subFieldType)) {
+                                int baseSubMaxLen = subFieldMaxLength == null || subFieldMaxLength <= 0 ? 1024 : subFieldMaxLength;
+                                int effectiveSubMaxLen = (lengthFactor > 0) ? Math.max(1, (int) (baseSubMaxLen * lengthFactor)) : baseSubMaxLen;
                                 String strValue = GenerateUtil.generateRandomLengthSentence(effectiveSubMaxLen);
                                 structObj.add(subFieldName, gson.toJsonTree(strValue));
                             } else if (subFieldType == DataType.Int64) {
@@ -726,7 +735,7 @@ public class CommonFunction {
         if (dataType == DataType.Bool) {
             row.add(fieldName, gson.toJsonTree(true));
         }
-        if (dataType == DataType.VarChar) {
+        if (isTextDataType(dataType)) {
             if (generalDataRole != null) {
                 if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
                     row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, realStartId)));
@@ -735,18 +744,6 @@ public class CommonFunction {
                 }
             } else {
                 row.add(fieldName, gson.toJsonTree(GenerateUtil.generateRandomLengthSentence(dimOrLength)));
-            }
-        }
-        if (dataType == DataType.String) {
-            if (generalDataRole != null) {
-                if (generalDataRole.getSequenceOrRandom().equalsIgnoreCase("sequence")) {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceSequence(generalDataRole.getRandomRangeParamsList(), totalNum, countIndex, realStartId)));
-                } else {
-                    row.add(fieldName, gson.toJsonTree(generalDataRole.getPrefix() + advanceRandom(generalDataRole.getRandomRangeParamsList())));
-                }
-            } else {
-                row.add(fieldName, gson.toJsonTree(GenerateUtil.generateRandomLengthSentence(dimOrLength)));
-
             }
         }
         if (dataType == DataType.Float) {

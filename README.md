@@ -205,7 +205,7 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 ### 5.2 DataType
 
 - 标量：`Int64` / `Int32` / `Int16` / `Int8` / `Bool` / `Float` / `Double`
-- 字符串：`VarChar`（不是 Varchar）/ `String`
+- 字符串/文本：`VarChar`（不是 Varchar）/ `String` / `Text`
 - 复杂：`Array` / `JSON` / `Struct`（Struct 只能作为 Array 的 elementType）
 - 向量：`FloatVector` / `BinaryVector` / `Float16Vector` / `BFloat16Vector` / `Int8Vector` / `SparseFloatVector`
 
@@ -236,7 +236,7 @@ Milvus 操作有严格的先后依赖，必须按此顺序编排序号：
 | `deep` | 向量 NPY | 96d | FloatVector |
 | `laion` | 向量 NPY | 768d | FloatVector |
 | `bluesky` | JSON Lines | 标量 JSON | JSON 字段 |
-| `msmarco-text` | TXT | 纯文本 | VarChar/BM25（建议 maxLength=65535） |
+| `msmarco-text` | TXT | 纯文本 | Text/BM25（或 VarChar，建议 maxLength=65535） |
 
 配置方式：`[{"fieldName": "vec", "dataset": "sift"}]`。不配置则所有字段随机生成。
 
