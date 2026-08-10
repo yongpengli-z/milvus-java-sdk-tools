@@ -5,6 +5,7 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.DropCollectionResult;
 import custom.entity.result.ResultEnum;
 import io.milvus.v2.service.collection.request.DropCollectionReq;
+import io.milvus.v2.service.collection.request.ListCollectionsReq;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import io.milvus.v2.service.utility.request.DropAliasReq;
 import io.milvus.v2.service.utility.request.ListAliasesReq;
@@ -22,8 +23,7 @@ public class DropCollectionComp {
     public static DropCollectionResult dropCollection(DropCollectionParams dropCollectionParams) {
         List<DropCollectionResult.DropCollectionResultItem> dropCollectionResultList = new ArrayList<>();
         if (dropCollectionParams.isDropAll()) {
-            ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
-            List<String> collectionNames = listCollectionsResp.getCollectionNames();
+            List<String> collectionNames = listCollectionNames(dropCollectionParams.getDatabaseName());
             log.info("Drop all collections: " + collectionNames);
             for (String collectionName : collectionNames) {
                 dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
@@ -35,6 +35,23 @@ public class DropCollectionComp {
             int dropCount = (int) Math.ceil(collectionNames.size() * dropRatio);
             log.info("Drop {} collections ratio, count: {}, collections: {}", dropRatio, dropCount, collectionNames);
             for (String collectionName : collectionNames.subList(0, dropCount)) {
+                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
+            }
+        } else if (dropCollectionParams.isCollectionNameUsePrefix()
+                && dropCollectionParams.getCollectionName() != null
+                && !dropCollectionParams.getCollectionName().equalsIgnoreCase("")) {
+            List<String> collectionNames = collectionNamesByPrefix(dropCollectionParams.getCollectionName(), dropCollectionParams.getDatabaseName());
+            log.info("Drop collections by prefix [{}]: {}", dropCollectionParams.getCollectionName(), collectionNames);
+            if (collectionNames.isEmpty()) {
+                dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
+                        .collectionName(dropCollectionParams.getCollectionName())
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.FAIL.result)
+                                .message("no collection matched prefix: " + dropCollectionParams.getCollectionName())
+                                .build())
+                        .build());
+            }
+            for (String collectionName : collectionNames) {
                 dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
             }
         } else {
@@ -53,6 +70,29 @@ public class DropCollectionComp {
             log.warn("DropCollection assertions: " + assertMessages);
         }
         return DropCollectionResult.builder().dropCollectionResultList(dropCollectionResultList).assertMessages(assertMessages).build();
+    }
+
+    private static List<String> collectionNamesByPrefix(String prefix, String databaseName) {
+        List<String> collectionNames = listCollectionNames(databaseName);
+        List<String> matched = new ArrayList<>();
+        for (String collectionName : collectionNames) {
+            if (collectionName != null && collectionName.startsWith(prefix)) {
+                matched.add(collectionName);
+            }
+        }
+        return matched;
+    }
+
+    private static List<String> listCollectionNames(String databaseName) {
+        ListCollectionsResp listCollectionsResp;
+        if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+            listCollectionsResp = milvusClientV2.listCollectionsV2(ListCollectionsReq.builder()
+                    .databaseName(databaseName)
+                    .build());
+        } else {
+            listCollectionsResp = milvusClientV2.listCollections();
+        }
+        return listCollectionsResp.getCollectionNames();
     }
 
     private static void dropOneCollection(String collectionName, String databaseName,

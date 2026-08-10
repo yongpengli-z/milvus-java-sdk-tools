@@ -5,6 +5,7 @@ import custom.entity.CreateCollectionParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.CreateCollectionResult;
 import custom.entity.result.ResultEnum;
+import custom.utils.GenerateUtil;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,7 @@ public class CreateCollectionComp {
         String collection = null;
         CommonResult commonResult;
         try {
-            collection = CommonFunction.genCommonCollection(createCollectionParams.getCollectionName(),
+            collection = CommonFunction.genCommonCollection(resolveCollectionName(createCollectionParams),
                     createCollectionParams.isEnableDynamic(), createCollectionParams.getShardNum(), createCollectionParams.getNumPartitions(),
                     createCollectionParams.getFieldParamsList(), createCollectionParams.getFunctionParams(), createCollectionParams.getProperties()
                     , createCollectionParams.getDatabaseName());
@@ -71,6 +72,17 @@ public class CreateCollectionComp {
                 .commonResult(commonResult)
                 .collectionName(collection)
                 .assertMessages(assertMessages).build();
+    }
+
+    private static String resolveCollectionName(CreateCollectionParams params) {
+        String collectionName = params.getCollectionName();
+        if (collectionName == null || collectionName.equals("")) {
+            return collectionName;
+        }
+        if (!params.isCollectionNameUsePrefix()) {
+            return collectionName;
+        }
+        return collectionName + GenerateUtil.getRandomString(10);
     }
 
 }

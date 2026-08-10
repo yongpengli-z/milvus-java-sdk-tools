@@ -21,6 +21,13 @@ public class CreateCollectionParams {
     private String collectionName;
 
     /**
+     * 是否将 {@link #collectionName} 当作前缀使用。
+     * <p>
+     * false：collectionName 非空时按完整名称创建；true：collectionName 非空时追加随机后缀创建。
+     */
+    private boolean collectionNameUsePrefix;
+
+    /**
      * Shard 数量。
      * <p>
      * 前端：`createCollectionEdit.vue` -> "Shard Num"

@@ -30,6 +30,13 @@ public class DropCollectionParams {
     private String collectionName;
 
     /**
+     * 是否将 {@link #collectionName} 当作前缀匹配。
+     * <p>
+     * false：collectionName 非空时按完整名称删除；true：删除所有以 collectionName 开头的 collection。
+     */
+    private boolean collectionNameUsePrefix;
+
+    /**
      * 删除比例，范围 0-1（当 {@link #dropAll}=false 且 {@link #collectionName} 为空时使用）。
      * <p>
      * 前端：`dropCollectionEdit.vue` -> "Drop Ratio"

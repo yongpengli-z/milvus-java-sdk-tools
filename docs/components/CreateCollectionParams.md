@@ -7,6 +7,7 @@
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
 | `collectionName` | String | 否 | `""` | 不传/空则自动生成随机名 |
+| `collectionNameUsePrefix` | boolean | 否 | `false` | false 时 `collectionName` 按完整名称创建；true 时按 `collectionName + 随机后缀` 创建 |
 | `shardNum` | int | 是 | `1` | Shard 数量 |
 | `numPartitions` | int | 是 | `0` | Partition Key 分区数。>0 时必须有字段 `partitionKey=true` |
 | `enableDynamic` | boolean | 是 | `false` | 是否开启动态列 |
@@ -99,6 +100,7 @@
 {
   "CreateCollectionParams_0": {
     "collectionName": "",
+    "collectionNameUsePrefix": false,
     "shardNum": 1,
     "numPartitions": 0,
     "enableDynamic": false,
@@ -131,6 +133,7 @@
 {
   "CreateCollectionParams_0": {
     "collectionName": "",
+    "collectionNameUsePrefix": false,
     "shardNum": 1,
     "numPartitions": 0,
     "enableDynamic": false,
