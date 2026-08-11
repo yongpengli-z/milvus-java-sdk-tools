@@ -22,26 +22,11 @@ import static custom.BaseTest.milvusClientV2;
 public class DropCollectionComp {
     public static DropCollectionResult dropCollection(DropCollectionParams dropCollectionParams) {
         List<DropCollectionResult.DropCollectionResultItem> dropCollectionResultList = new ArrayList<>();
-        if (dropCollectionParams.isDropAll()) {
-            List<String> collectionNames = listCollectionNames(dropCollectionParams.getDatabaseName());
-            log.info("Drop all collections: " + collectionNames);
-            for (String collectionName : collectionNames) {
-                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
-            }
-        } else if ((dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase(""))
-                && dropCollectionParams.getDropPercentage() > 0) {
-            List<String> collectionNames = new ArrayList<>(globalCollectionNames);
-            double dropRatio = Math.min(dropCollectionParams.getDropPercentage(), 1.0);
-            int dropCount = (int) Math.ceil(collectionNames.size() * dropRatio);
-            log.info("Drop {} collections ratio, count: {}, collections: {}", dropRatio, dropCount, collectionNames);
-            for (String collectionName : collectionNames.subList(0, dropCount)) {
-                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
-            }
-        } else if (dropCollectionParams.isCollectionNameUsePrefix()
+        if (dropCollectionParams.isCollectionNameUsePrefix()
                 && dropCollectionParams.getCollectionName() != null
                 && !dropCollectionParams.getCollectionName().equalsIgnoreCase("")) {
             List<String> collectionNames = collectionNamesByPrefix(dropCollectionParams.getCollectionName(), dropCollectionParams.getDatabaseName());
-            log.info("Drop collections by prefix [{}]: {}", dropCollectionParams.getCollectionName(), collectionNames);
+            log.info("Drop collections by prefix [{}], dropAll [{}]: {}", dropCollectionParams.getCollectionName(), dropCollectionParams.isDropAll(), collectionNames);
             if (collectionNames.isEmpty()) {
                 dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
                         .collectionName(dropCollectionParams.getCollectionName())
@@ -50,7 +35,17 @@ public class DropCollectionComp {
                                 .message("no collection matched prefix: " + dropCollectionParams.getCollectionName())
                                 .build())
                         .build());
+            } else if (dropCollectionParams.isDropAll()) {
+                for (String collectionName : collectionNames) {
+                    dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
+                }
+            } else {
+                String collectionName = collectionNames.get(collectionNames.size() - 1);
+                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
             }
+        } else if (dropCollectionParams.isDropAll()) {
+            List<String> collectionNames = listCollectionNames(dropCollectionParams.getDatabaseName());
+            log.info("Drop all collections: " + collectionNames);
             for (String collectionName : collectionNames) {
                 dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
             }

@@ -6,14 +6,21 @@
 
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
-| `dropAll` | boolean | 是 | `false` | true 则删除所有 collection |
-| `collectionName` | String | 否 | `""` | `dropAll=false` 时使用 |
-| `collectionNameUsePrefix` | boolean | 否 | `false` | false 时按完整名称删除；true 时删除所有以 `collectionName` 开头的 collection |
-| `dropPercentage` | double | 否 | `0` | 当 `dropAll=false` 且 `collectionName` 为空时，按比例删除全局记录中的 collection，范围 0-1 |
+| `dropAll` | boolean | 是 | `false` | 未开启前缀匹配时，true 则删除所有 collection；开启前缀匹配时，true 则删除所有匹配前缀的 collection |
+| `collectionName` | String | 否 | `""` | 删除目标 collection 名称；开启前缀匹配时作为前缀使用 |
+| `collectionNameUsePrefix` | boolean | 否 | `false` | false 时按完整名称删除；true 时按 `collectionName` 前缀匹配，`dropAll=true` 删除全部匹配项，`dropAll=false` 只删除匹配列表最后一个 |
 | `databaseName` | String | 否 | `""` | |
 
 ## JSON 示例
 
+只删除匹配前缀列表中的最后一个：
+
 ```json
 {"DropCollectionParams_0": {"dropAll": false, "collectionName": "Collection_", "collectionNameUsePrefix": true}}
+```
+
+删除所有匹配前缀的 collection：
+
+```json
+{"DropCollectionParams_0": {"dropAll": true, "collectionName": "Collection_", "collectionNameUsePrefix": true}}
 ```
