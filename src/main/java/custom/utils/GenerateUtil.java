@@ -5,6 +5,7 @@ import com.github.javafaker.Faker;
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -226,19 +227,53 @@ public class GenerateUtil {
      * 拼接，直到接近 maxLength 为止。
      */
     public static String generateRandomLengthSentence(int maxLength) {
+        if (maxLength <= 0) {
+            return "";
+        }
         StringBuilder sentence = new StringBuilder();
-        while (sentence.length() < maxLength) {
+        int currentBytes = 0;
+        while (currentBytes < maxLength) {
             String part = generateOneRandomSentence();
+            int partBytes = utf8BytesLength(part);
 
-            if (sentence.length() + part.length() > maxLength) {
-                if (sentence.length() == 0) {
-                    sentence.append(part, 0, maxLength);
+            if (currentBytes + partBytes > maxLength) {
+                String truncatedPart = truncateUtf8Bytes(part, maxLength - currentBytes);
+                if (!truncatedPart.isEmpty()) {
+                    sentence.append(truncatedPart);
                 }
                 break;
             }
             sentence.append(part);
+            currentBytes += partBytes;
         }
         return sentence.toString();
+    }
+
+    private static int utf8BytesLength(String value) {
+        return value.getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    private static String truncateUtf8Bytes(String value, int maxBytes) {
+        if (value == null || maxBytes <= 0) {
+            return "";
+        }
+        if (utf8BytesLength(value) <= maxBytes) {
+            return value;
+        }
+        StringBuilder builder = new StringBuilder();
+        int currentBytes = 0;
+        for (int i = 0; i < value.length(); ) {
+            int codePoint = value.codePointAt(i);
+            String next = new String(Character.toChars(codePoint));
+            int nextBytes = utf8BytesLength(next);
+            if (currentBytes + nextBytes > maxBytes) {
+                break;
+            }
+            builder.append(next);
+            currentBytes += nextBytes;
+            i += Character.charCount(codePoint);
+        }
+        return builder.toString();
     }
 
     /**
