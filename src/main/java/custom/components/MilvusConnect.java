@@ -7,8 +7,11 @@ import io.milvus.v2.client.ConnectConfig;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.client.globalcluster.GlobalClusterUtils;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
+import io.milvus.v2.service.database.response.ListDatabasesResp;
 import lombok.extern.slf4j.Slf4j;
 import custom.utils.HttpClientUtils;
+
+import java.util.List;
 
 import static custom.BaseTest.isCloud;
 
@@ -62,9 +65,75 @@ public class MilvusConnect {
         }
         MilvusClientV2 milvusClientV2 = new MilvusClientV2(build);
         log.info("Connecting to DB: " + uri);
+        useServerlessDatabaseIfNeeded(uri, milvusClientV2);
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
         log.info("List collection: " + listCollectionsResp.getCollectionNames());
         return milvusClientV2;
+    }
+
+    private static void useServerlessDatabaseIfNeeded(String uri, MilvusClientV2 milvusClientV2) {
+        if (uri == null || !uri.toLowerCase().contains(".serverless.")) {
+            return;
+        }
+        try {
+            ListDatabasesResp listDatabasesResp = milvusClientV2.listDatabases();
+            List<String> databaseNames = listDatabasesResp.getDatabaseNames();
+            log.info("Serverless list databases: {}", databaseNames);
+            String databaseName = selectServerlessDatabase(uri, databaseNames);
+            if (databaseName == null || databaseName.isEmpty()) {
+                log.warn("Serverless instance has no usable database, skip useDatabase");
+                return;
+            }
+            milvusClientV2.useDatabase(databaseName);
+            log.info("Serverless use database: {}", databaseName);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while using serverless database", e);
+        }
+    }
+
+    private static String selectServerlessDatabase(String uri, List<String> databaseNames) {
+        if (databaseNames == null || databaseNames.isEmpty()) {
+            return "";
+        }
+        String expectedDatabaseName = expectedServerlessDatabaseName(uri);
+        if (!expectedDatabaseName.isEmpty()) {
+            for (String databaseName : databaseNames) {
+                if (expectedDatabaseName.equals(databaseName)) {
+                    return databaseName;
+                }
+            }
+        }
+        if (databaseNames.size() == 1) {
+            return databaseNames.get(0);
+        }
+        for (String databaseName : databaseNames) {
+            if (databaseName != null && databaseName.startsWith("db_")) {
+                return databaseName;
+            }
+        }
+        return databaseNames.get(0);
+    }
+
+    private static String expectedServerlessDatabaseName(String uri) {
+        if (uri == null || uri.trim().isEmpty()) {
+            return "";
+        }
+        String host = uri.trim();
+        if (host.startsWith("https://")) {
+            host = host.substring("https://".length());
+        } else if (host.startsWith("http://")) {
+            host = host.substring("http://".length());
+        }
+        int dotIndex = host.indexOf(".");
+        if (dotIndex > 0) {
+            host = host.substring(0, dotIndex);
+        }
+        int dashIndex = host.indexOf("-");
+        String databaseId = dashIndex >= 0 && dashIndex + 1 < host.length()
+                ? host.substring(dashIndex + 1)
+                : host;
+        return databaseId.isEmpty() ? "" : "db_" + databaseId;
     }
 
     public static MilvusServiceClient createMilvusClientV1(String uri, String token) {
