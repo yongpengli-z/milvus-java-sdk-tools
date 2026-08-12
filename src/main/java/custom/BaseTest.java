@@ -126,6 +126,17 @@ public class BaseTest {
         });
     }
 
+    /**
+     * 用于日志展示 targetEndpoint。
+     * 空值或空字符串都视为默认 primary/default client。
+     */
+    public static String describeTargetEndpoint(String targetEndpoint) {
+        if (targetEndpoint == null || targetEndpoint.trim().isEmpty()) {
+            return "primary(default)";
+        }
+        return targetEndpoint;
+    }
+
     private static String resolveGlobalEndpointToken(String currentToken) {
         if (primaryInstanceInfo.getUri() == null || primaryInstanceInfo.getUri().isEmpty()) {
             return currentToken;

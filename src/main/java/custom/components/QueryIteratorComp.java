@@ -25,7 +25,7 @@ import static custom.BaseTest.*;
 public class QueryIteratorComp {
     public static QueryIteratorResult queryIterator(QueryIteratorParams queryIteratorParams) {
         MilvusClientV2 client = getMilvusClient(queryIteratorParams.getTargetEndpoint());
-        log.info("QueryIterator 使用 endpoint: {}", queryIteratorParams.getTargetEndpoint() == null ? "primary(default)" : queryIteratorParams.getTargetEndpoint());
+        log.info("QueryIterator 使用 endpoint: {}", describeTargetEndpoint(queryIteratorParams.getTargetEndpoint()));
 
         String collection = (queryIteratorParams.getCollectionName() == null ||
                 queryIteratorParams.getCollectionName().equalsIgnoreCase(""))

@@ -31,7 +31,7 @@ import static custom.BaseTest.*;
 public class QueryComp {
     public static QueryResult queryCollection(QueryParams queryParams) {
         MilvusClientV2 client = getMilvusClient(queryParams.getTargetEndpoint());
-        log.info("Query 使用 endpoint: {}", queryParams.getTargetEndpoint() == null ? "primary(default)" : queryParams.getTargetEndpoint());
+        log.info("Query 使用 endpoint: {}", describeTargetEndpoint(queryParams.getTargetEndpoint()));
 
         // 判断collection获取规则
         String collectionName = "";

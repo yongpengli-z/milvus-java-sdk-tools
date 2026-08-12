@@ -35,7 +35,7 @@ public class SearchComp {
     public static SearchResultA searchCollection(SearchParams searchParams) {
         // 根据 targetEndpoint 选择 client
         MilvusClientV2 client = getMilvusClient(searchParams.getTargetEndpoint());
-        log.info("Search 使用 endpoint: {}", searchParams.getTargetEndpoint() == null ? "primary(default)" : searchParams.getTargetEndpoint());
+        log.info("Search 使用 endpoint: {}", describeTargetEndpoint(searchParams.getTargetEndpoint()));
 
         // 先search collection
         // 判断collection获取规则

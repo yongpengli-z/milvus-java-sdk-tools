@@ -40,7 +40,7 @@ import static custom.BaseTest.*;
 public class HybridSearchComp {
     public static HybridSearchResult hybridSearchCollection(HybridSearchParams hybridSearchParams) {
         MilvusClientV2 client = getMilvusClient(hybridSearchParams.getTargetEndpoint());
-        log.info("HybridSearch 使用 endpoint: {}", hybridSearchParams.getTargetEndpoint() == null ? "primary(default)" : hybridSearchParams.getTargetEndpoint());
+        log.info("HybridSearch 使用 endpoint: {}", describeTargetEndpoint(hybridSearchParams.getTargetEndpoint()));
 
         // 判断collection获取规则
         Random random = new Random();

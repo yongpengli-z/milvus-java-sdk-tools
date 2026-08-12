@@ -18,7 +18,7 @@ import static custom.BaseTest.*;
 public class GetComp {
     public static GetResult get(GetParams getParams) {
         MilvusClientV2 client = getMilvusClient(getParams.getTargetEndpoint());
-        log.info("Get 使用 endpoint: {}", getParams.getTargetEndpoint() == null ? "primary(default)" : getParams.getTargetEndpoint());
+        log.info("Get 使用 endpoint: {}", describeTargetEndpoint(getParams.getTargetEndpoint()));
 
         String collectionName = (getParams.getCollectionName() == null ||
                 getParams.getCollectionName().equalsIgnoreCase(""))

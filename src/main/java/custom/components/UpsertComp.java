@@ -33,7 +33,7 @@ import static custom.BaseTest.*;
 public class UpsertComp {
     public static UpsertResult upsertCollection(UpsertParams upsertParams) {
         MilvusClientV2 client = getMilvusClient(upsertParams.getTargetEndpoint());
-        log.info("Upsert 使用 endpoint: {}", upsertParams.getTargetEndpoint() == null ? "primary(default)" : upsertParams.getTargetEndpoint());
+        log.info("Upsert 使用 endpoint: {}", describeTargetEndpoint(upsertParams.getTargetEndpoint()));
 
         // 先search collection
         // 判断collection获取规则

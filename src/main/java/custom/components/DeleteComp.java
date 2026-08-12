@@ -35,7 +35,7 @@ import static custom.BaseTest.*;
 public class DeleteComp {
     public static DeleteResult delete(DeleteParams deleteParams) {
         MilvusClientV2 client = getMilvusClient(deleteParams.getTargetEndpoint());
-        log.info("Delete 使用 endpoint: {}", deleteParams.getTargetEndpoint() == null ? "primary(default)" : deleteParams.getTargetEndpoint());
+        log.info("Delete 使用 endpoint: {}", describeTargetEndpoint(deleteParams.getTargetEndpoint()));
 
         String collection = (deleteParams.getCollectionName() == null ||
                 deleteParams.getCollectionName().equalsIgnoreCase("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : deleteParams.getCollectionName();

@@ -30,7 +30,7 @@ import static custom.BaseTest.*;
 public class InsertComp {
     public static InsertResult insertCollection(InsertParams insertParams) {
         MilvusClientV2 client = getMilvusClient(insertParams.getTargetEndpoint());
-        log.info("Insert 使用 endpoint: {}", insertParams.getTargetEndpoint() == null ? "primary(default)" : insertParams.getTargetEndpoint());
+        log.info("Insert 使用 endpoint: {}", describeTargetEndpoint(insertParams.getTargetEndpoint()));
 
         Random random = new Random();
         // 要循环insert的次数--insertRounds

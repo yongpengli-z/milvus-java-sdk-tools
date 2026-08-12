@@ -29,7 +29,7 @@ import static custom.BaseTest.*;
 public class SearchIteratorComp {
     public static SearchIteratorResultA searchIteratorCollection(SearchIteratorParams searchIteratorParams) {
         MilvusClientV2 client = getMilvusClient(searchIteratorParams.getTargetEndpoint());
-        log.info("SearchIterator 使用 endpoint: {}", searchIteratorParams.getTargetEndpoint() == null ? "primary(default)" : searchIteratorParams.getTargetEndpoint());
+        log.info("SearchIterator 使用 endpoint: {}", describeTargetEndpoint(searchIteratorParams.getTargetEndpoint()));
 
         // 先search collection
         String collection = (searchIteratorParams.getCollectionName() == null ||
