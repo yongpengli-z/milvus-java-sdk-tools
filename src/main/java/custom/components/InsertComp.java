@@ -12,6 +12,7 @@ import custom.pojo.FieldDataSource;
 import custom.utils.DatasetUtil;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import custom.utils.RetryLogUtil;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -164,7 +165,8 @@ public class InsertComp {
                                 }
                                 if (insertParams.isRetryAfterDeny()) {
                                     retryCount++;
-                                    log.info("线程[" + finalC + "]" + "第" + retryCount + "次监测到禁写，等待30秒...");
+                                    log.info("线程[" + finalC + "]第" + retryCount + "次重试，原因:"
+                                            + RetryLogUtil.retryReason(e) + "，等待30秒...");
                                     Thread.sleep(1000 * 30);
                                     continue;
                                 }
