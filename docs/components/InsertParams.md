@@ -55,6 +55,11 @@
 - **并发压测 + runningMinutes**：需将 `numEntries` 设够大，否则数据提前插完。
 - **lengthFactor**：当 `maxLength` 很大（如 65535）时，用 `0.01` 缩小到约 1% 节省带宽。
 - **nullableRatio**：仅对 schema 中 `isNullable=true` 的字段生效。
+- **Text / VarChar 长度规则**：
+  - `Text`、`VarChar`（以及旧 schema 里的 `String`）会按字段 `maxLength` 生成随机文本。
+  - 未配置 `maxLength` 时，默认按 `1024` 处理。
+  - `lengthFactor > 0` 时，实际长度会按 `maxLength * lengthFactor` 缩小。
+  - 生成逻辑按 UTF-8 字节长度控制，不会超过该字段的 `maxLength`。
 
 ## 动态字段数据生成
 
@@ -66,6 +71,10 @@
 ## Array of Struct 数据生成
 
 自动识别 Struct 字段并生成对应数据。Struct 子字段按类型自动生成（向量→随机向量，字符串→随机字符串）。
+
+- Struct 子字段里的 `Text` / `VarChar` 同样按子字段自己的 `maxLength` 生成。
+- 如果子字段未配置 `maxLength`，默认按 `1024` 处理。
+- 生成结果同样按 UTF-8 字节长度截断，不会超过 `maxLength`。
 
 ## JSON 示例
 
