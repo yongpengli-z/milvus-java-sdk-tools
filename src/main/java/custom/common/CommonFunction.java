@@ -50,7 +50,15 @@ public class CommonFunction {
     }
 
     private static boolean isMaxLengthDataType(DataType dataType) {
-        return dataType == DataType.String || dataType == DataType.VarChar;
+        return dataType == DataType.String || dataType == DataType.VarChar || dataType == DataType.Text;
+    }
+
+    private static int resolveTextMaxLength(Integer maxLength) {
+        return maxLength == null || maxLength <= 1 ? 1024 : maxLength;
+    }
+
+    private static boolean hasValidMaxLength(int maxLength) {
+        return maxLength > 0;
     }
 
     /**
@@ -153,7 +161,7 @@ public class CommonFunction {
                         structFieldBuilder.dimension(structFieldParam.getDim());
                     }
                     // 设置 VarChar/String 最大长度
-                    if (isMaxLengthDataType(structFieldParam.getDataType())) {
+                    if (isMaxLengthDataType(structFieldParam.getDataType()) && hasValidMaxLength(structFieldParam.getMaxLength())) {
                         structFieldBuilder.maxLength(structFieldParam.getMaxLength());
                     }
 
@@ -194,13 +202,13 @@ public class CommonFunction {
                 if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     addFieldBuilder.dimension(fieldParams.getDim());
                 }
-                if (isMaxLengthDataType(dataType)) {
+                if (isMaxLengthDataType(dataType) && hasValidMaxLength(fieldParams.getMaxLength())) {
                     addFieldBuilder.maxLength(fieldParams.getMaxLength());
                 }
                 if (dataType == DataType.Array) {
                     addFieldBuilder.maxCapacity(fieldParams.getMaxCapacity());
                     addFieldBuilder.elementType(fieldParams.getElementType());
-                    if (isMaxLengthDataType(fieldParams.getElementType())) {
+                    if (isMaxLengthDataType(fieldParams.getElementType()) && hasValidMaxLength(fieldParams.getMaxLength())) {
                         addFieldBuilder.maxLength(fieldParams.getMaxLength());
                     }
                 }
@@ -513,8 +521,12 @@ public class CommonFunction {
                                 // JSON 数据源
                                 jsonObject.add(name, (JsonObject) item);
                             } else if (item instanceof String) {
-                                // TXT 纯文本数据源 (用于 VarChar 字段)
-                                jsonObject.addProperty(name, (String) item);
+                                // TXT 纯文本数据源 (用于 Text/VarChar 字段)
+                                String textValue = (String) item;
+                                if (isTextDataType(dataType)) {
+                                    textValue = GenerateUtil.truncateUtf8Bytes(textValue, resolveTextMaxLength(maxLength));
+                                }
+                                jsonObject.addProperty(name, textValue);
                             } else if (item instanceof List) {
                                 // NPY 向量数据源 (List<Float>)
                                 @SuppressWarnings("unchecked")
@@ -535,7 +547,7 @@ public class CommonFunction {
                 } else if (isTextDataType(dataType)) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
-                    int baseMaxLength = maxLength == null || maxLength <= 1 ? 1024 : maxLength;
+                    int baseMaxLength = resolveTextMaxLength(maxLength);
                     int effectiveMaxLen = (lengthFactor > 0) ? Math.max(2, (int) (baseMaxLength * lengthFactor)) : baseMaxLength;
                     int varcharLen = (lengthFactor > 0) ? effectiveMaxLen : random.nextInt(effectiveMaxLen - 1) + 1;
                     jsonObject = (isNullable && random.nextDouble() < nullableRatio) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, varcharLen, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
@@ -618,7 +630,7 @@ public class CommonFunction {
                                 ByteBuffer int8Buffer = generateInt8Vector(subFieldDim);
                                 structObj.add(subFieldName, gson.toJsonTree(int8Buffer.array()));
                             } else if (isTextDataType(subFieldType)) {
-                                int baseSubMaxLen = subFieldMaxLength == null || subFieldMaxLength <= 0 ? 1024 : subFieldMaxLength;
+                                int baseSubMaxLen = resolveTextMaxLength(subFieldMaxLength);
                                 int effectiveSubMaxLen = (lengthFactor > 0) ? Math.max(1, (int) (baseSubMaxLen * lengthFactor)) : baseSubMaxLen;
                                 String strValue = GenerateUtil.generateRandomLengthSentence(effectiveSubMaxLen);
                                 structObj.add(subFieldName, gson.toJsonTree(strValue));

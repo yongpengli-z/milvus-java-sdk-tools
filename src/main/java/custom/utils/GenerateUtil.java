@@ -253,7 +253,7 @@ public class GenerateUtil {
         return value.getBytes(StandardCharsets.UTF_8).length;
     }
 
-    private static String truncateUtf8Bytes(String value, int maxBytes) {
+    public static String truncateUtf8Bytes(String value, int maxBytes) {
         if (value == null || maxBytes <= 0) {
             return "";
         }

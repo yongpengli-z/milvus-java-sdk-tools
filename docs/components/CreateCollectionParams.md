@@ -40,7 +40,7 @@
 | `primaryKey` | boolean | 是否主键。**建议显式给值** |
 | `autoId` | boolean | 仅主键可用。**建议显式给 `false`** |
 | `dim` | int | 向量维度（vector 类型必填） |
-| `maxLength` | int | VarChar/String 必填（1~65535）；Array elementType=VarChar 也需要；Text 不需要 |
+| `maxLength` | int | VarChar/String 必填（1~65535）；Array elementType=VarChar 也需要；Text 可选，insert 随机文本按该值控制长度，未填默认按 1024 字节生成 |
 | `maxCapacity` | int | Array 必填 |
 | `elementType` | enum | Array 元素类型。`Struct` 时需同时设 `structSchema` |
 | `structSchema` | List | Array of Struct 的子字段定义（见 StructFieldParams） |
