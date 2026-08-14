@@ -105,7 +105,7 @@ public class ComponentSchedule {
                 JSONObject jsonObject = callComponentSchedule(operators.get(i), i);
                 results.add(jsonObject);
 
-                if (containsFailResult(jsonObject.toJSONString())) {
+                if (shouldStopAfterFail(operators.get(i), jsonObject.toJSONString())) {
                     log.error("步骤返回 fail 状态，终止后续步骤执行！");
                     break;
                 }
@@ -772,6 +772,16 @@ public class ComponentSchedule {
 
     public static boolean containsFailResult(String result) {
         return containsResult(Objects.toString(result, ""), ResultEnum.FAIL.result);
+    }
+
+    private static boolean shouldStopAfterFail(Object operator, String result) {
+        if (!containsFailResult(result)) {
+            return false;
+        }
+        if (operator instanceof AssertParams) {
+            return ((AssertParams) operator).isFailFast();
+        }
+        return true;
     }
 
     private static boolean containsResult(String resultText, String result) {

@@ -60,9 +60,6 @@ public class AssertComp {
             itemResults.add(itemResult);
             if (!itemResult.isPassed()) {
                 assertMessages.add("[ASSERT FAIL] " + itemResult.getMessage());
-                if (assertParams.isFailFast()) {
-                    break;
-                }
             }
         }
 

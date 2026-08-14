@@ -14,7 +14,8 @@ import java.util.List;
 @Data
 public class AssertParams {
     /**
-     * Stop running remaining assertions after the first failed assertion.
+     * Stop running subsequent components if this assert component fails.
+     * Assertions inside this component are always all executed.
      */
     private boolean failFast;
 
