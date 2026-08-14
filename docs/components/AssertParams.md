@@ -18,7 +18,7 @@
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| `type` | String | 是 | `query` 或 `search` |
+| `type` | String | 是 | `query` / `search` / `describeIndex` |
 | `metric` | String | 是 | 要断言的指标 |
 | `operator` | String | 是 | `eq` / `ne` / `gt` / `gte` / `lt` / `lte` / `between` |
 | `expected` | Object | 是 | 预期值；`between` 使用 `[min, max]` |
@@ -51,6 +51,16 @@
 | `timeout` | long | search 可选 | SDK 请求超时 ms，默认 `800` |
 | `vectorSampleSize` | int | search 可选 | search assertion 从 collection 抽样向量的数量，默认 `max(1000, nq)` |
 
+## DescribeIndexAssertion
+
+`type = "describeIndex"` 时使用。
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| `fieldName` | String | 否 | 要 describe 的 field；`fieldName` 和 `indexName` 至少传一个 |
+| `indexName` | String | 否 | 指定 index 名称。适合同一 field 存在多个 index 的场景，例如 JSON path index |
+| `databaseName` | String | 否 | Database 名称 |
+
 ## 支持的 metric
 
 | type | metric | 说明 |
@@ -59,6 +69,9 @@
 | `query` | `count` | `count(*)` 返回的真实总量 |
 | `search` | `returnCount` | 一次 search 第一个 query vector 返回的结果数 |
 | `search` | `totalReturnCount` | `nq > 1` 时所有 query vector 返回结果数总和 |
+| `describeIndex` | `indexedRows` | 指定 index 已完成索引的行数 |
+| `describeIndex` | `totalRows` | 指定 index 需要索引的总行数 |
+| `describeIndex` | `pendingIndexRows` | 指定 index 待索引的行数 |
 
 ## 结果语义
 
@@ -108,6 +121,17 @@
           "indexAlgo": "",
           "timeout": 800,
           "vectorSampleSize": 1000
+        }
+      },
+      {
+        "type": "describeIndex",
+        "metric": "pendingIndexRows",
+        "operator": "eq",
+        "expected": 0,
+        "describeIndex": {
+          "fieldName": "dense_float_vec",
+          "indexName": "",
+          "databaseName": ""
         }
       }
     ]

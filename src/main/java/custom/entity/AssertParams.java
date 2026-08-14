@@ -37,7 +37,7 @@ public class AssertParams {
     @Data
     public static class AssertionItem {
         /**
-         * Assertion type: query or search.
+         * Assertion type: query, search, or describeIndex.
          */
         private String type;
 
@@ -46,6 +46,7 @@ public class AssertParams {
          * <ul>
          *   <li>query: returnCount, count</li>
          *   <li>search: returnCount, totalReturnCount</li>
+         *   <li>describeIndex: indexedRows, totalRows, pendingIndexRows</li>
          * </ul>
          */
         private String metric;
@@ -67,6 +68,7 @@ public class AssertParams {
 
         private QueryAssertion query;
         private SearchAssertion search;
+        private DescribeIndexAssertion describeIndex;
 
         public void setIds(List<Object> ids) {
             ensureQuery().setIds(ids);
@@ -108,6 +110,18 @@ public class AssertParams {
             ensureSearch().setVectorSampleSize(vectorSampleSize);
         }
 
+        public void setFieldName(String fieldName) {
+            ensureDescribeIndex().setFieldName(fieldName);
+        }
+
+        public void setIndexName(String indexName) {
+            ensureDescribeIndex().setIndexName(indexName);
+        }
+
+        public void setDatabaseName(String databaseName) {
+            ensureDescribeIndex().setDatabaseName(databaseName);
+        }
+
         public void setCollectionName(String collectionName) {
             // Legacy per-assertion field. Collection is now configured on AssertParams.
         }
@@ -129,6 +143,13 @@ public class AssertParams {
             }
             return search;
         }
+
+        private DescribeIndexAssertion ensureDescribeIndex() {
+            if (describeIndex == null) {
+                describeIndex = new DescribeIndexAssertion();
+            }
+            return describeIndex;
+        }
     }
 
     @Data
@@ -147,5 +168,12 @@ public class AssertParams {
         private String indexAlgo;
         private long timeout;
         private int vectorSampleSize;
+    }
+
+    @Data
+    public static class DescribeIndexAssertion {
+        private String fieldName;
+        private String indexName;
+        private String databaseName;
     }
 }

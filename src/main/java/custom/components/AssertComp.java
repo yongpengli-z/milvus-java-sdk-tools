@@ -13,6 +13,8 @@ import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
+import io.milvus.v2.service.index.request.DescribeIndexReq;
+import io.milvus.v2.service.index.response.DescribeIndexResp;
 import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
@@ -94,6 +96,8 @@ public class AssertComp {
                 metricValue = queryMetric(assertParams, assertion, metric);
             } else if ("search".equals(type)) {
                 metricValue = searchMetric(assertParams, assertion, metric);
+            } else if ("describeindex".equals(type)) {
+                metricValue = describeIndexMetric(assertParams, assertion, metric);
             } else {
                 throw new IllegalArgumentException("unsupported assertion type: " + assertion.getType());
             }
@@ -252,6 +256,77 @@ public class AssertComp {
         return new MetricValue(actual, details);
     }
 
+    private static MetricValue describeIndexMetric(AssertParams assertParams, AssertParams.AssertionItem assertion, String metric) {
+        MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams));
+        AssertParams.DescribeIndexAssertion describeIndex = describeIndexParams(assertion);
+        String collectionName = resolveCollectionName(assertParams.getCollectionName(), assertParams.getCollectionRule());
+        String fieldName = describeIndex.getFieldName();
+        String indexName = describeIndex.getIndexName();
+        String databaseName = describeIndex.getDatabaseName();
+        if (isBlank(fieldName) && isBlank(indexName)) {
+            throw new IllegalArgumentException("describeIndex assertion requires fieldName or indexName");
+        }
+
+        DescribeIndexReq.DescribeIndexReqBuilder builder = DescribeIndexReq.builder()
+                .collectionName(collectionName);
+        if (!isBlank(databaseName)) {
+            builder.databaseName(databaseName);
+        }
+        if (!isBlank(fieldName)) {
+            builder.fieldName(fieldName);
+        }
+        if (!isBlank(indexName)) {
+            builder.indexName(indexName);
+        }
+
+        long startTime = System.currentTimeMillis();
+        DescribeIndexResp describeIndexResp = client.describeIndex(builder.build());
+        long costMillis = System.currentTimeMillis() - startTime;
+        DescribeIndexResp.IndexDesc indexDesc = findIndexDesc(describeIndexResp, fieldName, indexName);
+        if (indexDesc == null) {
+            throw new IllegalStateException("cannot find index desc for fieldName=" + fieldName + ", indexName=" + indexName);
+        }
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("collectionName", collectionName);
+        details.put("databaseName", databaseName);
+        details.put("fieldName", indexDesc.getFieldName());
+        details.put("indexName", indexDesc.getIndexName());
+        details.put("indexState", indexDesc.getIndexState());
+        details.put("indexType", indexDesc.getIndexType());
+        details.put("metricType", indexDesc.getMetricType());
+        details.put("indexedRows", indexDesc.getIndexedRows());
+        details.put("totalRows", indexDesc.getTotalRows());
+        details.put("pendingIndexRows", indexDesc.getPendingIndexRows());
+        details.put("costMillis", costMillis);
+
+        Object actual;
+        if ("indexedrows".equals(metric)) {
+            actual = indexDesc.getIndexedRows();
+        } else if ("totalrows".equals(metric)) {
+            actual = indexDesc.getTotalRows();
+        } else if ("pendingindexrows".equals(metric)) {
+            actual = indexDesc.getPendingIndexRows();
+        } else {
+            throw new IllegalArgumentException("unsupported describeIndex metric: " + metric);
+        }
+        return new MetricValue(actual, details);
+    }
+
+    private static DescribeIndexResp.IndexDesc findIndexDesc(DescribeIndexResp describeIndexResp, String fieldName, String indexName) {
+        if (describeIndexResp == null || describeIndexResp.getIndexDescriptions() == null) {
+            return null;
+        }
+        for (DescribeIndexResp.IndexDesc indexDesc : describeIndexResp.getIndexDescriptions()) {
+            boolean fieldMatched = isBlank(fieldName) || fieldName.equals(indexDesc.getFieldName());
+            boolean indexMatched = isBlank(indexName) || indexName.equals(indexDesc.getIndexName());
+            if (fieldMatched && indexMatched) {
+                return indexDesc;
+            }
+        }
+        return null;
+    }
+
     private static List<BaseVector> providerSearchVectors(MilvusClientV2 client, String collectionName, String annsField,
                                                           int sampleSize, DescribeCollectionResp describeCollectionResp) {
         CreateCollectionReq.CollectionSchema collectionSchema = describeCollectionResp.getCollectionSchema();
@@ -379,6 +454,10 @@ public class AssertComp {
 
     private static AssertParams.SearchAssertion searchParams(AssertParams.AssertionItem assertion) {
         return assertion.getSearch() == null ? new AssertParams.SearchAssertion() : assertion.getSearch();
+    }
+
+    private static AssertParams.DescribeIndexAssertion describeIndexParams(AssertParams.AssertionItem assertion) {
+        return assertion.getDescribeIndex() == null ? new AssertParams.DescribeIndexAssertion() : assertion.getDescribeIndex();
     }
 
     private static String resolveCollectionName(String collectionName, String collectionRule) {
