@@ -82,31 +82,58 @@ public class CloudOpsServiceUtils {
         return s;
     }
 
+    /**
+     * 按关键字查询最新镜像。
+     * <p>
+     * 支持逗号分隔的多条件，例如 {@code "v3.0,nightly"}：每个条件分别按 dbVersion 和 tag
+     * 走后端模糊查询，合并去重后，本地过滤出同时包含所有条件的镜像，返回第一条。
+     */
     public static String getLatestImageByKeywords(String keywords,int insType) {
-        List<String> collect;
-        JSONObject jsonResponse = JSON.parseObject(listDBVersionByKeywords(keywords,insType));
-        JSONObject jsonResponse2 = JSON.parseObject(listTagByKeywords(keywords,insType));
-        List<String> lists = new ArrayList<>();
-        // 获取data-list
-        JSONArray jsonArray = jsonResponse.getJSONObject("data").getJSONArray("list");
-        for (int i = 0; i < jsonArray.size(); i++) {
-            JSONObject jsonObject = jsonArray.getJSONObject(i);
-            String dbVersion = jsonObject.getString("dbVersion");
-            String tag = jsonObject.getString("tag");
-            lists.add(dbVersion + "(" + tag + ")");
+        // 拆分多条件（逗号分隔），忽略空白
+        List<String> keywordList = new ArrayList<>();
+        for (String keyword : keywords.split(",")) {
+            String trimmed = keyword.trim();
+            if (!trimmed.isEmpty()) {
+                keywordList.add(trimmed);
+            }
         }
-        // 获取按照tag筛选的
-        JSONArray jsonArray2 = jsonResponse2.getJSONObject("data").getJSONArray("list");
-        for (int i = 0; i < jsonArray2.size(); i++) {
-            JSONObject jsonObject = jsonArray2.getJSONObject(i);
-            String dbVersion = jsonObject.getString("dbVersion");
-            String tag = jsonObject.getString("tag");
-            lists.add(dbVersion + "(" + tag + ")");
+        List<String> lists = new ArrayList<>();
+        for (String keyword : keywordList) {
+            JSONObject jsonResponse = JSON.parseObject(listDBVersionByKeywords(keyword,insType));
+            JSONObject jsonResponse2 = JSON.parseObject(listTagByKeywords(keyword,insType));
+            // 获取data-list
+            JSONArray jsonArray = jsonResponse.getJSONObject("data").getJSONArray("list");
+            for (int i = 0; i < jsonArray.size(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                String dbVersion = jsonObject.getString("dbVersion");
+                String tag = jsonObject.getString("tag");
+                lists.add(dbVersion + "(" + tag + ")");
+            }
+            // 获取按照tag筛选的
+            JSONArray jsonArray2 = jsonResponse2.getJSONObject("data").getJSONArray("list");
+            for (int i = 0; i < jsonArray2.size(); i++) {
+                JSONObject jsonObject = jsonArray2.getJSONObject(i);
+                String dbVersion = jsonObject.getString("dbVersion");
+                String tag = jsonObject.getString("tag");
+                lists.add(dbVersion + "(" + tag + ")");
+            }
         }
 
         // 剔除重复
-        collect = lists.stream().distinct().collect(Collectors.toList());
-        return collect.stream().findFirst().orElse("");
+        List<String> collect = lists.stream().distinct().collect(Collectors.toList());
+        // 多条件时，本地过滤出同时包含所有条件的镜像（对 dbVersion(tag) 整体做忽略大小写的包含匹配）
+        if (keywordList.size() > 1) {
+            collect = collect.stream()
+                    .filter(s -> {
+                        String lower = s.toLowerCase();
+                        return keywordList.stream().allMatch(k -> lower.contains(k.toLowerCase()));
+                    })
+                    .collect(Collectors.toList());
+        }
+        // 无匹配时抛出明确提示，避免调用方对空串做 substring 出现越界异常
+        return collect.stream().findFirst()
+                .orElseThrow(() -> new RuntimeException(
+                        "未找到匹配 [" + keywords + "] 的镜像(image)，请检查输入的版本关键字是否正确"));
     }
 
     public static String listRunningIndexPool() {

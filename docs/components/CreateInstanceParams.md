@@ -39,6 +39,7 @@
 - `latest-release`：最新 release 版本
 - `nightly`：最新 nightly 版本
 - 其他值：按关键字查询匹配镜像
+- 逗号分隔多条件：如 `v3.0,nightly`，要求镜像同时包含所有条件，返回最新的一条
 
 ## ⚠️ 连接 token 格式
 
