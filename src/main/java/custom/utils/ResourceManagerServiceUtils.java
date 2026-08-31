@@ -219,12 +219,14 @@ public class ResourceManagerServiceUtils {
 
     public static List<ParamInfo> listParams(String instanceId) {
         String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        log.info("[listParams] instanceId input={}, resolved instanceIdTemp={}", instanceId, instanceIdTemp);
         List<ParamInfo> paramInfoList = new ArrayList<>();
 
         // 1. Query legacy params from RM
         String url = envConfig.getRmHost() + "/resource/v1/param/milvus/list?all=true&InstanceId=" + instanceIdTemp;
         Map<String, String> header = buildRmProxyUserHeader("list param");
         String resp = HttpClientUtils.doGet(url, header, null);
+        log.info("[listParams] RM list param response (first 500 chars): {}", resp == null ? "null" : (resp.length() > 500 ? resp.substring(0, 500) + "..." : resp));
         JSONObject respJO = JSON.parseObject(resp);
         Integer code = respJO.getInteger("Code");
         if (code == null) {
@@ -241,6 +243,7 @@ public class ResourceManagerServiceUtils {
                 paramInfoList.add(paramInfo);
             }
         }
+        log.info("[listParams] RM legacy param count: {}", paramInfoList.size());
 
         // 2. Query override params from cloud-ops and merge
         String overrideUrl = envConfig.getCloudOpsServiceHost()
@@ -248,9 +251,11 @@ public class ResourceManagerServiceUtils {
                 + "?regionId=" + envConfig.getRegionId()
                 + "&instanceId=" + instanceIdTemp
                 + "&currentPage=1&pageSize=200";
+        log.info("[listParams] Query override params from: {}", overrideUrl);
         Map<String, String> overrideHeader = new HashMap<>();
         overrideHeader.put("sa_token", envConfig.getCloudOpsServiceToken());
         String overrideResp = HttpClientUtils.doGet(overrideUrl, overrideHeader, null);
+        log.info("[listParams] Override response (first 500 chars): {}", overrideResp == null ? "null" : (overrideResp.length() > 500 ? overrideResp.substring(0, 500) + "..." : overrideResp));
         try {
             JSONObject overrideJO = JSON.parseObject(overrideResp);
             Integer overrideCode = overrideJO.getInteger("Code");
@@ -289,6 +294,8 @@ public class ResourceManagerServiceUtils {
         } catch (Exception e) {
             log.warn("Query override params failed, skip merging: {}", e.getMessage());
         }
+        log.info("[listParams] Total merged param count: {}, param names: {}", paramInfoList.size(),
+                paramInfoList.stream().map(ParamInfo::getParamName).toList());
 
         return paramInfoList;
     }

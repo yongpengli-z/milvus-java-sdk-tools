@@ -97,9 +97,12 @@ public class ModifyParamsComp {
         }
 
         // 查询当前参数
+        log.info("[ModifyParams verify] instanceId={}, paramsList={}", modifyParams.getInstanceId(), paramsList);
         List<ModifyParamsResult.Params> currentParams = new ArrayList<>();
         List<ParamInfo> currentParamList
                 = ResourceManagerServiceUtils.listParams(modifyParams.getInstanceId());
+        log.info("[ModifyParams verify] currentParamList size={}, names={}", currentParamList.size(),
+                currentParamList.stream().map(ParamInfo::getParamName).toList());
         List<String> unmatchedParams = new ArrayList<>();
         List<String> pendingParams = new ArrayList<>();
         for (ModifyParams.Params params : paramsList) {
