@@ -45,7 +45,7 @@
 | `elementType` | enum | Array 元素类型。`Struct` 时需同时设 `structSchema` |
 | `structSchema` | List | Array of Struct 的子字段定义（见 StructFieldParams） |
 | `partitionKey` | boolean | **建议显式给 `false`** |
-| `nullable` | boolean | **建议显式给 `false`**（主键不可为 true；稠密向量字段已支持 `nullable: true`，Array of Struct 中的 FloatVector 子字段见 StructFieldParams 的 `isNullable`） |
+| `nullable` | boolean | **建议显式给 `false`**（仅主键不可为 true，其余类型均可 nullable——含全部向量类型 FloatVector/Float16Vector/BFloat16Vector/Int8Vector/BinaryVector/SparseFloatVector；Array of Struct 中的子字段见 StructFieldParams 的 `isNullable`） |
 | `enableMatch` | boolean | **建议显式给 `false`**。true 时**必须同时 `enableAnalyzer: true`** |
 | `enableAnalyzer` | boolean | **建议显式给 `false`** |
 | `analyzerParamsList` | List | 分析器配置。**不使用时传 `[]`**（避免 NPE） |
