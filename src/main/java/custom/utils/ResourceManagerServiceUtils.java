@@ -299,6 +299,9 @@ public class ResourceManagerServiceUtils {
         try {
             JSONObject respJO = JSON.parseObject(resp);
             Integer code = respJO.getInteger("Code");
+            if (code == null) {
+                code = respJO.getInteger("code");
+            }
             if (code != null && code == 0) {
                 return null;
             }
