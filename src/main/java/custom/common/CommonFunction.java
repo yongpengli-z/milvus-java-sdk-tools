@@ -541,9 +541,15 @@ public class CommonFunction {
                     }
                 } else if (dataType == DataType.FloatVector || dataType == DataType.BFloat16Vector || dataType == DataType.Float16Vector || dataType == DataType.BinaryVector || dataType == DataType.Int8Vector) {
                     // 没有配置 fieldDataSourceList，走 random 生成，可以使用 generalDataRoleList
-                    jsonObject = generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    // 支持 nullable：按 nullableRatio 概率生成 null 向量
+                    JsonObject jsonObjectItem = new JsonObject();
+                    jsonObjectItem.add(name, null);
+                    jsonObject = (isNullable && random.nextDouble() < nullableRatio) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, dimension, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (dataType == DataType.SparseFloatVector) {
-                    jsonObject = generalJsonObjectByDataType(name, dataType, random.nextInt(768) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
+                    // 支持 nullable：按 nullableRatio 概率生成 null 稀疏向量
+                    JsonObject jsonObjectItem = new JsonObject();
+                    jsonObjectItem.add(name, null);
+                    jsonObject = (isNullable && random.nextDouble() < nullableRatio) ? jsonObjectItem : generalJsonObjectByDataType(name, dataType, random.nextInt(768) + 1, i, null, 0, generalDataRoleList, totalNum, realStartId, isEnableMatch);
                 } else if (isTextDataType(dataType)) {
                     JsonObject jsonObjectItem = new JsonObject();
                     jsonObjectItem.add(name, null);
@@ -614,7 +620,11 @@ public class CommonFunction {
                             boolean subFieldIsEnableMatch = subFieldSchema.getEnableMatch() != null && subFieldSchema.getEnableMatch();
 
                             // 生成 struct 子字段的数据
-                            if (subFieldType == DataType.FloatVector) {
+                            // 支持 nullable：按 nullableRatio 概率将该子字段置为 null
+                            boolean subFieldIsNullable = subFieldSchema.getIsNullable();
+                            if (subFieldIsNullable && random.nextDouble() < nullableRatio) {
+                                structObj.add(subFieldName, null);
+                            } else if (subFieldType == DataType.FloatVector) {
                                 List<Float> vector = generateFloatVector(subFieldDim);
                                 structObj.add(subFieldName, gson.toJsonTree(vector));
                             } else if (subFieldType == DataType.BFloat16Vector) {

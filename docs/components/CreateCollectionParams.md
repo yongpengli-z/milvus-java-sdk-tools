@@ -45,7 +45,7 @@
 | `elementType` | enum | Array 元素类型。`Struct` 时需同时设 `structSchema` |
 | `structSchema` | List | Array of Struct 的子字段定义（见 StructFieldParams） |
 | `partitionKey` | boolean | **建议显式给 `false`** |
-| `nullable` | boolean | **建议显式给 `false`**（主键/向量不可为 true） |
+| `nullable` | boolean | **建议显式给 `false`**（主键不可为 true；稠密向量字段已支持 `nullable: true`，Array of Struct 中的 FloatVector 子字段见 StructFieldParams 的 `isNullable`） |
 | `enableMatch` | boolean | **建议显式给 `false`**。true 时**必须同时 `enableAnalyzer: true`** |
 | `enableAnalyzer` | boolean | **建议显式给 `false`** |
 | `analyzerParamsList` | List | 分析器配置。**不使用时传 `[]`**（避免 NPE） |
@@ -79,7 +79,7 @@
 | `dataType` | enum | 仅支持：Int8/Int16/Int32/Int64、Float/Double、Bool、VarChar/String、FloatVector |
 | `dim` | int | 仅 FloatVector 生效 |
 | `maxLength` | int | 仅 VarChar/String 生效 |
-| `isNullable` | boolean | 默认 `false` |
+| `isNullable` | boolean | 默认 `false`。FloatVector 子字段已支持 `true` |
 
 **限制**：Struct 只能作为 Array 元素使用；Struct 可包含 FloatVector 实现 Array of Vector。
 

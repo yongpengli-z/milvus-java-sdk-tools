@@ -54,7 +54,7 @@
 - **多组件避免重复数据**：为每个组件设置不同 `startId`，确保 ID 范围不重叠。
 - **并发压测 + runningMinutes**：需将 `numEntries` 设够大，否则数据提前插完。
 - **lengthFactor**：当 `maxLength` 很大（如 65535）时，用 `0.01` 缩小到约 1% 节省带宽。
-- **nullableRatio**：仅对 schema 中 `isNullable=true` 的字段生效。
+- **nullableRatio**：仅对 schema 中 `isNullable=true` 的字段生效。覆盖标量、Text/VarChar、Array、向量字段（FloatVector/SparseFloatVector 等稠密/稀疏向量）以及 Array of Struct 中 `isNullable=true` 的子字段。
 - **Text / VarChar 长度规则**：
   - `Text`、`VarChar`（以及旧 schema 里的 `String`）会按字段 `maxLength` 生成随机文本。
   - 未配置 `maxLength` 时，默认按 `1024` 处理。
