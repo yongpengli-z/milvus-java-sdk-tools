@@ -1186,104 +1186,108 @@ public class CommonFunction {
         // 获取主键信息
         PKFieldInfo pkFieldInfo = getPKFieldInfo(client, collection, databaseName);
         List<BaseVector> baseVectorDataset = new ArrayList<>();
-        QueryResp query = null;
-        try {
-            String filterStr;
-            if (pkFieldInfo.getDataType() == DataType.VarChar) {
-                filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
-            } else {
-                filterStr = pkFieldInfo.getFieldName() + " > 0 ";
-            }
-            // nullable 场景：采样时过滤掉向量值为 null 的行（Array of Struct 子向量在下方循环里逐条判空）
-            if (!collectionVectorInfo.isStructVector()) {
-                filterStr += " and " + collectionVectorInfo.getFieldName() + " is not null ";
-            }
-            QueryReq.QueryReqBuilder queryBuilder = QueryReq.builder().collectionName(collection)
-                    .filter(filterStr)
-                    .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
-                    .limit(randomNum);
-            if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
-                queryBuilder.databaseName(databaseName);
-            }
-            query = client.query(queryBuilder.build());
-            // 清空下 recallBaseIdList
-            recallBaseIdList.clear();
-        } catch (Exception e) {
-            log.error("query 异常: " + e.getMessage());
+        String filterStr;
+        if (pkFieldInfo.getDataType() == DataType.VarChar) {
+            filterStr = pkFieldInfo.getFieldName() + " > \"0\" ";
+        } else {
+            filterStr = pkFieldInfo.getFieldName() + " > 0 ";
         }
-        
-        // 处理 Array of Struct 中的向量字段
-        if (collectionVectorInfo.isStructVector()) {
-            String structFieldName = collectionVectorInfo.getStructFieldName();
-            String structSubFieldName = collectionVectorInfo.getStructSubFieldName();
-            
-            if (query != null && query.getQueryResults() != null) {
-                for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
-                    Object structArrayObj = queryResult.getEntity().get(structFieldName);
-                    if (structArrayObj == null) {
+        // 注意：Milvus 不支持对向量字段使用 is null / is not null 过滤，
+        // nullable 场景只能分页拉取后在客户端跳过 null 行，直到采满 randomNum 或没有更多数据。
+        recallBaseIdList.clear();
+        long offset = 0;
+        int totalScanned = 0;
+        while (baseVectorDataset.size() < randomNum) {
+            int remain = randomNum - baseVectorDataset.size();
+            // 每页多取一些，降低 null 行导致反复请求的成本；至少取 remain，最多 randomNum
+            int pageSize = Math.min(Math.max(remain * 2, 100), Math.max(randomNum, 100));
+            QueryResp query;
+            try {
+                QueryReq.QueryReqBuilder queryBuilder = QueryReq.builder().collectionName(collection)
+                        .filter(filterStr)
+                        .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
+                        .limit(pageSize)
+                        .offset(offset);
+                if (databaseName != null && !databaseName.equalsIgnoreCase("")) {
+                    queryBuilder.databaseName(databaseName);
+                }
+                query = client.query(queryBuilder.build());
+            } catch (Exception e) {
+                log.error("providerSearchVectorDataset query 异常: {}, collection={}, annsField={}, offset={}",
+                        e.getMessage(), collection, annsField, offset);
+                break;
+            }
+            if (query == null || query.getQueryResults() == null || query.getQueryResults().isEmpty()) {
+                log.warn("providerSearchVectorDataset: 已无更多数据，collection={}, annsField={}, offset={}, 已采集={}",
+                        collection, annsField, offset, baseVectorDataset.size());
+                break;
+            }
+            int pageActual = query.getQueryResults().size();
+            totalScanned += pageActual;
+            for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
+            // 处理 Array of Struct 中的向量字段
+            if (collectionVectorInfo.isStructVector()) {
+                String structFieldName = collectionVectorInfo.getStructFieldName();
+                String structSubFieldName = collectionVectorInfo.getStructSubFieldName();
+                Object structArrayObj = queryResult.getEntity().get(structFieldName);
+                if (structArrayObj == null) {
+                    continue;
+                }
+
+                // structArrayObj 是一个 List<Map<String, Object>>，每个 Map 代表一个 struct
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> structArray = (List<Map<String, Object>>) structArrayObj;
+
+                // 创建 EmbeddingList，包含该行所有 struct 中的向量
+                EmbeddingList embeddingList = new EmbeddingList();
+                int vectorCount = 0;
+                for (Map<String, Object> struct : structArray) {
+                    Object vectorObj = struct.get(structSubFieldName);
+                    if (vectorObj == null) {
                         continue;
                     }
-                    
-                    // structArrayObj 是一个 List<Map<String, Object>>，每个 Map 代表一个 struct
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> structArray = (List<Map<String, Object>>) structArrayObj;
-                    
-                    // 创建 EmbeddingList，包含该行所有 struct 中的向量
-                    EmbeddingList embeddingList = new EmbeddingList();
-                    int vectorCount = 0;
-                    for (Map<String, Object> struct : structArray) {
-                        Object vectorObj = struct.get(structSubFieldName);
-                        if (vectorObj == null) {
-                            continue;
-                        }
-                        
-                        // 根据向量类型创建对应的 BaseVector
-                        if (vectorDataType == DataType.FloatVector) {
-                            @SuppressWarnings("unchecked")
-                            List<Float> floatList = (List<Float>) vectorObj;
-                            embeddingList.add(new FloatVec(floatList));
-                            vectorCount++;
-                        } else if (vectorDataType == DataType.BinaryVector) {
-                            ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
-                            embeddingList.add(new BinaryVec(byteBuffer));
-                            vectorCount++;
-                        } else if (vectorDataType == DataType.Float16Vector) {
-                            ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
-                            embeddingList.add(new Float16Vec(byteBuffer));
-                            vectorCount++;
-                        } else if (vectorDataType == DataType.BFloat16Vector) {
-                            ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
-                            embeddingList.add(new BFloat16Vec(byteBuffer));
-                            vectorCount++;
-                        } else if (vectorDataType == DataType.SparseFloatVector) {
-                            @SuppressWarnings("unchecked")
-                            SortedMap<Long, Float> sortedMap = (SortedMap<Long, Float>) vectorObj;
-                            embeddingList.add(new SparseFloatVec(sortedMap));
-                            vectorCount++;
-                        } else if (vectorDataType == DataType.Int8Vector) {
-                            ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
-                            embeddingList.add(new Int8Vec(byteBuffer));
-                            vectorCount++;
-                        }
+
+                    // 根据向量类型创建对应的 BaseVector
+                    if (vectorDataType == DataType.FloatVector) {
+                        @SuppressWarnings("unchecked")
+                        List<Float> floatList = (List<Float>) vectorObj;
+                        embeddingList.add(new FloatVec(floatList));
+                        vectorCount++;
+                    } else if (vectorDataType == DataType.BinaryVector) {
+                        ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
+                        embeddingList.add(new BinaryVec(byteBuffer));
+                        vectorCount++;
+                    } else if (vectorDataType == DataType.Float16Vector) {
+                        ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
+                        embeddingList.add(new Float16Vec(byteBuffer));
+                        vectorCount++;
+                    } else if (vectorDataType == DataType.BFloat16Vector) {
+                        ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
+                        embeddingList.add(new BFloat16Vec(byteBuffer));
+                        vectorCount++;
+                    } else if (vectorDataType == DataType.SparseFloatVector) {
+                        @SuppressWarnings("unchecked")
+                        SortedMap<Long, Float> sortedMap = (SortedMap<Long, Float>) vectorObj;
+                        embeddingList.add(new SparseFloatVec(sortedMap));
+                        vectorCount++;
+                    } else if (vectorDataType == DataType.Int8Vector) {
+                        ByteBuffer byteBuffer = (ByteBuffer) vectorObj;
+                        embeddingList.add(new Int8Vec(byteBuffer));
+                        vectorCount++;
                     }
-                    
-                    // 只有当 EmbeddingList 不为空时才添加（检查是否有添加向量）
-                    if (vectorCount > 0) {
-                        baseVectorDataset.add(embeddingList);
-                    }
-                    
-                    // 收集recall base id
+                }
+
+                // 只有当 EmbeddingList 不为空时才添加（检查是否有添加向量），并同步收集 recall base id 保持对齐
+                if (vectorCount > 0) {
+                    baseVectorDataset.add(embeddingList);
                     Object pkObj = queryResult.getEntity().get(pkFieldInfo.getFieldName());
                     recallBaseIdList.add(pkObj);
                 }
-            }
-        } else {
-            // 处理正常的向量字段
-            if (query != null && query.getQueryResults() != null) {
-                for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
-                    Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
+            } else {
+                // 处理正常的向量字段
+                Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
                 if (o == null) {
-                    // 防御：nullable 字段可能返回 null（如服务端不支持 is not null 过滤时），跳过该行
+                    // nullable 字段可能返回 null，跳过该行继续分页采集
                     continue;
                 }
                 if (vectorDataType == DataType.FloatVector) {
@@ -1345,12 +1349,19 @@ public class CommonFunction {
                     ByteBuffer byteBuffer = (ByteBuffer) o;
                     baseVectorDataset.add(new Int8Vec(byteBuffer));
                 }
-                    // 收集recall base id
-                    Object pkObj = queryResult.getEntity().get(pkFieldInfo.getFieldName());
-                    recallBaseIdList.add(pkObj);
-                }
+                // 收集recall base id（只对成功采到向量的行收集，保持与 baseVectorDataset 对齐）
+                Object pkObj = queryResult.getEntity().get(pkFieldInfo.getFieldName());
+                recallBaseIdList.add(pkObj);
+            }
+            }
+            offset += pageActual;
+            // 如果返回数量小于请求的页大小，说明已经没有更多数据了
+            if (pageActual < pageSize) {
+                break;
             }
         }
+        log.info("providerSearchVectorDataset 采集完成: collection={}, annsField={}, 期望={}, 实际采集={}, 累计扫描={}",
+                collection, annsField, randomNum, baseVectorDataset.size(), totalScanned);
         return baseVectorDataset;
     }
 

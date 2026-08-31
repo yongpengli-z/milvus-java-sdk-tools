@@ -7,6 +7,9 @@ import custom.entity.result.CommonResult;
 import custom.entity.result.RecallResult;
 import custom.entity.result.ResultEnum;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.service.collection.request.CreateCollectionReq;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
 import io.milvus.v2.service.vector.response.SearchResp;
@@ -46,7 +49,29 @@ public class RecallComp {
 
             // Step 3: 从 collection 采样向量
             log.info("从 collection [{}] 采样 {} 条向量, annsField [{}]", collection, sampleNum, annsField);
-            List<BaseVector> allSampledVectors = CommonFunction.providerSearchVectorDataset(collection, sampleNum, annsField);
+            // 如果 annsField 是 Function(如 BM25) 的输出字段，服务端不允许捞取向量原始数据，
+            // 改为采样 function 输入字段的文本，用 EmbeddedText 做查询向量
+            String functionInputField = "";
+            try {
+                DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(
+                        DescribeCollectionReq.builder().collectionName(collection).build());
+                List<CreateCollectionReq.Function> functionList = describeCollectionResp.getCollectionSchema().getFunctionList();
+                if (functionList != null) {
+                    for (CreateCollectionReq.Function function : functionList) {
+                        if (function.getOutputFieldNames() != null && function.getOutputFieldNames().contains(annsField)) {
+                            int i = function.getOutputFieldNames().indexOf(annsField);
+                            functionInputField = function.getInputFieldNames().get(i);
+                            log.info("annsField [{}] 是 function 输出字段, 改为采样输入字段 [{}]", annsField, functionInputField);
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("describeCollection 检查 function 列表失败，按普通向量字段采样: {}", e.getMessage());
+            }
+            List<BaseVector> allSampledVectors = functionInputField.isEmpty()
+                    ? CommonFunction.providerSearchVectorDataset(collection, sampleNum, annsField)
+                    : CommonFunction.providerSearchFunctionData(collection, sampleNum, functionInputField);
             log.info("实际采样向量数: {}", allSampledVectors.size());
 
             if (allSampledVectors.isEmpty()) {
