@@ -1194,6 +1194,10 @@ public class CommonFunction {
             } else {
                 filterStr = pkFieldInfo.getFieldName() + " > 0 ";
             }
+            // nullable 场景：采样时过滤掉向量值为 null 的行（Array of Struct 子向量在下方循环里逐条判空）
+            if (!collectionVectorInfo.isStructVector()) {
+                filterStr += " and " + collectionVectorInfo.getFieldName() + " is not null ";
+            }
             QueryReq.QueryReqBuilder queryBuilder = QueryReq.builder().collectionName(collection)
                     .filter(filterStr)
                     .outputFields(Lists.newArrayList(collectionVectorInfo.getFieldName()))
@@ -1278,6 +1282,10 @@ public class CommonFunction {
             if (query != null && query.getQueryResults() != null) {
                 for (QueryResp.QueryResult queryResult : query.getQueryResults()) {
                     Object o = queryResult.getEntity().get(collectionVectorInfo.getFieldName());
+                if (o == null) {
+                    // 防御：nullable 字段可能返回 null（如服务端不支持 is not null 过滤时），跳过该行
+                    continue;
+                }
                 if (vectorDataType == DataType.FloatVector) {
                     if (!(o instanceof List)) {
                         throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
