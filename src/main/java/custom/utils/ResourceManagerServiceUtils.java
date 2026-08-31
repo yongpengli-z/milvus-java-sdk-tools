@@ -219,13 +219,18 @@ public class ResourceManagerServiceUtils {
 
     public static List<ParamInfo> listParams(String instanceId) {
         String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        List<ParamInfo> paramInfoList = new ArrayList<>();
+
+        // 1. Query legacy params from RM
         String url = envConfig.getRmHost() + "/resource/v1/param/milvus/list?all=true&InstanceId=" + instanceIdTemp;
         Map<String, String> header = buildRmProxyUserHeader("list param");
         String resp = HttpClientUtils.doGet(url, header, null);
-        List<ParamInfo> paramInfoList = new ArrayList<>();
         JSONObject respJO = JSON.parseObject(resp);
         Integer code = respJO.getInteger("Code");
-        if (code == 0) {
+        if (code == null) {
+            code = respJO.getInteger("code");
+        }
+        if (code != null && code == 0) {
             JSONArray jsonArray = respJO.getJSONObject("Data").getJSONArray("list");
             for (int i = 0; i < jsonArray.size(); i++) {
                 ParamInfo paramInfo = new ParamInfo();
@@ -236,6 +241,55 @@ public class ResourceManagerServiceUtils {
                 paramInfoList.add(paramInfo);
             }
         }
+
+        // 2. Query override params from cloud-ops and merge
+        String overrideUrl = envConfig.getCloudOpsServiceHost()
+                + "/api/v1/basic/param/instance/override/runtime/page"
+                + "?regionId=" + envConfig.getRegionId()
+                + "&instanceId=" + instanceIdTemp
+                + "&currentPage=1&pageSize=200";
+        Map<String, String> overrideHeader = new HashMap<>();
+        overrideHeader.put("sa_token", envConfig.getCloudOpsServiceToken());
+        String overrideResp = HttpClientUtils.doGet(overrideUrl, overrideHeader, null);
+        try {
+            JSONObject overrideJO = JSON.parseObject(overrideResp);
+            Integer overrideCode = overrideJO.getInteger("Code");
+            if (overrideCode == null) {
+                overrideCode = overrideJO.getInteger("code");
+            }
+            if (overrideCode != null && overrideCode == 0) {
+                JSONObject data = overrideJO.getJSONObject("Data");
+                if (data == null) {
+                    data = overrideJO.getJSONObject("data");
+                }
+                if (data != null) {
+                    JSONArray list = data.getJSONArray("list");
+                    if (list != null) {
+                        for (int i = 0; i < list.size(); i++) {
+                            JSONObject item = list.getJSONObject(i);
+                            String paramKey = item.getString("paramKey");
+                            String paramValue = item.getString("paramValue");
+                            if (paramKey == null || paramKey.isEmpty()) {
+                                continue;
+                            }
+                            // Skip if already present in legacy list
+                            boolean exists = paramInfoList.stream()
+                                    .anyMatch(p -> p.getParamName().equalsIgnoreCase(paramKey));
+                            if (!exists) {
+                                ParamInfo paramInfo = new ParamInfo();
+                                paramInfo.setParamName(paramKey);
+                                paramInfo.setCurrentValue(paramValue);
+                                paramInfo.setFinalValue(paramValue);
+                                paramInfoList.add(paramInfo);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Query override params failed, skip merging: {}", e.getMessage());
+        }
+
         return paramInfoList;
     }
 
