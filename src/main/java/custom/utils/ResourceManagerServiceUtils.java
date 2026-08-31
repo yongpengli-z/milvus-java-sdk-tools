@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -218,6 +219,26 @@ public class ResourceManagerServiceUtils {
         return errors;
     }
 
+    /**
+     * Normalize a param name the same way as the cloud runtime config layer
+     * (zilliz-cloud RuntimeConfigKey / Milvus formatKey): lowercase and remove
+     * '.', '_', '/'; names with "knowhere." prefix are kept as-is.
+     * Etcd override keys are stored in this flattened form, so comparisons
+     * between user-facing param names and runtime keys must normalize first.
+     */
+    public static String normalizeParamName(String paramName) {
+        if (paramName == null || paramName.isEmpty()) {
+            return "";
+        }
+        if (paramName.startsWith("knowhere.")) {
+            return paramName;
+        }
+        return paramName.toLowerCase(Locale.ROOT)
+                .replace("/", "")
+                .replace("_", "")
+                .replace(".", "");
+    }
+
     public static List<ParamInfo> listParams(String instanceId) {
         String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
         log.info("[listParams] instanceId input={}, resolved instanceIdTemp={}", instanceId, instanceIdTemp);
@@ -278,9 +299,10 @@ public class ResourceManagerServiceUtils {
                             if (paramKey == null || paramKey.isEmpty()) {
                                 continue;
                             }
-                            // Skip if already present in legacy list
+                            // Skip if already present in legacy list (compare with normalized names,
+                            // since etcd override keys are flattened: lowercase without '.', '_', '/')
                             boolean exists = paramInfoList.stream()
-                                    .anyMatch(p -> p.getParamName().equalsIgnoreCase(paramKey));
+                                    .anyMatch(p -> normalizeParamName(p.getParamName()).equals(normalizeParamName(paramKey)));
                             if (!exists) {
                                 ParamInfo paramInfo = new ParamInfo();
                                 paramInfo.setParamName(paramKey);

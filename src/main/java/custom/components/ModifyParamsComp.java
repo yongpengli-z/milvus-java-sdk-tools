@@ -35,7 +35,8 @@ public class ModifyParamsComp {
         List<ModifyParams.Params> needModifyParams = new ArrayList<>();
         List<ModifyParams.Params> needAddParams = new ArrayList<>();
         for (ModifyParams.Params param : paramsList) {
-            ParamInfo paramInfo = paramInfoList.stream().filter(x -> x.getParamName().equalsIgnoreCase(param.getParamName())).findFirst().orElse(null);
+            ParamInfo paramInfo = paramInfoList.stream().filter(x -> ResourceManagerServiceUtils.normalizeParamName(x.getParamName())
+                    .equals(ResourceManagerServiceUtils.normalizeParamName(param.getParamName()))).findFirst().orElse(null);
             if (paramInfo == null) {
                 needAddParams.add(param);
             }
@@ -107,7 +108,8 @@ public class ModifyParamsComp {
         List<String> unmatchedParams = new ArrayList<>();
         List<String> pendingParams = new ArrayList<>();
         for (ModifyParams.Params params : paramsList) {
-            ParamInfo paramInfo = currentParamList.stream().filter(x -> x.getParamName().equalsIgnoreCase(params.getParamName())).findFirst().orElse(null);
+            ParamInfo paramInfo = currentParamList.stream().filter(x -> ResourceManagerServiceUtils.normalizeParamName(x.getParamName())
+                    .equals(ResourceManagerServiceUtils.normalizeParamName(params.getParamName()))).findFirst().orElse(null);
             if (paramInfo == null) {
                 unmatchedParams.add(params.getParamName() + " not found after modify");
                 currentParams.add(ModifyParamsResult.Params.builder().paramName(params.getParamName())
