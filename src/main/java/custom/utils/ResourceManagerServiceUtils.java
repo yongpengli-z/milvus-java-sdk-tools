@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -295,7 +296,7 @@ public class ResourceManagerServiceUtils {
             log.warn("Query override params failed, skip merging: {}", e.getMessage());
         }
         log.info("[listParams] Total merged param count: {}, param names: {}", paramInfoList.size(),
-                paramInfoList.stream().map(ParamInfo::getParamName).toList());
+                paramInfoList.stream().map(ParamInfo::getParamName).collect(Collectors.toList()));
 
         return paramInfoList;
     }

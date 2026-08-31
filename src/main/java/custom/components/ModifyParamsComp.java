@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.cloudServiceUserInfo;
 
@@ -102,7 +103,7 @@ public class ModifyParamsComp {
         List<ParamInfo> currentParamList
                 = ResourceManagerServiceUtils.listParams(modifyParams.getInstanceId());
         log.info("[ModifyParams verify] currentParamList size={}, names={}", currentParamList.size(),
-                currentParamList.stream().map(ParamInfo::getParamName).toList());
+                currentParamList.stream().map(ParamInfo::getParamName).collect(Collectors.toList()));
         List<String> unmatchedParams = new ArrayList<>();
         List<String> pendingParams = new ArrayList<>();
         for (ModifyParams.Params params : paramsList) {
