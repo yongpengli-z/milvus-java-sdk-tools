@@ -43,13 +43,13 @@ public class ModifyParamsComp {
             }
         }
 
-        // 修改参数
+        // 统一使用新的参数 override API（旧 add/modify 接口已被冻结）
         List<String> rmErrors = new ArrayList<>();
-        if (needModifyParams.size() > 0) {
-            rmErrors.addAll(ResourceManagerServiceUtils.modifyParams(modifyParams.getInstanceId(), needModifyParams));
-        }
-        if (needAddParams.size() > 0) {
-            rmErrors.addAll(ResourceManagerServiceUtils.addParams(modifyParams.getInstanceId(), needAddParams));
+        List<ModifyParams.Params> allParams = new ArrayList<>();
+        allParams.addAll(needModifyParams);
+        allParams.addAll(needAddParams);
+        if (!allParams.isEmpty()) {
+            rmErrors.addAll(ResourceManagerServiceUtils.applyParamOverrides(modifyParams.getInstanceId(), allParams));
         }
         if (!rmErrors.isEmpty()) {
             return ModifyParamsResult.builder()

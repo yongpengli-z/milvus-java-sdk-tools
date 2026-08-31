@@ -265,6 +265,36 @@ public class ResourceManagerServiceUtils {
         return errors;
     }
 
+
+    /**
+     * Use the new instance parameter override API to set parameters.
+     * The legacy /resource/v1/param/milvus/add and /modify endpoints are frozen (Code=10003).
+     */
+    public static List<String> applyParamOverrides(String instanceId, List<ModifyParams.Params> paramsList) {
+        String url = envConfig.getCloudOpsServiceHost() + "/api/v1/basic/param/instance/override/apply";
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase(""))
+                ? newInstanceInfo.getInstanceId() : instanceId;
+        List<String> errors = new ArrayList<>();
+        for (ModifyParams.Params params : paramsList) {
+            JSONObject body = new JSONObject();
+            body.put("regionId", envConfig.getRegionId());
+            body.put("instanceId", instanceIdTemp);
+            body.put("paramName", params.getParamName());
+            body.put("paramValue", params.getParamValue());
+            body.put("action", "SET");
+            Map<String, String> header = new HashMap<>();
+            header.put("sa_token", envConfig.getCloudOpsServiceToken());
+            header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
+            String s = HttpClientUtils.doPostJson(url, header, body.toJSONString());
+            log.info("Override param [" + params + "] response:" + s);
+            String error = parseRmError("override", params.getParamName(), s);
+            if (error != null) {
+                errors.add(error);
+            }
+        }
+        return errors;
+    }
+
     private static String parseRmError(String operation, String paramName, String resp) {
         try {
             JSONObject respJO = JSON.parseObject(resp);
