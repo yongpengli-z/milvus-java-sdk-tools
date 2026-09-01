@@ -16,24 +16,26 @@ public class ConfigUtils {
             throw new CustomException(CustomExceptionCode.INVALID_PARAMS, "Unknown env, cannot load VDC config");
         }
         EnvConfig envConfig=new EnvConfig();
-        if (envEnum.vdcConfigPath == null || envEnum.vdcConfigPath.trim().isEmpty()) {
+        // 支持通过 -Dvdc.config.path 指定本地配置文件（便于本机调试），缺省用环境内置路径
+        String vdcConfigPath = System.getProperty("vdc.config.path", envEnum.vdcConfigPath);
+        if (vdcConfigPath == null || vdcConfigPath.trim().isEmpty()) {
             throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
                     "VDC config path is empty for env: " + envEnum.region);
         }
-        if (!new File(envEnum.vdcConfigPath).isFile()) {
+        if (!new File(vdcConfigPath).isFile()) {
             throw new CustomException(CustomExceptionCode.RESOURCE_NOT_FOUND, "VDC config file does not exist for env "
-                    + envEnum.region + ": " + envEnum.vdcConfigPath);
+                    + envEnum.region + ": " + vdcConfigPath);
         }
-        String s = DatasetUtil.providerConfigFile(envEnum.vdcConfigPath);
+        String s = DatasetUtil.providerConfigFile(vdcConfigPath);
         JSONObject configJO=JSONObject.parseObject(s);
         if (configJO == null || configJO.getJSONObject("ENV") == null) {
             throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
-                    "Invalid VDC config, missing ENV node: " + envEnum.vdcConfigPath);
+                    "Invalid VDC config, missing ENV node: " + vdcConfigPath);
         }
         JSONObject envJO = configJO.getJSONObject("ENV");
         if (envJO.getJSONObject(envEnum.envNodeName) == null) {
             throw new CustomException(CustomExceptionCode.INVALID_RESPONSE, "Invalid VDC config, missing env node "
-                    + envEnum.envNodeName + " in " + envEnum.vdcConfigPath);
+                    + envEnum.envNodeName + " in " + vdcConfigPath);
         }
         String rmHost = envJO.getJSONObject(envEnum.envNodeName).getString("rm_host");
         String cloudServiceHost = envJO.getJSONObject(envEnum.envNodeName).getString("cloud_service_host");
