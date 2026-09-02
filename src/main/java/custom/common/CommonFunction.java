@@ -1388,16 +1388,29 @@ public class CommonFunction {
      * rangeEnd <= 0 或超出池子大小表示取到末尾。多 client 分割示例：client0 取 [0,334)，client1 取 [334,668)。
      */
     public static List<String> resolveSearchCollectionPool(String collectionNamePrefix, int rangeStart, int rangeEnd) {
-        List<String> pool = globalCollectionNames;
+        return filterCollectionPool(globalCollectionNames, collectionNamePrefix, rangeStart, rangeEnd);
+    }
+
+    /**
+     * 通用 collection 列表过滤：先按前缀过滤，再按区间 [rangeStart, rangeEnd) 切片（区间模式先按名称排序）。
+     * 供 search/hybridSearch/load/release 等组件复用。
+     *
+     * @param source               原始 collection 列表（globalCollectionNames 池子或实例全量列表）
+     * @param collectionNamePrefix 前缀（可选；非空时先过滤）
+     * @param rangeStart           区间起始下标，>=0 启用区间切片
+     * @param rangeEnd             区间结束下标（开区间），<=0 或超出表示到末尾
+     */
+    public static List<String> filterCollectionPool(List<String> source, String collectionNamePrefix, int rangeStart, int rangeEnd) {
+        List<String> pool = source;
         if (collectionNamePrefix != null && !collectionNamePrefix.equalsIgnoreCase("")) {
-            pool = globalCollectionNames.stream()
+            pool = source.stream()
                     .filter(x -> x.startsWith(collectionNamePrefix))
                     .collect(Collectors.toList());
             log.info("按前缀[{}]匹配collection: 池子 {} 个 -> 命中 {} 个",
-                    collectionNamePrefix, globalCollectionNames.size(), pool.size());
+                    collectionNamePrefix, source.size(), pool.size());
             if (pool.isEmpty()) {
                 throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
-                        "collectionNamePrefix=" + collectionNamePrefix + " 未匹配到任何collection，当前池子: " + globalCollectionNames);
+                        "collectionNamePrefix=" + collectionNamePrefix + " 未匹配到任何collection，当前池子: " + source);
             }
         }
         if (rangeStart >= 0) {
