@@ -44,10 +44,24 @@ public class HybridSearchComp {
         MilvusClientV2 client = getMilvusClient(hybridSearchParams.getTargetEndpoint());
         log.info("HybridSearch 使用 endpoint: {}", describeTargetEndpoint(hybridSearchParams.getTargetEndpoint()));
 
-        // 判断collection获取规则（支持 collectionNamePrefix 前缀过滤后再 sequence/random）
-        String collection = CommonFunction.resolveSearchCollection(
-                hybridSearchParams.getCollectionRule(), hybridSearchParams.getCollectionName(), hybridSearchParams.getCollectionNamePrefix());
-        log.info("HybridSearch 目标 collection: {}", collection);
+        // 判断collection获取规则（支持 collectionNamePrefix 前缀过滤 + 区间切片后再 sequence/random）
+        boolean perRequestCollection = "sequence_per_request".equalsIgnoreCase(
+                hybridSearchParams.getCollectionRule() == null ? "" : hybridSearchParams.getCollectionRule());
+        List<String> collectionPool = null;
+        String collection;
+        if (perRequestCollection) {
+            // 逐请求轮转：步骤启动时只解析池子，每个 hybridSearch 请求从池子取下一个 collection（全局原子游标，跨线程唯一）
+            collectionPool = CommonFunction.resolveSearchCollectionPool(hybridSearchParams.getCollectionNamePrefix(),
+                    hybridSearchParams.getCollectionRangeStart(), hybridSearchParams.getCollectionRangeEnd());
+            // schema/BM25 Function 检测与底库捞取向量都以池子第一个 collection 为基准（假设池内 collection 同构）
+            collection = collectionPool.get(0);
+            log.info("HybridSearch sequence_per_request 模式，collection池: {} 个，基准collection: {}", collectionPool.size(), collection);
+        } else {
+            collection = CommonFunction.resolveSearchCollection(
+                    hybridSearchParams.getCollectionRule(), hybridSearchParams.getCollectionName(), hybridSearchParams.getCollectionNamePrefix(),
+                    hybridSearchParams.getCollectionRangeStart(), hybridSearchParams.getCollectionRangeEnd());
+            log.info("HybridSearch 目标 collection: {}", collection);
+        }
 
         // 验证 searchRequests 不为空
         if (hybridSearchParams.getSearchRequests() == null || hybridSearchParams.getSearchRequests().isEmpty()) {
@@ -171,6 +185,7 @@ public class HybridSearchComp {
         }
 
         final String finalCollection = collection;
+        final List<String> finalCollectionPool = collectionPool;
         final List<String> finalOutputs = outputs;
         final RateLimiter finalRateLimiter = rateLimiter;
         final List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
@@ -295,8 +310,12 @@ public class HybridSearchComp {
                     }
 
                     // 构建 HybridSearchReq - 使用正确的 API（milvus-sdk-java 2.6.11）
+                    // sequence_per_request 模式：每个 hybridSearch 请求取池子里下一个 collection（全局游标，跨线程唯一）
+                    String currentCollection = finalCollectionPool != null
+                            ? CommonFunction.nextCollectionPerRequest(finalCollectionPool)
+                            : finalCollection;
                     HybridSearchReq.HybridSearchReqBuilder hybridSearchReqBuilder = HybridSearchReq.builder()
-                            .collectionName(finalCollection)
+                            .collectionName(currentCollection)
                             .searchRequests(annSearchReqList)
                             .limit(hybridSearchParams.getTopK())  // 使用 limit() 替代已弃用的 topK()
                             .consistencyLevel(ConsistencyLevel.BOUNDED);
@@ -345,7 +364,7 @@ public class HybridSearchComp {
                     long endItemTime = System.currentTimeMillis();
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                     int resultSize = hybridSearchResp != null ? hybridSearchResp.getSearchResults().size() : 0;
-                    log.debug("线程[{}] hybridSearch cost:{} s，result size：{}", finalC, costTimeItem, resultSize);
+                    log.debug("线程[{}] hybridSearch cost:{} s，collection：{}，result size：{}", finalC, costTimeItem, currentCollection, resultSize);
                     costTime.add(costTimeItem);
                     statsReporter.recordCostTime(costTimeItem);
                     returnNum.add(resultSize);

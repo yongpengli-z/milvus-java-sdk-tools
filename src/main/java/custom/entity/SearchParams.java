@@ -176,6 +176,8 @@ public class SearchParams {
      *   <li>""：默认使用最近一次创建/记录的 collection</li>
      *   <li>"random"：从全局 collection 列表随机选</li>
      *   <li>"sequence"：按顺序轮询全局 collection 列表</li>
+     *   <li>"sequence_per_request"：每个请求轮换取下一个 collection（全局原子游标，跨线程唯一；
+     *       总请求数 ≤ 池子大小时每个 collection 恰好被 search 一次，常用于测多 collection 并发上限 QPS）</li>
      * </ul>
      * 前端：`searchEdit.vue` -> "Collection Rule"
      * <p>
@@ -194,6 +196,25 @@ public class SearchParams {
      * 未匹配到任何 collection 会直接报错。
      */
     private String collectionNamePrefix;
+
+    /**
+     * Collection 池区间起始下标（可选，默认 -1 不启用）。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Collection Range Start"
+     * <p>
+     * >= 0 时启用区间模式：前缀过滤后先按名称排序，再取 [rangeStart, rangeEnd) 切片，
+     * 用于多 client 物理分割（如 client0 取 [0,334)，client1 取 [334,668)）。
+     */
+    private int collectionRangeStart = -1;
+
+    /**
+     * Collection 池区间结束下标（可选，开区间）。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Collection Range End"
+     * <p>
+     * 前端默认值：-1（或 0/超出池子大小）表示取到末尾。
+     */
+    private int collectionRangeEnd = -1;
 
     /**
      * 查询分区列表（可选）。

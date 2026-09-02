@@ -1374,6 +1374,70 @@ public class CommonFunction {
      * @return List<BaseVector>
      */
     /**
+     * 解析 search 的 collection 池：非空前缀先过滤 globalCollectionNames。
+     * 前缀未匹配或池为空时抛出 INVALID_PARAMS。
+     */
+    public static List<String> resolveSearchCollectionPool(String collectionNamePrefix) {
+        return resolveSearchCollectionPool(collectionNamePrefix, -1, -1);
+    }
+
+    /**
+     * 解析 search 的 collection 池：先按前缀过滤，再按区间 [rangeStart, rangeEnd) 切片。
+     * <p>
+     * 区间模式（rangeStart >= 0）下会先按名称排序再切片，保证多个 client 切分一致、互不重叠；
+     * rangeEnd <= 0 或超出池子大小表示取到末尾。多 client 分割示例：client0 取 [0,334)，client1 取 [334,668)。
+     */
+    public static List<String> resolveSearchCollectionPool(String collectionNamePrefix, int rangeStart, int rangeEnd) {
+        List<String> pool = globalCollectionNames;
+        if (collectionNamePrefix != null && !collectionNamePrefix.equalsIgnoreCase("")) {
+            pool = globalCollectionNames.stream()
+                    .filter(x -> x.startsWith(collectionNamePrefix))
+                    .collect(Collectors.toList());
+            log.info("按前缀[{}]匹配collection: 池子 {} 个 -> 命中 {} 个",
+                    collectionNamePrefix, globalCollectionNames.size(), pool.size());
+            if (pool.isEmpty()) {
+                throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                        "collectionNamePrefix=" + collectionNamePrefix + " 未匹配到任何collection，当前池子: " + globalCollectionNames);
+            }
+        }
+        if (rangeStart >= 0) {
+            // 区间模式：先排序再切片，保证多 client 切分一致
+            List<String> sorted = new ArrayList<>(pool);
+            sorted.sort(String::compareTo);
+            int end = (rangeEnd <= 0 || rangeEnd > sorted.size()) ? sorted.size() : rangeEnd;
+            if (rangeStart >= sorted.size() || rangeStart >= end) {
+                throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                        "collection区间[" + rangeStart + "," + end + ") 无效，池子大小: " + sorted.size());
+            }
+            pool = new ArrayList<>(sorted.subList(rangeStart, end));
+            log.info("按区间[{},{})取collection: 排序后池子 {} 个 -> 切片 {} 个", rangeStart, end, sorted.size(), pool.size());
+        }
+        if (pool.isEmpty()) {
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                    "collection池子为空，请先创建collection或显式指定collectionName");
+        }
+        return pool;
+    }
+
+    /**
+     * sequence_per_request 模式：每个请求从池子里取下一个 collection（全局原子游标，跨线程唯一）。
+     * 总请求数 ≤ 池子大小 时，保证每个 collection 恰好被 search 一次；超过则循环覆盖。
+     */
+    public static String nextCollectionPerRequest(List<String> pool) {
+        int idx = Math.floorMod(searchRequestCollectionIndex.getAndIncrement(), pool.size());
+        return pool.get(idx);
+    }
+
+    /**
+     * 解析 search/hybridSearch 的目标 collection。
+     * 支持先用 collectionNamePrefix 前缀过滤 globalCollectionNames 池子，再按 collectionRule 做 sequence/random。
+     *
+     * @param collectionRule       选择规则：""=显式名称/池子最后一个, "random"=随机, "sequence"=轮询
+     * @param collectionName       显式指定的 collection 名（rule 为空时优先）
+     * @param collectionNamePrefix collection 名前缀（可选；非空时先过滤池子）
+     * @return 目标 collection 名
+     */
+    /**
      * 解析 search/hybridSearch 的目标 collection。
      * 支持先用 collectionNamePrefix 前缀过滤 globalCollectionNames 池子，再按 collectionRule 做 sequence/random。
      *
@@ -1383,24 +1447,20 @@ public class CommonFunction {
      * @return 目标 collection 名
      */
     public static String resolveSearchCollection(String collectionRule, String collectionName, String collectionNamePrefix) {
+        return resolveSearchCollection(collectionRule, collectionName, collectionNamePrefix, -1, -1);
+    }
+
+    /**
+     * 解析 search/hybridSearch 的目标 collection（带区间切片）。
+     */
+    public static String resolveSearchCollection(String collectionRule, String collectionName, String collectionNamePrefix,
+                                                 int rangeStart, int rangeEnd) {
+        List<String> pool = resolveSearchCollectionPool(collectionNamePrefix, rangeStart, rangeEnd);
+        return selectFromPool(collectionRule, collectionName, pool);
+    }
+
+    private static String selectFromPool(String collectionRule, String collectionName, List<String> pool) {
         Random random = new Random();
-        // 按前缀过滤池子
-        List<String> pool = globalCollectionNames;
-        if (collectionNamePrefix != null && !collectionNamePrefix.equalsIgnoreCase("")) {
-            pool = globalCollectionNames.stream()
-                    .filter(x -> x.startsWith(collectionNamePrefix))
-                    .collect(Collectors.toList());
-            log.info("按前缀[{}]匹配collection: 池子 {} 个 -> 命中 {} 个: {}",
-                    collectionNamePrefix, globalCollectionNames.size(), pool.size(), pool);
-            if (pool.isEmpty()) {
-                throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
-                        "collectionNamePrefix=" + collectionNamePrefix + " 未匹配到任何collection，当前池子: " + globalCollectionNames);
-            }
-        }
-        if (pool.isEmpty()) {
-            throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
-                    "collection池子为空，请先创建collection或显式指定collectionName");
-        }
         if (collectionRule == null || collectionRule.equalsIgnoreCase("")) {
             return (collectionName == null || collectionName.equalsIgnoreCase(""))
                     ? pool.get(pool.size() - 1) : collectionName;

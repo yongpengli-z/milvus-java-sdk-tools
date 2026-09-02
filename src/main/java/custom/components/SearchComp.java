@@ -41,9 +41,23 @@ public class SearchComp {
 
         // 先search collection
         // 判断collection获取规则（支持 collectionNamePrefix 前缀过滤后再 sequence/random）
-        String collection = CommonFunction.resolveSearchCollection(
-                searchParams.getCollectionRule(), searchParams.getCollectionName(), searchParams.getCollectionNamePrefix());
-        log.info("Search 目标 collection: {}", collection);
+        boolean perRequestCollection = "sequence_per_request".equalsIgnoreCase(
+                searchParams.getCollectionRule() == null ? "" : searchParams.getCollectionRule());
+        List<String> collectionPool = null;
+        String collection;
+        if (perRequestCollection) {
+            // 逐请求轮转：步骤启动时只解析池子，每个请求从池子取下一个 collection（全局原子游标，跨线程唯一）
+            collectionPool = CommonFunction.resolveSearchCollectionPool(searchParams.getCollectionNamePrefix(),
+                    searchParams.getCollectionRangeStart(), searchParams.getCollectionRangeEnd());
+            // schema 检测与底库捞取向量都以池子第一个 collection 为基准（假设池内 collection 同构）
+            collection = collectionPool.get(0);
+            log.info("Search sequence_per_request 模式，collection池: {} 个，基准collection: {}", collectionPool.size(), collection);
+        } else {
+            collection = CommonFunction.resolveSearchCollection(
+                    searchParams.getCollectionRule(), searchParams.getCollectionName(), searchParams.getCollectionNamePrefix(),
+                    searchParams.getCollectionRangeStart(), searchParams.getCollectionRangeEnd());
+            log.info("Search 目标 collection: {}", collection);
+        }
 
         // 判定是不是sparse向量，并且是由Function BM25生成
         DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());
@@ -124,6 +138,7 @@ public class SearchComp {
             RateLimiter finalRateLimiter = rateLimiter;
             List<GeneralDataRole> finalGeneralDataRoleList = generalDataRoleList;
             String finalCollection = collection;
+            List<String> finalCollectionPool = collectionPool;
             Callable<SearchResult> callable =
                     () -> {
                         List<BaseVector> randomBaseVectors = baseVectors;
@@ -167,11 +182,15 @@ public class SearchComp {
                                     log.info("线程[" + finalC + "] search filter:{}", filter);
                                 }
                             }
+                            // sequence_per_request 模式：每个请求取池子里下一个 collection（全局游标，跨线程唯一）
+                            String currentCollection = finalCollectionPool != null
+                                    ? CommonFunction.nextCollectionPerRequest(finalCollectionPool)
+                                    : finalCollection;
                             SearchReq searchReq = SearchReq.builder()
                                     .topK(searchParams.getTopK())
                                     .outputFields(finalOutputs)
                                     .consistencyLevel(ConsistencyLevel.BOUNDED)
-                                    .collectionName(finalCollection)
+                                    .collectionName(currentCollection)
                                     .searchParams(searchLevel)
                                     .filter(filter)
                                     .data(randomBaseVectors)
@@ -194,7 +213,7 @@ public class SearchComp {
                             }
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
-                            log.debug("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，result size：" + search.getSearchResults().size() + ",");
+                            log.debug("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，collection：" + currentCollection + "，result size：" + search.getSearchResults().size() + ",");
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime(costTimeItem);
 //                            returnNum.add(search.getSearchResults().get(0).size());

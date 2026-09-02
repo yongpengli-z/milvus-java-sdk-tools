@@ -30,6 +30,8 @@ public class HybridSearchParams {
      *   <li>""：默认使用最近一次创建/记录的 collection</li>
      *   <li>"random"：从全局 collection 列表随机选</li>
      *   <li>"sequence"：按顺序轮询全局 collection 列表</li>
+     *   <li>"sequence_per_request"：每个 hybridSearch 请求轮换取下一个 collection（全局原子游标，跨线程唯一；
+     *       总请求数 ≤ 池子大小时每个 collection 恰好被搜一次）</li>
      * </ul>
      * <p>
      * 前端默认值：""（None）
@@ -45,6 +47,19 @@ public class HybridSearchParams {
      * 未匹配到任何 collection 会直接报错。
      */
     private String collectionNamePrefix;
+
+    /**
+     * Collection 池区间起始下标（可选，默认 -1 不启用）。
+     * >= 0 时启用区间模式：前缀过滤后先按名称排序，再取 [rangeStart, rangeEnd) 切片，
+     * 用于多 client 物理分割（如 client0 取 [0,334)，client1 取 [334,668)）。
+     */
+    private int collectionRangeStart = -1;
+
+    /**
+     * Collection 池区间结束下标（可选，开区间）。
+     * 默认值 -1（或 0/超出池子大小）表示取到末尾。
+     */
+    private int collectionRangeEnd = -1;
 
     /**
      * 混合搜索请求列表。

@@ -60,6 +60,9 @@ public class BaseTest {
     public static int queryCollectionIndex = 0;
     public static int upsertCollectionIndex = 0;
 
+    /** sequence_per_request 模式下的全局请求级游标（跨线程共享，保证并发时每个请求打到不同 collection） */
+    public static java.util.concurrent.atomic.AtomicInteger searchRequestCollectionIndex = new java.util.concurrent.atomic.AtomicInteger(0);
+
     /** 按 URI 缓存 MilvusClientV2，避免重复创建 */
     private static final Map<String, MilvusClientV2> clientCache = new ConcurrentHashMap<>();
 
