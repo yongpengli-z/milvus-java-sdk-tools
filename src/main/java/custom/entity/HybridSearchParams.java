@@ -223,5 +223,15 @@ public class HybridSearchParams {
          * 前端默认值：""（空字符串，表示不过滤）
          */
         private String filter;
+
+        /**
+         * Query 数据集名称（可选），对应 {@link custom.common.QueryDatasetEnum} 中的 datasetName。
+         * <p>
+         * 指定后：该字段的查询输入（向量/文本）从数据集文件全量加载，不再从 collection 底库捞取。
+         * 不同字段可配置不同的 query 数据集（如 dense 字段用 "widetable"，BM25 字段用 "widetable_bm25"）。
+         * <p>
+         * 前端默认值：""（空字符串，保持原有逻辑）
+         */
+        private String queryDataset;
     }
 }

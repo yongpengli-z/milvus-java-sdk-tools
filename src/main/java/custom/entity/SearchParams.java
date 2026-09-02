@@ -203,4 +203,18 @@ public class SearchParams {
      * 前端默认值：""（空字符串，使用 primary）
      */
     private String targetEndpoint;
+
+    /**
+     * Query 数据集名称（可选），对应 {@link custom.common.QueryDatasetEnum} 中的 datasetName。
+     * <p>
+     * 指定后：search 的查询输入（向量/文本）从该数据集文件全量加载，不再从 collection 底库捞取。
+     * <ul>
+     *   <li>"widetable"：稠密向量查询，读取 emb_*.npy（768 维 FloatVec）</li>
+     *   <li>"widetable_bm25"：BM25 文本查询，读取 bm25_title_*.txt（EmbeddedText）</li>
+     * </ul>
+     * 为空 / null 时：保持原有逻辑（从 collection 捞取 1000 条）。
+     * <p>
+     * 前端默认值：""（空字符串）
+     */
+    private String queryDataset;
 }

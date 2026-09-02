@@ -2,6 +2,7 @@ package custom.components;
 
 import com.google.common.util.concurrent.RateLimiter;
 import custom.common.CommonFunction;
+import custom.common.QueryDatasetEnum;
 import custom.entity.HybridSearchParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.HybridSearchResult;
@@ -12,6 +13,7 @@ import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
+import custom.utils.QueryDatasetUtil;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
@@ -112,8 +114,17 @@ public class HybridSearchComp {
                 continue;
             }
 
-            // 检查该字段是否由BM25 Function生成
-            if (functionFieldMap.containsKey(annsField)) {
+            // 指定了 query 数据集：不从底库捞，从数据集文件加载该字段的查询输入
+            QueryDatasetEnum queryDatasetEnum = QueryDatasetEnum.fromName(request.getQueryDataset());
+            if (request.getQueryDataset() != null && !request.getQueryDataset().equalsIgnoreCase("") && queryDatasetEnum == null) {
+                log.warn("字段 {} 的 queryDataset={} 未匹配到 QueryDatasetEnum，回退为从collection里捞取查询输入", annsField, request.getQueryDataset());
+            }
+            if (queryDatasetEnum != null) {
+                log.info("字段 {} 使用query数据集 {} 全量加载hybridSearch查询输入", annsField, queryDatasetEnum.datasetName);
+                List<BaseVector> searchBaseVectors = QueryDatasetUtil.providerAllQueryVectors(queryDatasetEnum);
+                log.info("提供给hybridSearch使用的查询输入数量: {}", searchBaseVectors.size());
+                fieldVectorsMap.put(annsField, searchBaseVectors);
+            } else if (functionFieldMap.containsKey(annsField)) {
                 String inputFieldName = functionFieldMap.get(annsField);
                 log.info("字段 {} 由BM25 Function生成，从collection里捞取input field {} 的文本数据: {}", annsField, inputFieldName, 1000);
                 List<BaseVector> searchBaseVectors = CommonFunction.providerSearchFunctionData(client, collection, 1000, inputFieldName);
