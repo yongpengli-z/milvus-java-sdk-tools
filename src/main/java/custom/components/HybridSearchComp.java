@@ -44,24 +44,10 @@ public class HybridSearchComp {
         MilvusClientV2 client = getMilvusClient(hybridSearchParams.getTargetEndpoint());
         log.info("HybridSearch 使用 endpoint: {}", describeTargetEndpoint(hybridSearchParams.getTargetEndpoint()));
 
-        // 判断collection获取规则
-        Random random = new Random();
-        String collection;
-        if (hybridSearchParams.getCollectionRule() == null || hybridSearchParams.getCollectionRule().equalsIgnoreCase("")) {
-            collection = (hybridSearchParams.getCollectionName() == null ||
-                    hybridSearchParams.getCollectionName().equalsIgnoreCase(""))
-                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : hybridSearchParams.getCollectionName();
-        } else if (hybridSearchParams.getCollectionRule().equalsIgnoreCase("random")) {
-            collection = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
-        } else if (hybridSearchParams.getCollectionRule().equalsIgnoreCase("sequence")) {
-            collection = globalCollectionNames.get(searchCollectionIndex);
-            searchCollectionIndex += 1;
-            searchCollectionIndex = searchCollectionIndex % globalCollectionNames.size();
-        } else {
-            collection = (hybridSearchParams.getCollectionName() == null ||
-                    hybridSearchParams.getCollectionName().equalsIgnoreCase(""))
-                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : hybridSearchParams.getCollectionName();
-        }
+        // 判断collection获取规则（支持 collectionNamePrefix 前缀过滤后再 sequence/random）
+        String collection = CommonFunction.resolveSearchCollection(
+                hybridSearchParams.getCollectionRule(), hybridSearchParams.getCollectionName(), hybridSearchParams.getCollectionNamePrefix());
+        log.info("HybridSearch 目标 collection: {}", collection);
 
         // 验证 searchRequests 不为空
         if (hybridSearchParams.getSearchRequests() == null || hybridSearchParams.getSearchRequests().isEmpty()) {

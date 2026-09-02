@@ -40,24 +40,10 @@ public class SearchComp {
         log.info("Search 使用 endpoint: {}", describeTargetEndpoint(searchParams.getTargetEndpoint()));
 
         // 先search collection
-        // 判断collection获取规则
-        Random random = new Random();
-        String collection ;
-        if (searchParams.getCollectionRule() == null || searchParams.getCollectionRule().equalsIgnoreCase("")) {
-            collection = (searchParams.getCollectionName() == null ||
-                    searchParams.getCollectionName().equalsIgnoreCase(""))
-                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
-        } else if (searchParams.getCollectionRule().equalsIgnoreCase("random")) {
-            collection = globalCollectionNames.get(random.nextInt(globalCollectionNames.size()));
-        } else if (searchParams.getCollectionRule().equalsIgnoreCase("sequence")) {
-            collection = globalCollectionNames.get(searchCollectionIndex);
-            searchCollectionIndex += 1;
-            searchCollectionIndex = searchCollectionIndex % globalCollectionNames.size();
-        } else {
-            collection = (searchParams.getCollectionName() == null ||
-                    searchParams.getCollectionName().equalsIgnoreCase(""))
-                    ? globalCollectionNames.get(globalCollectionNames.size() - 1) : searchParams.getCollectionName();
-        }
+        // 判断collection获取规则（支持 collectionNamePrefix 前缀过滤后再 sequence/random）
+        String collection = CommonFunction.resolveSearchCollection(
+                searchParams.getCollectionRule(), searchParams.getCollectionName(), searchParams.getCollectionNamePrefix());
+        log.info("Search 目标 collection: {}", collection);
 
         // 判定是不是sparse向量，并且是由Function BM25生成
         DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collection).build());

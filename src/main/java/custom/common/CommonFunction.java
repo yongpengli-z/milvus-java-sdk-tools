@@ -40,6 +40,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
@@ -1372,6 +1373,49 @@ public class CommonFunction {
      * @param nq                nq
      * @return List<BaseVector>
      */
+    /**
+     * 解析 search/hybridSearch 的目标 collection。
+     * 支持先用 collectionNamePrefix 前缀过滤 globalCollectionNames 池子，再按 collectionRule 做 sequence/random。
+     *
+     * @param collectionRule       选择规则：""=显式名称/池子最后一个, "random"=随机, "sequence"=轮询
+     * @param collectionName       显式指定的 collection 名（rule 为空时优先）
+     * @param collectionNamePrefix collection 名前缀（可选；非空时先过滤池子）
+     * @return 目标 collection 名
+     */
+    public static String resolveSearchCollection(String collectionRule, String collectionName, String collectionNamePrefix) {
+        Random random = new Random();
+        // 按前缀过滤池子
+        List<String> pool = globalCollectionNames;
+        if (collectionNamePrefix != null && !collectionNamePrefix.equalsIgnoreCase("")) {
+            pool = globalCollectionNames.stream()
+                    .filter(x -> x.startsWith(collectionNamePrefix))
+                    .collect(Collectors.toList());
+            log.info("按前缀[{}]匹配collection: 池子 {} 个 -> 命中 {} 个: {}",
+                    collectionNamePrefix, globalCollectionNames.size(), pool.size(), pool);
+            if (pool.isEmpty()) {
+                throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                        "collectionNamePrefix=" + collectionNamePrefix + " 未匹配到任何collection，当前池子: " + globalCollectionNames);
+            }
+        }
+        if (pool.isEmpty()) {
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                    "collection池子为空，请先创建collection或显式指定collectionName");
+        }
+        if (collectionRule == null || collectionRule.equalsIgnoreCase("")) {
+            return (collectionName == null || collectionName.equalsIgnoreCase(""))
+                    ? pool.get(pool.size() - 1) : collectionName;
+        } else if (collectionRule.equalsIgnoreCase("random")) {
+            return pool.get(random.nextInt(pool.size()));
+        } else if (collectionRule.equalsIgnoreCase("sequence")) {
+            String collection = pool.get(searchCollectionIndex % pool.size());
+            searchCollectionIndex += 1;
+            return collection;
+        } else {
+            return (collectionName == null || collectionName.equalsIgnoreCase(""))
+                    ? pool.get(pool.size() - 1) : collectionName;
+        }
+    }
+
     public static List<BaseVector> providerSearchVectorByNq(List<BaseVector> baseVectorDataset, int nq) {
         List<BaseVector> baseVectors = new ArrayList<>();
         if (baseVectorDataset == null || baseVectorDataset.isEmpty()) {

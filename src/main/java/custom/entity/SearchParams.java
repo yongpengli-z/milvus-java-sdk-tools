@@ -184,6 +184,18 @@ public class SearchParams {
     private String collectionRule;
 
     /**
+     * Collection 名称前缀（可选）。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Collection Name Prefix"
+     * <p>
+     * 前端默认值：""（空字符串，不过滤）
+     * <p>
+     * 非空时：先按前缀过滤全局 collection 池，再做 sequence/random 选择；
+     * 未匹配到任何 collection 会直接报错。
+     */
+    private String collectionNamePrefix;
+
+    /**
      * 查询分区列表（可选）。
      * <p>
      * 前端：`searchEdit.vue` -> "Partition Names"（逗号分隔输入）

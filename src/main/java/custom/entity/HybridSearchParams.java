@@ -37,6 +37,16 @@ public class HybridSearchParams {
     private String collectionRule;
 
     /**
+     * Collection 名称前缀（可选）。
+     * <p>
+     * 前端默认值：""（空字符串，不过滤）
+     * <p>
+     * 非空时：先按前缀过滤全局 collection 池，再做 sequence/random 选择；
+     * 未匹配到任何 collection 会直接报错。
+     */
+    private String collectionNamePrefix;
+
+    /**
      * 混合搜索请求列表。
      * <p>
      * 每个元素代表一个向量字段的搜索请求，包含：
