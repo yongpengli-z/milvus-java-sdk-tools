@@ -137,6 +137,18 @@ public class HybridSearchParams {
     private long runningMinutes;
 
     /**
+     * 运行次数（可选，每个线程的请求次数）。
+     * <p>
+     * 前端默认值：0
+     * <ul>
+     *   <li>0：按 runningMinutes 时间模式跑（默认行为）</li>
+     *   <li>&gt;0：次数模式，每个线程跑满 N 次后停止（次数优先，不再看时间）</li>
+     * </ul>
+     * 只跑一次：numConcurrency=1 且 runningCount=1。
+     */
+    private long runningCount;
+
+    /**
      * 目标 QPS（每线程 RateLimiter 限流；0 表示不限制）。
      * <p>
      * 前端默认值：0

@@ -200,6 +200,12 @@ public class HybridSearchComp {
                 List<Integer> returnNum = new ArrayList<>();
                 List<Float> costTime = new ArrayList<>();
                 LocalDateTime endTime = LocalDateTime.now().plusMinutes(hybridSearchParams.getRunningMinutes());
+                // 次数模式：runningCount > 0 时每线程跑满 N 次后停止（次数优先，不再看时间）
+                long runningCount = hybridSearchParams.getRunningCount();
+                boolean countMode = runningCount > 0;
+                if (countMode) {
+                    log.info("线程[{}]按次数模式运行: {} 次", finalC, runningCount);
+                }
                 // QPS控制计数器
                 int requestCount = 0;
                 long lastLogTime = System.currentTimeMillis();
@@ -211,7 +217,7 @@ public class HybridSearchComp {
                     threadVectorsMap.put(entry.getKey(), new ArrayList<>(entry.getValue()));
                 }
 
-                while (LocalDateTime.now().isBefore(endTime)) {
+                while (countMode ? returnNum.size() < runningCount : LocalDateTime.now().isBefore(endTime)) {
                     // QPS控制点
                     if (finalRateLimiter != null) {
                         finalRateLimiter.acquire(); // 阻塞直到获得令牌

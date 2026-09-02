@@ -146,11 +146,17 @@ public class SearchComp {
                         List<Integer> returnNum = new ArrayList<>();
                         List<Float> costTime = new ArrayList<>();
                         LocalDateTime endTime = LocalDateTime.now().plusMinutes(searchParams.getRunningMinutes());
+                        // 次数模式：runningCount > 0 时每线程跑满 N 次后停止（次数优先，不再看时间）
+                        long runningCount = searchParams.getRunningCount();
+                        boolean countMode = runningCount > 0;
+                        if (countMode) {
+                            log.info("线程[" + finalC + "]按次数模式运行: " + runningCount + " 次");
+                        }
                         // QPS控制计数器
                         int requestCount = 0;
                         long lastLogTime = System.currentTimeMillis();
                         long lastPrintTime = System.currentTimeMillis();
-                        while (LocalDateTime.now().isBefore(endTime)) {
+                        while (countMode ? returnNum.size() < runningCount : LocalDateTime.now().isBefore(endTime)) {
                             // 3. QPS控制点（如果需要）
                             if (finalRateLimiter != null) {
                                 finalRateLimiter.acquire(); // 阻塞直到获得令牌
