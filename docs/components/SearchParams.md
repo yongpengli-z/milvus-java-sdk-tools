@@ -7,7 +7,11 @@
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
 | `collectionName` | String | 否 | `""` | |
-| `collectionRule` | String | 是 | `""` | `random`/`sequence`/空 |
+| `collectionRule` | String | 是 | `""` | `random`/`sequence`/`sequence_per_request`/空 |
+| `collectionNamePrefix` | String | 否 | `""` | collection 名前缀过滤（见下文「Collection 池过滤与分割」） |
+| `collectionRangeStart` | int | 否 | `-1` | 池区间起始下标，>=0 启用区间切片 |
+| `collectionRangeEnd` | int | 否 | `-1` | 池区间结束下标（开区间），<=0 表示到末尾 |
+| `queryDataset` | String | 否 | `""` | query 数据集名称（见下文「Query 数据集」），不从底库捞查询输入 |
 | `annsField` | String | **是** | | 向量字段名。**强烈建议显式指定** |
 | `nq` | int | 是 | `1` | query vectors 数量 |
 | `topK` | int | 是 | `1` | |
@@ -15,6 +19,7 @@
 | `filter` | String | 否 | `""` | Milvus expr（支持 `$fieldName` 占位符） |
 | `numConcurrency` | int | 是 | `10` | |
 | `runningMinutes` | long | 是 | `10` | 按时间循环 |
+| `runningCount` | long | 否 | `0` | 按次数循环：>0 时每线程跑满 N 次后停止（次数优先，不再看时间） |
 | `randomVector` | boolean | 是 | `true` | |
 | `searchLevel` | int | 否 | `1` | |
 | `indexAlgo` | String | 否 | `""` | |
@@ -24,6 +29,31 @@
 | `ignoreError` | boolean | 否 | `false` | |
 | `timeout` | long | 否 | `800` | SDK 请求超时（ms），0=默认 800ms |
 | `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
+
+## Collection 池过滤与分割
+
+Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组件维护）中选择：
+
+- `collectionRule`：`""`=显式 `collectionName` 或池子最后一个；`random`=池内随机；`sequence`=按步骤轮询（每步骤选一个，整个步骤固定）；`sequence_per_request`=**每个请求**轮换取下一个（全局原子游标，跨线程唯一；总请求数 ≤ 池子大小时每个 collection 恰好被搜一次，适合测多 collection 并发上限 QPS）
+- `collectionNamePrefix`：非空时先按前缀过滤池子再做选择；匹配不到直接报错
+- `collectionRangeStart`/`collectionRangeEnd`：>=0 启用区间模式，前缀过滤后**按名称排序**再取 `[start,end)` 切片，用于多 client 物理分割（如 client0 取 `[0,334)`、client1 取 `[334,668)`），不依赖命名规律
+
+## Query 数据集
+
+`queryDataset` 指定后，查询输入（向量/文本）从数据集文件**全量加载**，不再从 collection 底库捞取；为空保持原有逻辑。对应 `custom.common.QueryDatasetEnum`：
+
+| datasetName | 类型 | 数据文件 |
+|-------------|------|----------|
+| `widetable` | vector（FloatVec，768d） | `/test/milvus/raw_data/widetable/emb_768.npy`（10000 条） |
+| `widetable_bm25` | text（EmbeddedText，BM25 查询文本） | `/test/milvus/raw_data/widetable/bm25_title_short.txt`（2000 条） |
+
+填错名称会 log.warn 告警并回退为从底库捞取。
+
+## 按次数运行
+
+`runningCount` > 0 时进入次数模式：每个线程跑满 N 次后停止（次数优先，不再看 `runningMinutes`）。失败请求也计入次数。
+**只跑一次**：`numConcurrency=1` 且 `runningCount=1`，单样本也能正常输出 avg/TPxx/passRate。
+配合 `sequence_per_request` 遍历 N 个 collection 各搜一次：`numConcurrency=1`，`runningCount=N`，整体 avg/TP99 原生输出。
 
 ## targetEndpoint
 
@@ -53,9 +83,25 @@
 {
   "SearchParams_0": {
     "annsField": "vec", "nq": 1, "topK": 10, "outputs": ["*"],
-    "numConcurrency": 10, "runningMinutes": 1, "randomVector": true,
+    "numConcurrency": 10, "runningMinutes": 1, "runningCount": 0,
+    "collectionRule": "", "collectionNamePrefix": "",
+    "collectionRangeStart": -1, "collectionRangeEnd": -1,
+    "queryDataset": "", "randomVector": true,
     "generalFilterRoleList": [], "partitionNames": [],
     "targetEndpoint": ""
+  }
+}
+```
+
+遍历 1000 个 collection 各搜一次（单 client 串行，原生输出整体 avg/TP99）：
+
+```json
+{
+  "SearchParams_0": {
+    "annsField": "vec", "nq": 1, "topK": 10,
+    "collectionRule": "sequence_per_request", "collectionNamePrefix": "wt_",
+    "numConcurrency": 1, "runningCount": 1000, "runningMinutes": 1,
+    "randomVector": true, "generalFilterRoleList": [], "partitionNames": []
   }
 }
 ```
