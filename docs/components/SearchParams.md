@@ -9,8 +9,8 @@
 | `collectionName` | String | 否 | `""` | |
 | `collectionRule` | String | 是 | `""` | `random`/`sequence`/`sequence_per_request`/空 |
 | `collectionNamePrefix` | String | 否 | `""` | collection 名前缀过滤（见下文「Collection 池过滤与分割」） |
-| `collectionRangeStart` | int | 否 | `-1` | 池区间起始下标，>=0 启用区间切片 |
-| `collectionRangeEnd` | int | 否 | `-1` | 池区间结束下标（开区间），<=0 表示到末尾 |
+| `collectionRangeStart` | int | 否 | `-1` | 池区间起始，>=0 启用区间模式（见下文） |
+| `collectionRangeEnd` | int | 否 | `-1` | 池区间结束（开区间），<=0 表示到末尾 |
 | `queryDataset` | String | 否 | `""` | query 数据集名称（见下文「Query 数据集」），不从底库捞查询输入 |
 | `annsField` | String | **是** | | 向量字段名。**强烈建议显式指定** |
 | `nq` | int | 是 | `1` | query vectors 数量 |
@@ -36,7 +36,9 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 
 - `collectionRule`：`""`=显式 `collectionName` 或池子最后一个；`random`=池内随机；`sequence`=按步骤轮询（每步骤选一个，整个步骤固定）；`sequence_per_request`=**每个请求**轮换取下一个（全局原子游标，跨线程唯一；总请求数 ≤ 池子大小时每个 collection 恰好被搜一次，适合测多 collection 并发上限 QPS）
 - `collectionNamePrefix`：非空时先按前缀过滤池子再做选择；匹配不到直接报错
-- `collectionRangeStart`/`collectionRangeEnd`：>=0 启用区间模式，前缀过滤后**按名称排序**再取 `[start,end)` 切片，用于多 client 物理分割（如 client0 取 `[0,334)`、client1 取 `[334,668)`），不依赖命名规律
+- `collectionRangeStart`/`collectionRangeEnd`：>=0 启用区间模式，取 `[start,end)`（开区间，`end`<=0 表示到末尾）。两种模式：
+  - **数字后缀模式**（前缀非空且命中名称为 `前缀+纯数字后缀`，如 `multi_tenant_1000_0000001`）：按后缀**数值**过滤，`start`/`end` 直接对应名字里的数字，前导零不影响——填 `1` 即匹配 `..._0000001`，`[1,500001)` 命中 `multi_tenant_1000_0000001 ~ multi_tenant_1000_0500000`。即使池子里有缺号也不偏移
+  - **位置切片模式**（无前缀或后缀非纯数字）：前缀过滤后**按名称排序**再取下标切片，用于多 client 物理分割（如 client0 取 `[0,334)`、client1 取 `[334,668)`），不依赖命名规律
 
 ## Query 数据集
 

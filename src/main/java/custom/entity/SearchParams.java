@@ -198,21 +198,23 @@ public class SearchParams {
     private String collectionNamePrefix;
 
     /**
-     * Collection 池区间起始下标（可选，默认 -1 不启用）。
+     * Collection 池区间起始（可选，默认 -1 不启用）。
      * <p>
      * 前端：`searchEdit.vue` -> "Collection Range Start"
      * <p>
-     * >= 0 时启用区间模式：前缀过滤后先按名称排序，再取 [rangeStart, rangeEnd) 切片，
-     * 用于多 client 物理分割（如 client0 取 [0,334)，client1 取 [334,668)）。
+     * >= 0 时启用区间模式。若 collectionNamePrefix 命中的名称是 前缀+纯数字后缀
+     * （如 multi_tenant_1000_0000001），则按后缀数值过滤 [rangeStart, rangeEnd)，
+     * 前导零不影响（填 1 即可匹配 ..._0000001）；
+     * 否则退化为排序后按下标切片，用于多 client 物理分割（如 client0 取 [0,334)，client1 取 [334,668)）。
      */
     private int collectionRangeStart = -1;
 
     /**
-     * Collection 池区间结束下标（可选，开区间）。
+     * Collection 池区间结束（可选，开区间）。
      * <p>
      * 前端：`searchEdit.vue` -> "Collection Range End"
      * <p>
-     * 前端默认值：-1（或 0/超出池子大小）表示取到末尾。
+     * 前端默认值：-1（或 0）表示不限制上界/取到末尾。
      */
     private int collectionRangeEnd = -1;
 

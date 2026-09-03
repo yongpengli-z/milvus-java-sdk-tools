@@ -1392,17 +1392,26 @@ public class CommonFunction {
     }
 
     /**
-     * 通用 collection 列表过滤：先按前缀过滤，再按区间 [rangeStart, rangeEnd) 切片（区间模式先按名称排序）。
+     * 通用 collection 列表过滤：先按前缀过滤，再按区间 [rangeStart, rangeEnd) 过滤。
      * 供 search/hybridSearch/load/release 等组件复用。
+     * <p>
+     * 区间有两种模式：
+     * 1. 数字后缀模式（前缀非空且命中名称为 前缀+纯数字后缀，如 multi_tenant_1000_0000001）：
+     *    按后缀数值过滤，rangeStart/rangeEnd 直接对应名字里的数字，前导零不影响匹配
+     *    （如 [1,500001) 命中 multi_tenant_1000_0000001 ~ multi_tenant_1000_0500000）。
+     * 2. 位置切片模式（无前缀或后缀非纯数字）：先按名称排序，再取 [rangeStart, rangeEnd) 下标切片，
+     *    保证多个 client 切分一致、互不重叠。
+     * rangeEnd <= 0 表示不限制上界/取到末尾。
      *
      * @param source               原始 collection 列表（globalCollectionNames 池子或实例全量列表）
      * @param collectionNamePrefix 前缀（可选；非空时先过滤）
-     * @param rangeStart           区间起始下标，>=0 启用区间切片
-     * @param rangeEnd             区间结束下标（开区间），<=0 或超出表示到末尾
+     * @param rangeStart           区间起始（>=0 启用）：数字后缀模式下为后缀数值下界（含），否则为排序后下标
+     * @param rangeEnd             区间结束（开区间，<=0 表示到末尾）
      */
     public static List<String> filterCollectionPool(List<String> source, String collectionNamePrefix, int rangeStart, int rangeEnd) {
         List<String> pool = source;
-        if (collectionNamePrefix != null && !collectionNamePrefix.equalsIgnoreCase("")) {
+        boolean hasPrefix = collectionNamePrefix != null && !collectionNamePrefix.equalsIgnoreCase("");
+        if (hasPrefix) {
             pool = source.stream()
                     .filter(x -> x.startsWith(collectionNamePrefix))
                     .collect(Collectors.toList());
@@ -1414,7 +1423,14 @@ public class CommonFunction {
             }
         }
         if (rangeStart >= 0) {
-            // 区间模式：先排序再切片，保证多 client 切分一致
+            if (hasPrefix) {
+                List<String> suffixRanged = filterByNumericSuffix(pool, collectionNamePrefix, rangeStart, rangeEnd);
+                if (suffixRanged != null) {
+                    return suffixRanged;
+                }
+                // 后缀不是纯数字，回退到位置切片
+            }
+            // 位置切片模式：先排序再切片，保证多 client 切分一致
             List<String> sorted = new ArrayList<>(pool);
             sorted.sort(String::compareTo);
             int end = (rangeEnd <= 0 || rangeEnd > sorted.size()) ? sorted.size() : rangeEnd;
@@ -1430,6 +1446,38 @@ public class CommonFunction {
                     "collection池子为空，请先创建collection或显式指定collectionName");
         }
         return pool;
+    }
+
+    /**
+     * 数字后缀区间过滤：把命中前缀的名称按 前缀+数字后缀 解析（如前缀 multi_tenant_1000_、后缀 0000001），
+     * 按后缀数值取 [rangeStart, rangeEnd)（rangeEnd<=0 表示不限上界），并按数值升序返回。
+     * 前导零不影响匹配（后缀按数值解析）。没有任何 前缀+纯数字 名称时返回 null，由调用方回退到位置切片。
+     */
+    private static List<String> filterByNumericSuffix(List<String> pool, String prefix, int rangeStart, int rangeEnd) {
+        List<Map.Entry<Long, String>> numbered = new ArrayList<>();
+        for (String name : pool) {
+            String suffix = name.substring(prefix.length());
+            if (!suffix.isEmpty() && suffix.chars().allMatch(Character::isDigit)) {
+                numbered.add(new AbstractMap.SimpleEntry<>(Long.parseLong(suffix), name));
+            }
+        }
+        if (numbered.isEmpty()) {
+            return null;
+        }
+        long end = rangeEnd <= 0 ? Long.MAX_VALUE : rangeEnd;
+        List<String> ranged = numbered.stream()
+                .filter(e -> e.getKey() >= rangeStart && e.getKey() < end)
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
+        if (ranged.isEmpty()) {
+            throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
+                    "按数字后缀区间[" + rangeStart + "," + (rangeEnd <= 0 ? "末尾" : rangeEnd) + ") 未命中任何collection，前缀: "
+                            + prefix + "，池子大小: " + pool.size());
+        }
+        log.info("按数字后缀区间[{},{})取collection: 前缀[{}]命中 {} 个 -> 区间过滤后 {} 个",
+                rangeStart, rangeEnd <= 0 ? "末尾" : String.valueOf(rangeEnd), prefix, pool.size(), ranged.size());
+        return ranged;
     }
 
     /**

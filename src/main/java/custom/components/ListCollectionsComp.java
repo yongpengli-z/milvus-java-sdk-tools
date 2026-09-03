@@ -7,6 +7,9 @@ import custom.entity.result.ResultEnum;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
@@ -20,10 +23,18 @@ public class ListCollectionsComp {
                 milvusClientV2.useDatabase(databaseName);
             }
             ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
-            log.info("List collections({}个): {}", listCollectionsResp.getCollectionNames().size(), listCollectionsResp.getCollectionNames());
+            List<String> collectionNames = listCollectionsResp.getCollectionNames();
+            String prefix = listCollectionsParams.getCollectionNamePrefix();
+            if (prefix != null && !prefix.isEmpty()) {
+                collectionNames = collectionNames.stream()
+                        .filter(name -> name.startsWith(prefix))
+                        .collect(Collectors.toList());
+                log.info("按前缀 \"{}\" 过滤后命中 {} 个 collection", prefix, collectionNames.size());
+            }
+            log.info("List collections({}个): {}", collectionNames.size(), collectionNames);
             return ListCollectionsResult.builder()
-                    .collectionNames(listCollectionsResp.getCollectionNames())
-                    .collectionCount(listCollectionsResp.getCollectionNames().size())
+                    .collectionNames(collectionNames)
+                    .collectionCount(collectionNames.size())
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result)
                             .build())

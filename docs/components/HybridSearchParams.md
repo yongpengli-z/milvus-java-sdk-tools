@@ -9,8 +9,8 @@
 | `collectionName` | String | 否 | `""` | |
 | `collectionRule` | String | 是 | `""` | `random`/`sequence`/`sequence_per_request`/空 |
 | `collectionNamePrefix` | String | 否 | `""` | collection 名前缀过滤（与 SearchParams 语义一致） |
-| `collectionRangeStart` | int | 否 | `-1` | 池区间起始下标，>=0 启用区间切片（排序后取 `[start,end)`，用于多 client 分割） |
-| `collectionRangeEnd` | int | 否 | `-1` | 池区间结束下标（开区间），<=0 表示到末尾 |
+| `collectionRangeStart` | int | 否 | `-1` | 池区间起始，>=0 启用区间模式（与 SearchParams 语义一致） |
+| `collectionRangeEnd` | int | 否 | `-1` | 池区间结束（开区间），<=0 表示到末尾 |
 | `searchRequests` | List | 是 | | 搜索请求列表（见下文） |
 | `ranker` | String | 是 | `"RRF"` | 融合策略：`RRF` 或 `WeightedRanker` |
 | `rankerParams` | Object | 否 | | RRF→`{"k":60}`；WeightedRanker→`{"weights":[0.5,0.5]}` |
@@ -28,7 +28,7 @@
 
 ## Collection 选择
 
-与 SearchParams 一致：`collectionRule` 新增 `sequence_per_request`（每个 hybridSearch 请求轮换取下一个 collection，全局原子游标跨线程唯一，总请求数 ≤ 池子大小时每个 collection 恰好被搜一次）；`collectionNamePrefix` 前缀过滤与 `collectionRangeStart/End` 区间切片可叠加（先前缀、再排序切片）。
+与 SearchParams 一致：`collectionRule` 新增 `sequence_per_request`（每个 hybridSearch 请求轮换取下一个 collection，全局原子游标跨线程唯一，总请求数 ≤ 池子大小时每个 collection 恰好被搜一次）；`collectionNamePrefix` 前缀过滤与 `collectionRangeStart/End` 区间过滤可叠加（先前缀、再区间——前缀命中 `前缀+纯数字后缀` 时按后缀数值过滤，前导零不影响；否则排序后按下标切片）。
 `sequence_per_request` 模式下 schema/BM25 Function 检测以池子第一个 collection 为基准，假设池内 collection 同构。
 
 ## targetEndpoint

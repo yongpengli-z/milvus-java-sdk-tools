@@ -7,9 +7,11 @@
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
 | `databaseName` | String | 否 | `""` | 为空使用当前 database |
+| `collectionNamePrefix` | String | 否 | `""` | 名称前缀过滤，如 `multi_tenant_1000_`；为空返回全部 |
 
 ## JSON 示例
 
 ```json
 {"ListCollectionsParams_0": {}}
+{"ListCollectionsParams_1": {"collectionNamePrefix": "multi_tenant_1000_"}}
 ```
