@@ -38,3 +38,11 @@ build/
 .DS_Store
 /src/main/resources/backup/
 /src/main/resources/example/
+
+# local scripts with credentials / runtime artifacts
+scripts/__pycache__/
+scripts/capacity_orchestrator.py
+scripts/capacity_orchestrator.log
+scripts/loki_*.py
+scripts/poll_task.py
+scripts/qtp_mcp.py
