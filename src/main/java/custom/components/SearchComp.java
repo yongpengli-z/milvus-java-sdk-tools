@@ -214,6 +214,10 @@ public class SearchComp {
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                             log.debug("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，collection：" + currentCollection + "，result size：" + search.getSearchResults().size() + ",");
+                            // sequence_per_request 模式：每次 search 打印使用的 collection 及耗时
+                            if (finalCollectionPool != null) {
+                                log.info("线程[" + finalC + "] search collection: " + currentCollection + "，cost: " + costTimeItem + " s");
+                            }
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime(costTimeItem);
 //                            returnNum.add(search.getSearchResults().get(0).size());

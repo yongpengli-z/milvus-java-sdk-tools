@@ -365,6 +365,10 @@ public class HybridSearchComp {
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                     int resultSize = hybridSearchResp != null ? hybridSearchResp.getSearchResults().size() : 0;
                     log.debug("线程[{}] hybridSearch cost:{} s，collection：{}，result size：{}", finalC, costTimeItem, currentCollection, resultSize);
+                    // sequence_per_request 模式：每次 hybridSearch 打印使用的 collection 及耗时
+                    if (finalCollectionPool != null) {
+                        log.info("线程[{}] hybridSearch collection: {}，cost: {} s", finalC, currentCollection, costTimeItem);
+                    }
                     costTime.add(costTimeItem);
                     statsReporter.recordCostTime(costTimeItem);
                     returnNum.add(resultSize);
