@@ -1,5 +1,6 @@
 package custom.components;
 
+import custom.common.CommonFunction;
 import custom.entity.ListCollectionsParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ListCollectionsResult;
@@ -31,7 +32,7 @@ public class ListCollectionsComp {
                         .collect(Collectors.toList());
                 log.info("按前缀 \"{}\" 过滤后命中 {} 个 collection", prefix, collectionNames.size());
             }
-            log.info("List collections({}个): {}", collectionNames.size(), collectionNames);
+            log.info("List collections: {}", CommonFunction.summarizeForLog(collectionNames));
             return ListCollectionsResult.builder()
                     .collectionNames(collectionNames)
                     .collectionCount(collectionNames.size())

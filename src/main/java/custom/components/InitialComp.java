@@ -1,5 +1,6 @@
 package custom.components;
 
+import custom.common.CommonFunction;
 import custom.entity.InitialParams;
 import io.milvus.v2.service.collection.request.DropCollectionReq;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
@@ -31,7 +32,7 @@ public class InitialComp {
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
         List<String> collectionNames =
                 listCollectionsResp.getCollectionNames();
-        log.info("List collection: " + collectionNames);
+        log.info("List collection: {}", CommonFunction.summarizeForLog(collectionNames));
         globalCollectionNames.addAll(collectionNames);
         if (initialParams.isCleanCollection()) {
             if (collectionNames.size() > 0) {
@@ -86,7 +87,7 @@ public class InitialComp {
                     ListCollectionsResp resp = milvusClientV2.listCollections();
                     List<String> collections = resp.getCollectionNames();
                     if (collections != null && !collections.isEmpty()) {
-                        log.info("Database [{}] has collections: {}, dropping them", dbName, collections);
+                        log.info("Database [{}] has collections: {}, dropping them", dbName, CommonFunction.summarizeForLog(collections));
                         cleanCollections(collections);
                     }
                     milvusClientV2.useDatabase("default");

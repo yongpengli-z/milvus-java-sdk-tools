@@ -60,7 +60,7 @@ public class ReleaseCollectionComp {
         if (releaseParams.isReleaseAll()) {
             ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
             List<String> collectionNames = listCollectionsResp.getCollectionNames();
-            log.info("Release all collections: " + collectionNames);
+            log.info("Release all collections: " + CommonFunction.summarizeForLog(collectionNames));
             return collectionNames;
         }
         String collectionName = (releaseParams.getCollectionName() == null || releaseParams.getCollectionName().equalsIgnoreCase(""))

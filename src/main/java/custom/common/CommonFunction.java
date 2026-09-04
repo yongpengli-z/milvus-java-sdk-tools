@@ -1374,6 +1374,51 @@ public class CommonFunction {
      * @return List<BaseVector>
      */
     /**
+     * 日志友好的列表摘要：
+     * - 小于等于 20 个：原样打印全部；
+     * - 超过 20 个：按“去掉末尾纯数字后缀后的前缀”分组统计个数并各给一个示例，
+     *   如 a_0001、b_1_0002 会归为 a_:N个、b_1_:M个；组数过多（>30）时只保留前 20 组并标注省略。
+     * 避免海量 collection 打满日志。
+     */
+    public static String summarizeForLog(List<String> names) {
+        if (names == null) {
+            return "null";
+        }
+        int size = names.size();
+        if (size <= 20) {
+            return "共" + size + "个: " + names;
+        }
+        // 按去掉末尾数字后缀的前缀分组，value = [个数, 示例名]
+        Map<String, long[]> groupCount = new HashMap<>();
+        Map<String, String> groupSample = new LinkedHashMap<>();
+        for (String name : names) {
+            int i = name.length();
+            while (i > 0 && Character.isDigit(name.charAt(i - 1))) {
+                i--;
+            }
+            String groupKey = name.substring(0, i);
+            groupCount.computeIfAbsent(groupKey, k -> new long[1])[0]++;
+            groupSample.putIfAbsent(groupKey, name);
+        }
+        List<Map.Entry<String, long[]>> groups = new ArrayList<>(groupCount.entrySet());
+        groups.sort((a, b) -> Long.compare(b.getValue()[0], a.getValue()[0]));
+        StringBuilder sb = new StringBuilder("共").append(size).append("个: ");
+        int shown = Math.min(groups.size(), 20);
+        for (int i = 0; i < shown; i++) {
+            Map.Entry<String, long[]> e = groups.get(i);
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(e.getKey()).append(": ").append(e.getValue()[0]).append("个(例: ")
+                    .append(groupSample.get(e.getKey())).append(")");
+        }
+        if (groups.size() > shown) {
+            sb.append("，等").append(groups.size()).append("组");
+        }
+        return sb.toString();
+    }
+
+    /**
      * 解析 search 的 collection 池：非空前缀先过滤 globalCollectionNames。
      * 前缀未匹配或池为空时抛出 INVALID_PARAMS。
      */
@@ -1419,7 +1464,7 @@ public class CommonFunction {
                     collectionNamePrefix, source.size(), pool.size());
             if (pool.isEmpty()) {
                 throw new CustomException(CustomExceptionCode.INVALID_PARAMS,
-                        "collectionNamePrefix=" + collectionNamePrefix + " 未匹配到任何collection，当前池子: " + source);
+                        "collectionNamePrefix=" + collectionNamePrefix + " 未匹配到任何collection，池子大小: " + source.size());
             }
         }
         if (rangeStart >= 0) {

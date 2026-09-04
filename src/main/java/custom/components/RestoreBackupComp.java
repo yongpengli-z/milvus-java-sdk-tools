@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.common.BackupDatasetEnum;
+import custom.common.CommonFunction;
 import custom.entity.RestoreBackupParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.RestoreBackupResult;
@@ -63,7 +64,7 @@ public class RestoreBackupComp {
                         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
                         List<String> collectionNames =
                                 listCollectionsResp.getCollectionNames();
-                        log.info("List collection: " + collectionNames);
+                        log.info("List collection: " + CommonFunction.summarizeForLog(collectionNames));
                         globalCollectionNames.addAll(collectionNames);
                         return RestoreBackupResult.builder().commonResult(commonResult).build();
                     }

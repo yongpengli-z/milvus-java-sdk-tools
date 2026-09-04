@@ -1,5 +1,6 @@
 package custom.components;
 
+import custom.common.CommonFunction;
 import custom.entity.DropCollectionParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.DropCollectionResult;
@@ -26,7 +27,7 @@ public class DropCollectionComp {
                 && dropCollectionParams.getCollectionName() != null
                 && !dropCollectionParams.getCollectionName().equalsIgnoreCase("")) {
             List<String> collectionNames = collectionNamesByPrefix(dropCollectionParams.getCollectionName(), dropCollectionParams.getDatabaseName());
-            log.info("Drop collections by prefix [{}], dropAll [{}]: {}", dropCollectionParams.getCollectionName(), dropCollectionParams.isDropAll(), collectionNames);
+            log.info("Drop collections by prefix [{}], dropAll [{}]: {}", dropCollectionParams.getCollectionName(), dropCollectionParams.isDropAll(), CommonFunction.summarizeForLog(collectionNames));
             if (collectionNames.isEmpty()) {
                 dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
                         .collectionName(dropCollectionParams.getCollectionName())
@@ -45,7 +46,7 @@ public class DropCollectionComp {
             }
         } else if (dropCollectionParams.isDropAll()) {
             List<String> collectionNames = listCollectionNames(dropCollectionParams.getDatabaseName());
-            log.info("Drop all collections: " + collectionNames);
+            log.info("Drop all collections: " + CommonFunction.summarizeForLog(collectionNames));
             for (String collectionName : collectionNames) {
                 dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
             }

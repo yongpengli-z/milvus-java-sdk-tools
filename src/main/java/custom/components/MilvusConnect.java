@@ -9,6 +9,7 @@ import io.milvus.v2.client.globalcluster.GlobalClusterUtils;
 import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import io.milvus.v2.service.database.response.ListDatabasesResp;
 import lombok.extern.slf4j.Slf4j;
+import custom.common.CommonFunction;
 import custom.utils.HttpClientUtils;
 
 import java.util.List;
@@ -67,7 +68,7 @@ public class MilvusConnect {
         log.info("Connecting to DB: " + uri);
         useServerlessDatabaseIfNeeded(uri, milvusClientV2);
         ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
-        log.info("List collection: " + listCollectionsResp.getCollectionNames());
+        log.info("List collection: " + CommonFunction.summarizeForLog(listCollectionsResp.getCollectionNames()));
         return milvusClientV2;
     }
 
