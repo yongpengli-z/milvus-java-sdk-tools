@@ -242,9 +242,16 @@ public class HttpClientUtils {
 
             // 执行请求
             response = httpclient.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
             // 判断返回状态是否为200
-            if (response.getStatusLine().getStatusCode() == 200) {
+            if (statusCode == 200) {
                 resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
+            } else {
+                // 非200时记录状态码和响应体，避免调用方拿到空串后难以排查
+                String errorBody = response.getEntity() != null
+                        ? EntityUtils.toString(response.getEntity(), "UTF-8") : "";
+                log.error("doGet 请求失败: url={}, statusCode={}, body={}", url, statusCode,
+                        errorBody.length() > 500 ? errorBody.substring(0, 500) : errorBody);
             }
         } catch (Exception e) {
             if (isQtpServerUrl(url)) {

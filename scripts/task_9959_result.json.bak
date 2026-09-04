@@ -1,0 +1,8 @@
+{
+  "task_id": 9959,
+  "status": "polling",
+  "grafana_from": "1779153454279",
+  "case_name": "tiered-8cu-L1",
+  "instance_id": "in01-7258326f0d7d211",
+  "namespace": "milvus-in01-7258326f0d7d211"
+}

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milvus Python Failed Test Logs</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; }
+        .summary-card .value { font-size: 32px; font-weight: bold; }
+        .failed { color: #ef4444; }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .test-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid;
+            background: #f9fafb;
+        }
+        .test-item.failed { border-color: #ef4444; }
+        .test-name { font-family: monospace; font-size: 13px; }
+        .duration { color: #6b7280; font-size: 12px; }
+        .error-box {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .logs-box {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry { margin: 3px 0; }
+        .log-debug { color: #6b7280; }
+        .log-info { color: #3b82f6; }
+        .log-warning { color: #f59e0b; }
+        .log-error { color: #ef4444; }
+        .log-critical { color: #dc2626; font-weight: bold; }
+        .empty-state {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            color: #6b7280;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        details { margin: 10px 0; }
+        summary { cursor: pointer; font-weight: 600; padding: 10px; background: #f9fafb; }
+        summary:hover { background: #f3f4f6; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Milvus Python Failed Test Logs</h1>
+        <p>Generated at: 2026-09-03 01:34:21</p>
+        <p>Log location: /tmp/ci_logs</p>
+    </div>
+
+    <div class="summary">
+        <div class="summary-card">
+            <h3>Total Tests</h3>
+            <div class="value">815</div>
+        </div>
+        <div class="summary-card">
+            <h3>Passed</h3>
+            <div class="value">812</div>
+            <div class="duration">99.6%</div>
+        </div>
+        <div class="summary-card">
+            <h3>Failed</h3>
+            <div class="value failed">1</div>
+            <div class="duration">0.1%</div>
+        </div>
+        <div class="summary-card">
+            <h3>Skipped</h3>
+            <div class="value">1</div>
+            <div class="duration">0.1%</div>
+        </div>
+        <div class="summary-card">
+            <h3>XFail</h3>
+            <div class="value">1</div>
+            <div class="duration">0.1%</div>
+        </div>
+        <div class="summary-card">
+            <h3>XPass</h3>
+            <div class="value">0</div>
+            <div class="duration">0.0%</div>
+        </div>
+        <div class="summary-card">
+            <h3>Duration</h3>
+            <div class="value">7479.41s</div>
+        </div>
+    </div>
+    <div class="test-section">
+        <h2>Failed Tests</h2>
+        <details open>
+            <summary class="test-item failed">
+                <span class="test-name">milvus_client/test_milvus_client_search_iterator.py::TestMilvusClientSearchIteratorValid::test_milvus_client_search_iterator_after_json_path_index[varchar-INVERTED-False-IP]</span>
+                <span class="duration"> (13.01s)</span>
+            </summary>
+            <div class="error-box">
+self = &lt;test_milvus_client_search_iterator.TestMilvusClientSearchIteratorValid object at 0x7feeae8396a0&gt;
+metric_type = 'IP', enable_dynamic_field = False
+supported_json_cast_type = 'varchar'
+supported_varchar_scalar_index = 'INVERTED'
+
+    @pytest.mark.tags(CaseLabel.L0)
+    @pytest.mark.parametrize("metric_type", ct.dense_metrics)
+    @pytest.mark.parametrize("enable_dynamic_field", [True, False])
+    def test_milvus_client_search_iterator_after_json_path_index(
+        self, metric_type, enable_dynamic_field, supported_json_cast_type, supported_varchar_scalar_index
+    ):
+        """
+        target: test search iterator after creating json path index
+        method: Search iterator after creating json path index
+        Step: 1. create schema
+              2. prepare index_params with vector and all the json path index params
+              3. create collection with the above schema and index params
+              4. insert
+              5. flush
+              6. release collection
+              7. load collection
+              8. search iterator
+        expected: Search successfully
+        """
+        batch_size = 20
+        client = self._client()
+        collection_name = cf.gen_unique_str(prefix)
+        # 1. create collection
+        json_field_name = "my_json"
+        schema = self.create_schema(client, enable_dynamic_field=enable_dynamic_field)[0]
+        schema.add_field(default_primary_key_field_name, DataType.INT64, is_primary=True, auto_id=False)
+        schema.add_field(default_vector_field_name, DataType.FLOAT_VECTOR, dim=default_dim, nullable=True)
+        schema.add_field(default_float_field_name, DataType.FLOAT)
+        schema.add_field(default_string_field_name, DataType.VARCHAR, max_length=64)
+        if not enable_dynamic_field:
+            schema.add_field(json_field_name, DataType.JSON)
+        index_params = self.prepare_index_params(client)[0]
+        index_params.add_index(field_name=default_vector_field_name, index_type="AUTOINDEX", metric_type=metric_type)
+        index_params.add_index(
+            field_name=json_field_name,
+            index_type=supported_varchar_scalar_index,
+            params={"json_cast_type": supported_json_cast_type, "json_path": f"{json_field_name}['a']['b']"},
+        )
+        index_params.add_index(
+            field_name=json_field_name,
+            index_type=supported_varchar_scalar_index,
+            params={"json_cast_type": supported_json_cast_type, "json_path": f"{json_field_name}['a']"},
+        )
+        index_params.add_index(
+            field_name=json_field_name,
+            index_type=supported_varchar_scalar_index,
+            params={"json_cast_type": supported_json_cast_type, "json_path": f"{json_field_name}"},
+        )
+        index_params.add_index(
+            field_name=json_field_name,
+            index_type=supported_varchar_scalar_index,
+            params={"json_cast_type": supported_json_cast_type, "json_path": f"{json_field_name}['a'][0]['b']"},
+        )
+        index_params.add_index(
+            field_name=json_field_name,
+            index_type=supported_varchar_scalar_index,
+            params={"json_cast_type": supported_json_cast_type, "json_path": f"{json_field_name}['a'][0]"},
+        )
+        self.create_collection(
+            client, collection_name, schema=schema, index_params=index_params, metric_type=metric_type
+        )
+        # 2. insert
+        rows = [
+            {
+                default_primary_key_field_name: i,
+                default_vector_field_name: list(cf.gen_vectors(1, default_dim)[0]) if random.random() &gt;= 0.2 else None,
+                default_float_field_name: i * 1.0,
+                default_string_field_name: str(i),
+                json_field_name: {"a": {"b": i}},
+            }
+            for i in range(default_nb)
+        ]
+        self.insert(client, collection_name, rows)
+        self.flush(client, collection_name)
+        # 3. release and load collection to make sure the new index is loaded
+        self.release_collection(client, collection_name)
+        self.load_collection(client, collection_name)
+        # 4. search iterator
+        vectors_to_search = cf.gen_vectors(1, default_dim)
+        search_params = {"params": {}}
+        self.search_iterator(
+            client,
+            collection_name=collection_name,
+            data=vectors_to_search,
+            anns_field=default_vector_field_name,
+            search_params=search_params,
+            batch_size=batch_size,
+            check_task=CheckTasks.check_search_iterator,
+            check_items={"metric_type": metric_type, "batch_size": batch_size},
+        )
+        limit = 200
+        res = self.search(
+            client,
+            collection_name,
+            vectors_to_search,
+            search_params=search_params,
+            limit=limit,
+            check_task=CheckTasks.check_search_results,
+            check_items={
+                "nq": 1,
+                "limit": limit,
+                "pk_name": default_primary_key_field_name,
+                "enable_milvus_client_api": True,
+            },
+        )[0]
+        for limit in [batch_size - 3, batch_size, batch_size * 2, -1]:
+            if metric_type != "L2":
+                radius = res[0][limit // 2].get("distance", 0) - 0.1  # pick a radius to make sure there exists results
+                range_filter = res[0][0].get("distance", 0) + 0.1
+            else:
+                radius = res[0][limit // 2].get("distance", 0) + 0.1
+                range_filter = res[0][0].get("distance", 0) - 0.1
+            search_params = {"params": {"radius": radius, "range_filter": range_filter}}
+            log.debug(f"search iterator with limit={limit} radius={radius}, range_filter={range_filter}")
+            expected_batch_size = batch_size if limit == -1 else min(batch_size, limit)
+            # external filter not set
+&gt;           self.search_iterator(
+                client,
+                collection_name,
+                vectors_to_search,
+                batch_size,
+                search_params=search_params,
+                limit=limit,
+                check_task=CheckTasks.check_search_iterator,
+                check_items={"batch_size": expected_batch_size},
+            )
+
+milvus_client/test_milvus_client_search_iterator.py:1276: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utils/wrapper.py:33: in inner_wrapper
+    res, result = func(*args, **kwargs)
+base/client_v2_base.py:204: in search_iterator
+    **kwargs).run()
+check/func_check.py:74: in run
+    result = self.check_search_iterator(self.response, self.func_name, self.check_items)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+search_res = &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d37a10&gt;
+func_name = 'search_iterator', check_items = {'batch_size': 20}
+
+    @staticmethod
+    def check_search_iterator(search_res, func_name, check_items):
+        """
+        target: check the search iterator results
+        method: 1. check the iterator number
+                2. check the limit(topK) and ids
+                3. check the distance
+        expected: check the search is ok
+        """
+        log.info("search_iterator_results_check: checking the searching results")
+        if func_name != "search_iterator":
+            log.warning("The function name is {} rather than {}".format(func_name, "search_iterator"))
+        search_iterator = search_res
+        expected_batch_size = check_items.get("batch_size", None)
+        expected_iterate_times = check_items.get("iterate_times", None)
+        pk_list = []
+        iterate_times = 0
+        while True:
+            try:
+                res = search_iterator.next()
+                iterate_times += 1
+                if not res:
+                    log.info("search iteration finished, close")
+                    search_iterator.close()
+                    break
+                if expected_batch_size is not None:
+                    assert len(res) &lt;= expected_batch_size
+                if check_items.get("radius", None):
+                    for distance in res.distances():
+                        if check_items["metric_type"] == "L2":
+                            assert distance &lt; check_items["radius"]
+                        else:
+                            assert distance &gt; check_items["radius"]
+                if check_items.get("range_filter", None):
+                    for distance in res.distances():
+                        if check_items["metric_type"] == "L2":
+                            assert distance &gt;= check_items["range_filter"]
+                        else:
+                            assert distance &lt;= check_items["range_filter"]
+                pk_list.extend(res.ids())
+            except Exception as e:
+                assert check_items["err_msg"] in str(e)
+                return False
+        if expected_iterate_times is not None:
+            assert iterate_times &lt;= expected_iterate_times
+            if expected_iterate_times == 1:
+                assert len(pk_list) == 0  # expected batch size =0 if external filter all
+                assert iterate_times == 1
+                return True
+        log.debug(f"check: total {len(pk_list)} results, set len: {len(set(pk_list))}, iterate_times: {iterate_times}")
+&gt;       assert len(pk_list) == len(set(pk_list)) != 0
+E       AssertionError
+
+check/func_check.py:554: AssertionError
+            </div>
+            <div class="logs-box">
+                <strong>Captured Logs:</strong>
+                <div class="log-entry log-debug">[01:16:00 - DEBUG] (api_request)  : [MilvusClient] args: ['https://in01-cac88dc2142e9b0.aws-us-west-2.vectordb-uat3.zillizcloud.com:19541', '', '', '', 'db_a..., kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:00 - DEBUG] (api_response) : &lt;pymilvus.milvus_client.milvus_client.MilvusClient object at 0x7fee8729cfb0&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:00 - DEBUG] (api_request)  : [BaseMilvusClient.create_schema] args: [], kwargs: {'enable_dynamic_field': False, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:00 - DEBUG] (api_response) : {'auto_id': False, 'description': '', 'fields': [], 'enable_dynamic_field': False, 'enable_namespace......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:00 - DEBUG] (api_request)  : [BaseMilvusClient.prepare_index_params] args: [], kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:00 - DEBUG] (api_response) : []  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:00 - DEBUG] (api_request)  : [MilvusClient.create_collection] args: ['milvus_client_api_search_iterator_8c66z6Dq', None, 'id', 'int', 'vector', 'IP', False, 120, {'auto..., kwargs: {'consistency_level': 'Strong'} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:04 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:05 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['milvus_client_api_search_iterator_8c66z6Dq', [{'id': 0, 'vector': [0.07916604640501586, 0.11070003..., kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:05 - DEBUG] (api_response) : {'insert_count': 3000, 'ids': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:05 - DEBUG] (api_request)  : [MilvusClient.flush] args: ['milvus_client_api_search_iterator_8c66z6Dq'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:06 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:06 - DEBUG] (api_request)  : [MilvusClient.release_collection] args: ['milvus_client_api_search_iterator_8c66z6Dq'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:07 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:07 - DEBUG] (api_request)  : [MilvusClient.load_collection] args: ['milvus_client_api_search_iterator_8c66z6Dq'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:09 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:09 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'anns_field': 'vector', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:09 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee4914b980&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] check: total 2415 results, set len: 2415, iterate_times: 122 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_request)  : [MilvusClient.search] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_response) : data: [[{'id': 270, 'distance': 0.37050116062164307, 'entity': {}}, {'id': 2018, 'distance': 0.27729......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] search iterator with limit=17 radius=0.13256799578666686, range_filter=0.47050116062164304 (test_milvus_client_search_iterator.py:1273)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48ddc950&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] check: total 17 results, set len: 17, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_half at 0x7feeaeafbba0&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48ddea80&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] check: total 17 results, set len: 17, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_nothing at 0x7feeaeafbce0&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48ddc950&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] check: total 17 results, set len: 17, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_with_outputs at 0x7feeaeafbe20&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48ddea80&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] check: total 17 results, set len: 17, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:10 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_all at 0x7feeaeafbc40&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48ddf590&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] search iterator with limit=20 radius=0.12475817799568176, range_filter=0.47050116062164304 (test_milvus_client_search_iterator.py:1273)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48ddd220&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] check: total 20 results, set len: 20, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_half at 0x7feeaeafbba0&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48ddcb60&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] check: total 20 results, set len: 20, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_nothing at 0x7feeaeafbce0&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d359d0&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] check: total 20 results, set len: 20, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:11 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_with_outputs at 0x7feeaeafbe20&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d35580&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] check: total 20 results, set len: 20, iterate_times: 2 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_all at 0x7feeaeafbc40&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d35f10&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] search iterator with limit=40 radius=0.10247244834899902, range_filter=0.47050116062164304 (test_milvus_client_search_iterator.py:1273)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d34470&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] check: total 40 results, set len: 40, iterate_times: 3 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_half at 0x7feeaeafbba0&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d36690&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] check: total 40 results, set len: 40, iterate_times: 3 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_nothing at 0x7feeaeafbce0&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d36ab0&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] check: total 40 results, set len: 40, iterate_times: 3 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:12 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_with_outputs at 0x7feeaeafbe20&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d36c60&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] check: total 40 results, set len: 40, iterate_times: 3 (func_check.py:553)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'external_filter_func': &lt;function external_filter_all at 0x7feeaeafbc40&gt;, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d371a0&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] search iterator with limit=-1 radius=0.019809225201606745, range_filter=0.47050116062164304 (test_milvus_client_search_iterator.py:1273)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] (api_request)  : [MilvusClient.search_iterator] args: ['milvus_client_api_search_iterator_8c66z6Dq', [[-0.02771830805363701, -0.04565771318478611, 0.09886..., kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] (api_response) : &lt;pymilvus.client.search_iterator.SearchIteratorV2 object at 0x7fee48d37a10&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:16:13 - DEBUG] check: total 925 results, set len: 924, iterate_times: 48 (func_check.py:553)</div>
+                <div class="log-entry log-info">[01:16:00 - INFO] *********************************** setup *********************************** (client_base.py:48)</div>
+                <div class="log-entry log-info">[01:16:00 - INFO] pymilvus version: 2.6.16rc19 (client_base.py:49)</div>
+                <div class="log-entry log-info">[01:16:00 - INFO] [setup_method] Start setup test case test_milvus_client_search_iterator_after_json_path_index. (client_base.py:50)</div>
+                <div class="log-entry log-info">[01:16:00 - INFO] server version: Zilliz Cloud Vector Database(Compatible with Milvus 2.6) (client_v2_base.py:54)</div>
+                <div class="log-entry log-info">[01:16:09 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search_results_check: checking the searching results (func_check.py:424)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search_results_check: Numbers of query searched is correct (func_check.py:454)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search_results_check: limit (topK) and ids searched for 1 queries are correct (func_check.py:501)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:10 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:11 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:12 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:13 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:13 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:13 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:13 - INFO] search iteration finished, close (func_check.py:526)</div>
+                <div class="log-entry log-info">[01:16:13 - INFO] search_iterator_results_check: checking the searching results (func_check.py:513)</div>
+                <div class="log-entry log-info">[01:16:13 - INFO] search iteration finished, close (func_check.py:526)</div>
+            </div>
+        </details>
+    </div>
+
+</body>
+</html>

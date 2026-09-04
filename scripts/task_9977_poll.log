@@ -1,0 +1,115 @@
+[2026-05-20 09:44:19] Starting poll for task 9977 (tiered-4cu-L2), polling every 600s
+[2026-05-20 09:44:19] Redis status: 1
+[2026-05-20 09:44:57] Starting poll for task 9977 (tiered-4cu-L2), polling every 600s
+[2026-05-20 09:44:59] Redis status: 1
+[2026-05-20 09:54:59] Instance from QTP: in01-6ac7b170822513a
+[2026-05-20 09:54:59] Redis status: 1
+[2026-05-20 09:55:01]   binlog=0.14GiB, rows=0.048M
+[2026-05-20 10:05:01] Redis status: 1
+[2026-05-20 10:05:03]   binlog=11.13GiB, rows=3.854M
+[2026-05-20 10:15:04] Redis status: 1
+[2026-05-20 10:15:05]   binlog=22.25GiB, rows=7.708M
+[2026-05-20 10:25:06] Redis status: 1
+[2026-05-20 10:25:08]   binlog=32.15GiB, rows=11.137M
+[2026-05-20 10:35:08] Redis status: 1
+[2026-05-20 10:35:09]   binlog=40.75GiB, rows=14.152M
+[2026-05-20 10:45:10] Redis status: 1
+[2026-05-20 10:45:12]   binlog=49.31GiB, rows=17.095M
+[2026-05-20 10:55:12] Redis status: 1
+[2026-05-20 10:55:15]   binlog=57.84GiB, rows=20.037M
+[2026-05-20 11:05:15] Redis status: 1
+[2026-05-20 11:05:17]   binlog=67.49GiB, rows=23.379M
+[2026-05-20 11:15:17] Redis status: 1
+[2026-05-20 11:15:19]   binlog=79.27GiB, rows=27.460M
+[2026-05-20 11:25:19] Redis status: 1
+[2026-05-20 11:25:21]   binlog=91.21GiB, rows=31.596M
+[2026-05-20 11:35:21] Redis status: 1
+[2026-05-20 11:35:23]   binlog=102.98GiB, rows=35.674M
+[2026-05-20 11:45:24] Redis status: 1
+[2026-05-20 11:45:26]   binlog=114.79GiB, rows=39.766M
+[2026-05-20 11:55:26] Redis status: 1
+[2026-05-20 11:55:28]   binlog=126.59GiB, rows=43.854M
+[2026-05-20 12:05:28] Redis status: 1
+[2026-05-20 12:05:30]   binlog=138.48GiB, rows=47.973M
+[2026-05-20 12:15:31] Redis status: 1
+[2026-05-20 12:15:33]   binlog=150.40GiB, rows=52.102M
+[2026-05-20 12:25:33] Redis status: 1
+[2026-05-20 12:25:35]   binlog=162.25GiB, rows=56.205M
+[2026-05-20 12:35:35] Redis status: 1
+[2026-05-20 12:35:37]   binlog=174.02GiB, rows=60.285M
+[2026-05-20 12:45:37] Redis status: 1
+[2026-05-20 12:45:39]   binlog=185.80GiB, rows=64.366M
+[2026-05-20 12:55:39] Redis status: 1
+[2026-05-20 12:55:41]   binlog=197.76GiB, rows=68.509M
+[2026-05-20 13:05:41] Redis status: 1
+[2026-05-20 13:05:43]   binlog=209.61GiB, rows=72.612M
+[2026-05-20 13:15:43] Redis status: 1
+[2026-05-20 13:15:45]   binlog=221.40GiB, rows=76.698M
+[2026-05-20 13:25:45] Redis status: 1
+[2026-05-20 13:25:47]   binlog=233.23GiB, rows=80.794M
+[2026-05-20 13:35:47] Redis status: 1
+[2026-05-20 13:35:49]   binlog=245.03GiB, rows=84.926M
+[2026-05-20 13:45:49] Redis status: 1
+[2026-05-20 13:45:51]   binlog=256.95GiB, rows=89.011M
+[2026-05-20 13:55:51] Redis status: 1
+[2026-05-20 13:55:53]   binlog=268.81GiB, rows=93.123M
+[2026-05-20 14:05:53] Redis status: 1
+[2026-05-20 14:05:55]   binlog=280.58GiB, rows=97.198M
+[2026-05-20 14:15:55] Redis status: 1
+[2026-05-20 14:15:57]   binlog=292.39GiB, rows=101.291M
+[2026-05-20 14:25:57] Redis status: 1
+[2026-05-20 14:25:59]   binlog=304.21GiB, rows=105.449M
+[2026-05-20 14:36:00] Redis status: 1
+[2026-05-20 14:36:02]   binlog=316.02GiB, rows=109.524M
+[2026-05-20 14:46:02] Redis status: 1
+[2026-05-20 14:46:04]   binlog=328.06GiB, rows=113.646M
+[2026-05-20 14:56:04] Redis status: 1
+[2026-05-20 14:56:06]   binlog=339.87GiB, rows=117.738M
+[2026-05-20 15:06:06] Redis status: 1
+[2026-05-20 15:06:09]   binlog=351.68GiB, rows=121.827M
+[2026-05-20 15:16:09] Redis status: 1
+[2026-05-20 15:16:11]   binlog=363.59GiB, rows=125.956M
+[2026-05-20 15:26:11] Redis status: 1
+[2026-05-20 15:26:14]   binlog=375.45GiB, rows=130.064M
+[2026-05-20 15:36:14] Redis status: 1
+[2026-05-20 15:36:16]   binlog=387.25GiB, rows=134.152M
+[2026-05-20 15:46:16] Redis status: 1
+[2026-05-20 15:46:18]   binlog=399.03GiB, rows=138.233M
+[2026-05-20 15:56:18] Redis status: 1
+[2026-05-20 15:56:20]   binlog=410.97GiB, rows=142.367M
+[2026-05-20 16:06:21] Redis status: 1
+[2026-05-20 16:06:23]   binlog=422.66GiB, rows=146.453M
+[2026-05-20 16:16:24] Redis status: 1
+[2026-05-20 16:16:26]   binlog=434.60GiB, rows=150.554M
+[2026-05-20 16:26:26] Redis status: 1
+[2026-05-20 16:26:28]   binlog=446.43GiB, rows=154.654M
+[2026-05-20 16:36:28] Redis status: 1
+[2026-05-20 16:36:30]   binlog=458.24GiB, rows=158.797M
+[2026-05-20 16:46:30] Redis status: 2
+[2026-05-20 16:46:32]   binlog=461.87GiB, rows=160.000M
+[2026-05-20 16:46:32] === CHECKPOINT REACHED ===
+[2026-05-20 16:46:39] Target: RSS=8.29GiB, S3=461.87GiB, rows=160000000
+[2026-05-20 16:46:39] Resuming task...
+[2026-05-20 16:46:39] Resume: {'code': 200, 'message': '请求成功', 'data': 1}
+[2026-05-20 16:46:49] Redis status: 1
+[2026-05-20 16:46:51]   binlog=461.87GiB, rows=160.000M
+[2026-05-20 16:56:51] Redis status: 1
+[2026-05-20 16:56:53]   binlog=473.03GiB, rows=163.867M
+[2026-05-20 17:06:53] Redis status: 1
+[2026-05-20 17:06:55]   binlog=484.78GiB, rows=167.939M
+[2026-05-20 17:16:55] Redis status: 1
+[2026-05-20 17:16:58]   binlog=496.53GiB, rows=172.008M
+[2026-05-20 17:26:58] Redis status: 1
+[2026-05-20 17:27:00]   binlog=508.33GiB, rows=176.157M
+[2026-05-20 17:37:00] Redis status: 1
+[2026-05-20 17:37:02]   binlog=520.23GiB, rows=180.217M
+[2026-05-20 17:47:02] Redis status: 1
+[2026-05-20 17:47:04]   binlog=532.02GiB, rows=184.301M
+[2026-05-20 17:57:04] Redis status: 1
+[2026-05-20 17:57:06]   binlog=533.25GiB, rows=184.727M
+[2026-05-20 18:07:09] Redis status: 1
+[2026-05-20 18:17:10] Redis status: 1
+[2026-05-20 18:27:12] Error: HTTP Error 503: Service Temporarily Unavailable
+[2026-05-20 18:37:13] Error: HTTP Error 503: Service Temporarily Unavailable
+[2026-05-20 18:47:13] Redis status: 1
+[2026-05-20 18:57:15] Redis status: 1

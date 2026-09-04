@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: milvus-java-tools       # 按需修改 Pod 名称
+  namespace: qa
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+spec:
+  nodeSelector:
+    node-role/test-client: "true"
+  tolerations:
+    - key: node-role
+      operator: Equal
+      value: vdc-test
+      effect: NoSchedule
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: harbor.cloud-uat.zilliz.com.cn/qa/milvus-java-sdk-tools:v2.0.2   # 使用打包了 helm 的新镜像
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          java -DtaskId=${TASK_ID} \
+               -Denv=${ENV} \
+               -Duri=${URI} \
+               -Dtoken=${TOKEN} \
+               -Dinitial_params=${INITIAL_PARAMS} \
+               -Dcustomize_params=${CUSTOMIZE_PARAMS} \
+               -jar /app.jar
+      env:
+        - name: ENV
+          value: ""
+        - name: URI
+          value: "172.0.0.1"
+        - name: TOKEN
+          value: ""
+        - name: TASK_ID
+          value: "0"
+        - name: INITIAL_PARAMS
+          value: '{"cleanCollection":false}'
+        - name: CUSTOMIZE_PARAMS
+          value: '{}'
+      resources:
+        requests:
+          cpu: "1"
+          memory: 4Gi
+        limits:
+          cpu: "8"
+          memory: 8Gi
+      volumeMounts:
+        - name: kube-config
+          mountPath: /root/.kube
+          readOnly: true
+        - name: db-data-path
+          mountPath: /test
+  volumes:
+    - name: kube-config
+      secret:
+        secretName: qa-argo-ali-vdc-uat
+    - name: db-data-path
+      persistentVolumeClaim:
+        claimName: qa-pvc

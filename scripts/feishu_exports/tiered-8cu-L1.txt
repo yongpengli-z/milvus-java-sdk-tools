@@ -1,0 +1,43 @@
+basic:
+  task: 9987
+  instance: in01-5f4bae05daf50f6
+  collection: cap_tiered_8cu_l1_* (QTP taskName)
+  qtp: https://qtp.zilliz.cc/run/customizeTable?id=9987
+  grafana: https://grafana-vdc-dev.zilliz.cc/d/uLf5cJ3Ga/milvus2-6?orgId=1&var-datasource=dXFY2C0Vz&var-namespace=milvus-in01-5f4bae05daf50f6&var-instance=in01-5f4bae05daf50f6&from=1779279740108&to=1779355937714
+  expected_capacity: 320M
+  cuType: class-8-tiered-enterprise
+  buildLevel: 1
+  fieldDataSourceList: [] (random vectors)
+  dbVersion: v2.6.16-c4e39553e-4233
+
+target_checkpoint:
+  rows: 320.000M
+  insert: success, cost=39128.484s, rps=8.178, tp99=2.269s
+  search: success, cost=60.062s, rps=2.497, tp99=1.877s, passRate=100.0%, avg=0.4002s
+  rss_peak: 11.76GiB (18.4%)
+  namespace_rss_peak: N/A
+  working_set_peak: N/A
+  s3_binlog_size: 923.73GiB
+  s3_binlog_quota: 1600.00GiB
+
+append_and_final:
+  append_result: disk quota exceeded
+  append_rows: 234.305M
+  final_searchable_capacity: 554.304M
+  search_peak: success, cost=60.006s, rps=0.383, tp99=3.334s, passRate=100.0%, avg=2.6088s
+
+peak:
+  rss_peak: 18.82GiB (29.4%)
+  s3_binlog_peak: 1600.09GiB
+  stored_rows_peak: 554.304M
+
+matrix:
+  reached_expected: yes
+  actual_max_capacity: 554.304M
+  target_rss: 11.76GiB (18.4%)
+  target_s3_binlog: 923.73GiB
+  peak_rss: 18.82GiB (29.4%)
+  peak_s3_binlog: 1600.09GiB
+
+cleanup:
+  result: success (DeleteInstance via QTP)

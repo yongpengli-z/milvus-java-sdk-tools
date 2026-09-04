@@ -1,0 +1,134 @@
+{
+  "task_id": 9935,
+  "status": "completed",
+  "grafana_from": "1778980533423",
+  "case_name": "tiered-4cu-L1",
+  "instance_id": "in01-ec9b870d6da59e2",
+  "namespace": "milvus-in01-ec9b870d6da59e2",
+  "target_metrics": {
+    "rss_peak": 7869612032,
+    "s3_binlog_size": 495923792932,
+    "stored_rows": 160000000,
+    "disk_quota": 858993459200
+  },
+  "qtp_checkpoint": {
+    "insert_target": {
+      "assertMessages": [],
+      "avg": 1.1329,
+      "commonResult": {
+        "result": "success"
+      },
+      "costTime": 25203.140625,
+      "numEntries": 160000000,
+      "requestNum": 160000,
+      "rps": 6.348415374755859,
+      "tp50": 0.952,
+      "tp80": 1.491,
+      "tp85": 1.662,
+      "tp90": 1.909,
+      "tp98": 2.854,
+      "tp99": 3.579
+    },
+    "append": {},
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 0.2257,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 60.071,
+      "passRate": 100.0,
+      "requestNum": 266,
+      "rps": 4.4280934,
+      "tp50": 0.075,
+      "tp80": 0.295,
+      "tp85": 0.424,
+      "tp90": 0.693,
+      "tp98": 1.36,
+      "tp99": 1.575
+    },
+    "search_peak": {}
+  },
+  "peak_metrics": {
+    "peak_rss": 12089909248,
+    "peak_s3_binlog": 859063752488,
+    "peak_stored_rows": 277160000
+  },
+  "qtp": {
+    "insert_target": {
+      "assertMessages": [],
+      "avg": 1.1329,
+      "commonResult": {
+        "result": "success"
+      },
+      "costTime": 25203.140625,
+      "numEntries": 160000000,
+      "requestNum": 160000,
+      "rps": 6.348415374755859,
+      "tp50": 0.952,
+      "tp80": 1.491,
+      "tp85": 1.662,
+      "tp90": 1.909,
+      "tp98": 2.854,
+      "tp99": 3.579
+    },
+    "append": {
+      "assertMessages": [
+        "[ASSERT FAIL] insert exception: quota exceeded[reason=disk quota exceeded, please allocate more resources: cluster disk quota exceeded]"
+      ],
+      "avg": 0.6405,
+      "commonResult": {
+        "message": "quota exceeded[reason=disk quota exceeded, please allocate more resources: cluster disk quota exceeded]",
+        "result": "exception"
+      },
+      "costTime": 21552.337890625,
+      "numEntries": 117161000,
+      "requestNum": 117161,
+      "rps": 5.436115741729736,
+      "tp50": 0.416,
+      "tp80": 1.141,
+      "tp85": 1.298,
+      "tp90": 1.512,
+      "tp98": 2.194,
+      "tp99": 2.368
+    },
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 0.2257,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 60.071,
+      "passRate": 100.0,
+      "requestNum": 266,
+      "rps": 4.4280934,
+      "tp50": 0.075,
+      "tp80": 0.295,
+      "tp85": 0.424,
+      "tp90": 0.693,
+      "tp98": 1.36,
+      "tp99": 1.575
+    },
+    "search_peak": {
+      "assertMessages": [],
+      "avg": 2.1445,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 60.054,
+      "passRate": 100.0,
+      "requestNum": 28,
+      "rps": 0.46624705,
+      "tp50": 2.129,
+      "tp80": 2.603,
+      "tp85": 2.666,
+      "tp90": 2.896,
+      "tp98": 3.072,
+      "tp99": 3.072
+    }
+  },
+  "grafana_to": "1779065913906"
+}

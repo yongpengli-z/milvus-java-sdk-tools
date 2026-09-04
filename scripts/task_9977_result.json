@@ -1,0 +1,13 @@
+{
+  "task_id": 9977,
+  "case_name": "tiered-4cu-L2",
+  "status": "resumed",
+  "target_metrics": {
+    "rss_peak": 8904208384,
+    "namespace_rss_peak": 8980111360,
+    "working_set_peak": 32831709184,
+    "s3_binlog_size": 495925838839,
+    "stored_rows": 160000000,
+    "disk_quota": 858993459200
+  }
+}

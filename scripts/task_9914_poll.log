@@ -1,0 +1,32 @@
+[2026-05-16 14:49:33] Checkpoint metrics already collected; will poll until completion
+[2026-05-16 14:49:33] Starting poll for task 9914 (tiered-1cu-L2), polling every 600s
+[2026-05-16 14:49:33] Instance from hint file: in01-519ffe07091eda7
+[2026-05-16 14:49:33] Redis status: 1
+[2026-05-16 14:49:35]   binlog=115.70GiB, rows=40.081M
+[2026-05-16 14:59:35] Redis status: 1
+[2026-05-16 14:59:38]   binlog=124.55GiB, rows=43.148M
+[2026-05-16 15:09:38] Redis status: 1
+[2026-05-16 15:09:40]   binlog=133.72GiB, rows=46.322M
+[2026-05-16 15:19:40] Redis status: 1
+[2026-05-16 15:19:42]   binlog=142.52GiB, rows=49.372M
+[2026-05-16 15:29:42] Redis status: 1
+[2026-05-16 15:29:44]   binlog=151.61GiB, rows=52.520M
+[2026-05-16 15:39:44] Redis status: 1
+[2026-05-16 15:39:46]   binlog=160.65GiB, rows=55.653M
+[2026-05-16 15:49:46] Redis status: 1
+[2026-05-16 15:49:48]   binlog=169.29GiB, rows=58.645M
+[2026-05-16 15:59:48] Redis status: 1
+[2026-05-16 15:59:50]   binlog=178.12GiB, rows=61.745M
+[2026-05-16 16:09:50] Redis status: 1
+[2026-05-16 16:09:52]   binlog=186.60GiB, rows=64.643M
+[2026-05-16 16:19:52] Redis status: 1
+[2026-05-16 16:19:53]   binlog=195.19GiB, rows=67.618M
+[2026-05-16 16:29:54] Redis status: 1
+[2026-05-16 16:29:55]   binlog=200.03GiB, rows=69.294M
+[2026-05-16 16:39:55] Redis status: 1
+[2026-05-16 16:49:57] Redis status: 1
+[2026-05-16 16:59:59] Redis status: 1
+[2026-05-16 17:10:01] Redis status: 1
+[2026-05-16 17:20:03] Redis status: 1
+[2026-05-16 17:30:05] Redis status: 1
+[2026-05-16 17:40:07] Redis status: 1

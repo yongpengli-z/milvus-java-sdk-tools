@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: milvus-java-tools-ali
+  namespace: qa
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+spec:
+  nodeSelector:
+    node-role/test-client: "true"
+  tolerations:
+    - key: node-role
+      operator: Equal
+      value: vdc-test
+      effect: NoSchedule
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: harbor.cloud-uat.zilliz.com.cn/qa/milvus-java-sdk-tools:v2.0.2
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          java -DtaskId=${TASK_ID} \
+               -Denv=${ENV} \
+               -Duri=${URI} \
+               -Dtoken=${TOKEN} \
+               -Dinitial_params=${INITIAL_PARAMS} \
+               -Dcustomize_params=${CUSTOMIZE_PARAMS} \
+               -jar /app.jar
+      env:
+        - name: ENV
+          value: "alihz"
+        - name: URI
+          value: ""
+        - name: TOKEN
+          value: ""
+        - name: TASK_ID
+          value: "0"
+        - name: INITIAL_PARAMS
+          value: '{"cleanCollection":false}'
+        - name: CUSTOMIZE_PARAMS
+          value: >-
+            {"HelmCreateInstanceParams_0":{"namespace":"milvus-qtp","releaseName":"my-std-8x0m","customHelmValues":[],"milvusConfigItems":[],"milvusMode":"standalone","milvusImageTag":"v2.6.10","etcdConfig":{"useExternal":false,"enabled":true,"externalEndpoints":"","replicaCount":1,"storageSize":"10Gi","storageClassName":""},"minioConfig":{"useExternal":false,"enabled":true,"externalEndpoints":"","accessKey":"","secretKey":"","bucketName":"milvus-bucket","rootPath":"milvus","replicaCount":1,"storageSize":"10Gi","storageClassName":"","useIAM":false,"iamEndpoint":"","region":""},"pulsarConfig":{"useExternal":false,"enabled":false,"externalEndpoints":"","replicaCount":1,"storageSize":"10Gi","storageClassName":""},"kafkaConfig":{"useExternal":false,"enabled":false,"externalEndpoints":"","replicaCount":1,"storageSize":"10Gi","storageClassName":""},"woodpeckerConfig":{"enabled":false,"storageType":"minio","imageRepository":"harbor.milvus.io/milvus/woodpecker","imageTag":"latest","replicas":4,"cpuRequest":"500m","cpuLimit":"1","memoryRequest":"512Mi","memoryLimit":"1Gi"},"resources":{"cpuRequest":"100m","cpuLimit":"2","memoryRequest":"512Mi","memoryLimit":"2Gi"},"proxyConfig":{"replicas":1,"cpuRequest":"100m","cpuLimit":"2","memoryRequest":"512Mi","memoryLimit":"2Gi","diskSize":""},"queryNodeConfig":{"replicas":1,"cpuRequest":"100m","cpuLimit":"2","memoryRequest":"512Mi","memoryLimit":"2Gi","diskSize":""},"dataNodeConfig":{"replicas":1,"cpuRequest":"100m","cpuLimit":"2","memoryRequest":"512Mi","memoryLimit":"2Gi","diskSize":""},"indexNodeConfig":{"replicas":1,"cpuRequest":"100m","cpuLimit":"2","memoryRequest":"512Mi","memoryLimit":"2Gi","diskSize":""},"mixCoordinatorConfig":{"replicas":1,"cpuRequest":"100m","cpuLimit":"2","memoryRequest":"512Mi","memoryLimit":"2Gi","diskSize":""},"streamingNodeConfig":{"replicas":1,"cpuRequest":"100m","cpuLimit":"2","memoryRequest":"512Mi","memoryLimit":"2Gi","diskSize":""},"deployArchitecture":"default","waitTimeoutMinutes":30,"useHours":8}}
+      resources:
+        requests:
+          cpu: "1"
+          memory: 4Gi
+        limits:
+          cpu: "8"
+          memory: 8Gi
+      volumeMounts:
+        - name: kube-config
+          mountPath: /root/.kube
+          readOnly: true
+        - name: db-data-path
+          mountPath: /test
+  volumes:
+    - name: kube-config
+      secret:
+        secretName: qa-argo-ali-vdc-uat    # ALI 环境的 kubeconfig secret
+    - name: db-data-path
+      persistentVolumeClaim:
+        claimName: qa-pvc

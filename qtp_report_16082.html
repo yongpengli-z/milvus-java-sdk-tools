@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milvus Python Failed Test Logs</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; }
+        .summary-card .value { font-size: 32px; font-weight: bold; }
+        .failed { color: #ef4444; }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .test-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid;
+            background: #f9fafb;
+        }
+        .test-item.failed { border-color: #ef4444; }
+        .test-name { font-family: monospace; font-size: 13px; }
+        .duration { color: #6b7280; font-size: 12px; }
+        .error-box {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .logs-box {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry { margin: 3px 0; }
+        .log-debug { color: #6b7280; }
+        .log-info { color: #3b82f6; }
+        .log-warning { color: #f59e0b; }
+        .log-error { color: #ef4444; }
+        .log-critical { color: #dc2626; font-weight: bold; }
+        .empty-state {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            color: #6b7280;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        details { margin: 10px 0; }
+        summary { cursor: pointer; font-weight: 600; padding: 10px; background: #f9fafb; }
+        summary:hover { background: #f3f4f6; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Milvus Python Failed Test Logs</h1>
+        <p>Generated at: 2026-09-03 01:35:51</p>
+        <p>Log location: /tmp/ci_logs</p>
+    </div>
+
+    <div class="summary">
+        <div class="summary-card">
+            <h3>Total Tests</h3>
+            <div class="value">832</div>
+        </div>
+        <div class="summary-card">
+            <h3>Passed</h3>
+            <div class="value">825</div>
+            <div class="duration">99.2%</div>
+        </div>
+        <div class="summary-card">
+            <h3>Failed</h3>
+            <div class="value failed">2</div>
+            <div class="duration">0.2%</div>
+        </div>
+        <div class="summary-card">
+            <h3>Skipped</h3>
+            <div class="value">1</div>
+            <div class="duration">0.1%</div>
+        </div>
+        <div class="summary-card">
+            <h3>XFail</h3>
+            <div class="value">4</div>
+            <div class="duration">0.5%</div>
+        </div>
+        <div class="summary-card">
+            <h3>XPass</h3>
+            <div class="value">0</div>
+            <div class="duration">0.0%</div>
+        </div>
+        <div class="summary-card">
+            <h3>Duration</h3>
+            <div class="value">6986.03s</div>
+        </div>
+    </div>
+    <div class="test-section">
+        <h2>Failed Tests</h2>
+        <details open>
+            <summary class="test-item failed">
+                <span class="test-name">milvus_client/test_milvus_client_struct_array_nullable.py::TestMilvusClientStructArraySchemaEvolution::test_add_struct_array_field_with_vector_load_partitions_after_release</span>
+                <span class="duration"> (32.80s)</span>
+            </summary>
+            <div class="error-box">
+self = &lt;test_milvus_client_struct_array_nullable.TestMilvusClientStructArraySchemaEvolution object at 0x7f25d54d02f0&gt;
+
+    @pytest.mark.tags(CaseLabel.L0)
+    def test_add_struct_array_field_with_vector_load_partitions_after_release(self):
+        """
+        target: test load_partitions after dynamically adding a nullable struct array field with vector sub-field
+        method: create two partitions with old sealed and growing rows, add a struct array field with scalar and vector
+            sub-fields, insert post-add rows, release the collection, then load and verify one partition at a time
+        expected: partition load returns only rows from the loaded partition, with correct nullable and vector output
+        """
+        collection_name = cf.gen_unique_str(f"{prefix}_add_struct_vector_load_partition")
+        client = self._client()
+        partition_a = "partition_a"
+        partition_b = "partition_b"
+    
+        schema = gen_schema(self, client, auto_id=False, enable_dynamic_field=False)
+        schema.add_field(field_name=PK_FIELD, datatype=PK_TYPE, is_primary=True)
+        schema.add_field(field_name=VECTOR_FIELD, datatype=VECTOR_TYPE, dim=VECTOR_DIM)
+        schema.add_field(field_name=TAG_FIELD, datatype=TAG_TYPE, max_length=TAG_MAX_LENGTH)
+    
+        res, _ = self.create_collection(client, collection_name, schema=schema)
+    
+        for partition_name in (partition_a, partition_b):
+            res, _ = self.create_partition(client, collection_name, partition_name)
+    
+        old_sealed_a = {PK_FIELD: 0, VECTOR_FIELD: gen_vector(0), TAG_FIELD: "a_old_sealed"}
+        old_sealed_b = {PK_FIELD: 100, VECTOR_FIELD: gen_vector(100), TAG_FIELD: "b_old_sealed"}
+        old_sealed_filler_a = gen_index_filler_rows(
+            10000,
+            self.min_index_sealed_rows - 1,
+            "a_old_sealed_index_filler",
+        )
+        old_sealed_filler_b = gen_index_filler_rows(
+            20000,
+            self.min_index_sealed_rows - 1,
+            "b_old_sealed_index_filler",
+        )
+        all_old_sealed_a = [old_sealed_a] + old_sealed_filler_a
+        all_old_sealed_b = [old_sealed_b] + old_sealed_filler_b
+        res, _ = self.insert(client, collection_name, all_old_sealed_a, partition_name=partition_a)
+        assert res["insert_count"] == len(all_old_sealed_a)
+        res, _ = self.insert(client, collection_name, all_old_sealed_b, partition_name=partition_b)
+        assert res["insert_count"] == len(all_old_sealed_b)
+    
+        res, _ = self.flush(client, collection_name)
+    
+        index_params = gen_index_params(self, client)
+        index_params.add_index(
+            field_name=VECTOR_FIELD, index_type=NORMAL_VECTOR_INDEX_TYPE, metric_type=NORMAL_VECTOR_METRIC_TYPE
+        )
+        res, _ = self.create_index(client, collection_name, index_params)
+    
+        res, _ = self.load_collection(client, collection_name)
+    
+        old_growing_a = {PK_FIELD: 1, VECTOR_FIELD: gen_vector(1), TAG_FIELD: "a_old_growing"}
+        old_growing_b = {PK_FIELD: 101, VECTOR_FIELD: gen_vector(101), TAG_FIELD: "b_old_growing"}
+        res, _ = self.insert(client, collection_name, [old_growing_a], partition_name=partition_a)
+        assert res["insert_count"] == 1
+        res, _ = self.insert(client, collection_name, [old_growing_b], partition_name=partition_b)
+        assert res["insert_count"] == 1
+    
+        profile_schema = gen_struct_schema(self, client)
+        profile_schema.add_field(INT_SUBFIELD, INT_SUBFIELD_TYPE)
+        profile_schema.add_field(TAG_SUBFIELD, TAG_SUBFIELD_TYPE, max_length=TAG_MAX_LENGTH)
+        profile_schema.add_field(VECTOR_SUBFIELD, VECTOR_SUBFIELD_TYPE, dim=VECTOR_DIM)
+        res, _ = self.add_collection_struct_field(
+            client, collection_name, STRUCT_FIELD, profile_schema, max_capacity=STRUCT_MAX_CAPACITY
+        )
+        sealed_non_empty_a = {
+            PK_FIELD: 2,
+            VECTOR_FIELD: gen_vector(2),
+            TAG_FIELD: "a_sealed_non_empty",
+            STRUCT_FIELD: gen_profile(2),
+        }
+        sealed_non_empty_b = {
+            PK_FIELD: 102,
+            VECTOR_FIELD: gen_vector(102),
+            TAG_FIELD: "b_sealed_non_empty",
+            STRUCT_FIELD: gen_profile(102),
+        }
+        res, _ = self.insert(client, collection_name, [sealed_non_empty_a], partition_name=partition_a)
+        assert res["insert_count"] == 1
+        res, _ = self.insert(client, collection_name, [sealed_non_empty_b], partition_name=partition_b)
+        assert res["insert_count"] == 1
+    
+        sealed_null_a = {
+            PK_FIELD: 3,
+            VECTOR_FIELD: gen_vector(3),
+            TAG_FIELD: "a_sealed_null",
+            STRUCT_FIELD: None,
+        }
+        sealed_empty_a = {
+            PK_FIELD: 4,
+            VECTOR_FIELD: gen_vector(4),
+            TAG_FIELD: "a_sealed_empty",
+            STRUCT_FIELD: [],
+        }
+        sealed_null_b = {
+            PK_FIELD: 103,
+            VECTOR_FIELD: gen_vector(103),
+            TAG_FIELD: "b_sealed_null",
+            STRUCT_FIELD: None,
+        }
+        sealed_empty_b = {
+            PK_FIELD: 104,
+            VECTOR_FIELD: gen_vector(104),
+            TAG_FIELD: "b_sealed_empty",
+            STRUCT_FIELD: [],
+        }
+        res, _ = self.insert(client, collection_name, [sealed_null_a, sealed_empty_a], partition_name=partition_a)
+        assert res["insert_count"] == 2
+        res, _ = self.insert(client, collection_name, [sealed_null_b, sealed_empty_b], partition_name=partition_b)
+        assert res["insert_count"] == 2
+    
+        res, _ = self.flush(client, collection_name)
+    
+        growing_non_empty_a = {
+            PK_FIELD: 5,
+            VECTOR_FIELD: gen_vector(5),
+            TAG_FIELD: "a_growing_non_empty",
+            STRUCT_FIELD: gen_profile(5),
+        }
+        growing_non_empty_b = {
+            PK_FIELD: 105,
+            VECTOR_FIELD: gen_vector(105),
+            TAG_FIELD: "b_growing_non_empty",
+            STRUCT_FIELD: gen_profile(105),
+        }
+        res, _ = self.insert(client, collection_name, [growing_non_empty_a], partition_name=partition_a)
+        assert res["insert_count"] == 1
+        res, _ = self.insert(client, collection_name, [growing_non_empty_b], partition_name=partition_b)
+        assert res["insert_count"] == 1
+    
+        growing_empty_a = {
+            PK_FIELD: 6,
+            VECTOR_FIELD: gen_vector(6),
+            TAG_FIELD: "a_growing_empty",
+            STRUCT_FIELD: [],
+        }
+        growing_empty_b = {
+            PK_FIELD: 106,
+            VECTOR_FIELD: gen_vector(106),
+            TAG_FIELD: "b_growing_empty",
+            STRUCT_FIELD: [],
+        }
+        res, _ = self.insert(client, collection_name, [growing_empty_a], partition_name=partition_a)
+        assert res["insert_count"] == 1
+        res, _ = self.insert(client, collection_name, [growing_empty_b], partition_name=partition_b)
+        assert res["insert_count"] == 1
+    
+        res, _ = self.flush(client, collection_name)
+    
+        index_params = gen_index_params(self, client)
+        index_params.add_index(
+            field_name=STRUCT_VECTOR_FIELD,
+            index_type=STRUCT_VECTOR_INDEX_TYPE,
+            metric_type=STRUCT_VECTOR_METRIC_TYPE,
+            params=INDEX_PARAMS,
+        )
+        res, _ = self.create_index(client, collection_name, index_params)
+    
+        source_a = {row[PK_FIELD]: {**row, STRUCT_FIELD: None} for row in all_old_sealed_a + [old_growing_a]}
+        source_a.update(
+            {
+                sealed_non_empty_a[PK_FIELD]: sealed_non_empty_a,
+                sealed_null_a[PK_FIELD]: sealed_null_a,
+                sealed_empty_a[PK_FIELD]: sealed_empty_a,
+                growing_non_empty_a[PK_FIELD]: growing_non_empty_a,
+                growing_empty_a[PK_FIELD]: growing_empty_a,
+            }
+        )
+        source_b = {row[PK_FIELD]: {**row, STRUCT_FIELD: None} for row in all_old_sealed_b + [old_growing_b]}
+        source_b.update(
+            {
+                sealed_non_empty_b[PK_FIELD]: sealed_non_empty_b,
+                sealed_null_b[PK_FIELD]: sealed_null_b,
+                sealed_empty_b[PK_FIELD]: sealed_empty_b,
+                growing_non_empty_b[PK_FIELD]: growing_non_empty_b,
+                growing_empty_b[PK_FIELD]: growing_empty_b,
+            }
+        )
+    
+        res, _ = self.release_collection(client, collection_name)
+    
+        for partition_name, source_by_id, search_row in (
+            (partition_a, source_a, growing_non_empty_a),
+            (partition_b, source_b, growing_non_empty_b),
+        ):
+            res, _ = self.load_partitions(client, collection_name, [partition_name])
+    
+            query_results, _ = self.query(
+                client,
+                collection_name,
+                filter=ALL_ROWS_FILTER,
+                output_fields=[PK_FIELD, TAG_FIELD, STRUCT_FIELD],
+                partition_names=[partition_name],
+                limit=len(source_by_id),
+            )
+            assert {row[PK_FIELD] for row in query_results} == set(source_by_id)
+            for row in query_results:
+                expected = source_by_id[row[PK_FIELD]]
+                assert row[TAG_FIELD] == expected[TAG_FIELD]
+                assert_profile_equal(row[STRUCT_FIELD], expected[STRUCT_FIELD])
+    
+            subfield_results, _ = self.query(
+                client,
+                collection_name,
+                filter=ALL_ROWS_FILTER,
+                output_fields=[PK_FIELD, STRUCT_VECTOR_FIELD],
+                partition_names=[partition_name],
+                limit=len(source_by_id),
+            )
+            assert {row[PK_FIELD] for row in subfield_results} == set(source_by_id)
+            for row in subfield_results:
+                expected = source_by_id[row[PK_FIELD]]
+                assert set(row) == {PK_FIELD, STRUCT_FIELD}
+                assert_profile_vector_subfield_equal(row[STRUCT_FIELD], expected[STRUCT_FIELD])
+    
+            search_results, _ = self.search(
+                client,
+                collection_name,
+                data=[search_row[VECTOR_FIELD]],
+                anns_field=VECTOR_FIELD,
+                search_params=NORMAL_VECTOR_SEARCH_PARAMS,
+                output_fields=[PK_FIELD, TAG_FIELD, STRUCT_FIELD],
+                partition_names=[partition_name],
+                limit=len(source_by_id),
+            )
+            assert {hit[PK_FIELD] for hit in search_results[0]} == set(source_by_id)
+&gt;           assert search_results[0][0][PK_FIELD] == search_row[PK_FIELD]
+E           assert 100 == 105
+
+milvus_client/test_milvus_client_struct_array_nullable.py:9834: AssertionError
+            </div>
+            <div class="logs-box">
+                <strong>Captured Logs:</strong>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_request)  : [MilvusClient] args: ['https://in01-34724eb1512b66b.aws-us-west-2.vectordb-uat3.zillizcloud.com:19538', '', '', '', 'db_a......, kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_response) : &lt;pymilvus.milvus_client.milvus_client.MilvusClient object at 0x7f257791bfb0&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_request)  : [BaseMilvusClient.create_schema] args: [], kwargs: {'auto_id': False, 'enable_dynamic_field': False, 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_response) : {'auto_id': False, 'description': '', 'fields': [], 'enable_dynamic_field': False, 'enable_namespace......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_request)  : [MilvusClient.create_collection] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', None, 'id', 'int', 'vector', 'COSINE', Fa......, kwargs: {'consistency_level': 'Strong'} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_request)  : [MilvusClient.create_partition] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', 'partition_a'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_request)  : [MilvusClient.create_partition] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', 'partition_b'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:01 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:02 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 0, 'normal_vector': [0.0, 0.001, ......, kwargs: {'partition_name': 'partition_a', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:02 - DEBUG] (api_response) : {'insert_count': 3000, 'ids': [0, 10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 100......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:02 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 100, 'normal_vector': [100.0, 100......, kwargs: {'partition_name': 'partition_b', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:02 - DEBUG] (api_response) : {'insert_count': 3000, 'ids': [100, 20000, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 2......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:02 - DEBUG] (api_request)  : [MilvusClient.flush] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:03 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:03 - DEBUG] (api_request)  : [BaseMilvusClient.prepare_index_params] args: [], kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:03 - DEBUG] (api_response) : []  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:03 - DEBUG] (api_request)  : [MilvusClient.create_index] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'field_name': 'normal_vector', 'index_t......, kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:05 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:05 - DEBUG] (api_request)  : [MilvusClient.load_collection] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 1, 'normal_vector': [1.0, 1.001, ......, kwargs: {'partition_name': 'partition_a', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [1]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 101, 'normal_vector': [101.0, 101......, kwargs: {'partition_name': 'partition_b', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [101]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [BaseMilvusClient.create_struct_field_schema] args: [], kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : &lt;pymilvus.orm.schema.StructFieldSchema object at 0x7f25b4429730&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.add_collection_struct_field] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', 'profile', &lt;pymilvus.orm.schema.StructFie......, kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 2, 'normal_vector': [2.0, 2.001, ......, kwargs: {'partition_name': 'partition_a', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [2]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 102, 'normal_vector': [102.0, 102......, kwargs: {'partition_name': 'partition_b', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [102]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 3, 'normal_vector': [3.0, 3.001, ......, kwargs: {'partition_name': 'partition_a', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : {'insert_count': 2, 'ids': [3, 4]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 103, 'normal_vector': [103.0, 103......, kwargs: {'partition_name': 'partition_b', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_response) : {'insert_count': 2, 'ids': [103, 104]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:07 - DEBUG] (api_request)  : [MilvusClient.flush] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 5, 'normal_vector': [5.0, 5.001, ......, kwargs: {'partition_name': 'partition_a', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [5]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 105, 'normal_vector': [105.0, 105......, kwargs: {'partition_name': 'partition_b', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [105]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 6, 'normal_vector': [6.0, 6.001, ......, kwargs: {'partition_name': 'partition_a', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [6]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_request)  : [MilvusClient.insert] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'id': 106, 'normal_vector': [106.0, 106......, kwargs: {'partition_name': 'partition_b', 'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_response) : {'insert_count': 1, 'ids': [106]}  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:12 - DEBUG] (api_request)  : [MilvusClient.flush] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:24 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:24 - DEBUG] (api_request)  : [BaseMilvusClient.prepare_index_params] args: [], kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:24 - DEBUG] (api_response) : []  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:24 - DEBUG] (api_request)  : [MilvusClient.create_index] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [{'field_name': 'profile[p_vec]', 'index_......, kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:26 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:26 - DEBUG] (api_request)  : [MilvusClient.release_collection] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:27 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:27 - DEBUG] (api_request)  : [MilvusClient.load_partitions] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', ['partition_a']], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_request)  : [MilvusClient.query] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'filter': 'id &gt;= 0', 'output_fields': ['id', 'doc_tag', 'profile'], 'partition_names': ['partition_...... (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_response) : data: ["{'id': 0, 'doc_tag': 'a_old_sealed', 'profile': None}", "{'id': 1, 'doc_tag': 'a_old_growing......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_request)  : [MilvusClient.query] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'filter': 'id &gt;= 0', 'output_fields': ['id', 'profile[p_vec]'], 'partition_names': ['partition_a'],...... (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_response) : data: ["{'id': 0, 'profile': None}", "{'id': 1, 'profile': None}", "{'id': 2, 'profile': [{'p_vec': ......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_request)  : [MilvusClient.search] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [[5.0, 5.001, 5.002, 5.003, 5.004, 5.005,......, kwargs: {'anns_field': 'normal_vector', 'partition_names': ['partition_a']} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_response) : data: [[{'id': 5, 'distance': 0.0, 'entity': {'doc_tag': 'a_growing_non_empty', 'id': 5, 'profile': ......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_request)  : [MilvusClient.query] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'filter': 'element_filter(profile, $[p_int] == 50)', 'output_fields': ['id', 'doc_tag', 'profile'],...... (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_response) : data: ["{'id': 5, 'offset': 0, 'doc_tag': 'a_growing_non_empty', 'profile': [{'p_tag': 'profile_5_0'......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:31 - DEBUG] (api_request)  : [MilvusClient.release_partitions] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', ['partition_a']], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:32 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:32 - DEBUG] (api_request)  : [MilvusClient.load_partitions] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', ['partition_b']], kwargs: {'timeout': 120} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:34 - DEBUG] (api_response) : None  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:34 - DEBUG] (api_request)  : [MilvusClient.query] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'filter': 'id &gt;= 0', 'output_fields': ['id', 'doc_tag', 'profile'], 'partition_names': ['partition_...... (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:34 - DEBUG] (api_response) : data: ["{'id': 100, 'doc_tag': 'b_old_sealed', 'profile': None}", "{'id': 101, 'doc_tag': 'b_old_gro......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:34 - DEBUG] (api_request)  : [MilvusClient.query] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk'], kwargs: {'filter': 'id &gt;= 0', 'output_fields': ['id', 'profile[p_vec]'], 'partition_names': ['partition_b'],...... (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:34 - DEBUG] (api_response) : data: ["{'id': 100, 'profile': None}", "{'id': 101, 'profile': None}", "{'id': 102, 'profile': [{'p_......  (api_request.py:27)</div>
+                <div class="log-entry log-debug">[01:26:34 - DEBUG] (api_request)  : [MilvusClient.search] args: ['struct_array_add_struct_vector_load_partition_ueEpW2Uk', [[105.0, 105.001, 105.002, 105.003, 105.0......, kwargs: {'anns_field': 'normal_vector', 'partition_names': ['partition_b']} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:26:34 - DEBUG] (api_response) : data: [[{'id': 100, 'distance': 0.0, 'entity': {'doc_tag': 'b_old_sealed', 'id': 100, 'profile': Non......  (api_request.py:27)</div>
+                <div class="log-entry log-info">[01:26:01 - INFO] *********************************** setup *********************************** (client_base.py:48)</div>
+                <div class="log-entry log-info">[01:26:01 - INFO] pymilvus version: 3.1.0rc78 (client_base.py:49)</div>
+                <div class="log-entry log-info">[01:26:01 - INFO] [setup_method] Start setup test case test_add_struct_array_field_with_vector_load_partitions_after_release. (client_base.py:50)</div>
+                <div class="log-entry log-info">[01:26:01 - INFO] server version: {'version': 'Zilliz Cloud Vector Database(Compatible with Milvus 3.0)', 'build_time': 'Wed Sep  2 12:11:06 UTC 2026', 'git_commit': 'hidden', 'go_version': 'go version go1.26.6 linux/arm64', 'deploy_mode': 'Cloud'} (client_v2_base.py:46)</div>
+            </div>
+        </details>
+        <details open>
+            <summary class="test-item failed">
+                <span class="test-name">milvus_client/test_milvus_client_function_chain.py::TestMilvusClientFunctionChainXGBoost::test_milvus_client_xgboost_supports_all_numeric_feature_types[hnsw]</span>
+                <span class="duration"> (6.09s)</span>
+            </summary>
+            <div class="error-box">
+self = &lt;urllib3.connection.HTTPConnection object at 0x7fc324659be0&gt;
+
+    def _new_conn(self) -&gt; socket.socket:
+        """Establish a socket connection and set nodelay settings on it.
+    
+        :return: New socket connection.
+        """
+        try:
+&gt;           sock = connection.create_connection(
+                (self._dns_host, self.port),
+                self.timeout,
+                source_address=self.source_address,
+                socket_options=self.socket_options,
+            )
+
+/usr/local/lib/python3.12/dist-packages/urllib3/connection.py:198: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.12/dist-packages/urllib3/util/connection.py:85: in create_connection
+    raise err
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+address = ('localhost', 9000), timeout = 300, source_address = None
+socket_options = [(6, 1, 1)]
+
+    def create_connection(
+        address: tuple[str, int],
+        timeout: _TYPE_TIMEOUT = _DEFAULT_TIMEOUT,
+        source_address: tuple[str, int] | None = None,
+        socket_options: _TYPE_SOCKET_OPTIONS | None = None,
+    ) -&gt; socket.socket:
+        """Connect to *address* and return the socket object.
+    
+        Convenience function.  Connect to *address* (a 2-tuple ``(host,
+        port)``) and return the socket object.  Passing the optional
+        *timeout* parameter will set the timeout on the socket instance
+        before attempting to connect.  If no *timeout* is supplied, the
+        global default timeout setting returned by :func:`socket.getdefaulttimeout`
+        is used.  If *source_address* is set it must be a tuple of (host, port)
+        for the socket to bind as a source address before making the connection.
+        An host of '' or port 0 tells the OS to use the default.
+        """
+    
+        host, port = address
+        if host.startswith("["):
+            host = host.strip("[]")
+        err = None
+    
+        # Using the value from allowed_gai_family() in the context of getaddrinfo lets
+        # us select whether to work with IPv4 DNS records, IPv6 records, or both.
+        # The original create_connection function always returns all records.
+        family = allowed_gai_family()
+    
+        try:
+            host.encode("idna")
+        except UnicodeError:
+            raise LocationParseError(f"'{host}', label empty or too long") from None
+    
+        for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            sock = None
+            try:
+                sock = socket.socket(af, socktype, proto)
+    
+                # If provided, set socket level options before connecting.
+                _set_socket_options(sock, socket_options)
+    
+                if timeout is not _DEFAULT_TIMEOUT:
+                    sock.settimeout(timeout)
+                if source_address:
+                    sock.bind(source_address)
+&gt;               sock.connect(sa)
+E               ConnectionRefusedError: [Errno 111] Connection refused
+
+/usr/local/lib/python3.12/dist-packages/urllib3/util/connection.py:73: ConnectionRefusedError
+
+The above exception was the direct cause of the following exception:
+
+self = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x7fc32460bce0&gt;
+method = 'GET', url = '/milvus-bucket?location=', body = None
+headers = HTTPHeaderDict({'Host': 'localhost:9000', 'User-Agent': 'MinIO (Linux; x86_64) minio-py/7.2.0', 'x-amz-content-sha256'...ers=host;x-amz-content-sha256;x-amz-date, Signature=f36e12a9c76029218e167b54e1a0b239e555f75c08e905488ba296879c2a0c09'})
+retries = Retry(total=0, connect=None, read=None, redirect=None, status=None)
+redirect = False, assert_same_host = False, timeout = &lt;_TYPE_DEFAULT.token: -1&gt;
+pool_timeout = None, release_conn = True, chunked = False, body_pos = None
+preload_content = True, decode_content = True, response_kw = {}
+parsed_url = Url(scheme=None, auth=None, host=None, port=None, path='/milvus-bucket', query='location=', fragment=None)
+destination_scheme = None, conn = None, release_this_conn = True
+http_tunnel_required = False, err = None, clean_exit = False
+
+    def urlopen(  # type: ignore[override]
+        self,
+        method: str,
+        url: str,
+        body: _TYPE_BODY | None = None,
+        headers: typing.Mapping[str, str] | None = None,
+        retries: Retry | bool | int | None = None,
+        redirect: bool = True,
+        assert_same_host: bool = True,
+        timeout: _TYPE_TIMEOUT = _DEFAULT_TIMEOUT,
+        pool_timeout: int | None = None,
+        release_conn: bool | None = None,
+        chunked: bool = False,
+        body_pos: _TYPE_BODY_POSITION | None = None,
+        preload_content: bool = True,
+        decode_content: bool = True,
+        **response_kw: typing.Any,
+    ) -&gt; BaseHTTPResponse:
+        """
+        Get a connection from the pool and perform an HTTP request. This is the
+        lowest level call for making a request, so you'll need to specify all
+        the raw details.
+    
+        .. note::
+    
+           More commonly, it's appropriate to use a convenience method
+           such as :meth:`request`.
+    
+        .. note::
+    
+           `release_conn` will only behave as expected if
+           `preload_content=False` because we want to make
+           `preload_content=False` the default behaviour someday soon without
+           breaking backwards compatibility.
+    
+        :param method:
+            HTTP request method (such as GET, POST, PUT, etc.)
+    
+        :param url:
+            The URL to perform the request on.
+    
+        :param body:
+            Data to send in the request body, either :class:`str`, :class:`bytes`,
+            an iterable of :class:`str`/:class:`bytes`, or a file-like object.
+    
+        :param headers:
+            Dictionary of custom headers to send, such as User-Agent,
+            If-None-Match, etc. If None, pool headers are used. If provided,
+            these headers completely replace any pool-specific headers.
+    
+        :param retries:
+            Configure the number of retries to allow before raising a
+            :class:`~urllib3.exceptions.MaxRetryError` exception.
+    
+            If ``None`` (default) will retry 3 times, see ``Retry.DEFAULT``. Pass a
+            :class:`~urllib3.util.retry.Retry` object for fine-grained control
+            over different types of retries.
+            Pass an integer number to retry connection errors that many times,
+            but no other types of errors. Pass zero to never retry.
+    
+            If ``False``, then retries are disabled and any exception is raised
+            immediately. Also, instead of raising a MaxRetryError on redirects,
+            the redirect response will be returned.
+    
+        :type retries: :class:`~urllib3.util.retry.Retry`, False, or an int.
+    
+        :param redirect:
+            If True, automatically handle redirects (status codes 301, 302,
+            303, 307, 308). Each redirect counts as a retry. Disabling retries
+            will disable redirect, too.
+    
+        :param assert_same_host:
+            If ``True``, will make sure that the host of the pool requests is
+            consistent else will raise HostChangedError. When ``False``, you can
+            use the pool on an HTTP proxy and request foreign hosts.
+    
+        :param timeout:
+            If specified, overrides the default timeout for this one
+            request. It may be a float (in seconds) or an instance of
+            :class:`urllib3.util.Timeout`.
+    
+        :param pool_timeout:
+            If set and the pool is set to block=True, then this method will
+            block for ``pool_timeout`` seconds and raise EmptyPoolError if no
+            connection is available within the time period.
+    
+        :param bool preload_content:
+            If True, the response's body will be preloaded into memory.
+    
+        :param bool decode_content:
+            If True, will attempt to decode the body based on the
+            'content-encoding' header.
+    
+        :param release_conn:
+            If False, then the urlopen call will not release the connection
+            back into the pool once a response is received (but will release if
+            you read the entire contents of the response such as when
+            `preload_content=True`). This is useful if you're not preloading
+            the response's content immediately. You will need to call
+            ``r.release_conn()`` on the response ``r`` to return the connection
+            back into the pool. If None, it takes the value of ``preload_content``
+            which defaults to ``True``.
+    
+        :param bool chunked:
+            If True, urllib3 will send the body using chunked transfer
+            encoding. Otherwise, urllib3 will send the body using the standard
+            content-length form. Defaults to False.
+    
+        :param int body_pos:
+            Position to seek to in file-like body in the event of a retry or
+            redirect. Typically this won't need to be set because urllib3 will
+            auto-populate the value when needed.
+        """
+        parsed_url = parse_url(url)
+        destination_scheme = parsed_url.scheme
+    
+        if headers is None:
+            headers = self.headers
+    
+        if not isinstance(retries, Retry):
+            retries = Retry.from_int(retries, redirect=redirect, default=self.retries)
+    
+        if release_conn is None:
+            release_conn = preload_content
+    
+        # Check host
+        if assert_same_host and not self.is_same_host(url):
+            raise HostChangedError(self, url, retries)
+    
+        # Ensure that the URL we're connecting to is properly encoded
+        if url.startswith("/"):
+            url = to_str(_encode_target(url))
+        else:
+            url = to_str(parsed_url.url)
+    
+        conn = None
+    
+        # Track whether `conn` needs to be released before
+        # returning/raising/recursing. Update this variable if necessary, and
+        # leave `release_conn` constant throughout the function. That way, if
+        # the function recurses, the original value of `release_conn` will be
+        # passed down into the recursive call, and its value will be respected.
+        #
+        # See issue #651 [1] for details.
+        #
+        # [1] &lt;https://github.com/urllib3/urllib3/issues/651&gt;
+        release_this_conn = release_conn
+    
+        http_tunnel_required = connection_requires_http_tunnel(
+            self.proxy, self.proxy_config, destination_scheme
+        )
+    
+        # Merge the proxy headers. Only done when not using HTTP CONNECT. We
+        # have to copy the headers dict so we can safely change it without those
+        # changes being reflected in anyone else's copy.
+        if not http_tunnel_required:
+            headers = headers.copy()  # type: ignore[attr-defined]
+            headers.update(self.proxy_headers)  # type: ignore[union-attr]
+    
+        # Must keep the exception bound to a separate variable or else Python 3
+        # complains about UnboundLocalError.
+        err = None
+    
+        # Keep track of whether we cleanly exited the except block. This
+        # ensures we do proper cleanup in finally.
+        clean_exit = False
+    
+        # Rewind body position, if needed. Record current position
+        # for future rewinds in the event of a redirect/retry.
+        body_pos = set_file_position(body, body_pos)
+    
+        try:
+            # Request a connection from the queue.
+            timeout_obj = self._get_timeout(timeout)
+            conn = self._get_conn(timeout=pool_timeout)
+    
+            conn.timeout = timeout_obj.connect_timeout  # type: ignore[assignment]
+    
+            # Is this a closed/new connection that requires CONNECT tunnelling?
+            if self.proxy is not None and http_tunnel_required and conn.is_closed:
+                try:
+                    self._prepare_proxy(conn)
+                except (BaseSSLError, OSError, SocketTimeout) as e:
+                    self._raise_timeout(
+                        err=e, url=self.proxy.url, timeout_value=conn.timeout
+                    )
+                    raise
+    
+            # If we're going to release the connection in ``finally:``, then
+            # the response doesn't need to know about the connection. Otherwise
+            # it will also try to release it and we'll have a double-release
+            # mess.
+            response_conn = conn if not release_conn else None
+    
+            # Make the request on the HTTPConnection object
+&gt;           response = self._make_request(
+                conn,
+                method,
+                url,
+                timeout=timeout_obj,
+                body=body,
+                headers=headers,
+                chunked=chunked,
+                retries=retries,
+                response_conn=response_conn,
+                preload_content=preload_content,
+                decode_content=decode_content,
+                **response_kw,
+            )
+
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:787: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:493: in _make_request
+    conn.request(
+/usr/local/lib/python3.12/dist-packages/urllib3/connection.py:445: in request
+    self.endheaders()
+/usr/lib/python3.12/http/client.py:1333: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/usr/lib/python3.12/http/client.py:1093: in _send_output
+    self.send(msg)
+/usr/lib/python3.12/http/client.py:1037: in send
+    self.connect()
+/usr/local/lib/python3.12/dist-packages/urllib3/connection.py:276: in connect
+    self.sock = self._new_conn()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;urllib3.connection.HTTPConnection object at 0x7fc324659be0&gt;
+
+    def _new_conn(self) -&gt; socket.socket:
+        """Establish a socket connection and set nodelay settings on it.
+    
+        :return: New socket connection.
+        """
+        try:
+            sock = connection.create_connection(
+                (self._dns_host, self.port),
+                self.timeout,
+                source_address=self.source_address,
+                socket_options=self.socket_options,
+            )
+        except socket.gaierror as e:
+            raise NameResolutionError(self.host, self, e) from e
+        except SocketTimeout as e:
+            raise ConnectTimeoutError(
+                self,
+                f"Connection to {self.host} timed out. (connect timeout={self.timeout})",
+            ) from e
+    
+        except OSError as e:
+&gt;           raise NewConnectionError(
+                self, f"Failed to establish a new connection: {e}"
+            ) from e
+E           urllib3.exceptions.NewConnectionError: &lt;urllib3.connection.HTTPConnection object at 0x7fc324659be0&gt;: Failed to establish a new connection: [Errno 111] Connection refused
+
+/usr/local/lib/python3.12/dist-packages/urllib3/connection.py:213: NewConnectionError
+
+The above exception was the direct cause of the following exception:
+
+self = &lt;test_milvus_client_function_chain.TestMilvusClientFunctionChainXGBoost object at 0x7fc375e4ba70&gt;
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/popen-gw2/test_milvus_client_xgboost_sup1')
+minio_host = 'localhost', minio_bucket = 'milvus-bucket', index_type = 'HNSW'
+
+    @pytest.mark.parametrize(
+        "index_type",
+        [
+            pytest.param("FLAT", marks=pytest.mark.tags(CaseLabel.L1), id="flat"),
+            pytest.param("HNSW", marks=pytest.mark.tags(CaseLabel.L0), id="hnsw"),
+            pytest.param("DISKANN", marks=pytest.mark.tags(CaseLabel.L2), id="diskann"),
+        ],
+    )
+    def test_milvus_client_xgboost_supports_all_numeric_feature_types(
+        self,
+        tmp_path,
+        minio_host,
+        minio_bucket,
+        index_type,
+    ):
+        """
+        target: test numeric feature correctness in a realistic recommendation search
+        method: train on 9000 distributed rows, create 2 sealed + 1 growing segment, then rerank FLAT/HNSW/DISKANN
+        expected: all fields round-trip and correct/swapped feature orders match local predictions
+        """
+        client = self._client()
+        resource_name = cf.gen_unique_str("xgboost_relevance_model")
+        remote_path = f"xgboost/{resource_name}.ubj"
+        columns, features, embeddings, query_vectors, labels = self._regression_dataset(
+            feature_seed=19530,
+            embedding_seed=19531,
+            query_seed=19532,
+        )
+        booster, model_path, expected_scores, _ = self._train_xgboost_model(
+            tmp_path,
+            "xgboost_recommendation_relevance",
+            features,
+            labels,
+            "reg:squarederror",
+        )
+        assert set(booster.get_score(importance_type="weight")) == {f"f{idx}" for idx in range(len(self.feature_names))}
+&gt;       minio_client = self._upload_model(
+            client,
+            minio_host,
+            minio_bucket,
+            resource_name,
+            remote_path,
+            model_path,
+        )
+
+milvus_client/test_milvus_client_function_chain.py:957: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+milvus_client/test_milvus_client_function_chain.py:118: in _upload_model
+    if not minio_client.bucket_exists(bucket):
+/usr/local/lib/python3.12/dist-packages/minio/api.py:662: in bucket_exists
+    self._execute("HEAD", bucket_name)
+/usr/local/lib/python3.12/dist-packages/minio/api.py:413: in _execute
+    region = self._get_region(bucket_name)
+/usr/local/lib/python3.12/dist-packages/minio/api.py:470: in _get_region
+    response = self._url_open(
+/usr/local/lib/python3.12/dist-packages/minio/api.py:279: in _url_open
+    response = self._http.urlopen(
+/usr/local/lib/python3.12/dist-packages/urllib3/poolmanager.py:443: in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:871: in urlopen
+    return self.urlopen(
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:871: in urlopen
+    return self.urlopen(
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:871: in urlopen
+    return self.urlopen(
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:871: in urlopen
+    return self.urlopen(
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:871: in urlopen
+    return self.urlopen(
+/usr/local/lib/python3.12/dist-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Retry(total=0, connect=None, read=None, redirect=None, status=None)
+method = 'GET', url = '/milvus-bucket?location=', response = None
+error = NewConnectionError('&lt;urllib3.connection.HTTPConnection object at 0x7fc324659be0&gt;: Failed to establish a new connection: [Errno 111] Connection refused')
+_pool = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x7fc32460bce0&gt;
+_stacktrace = &lt;traceback object at 0x7fc306f4a4c0&gt;
+
+    def increment(
+        self,
+        method: str | None = None,
+        url: str | None = None,
+        response: BaseHTTPResponse | None = None,
+        error: Exception | None = None,
+        _pool: ConnectionPool | None = None,
+        _stacktrace: TracebackType | None = None,
+    ) -&gt; Self:
+        """Return a new Retry object with incremented retry counters.
+    
+        :param response: A response object, or None, if the server did not
+            return a response.
+        :type response: :class:`~urllib3.response.BaseHTTPResponse`
+        :param Exception error: An error encountered during the request, or
+            None if the response was received successfully.
+    
+        :return: A new ``Retry`` object.
+        """
+        if self.total is False and error:
+            # Disabled, indicate to re-raise the error.
+            raise reraise(type(error), error, _stacktrace)
+    
+        total = self.total
+        if total is not None:
+            total -= 1
+    
+        connect = self.connect
+        read = self.read
+        redirect = self.redirect
+        status_count = self.status
+        other = self.other
+        cause = "unknown"
+        status = None
+        redirect_location = None
+    
+        if error and self._is_connection_error(error):
+            # Connect retry?
+            if connect is False:
+                raise reraise(type(error), error, _stacktrace)
+            elif connect is not None:
+                connect -= 1
+    
+        elif error and self._is_read_error(error):
+            # Read retry?
+            if read is False or method is None or not self._is_method_retryable(method):
+                raise reraise(type(error), error, _stacktrace)
+            elif read is not None:
+                read -= 1
+    
+        elif error:
+            # Other retry?
+            if other is not None:
+                other -= 1
+    
+        elif response and response.get_redirect_location():
+            # Redirect retry?
+            if redirect is not None:
+                redirect -= 1
+            cause = "too many redirects"
+            response_redirect_location = response.get_redirect_location()
+            if response_redirect_location:
+                redirect_location = response_redirect_location
+            status = response.status
+    
+        else:
+            # Incrementing because of a server error like a 500 in
+            # status_forcelist and the given method is in the allowed_methods
+            cause = ResponseError.GENERIC_ERROR
+            if response and response.status:
+                if status_count is not None:
+                    status_count -= 1
+                cause = ResponseError.SPECIFIC_ERROR.format(status_code=response.status)
+                status = response.status
+    
+        history = self.history + (
+            RequestHistory(method, url, error, status, redirect_location),
+        )
+    
+        new_retry = self.new(
+            total=total,
+            connect=connect,
+            read=read,
+            redirect=redirect,
+            status=status_count,
+            other=other,
+            history=history,
+        )
+    
+        if new_retry.is_exhausted():
+            reason = error or ResponseError(cause)
+&gt;           raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+E           urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=9000): Max retries exceeded with url: /milvus-bucket?location= (Caused by NewConnectionError('&lt;urllib3.connection.HTTPConnection object at 0x7fc324659be0&gt;: Failed to establish a new connection: [Errno 111] Connection refused'))
+
+/usr/local/lib/python3.12/dist-packages/urllib3/util/retry.py:519: MaxRetryError
+            </div>
+            <div class="logs-box">
+                <strong>Captured Logs:</strong>
+                <div class="log-entry log-debug">[01:16:18 - DEBUG] (api_request)  : [MilvusClient] args: ['https://in01-34724eb1512b66b.aws-us-west-2.vectordb-uat3.zillizcloud.com:19538', '', '', '', 'db_a......, kwargs: {} (api_request.py:52)</div>
+                <div class="log-entry log-debug">[01:16:18 - DEBUG] (api_response) : &lt;pymilvus.milvus_client.milvus_client.MilvusClient object at 0x7fc32465b0b0&gt;  (api_request.py:27)</div>
+                <div class="log-entry log-info">[01:16:18 - INFO] *********************************** setup *********************************** (client_base.py:48)</div>
+                <div class="log-entry log-info">[01:16:18 - INFO] pymilvus version: 3.1.0rc78 (client_base.py:49)</div>
+                <div class="log-entry log-info">[01:16:18 - INFO] [setup_method] Start setup test case test_milvus_client_xgboost_supports_all_numeric_feature_types. (client_base.py:50)</div>
+                <div class="log-entry log-info">[01:16:18 - INFO] server version: {'version': 'Zilliz Cloud Vector Database(Compatible with Milvus 3.0)', 'build_time': 'Wed Sep  2 12:11:06 UTC 2026', 'git_commit': 'hidden', 'go_version': 'go version go1.26.6 linux/arm64', 'deploy_mode': 'Cloud'} (client_v2_base.py:46)</div>
+                <div class="log-entry log-warning">[01:16:18 - WARNING] Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('&lt;urllib3.connection.HTTPConnection object at 0x7fc32460a750&gt;: Failed to establish a new connection: [Errno 111] Connection refused')': /milvus-bucket?location= (connectionpool.py:868)</div>
+                <div class="log-entry log-warning">[01:16:18 - WARNING] Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('&lt;urllib3.connection.HTTPConnection object at 0x7fc32465aab0&gt;: Failed to establish a new connection: [Errno 111] Connection refused')': /milvus-bucket?location= (connectionpool.py:868)</div>
+                <div class="log-entry log-warning">[01:16:19 - WARNING] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('&lt;urllib3.connection.HTTPConnection object at 0x7fc32465a480&gt;: Failed to establish a new connection: [Errno 111] Connection refused')': /milvus-bucket?location= (connectionpool.py:868)</div>
+                <div class="log-entry log-warning">[01:16:21 - WARNING] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('&lt;urllib3.connection.HTTPConnection object at 0x7fc324659340&gt;: Failed to establish a new connection: [Errno 111] Connection refused')': /milvus-bucket?location= (connectionpool.py:868)</div>
+                <div class="log-entry log-warning">[01:16:24 - WARNING] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('&lt;urllib3.connection.HTTPConnection object at 0x7fc32465b2f0&gt;: Failed to establish a new connection: [Errno 111] Connection refused')': /milvus-bucket?location= (connectionpool.py:868)</div>
+            </div>
+        </details>
+    </div>
+
+</body>
+</html>

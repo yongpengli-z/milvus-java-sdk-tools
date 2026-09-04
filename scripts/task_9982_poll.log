@@ -1,0 +1,16 @@
+[2026-05-20 19:01:24] Starting poll for task 9982 (tiered-4cu-L2), polling every 600s
+[2026-05-20 19:01:25] Redis status: 1
+[2026-05-20 19:11:25] Instance from QTP: in01-1e9a2b7952a3838
+[2026-05-20 19:11:25] Redis status: 1
+[2026-05-20 19:21:27] Redis status: 1
+[2026-05-20 19:31:29] Redis status: 1
+[2026-05-20 19:41:31] Redis status: 1
+[2026-05-20 19:51:33] Redis status: 1
+[2026-05-20 21:17:49] Error: <urlopen error timed out>
+[2026-05-20 22:25:30] Error: <urlopen error timed out>
+[2026-05-20 23:30:04] Error: <urlopen error timed out>
+[2026-05-21 01:56:01] Error: <urlopen error [Errno 60] Operation timed out>
+[2026-05-21 04:28:32] Error: <urlopen error timed out>
+[2026-05-21 07:31:37] Error: <urlopen error [Errno 60] Operation timed out>
+[2026-05-21 08:58:03] Redis status: 1
+[2026-05-21 09:08:04] Redis status: 1

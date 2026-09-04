@@ -1,0 +1,18 @@
+{
+  "document_id": "FUJdd52k2oaRZtxUklhc8tabnJf",
+  "env": "awswest",
+  "poll_interval_sec": 600,
+  "current": null,
+  "pending_cases": [],
+  "completed_cases": [
+    "tiered-1cu-L0",
+    "tiered-1cu-L1",
+    "tiered-1cu-L2",
+    "tiered-4cu-L0",
+    "tiered-4cu-L1",
+    "tiered-4cu-L2",
+    "tiered-8cu-L0",
+    "tiered-8cu-L1",
+    "tiered-8cu-L2"
+  ]
+}

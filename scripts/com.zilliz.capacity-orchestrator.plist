@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.zilliz.capacity-orchestrator</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/yongpengli/Documents/GitHub/milvus-java-sdk-tools/scripts/start_capacity_orchestrator.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/yongpengli/Documents/GitHub/milvus-java-sdk-tools</string>
+  <key>StandardOutPath</key>
+  <string>/Users/yongpengli/Documents/GitHub/milvus-java-sdk-tools/scripts/capacity_orchestrator.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/yongpengli/Documents/GitHub/milvus-java-sdk-tools/scripts/capacity_orchestrator.log</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+</dict>
+</plist>

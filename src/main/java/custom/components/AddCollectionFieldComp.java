@@ -5,11 +5,14 @@ import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import custom.entity.AddCollectionFieldParams;
+import custom.entity.StructFieldParams;
 import custom.entity.result.AddCollectionFieldResult;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.AddCollectionFieldReq;
+import io.milvus.v2.service.collection.request.AddCollectionStructFieldReq;
+import io.milvus.v2.service.collection.request.AddFieldReq;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -38,6 +41,14 @@ public class AddCollectionFieldComp {
         }
 
         try {
+            // Array of Struct：走 addCollectionStructField 专用接口（Milvus 3.0.0+ 支持）
+            if (isStructArrayField(addCollectionFieldParams)) {
+                addStructArrayField(addCollectionFieldParams, collectionName);
+                commonResult.setResult(ResultEnum.SUCCESS.result);
+                addCollectionFieldResult.setCommonResult(commonResult);
+                return addCollectionFieldResult;
+            }
+
             Object defaultValue = null;
             if (addCollectionFieldParams.getDataType() == DataType.Float) {
                 defaultValue = Float.parseFloat(addCollectionFieldParams.getDefaultValue());
@@ -103,5 +114,61 @@ public class AddCollectionFieldComp {
         addCollectionFieldResult.setCommonResult(commonResult);
         return addCollectionFieldResult;
 
+    }
+
+    /**
+     * 判断是否为 Array of Struct 字段（dataType=Array 且 elementType=Struct 且 structSchema 非空）。
+     */
+    private static boolean isStructArrayField(AddCollectionFieldParams params) {
+        return params.getDataType() == DataType.Array
+                && params.getElementType() == DataType.Struct
+                && params.getStructSchema() != null
+                && !params.getStructSchema().isEmpty();
+    }
+
+    /**
+     * 动态添加 Array of Struct 字段。
+     * <p>
+     * 服务端限制（Milvus 3.0.0+）：字段必须 nullable=true、maxCapacity 必填；
+     * 子字段不能是 Struct/Array/JSON，不能设置主键/默认值/nullable。
+     */
+    private static void addStructArrayField(AddCollectionFieldParams params, String collectionName) {
+        if (params.getMaxCapacity() == null || params.getMaxCapacity() <= 0) {
+            throw new IllegalArgumentException("maxCapacity is required for struct array field: " + params.getFieldName());
+        }
+        AddCollectionStructFieldReq.AddCollectionStructFieldReqBuilder builder = AddCollectionStructFieldReq.builder()
+                .collectionName(collectionName)
+                .fieldName(params.getFieldName())
+                .maxCapacity(params.getMaxCapacity())
+                // 动态添加的 StructArray 字段必须 nullable
+                .nullable(params.getIsNullable() == null || params.getIsNullable());
+
+        for (StructFieldParams structFieldParam : params.getStructSchema()) {
+            AddFieldReq.AddFieldReqBuilder<?> structFieldBuilder = AddFieldReq.builder()
+                    .fieldName(structFieldParam.getFieldName())
+                    .dataType(structFieldParam.getDataType())
+                    .isNullable(structFieldParam.isNullable());
+            // 向量维度
+            if (structFieldParam.getDataType() == DataType.FloatVector ||
+                    structFieldParam.getDataType() == DataType.BFloat16Vector ||
+                    structFieldParam.getDataType() == DataType.Float16Vector ||
+                    structFieldParam.getDataType() == DataType.BinaryVector ||
+                    structFieldParam.getDataType() == DataType.Int8Vector) {
+                structFieldBuilder.dimension(structFieldParam.getDim());
+            }
+            // VarChar/String/Text 最大长度
+            if ((structFieldParam.getDataType() == DataType.VarChar ||
+                    structFieldParam.getDataType() == DataType.String ||
+                    structFieldParam.getDataType() == DataType.Text) && structFieldParam.getMaxLength() > 0) {
+                structFieldBuilder.maxLength(structFieldParam.getMaxLength());
+            }
+            builder.addStructField(structFieldBuilder.build());
+        }
+
+        AddCollectionStructFieldReq req = builder.build();
+        if (params.getDatabaseName() != null && !params.getDatabaseName().equalsIgnoreCase("")) {
+            req.setDatabaseName(params.getDatabaseName());
+        }
+        milvusClientV2.addCollectionStructField(req);
     }
 }

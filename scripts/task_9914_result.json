@@ -1,0 +1,36 @@
+{
+  "task_id": 9914,
+  "case_name": "tiered-1cu-L2",
+  "instance_id": "in01-519ffe07091eda7",
+  "namespace": "milvus-in01-519ffe07091eda7",
+  "status": "completed",
+  "checkpoint_note": "checkpoint already passed; target_metrics collected retroactively",
+  "target_metrics": {
+    "rss_peak": 3496509440,
+    "namespace_rss_peak": 3565232128,
+    "working_set_peak": 7971254272,
+    "s3_binlog_size": 120469156302,
+    "stored_rows": 38867000,
+    "disk_quota": 214748364800
+  },
+  "grafana_from": "1778870964880",
+  "grafana_to": "1778933430607",
+  "grafana_dashboard_url": "https://grafana-vdc-dev.zilliz.cc/d/uLf5cJ3Ga/milvus2-6?orgId=1&var-datasource=dXFY2C0Vz&var-namespace=milvus-in01-519ffe07091eda7&var-instance=in01-519ffe07091eda7&from=1778870964880&to=1778933430607",
+  "peak_metrics": {
+    "peak_rss": 4661633024,
+    "peak_namespace_rss": 4740374528,
+    "peak_working_set": 8044453888,
+    "peak_s3_binlog": 214778329422,
+    "peak_stored_rows": 69294000
+  },
+  "qtp": {
+    "insert_target_numEntries": 29525000,
+    "insert_target_exception": "time tick long delay",
+    "append_numEntries": 39771000,
+    "append_exception": "cluster disk quota exceeded",
+    "search_checkpoint_passRate": 100.0,
+    "search_checkpoint_avg_ms": 5535.8,
+    "search_peak_passRate": 100.0,
+    "search_peak_avg_ms": 17593.8
+  }
+}

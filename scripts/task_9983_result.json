@@ -1,0 +1,21 @@
+{
+  "task_id": 9983,
+  "status": "completed",
+  "grafana_from": "1779275288053",
+  "case_name": "tiered-8cu-L0",
+  "instance_id": "in01-84ced0e260c6b06",
+  "namespace": "milvus-in01-84ced0e260c6b06",
+  "peak_metrics": {
+    "peak_rss": 257789952,
+    "peak_s3_binlog": null,
+    "peak_stored_rows": null
+  },
+  "qtp": {
+    "insert_target": {},
+    "append": {},
+    "search_checkpoint": {},
+    "search_peak": {}
+  },
+  "grafana_to": "1779277095159",
+  "grafana_dashboard_url": "https://grafana-vdc-dev.zilliz.cc/d/uLf5cJ3Ga/milvus2-6?orgId=1&var-datasource=dXFY2C0Vz&var-namespace=milvus-in01-84ced0e260c6b06&var-instance=in01-84ced0e260c6b06&from=1779275288053&to=1779277095159"
+}

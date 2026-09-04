@@ -48,6 +48,8 @@
 | InsertParams | 插入数据（支持数据集/随机生成/按时间运行） | [详情](docs/components/InsertParams.md) |
 | RestfulInsertParams | 通过 REST API 插入数据 | [详情](docs/components/RestfulInsertParams.md) |
 | SearchParams | 向量搜索（支持 filter、并发、按时间运行） | [详情](docs/components/SearchParams.md) |
+| SearchOrderByParams | 向量搜索结果按标量字段排序（SDK 3.0.4） | [详情](docs/components/SearchOrderByParams.md) |
+| SearchAggregationParams | 向量搜索分桶聚合（指标、top hits、嵌套聚合；SDK 3.0.4） | [详情](docs/components/SearchAggregationParams.md) |
 | QueryParams | 标量查询（filter / ids） | [详情](docs/components/QueryParams.md) |
 | AssertParams | 一次性业务断言（可集中断言 query count、search 返回数量等） | [详情](docs/components/AssertParams.md) |
 | UpsertParams | 更新插入（支持 Partial Update） | [详情](docs/components/UpsertParams.md) |

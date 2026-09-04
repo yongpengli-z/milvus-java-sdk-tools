@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\" separator\\).:*)",
+      "Bash(git reset:*)",
+      "mcp__testplatform__get_build_status",
+      "Bash(openspec new:*)",
+      "Bash(openspec status:*)",
+      "Bash(openspec instructions proposal:*)",
+      "Bash(openspec instructions design:*)",
+      "Bash(openspec instructions specs:*)",
+      "Bash(openspec instructions tasks:*)",
+      "Bash(openspec instructions apply:*)",
+      "Read(//private/tmp/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/yongpengli/Documents/GitHub/testplatform/src/main/resources",
+      "/Users/yongpengli/Documents/GitHub/test-platform-web/src/views/run/template/components",
+      "/Users/yongpengli/Documents/GitHub/testplatform/src/main/java/com/zilliz/testplatform/entity",
+      "/Users/yongpengli/Documents/GitHub/milvus-java-sdk-toos/docs"
+    ]
+  }
+}

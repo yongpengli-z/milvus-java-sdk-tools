@@ -1,0 +1,20 @@
+{
+  "task_id": 9956,
+  "status": "completed",
+  "grafana_from": "1779106042929",
+  "case_name": "tiered-8cu-L0",
+  "instance_id": "in01-9623e36727ba914",
+  "namespace": "milvus-in01-9623e36727ba914",
+  "peak_metrics": {
+    "peak_rss": 2215936,
+    "peak_s3_binlog": null,
+    "peak_stored_rows": null
+  },
+  "qtp": {
+    "insert_target": {},
+    "append": {},
+    "search_checkpoint": {},
+    "search_peak": {}
+  },
+  "grafana_to": "1779152248064"
+}

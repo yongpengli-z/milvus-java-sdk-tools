@@ -101,6 +101,13 @@ public class CloudOpsServiceUtils {
         for (String keyword : keywordList) {
             JSONObject jsonResponse = JSON.parseObject(listDBVersionByKeywords(keyword,insType));
             JSONObject jsonResponse2 = JSON.parseObject(listTagByKeywords(keyword,insType));
+            // 请求失败（非200或异常）时 doGet 返回空串，parseObject 结果为 null，这里直接抛出带上下文的异常
+            if (jsonResponse == null || jsonResponse.getJSONObject("data") == null
+                    || jsonResponse2 == null || jsonResponse2.getJSONObject("data") == null) {
+                throw new RuntimeException("查询镜像版本接口失败(release_version 返回为空或无 data)，关键字: " + keyword
+                        + ", insType: " + insType + ", regionId: " + envConfig.getRegionId()
+                        + "，请检查 cloud-ops 服务是否可用");
+            }
             // 获取data-list
             JSONArray jsonArray = jsonResponse.getJSONObject("data").getJSONArray("list");
             for (int i = 0; i < jsonArray.size(); i++) {

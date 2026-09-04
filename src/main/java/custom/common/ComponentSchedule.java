@@ -557,6 +557,18 @@ public class ComponentSchedule {
             jsonObject.put("QueryIterator_" + index, queryIteratorResult);
             reportStepResult(QueryIteratorParams.class.getSimpleName() + "_" + index, JSON.toJSONString(queryIteratorResult));
         }
+        if (object instanceof SearchOrderByParams) {
+            log.info("*********** < ordered vector search > ***********");
+            SearchOrderByResult searchOrderByResult = SearchOrderByComp.search((SearchOrderByParams) object);
+            jsonObject.put("SearchOrderBy_" + index, searchOrderByResult);
+            reportStepResult(SearchOrderByParams.class.getSimpleName() + "_" + index, JSON.toJSONString(searchOrderByResult));
+        }
+        if (object instanceof SearchAggregationParams) {
+            log.info("*********** < search aggregation > ***********");
+            SearchAggregationResult searchAggregationResult = SearchAggregationComp.search((SearchAggregationParams) object);
+            jsonObject.put("SearchAggregation_" + index, searchAggregationResult);
+            reportStepResult(SearchAggregationParams.class.getSimpleName() + "_" + index, JSON.toJSONString(searchAggregationResult));
+        }
         } catch (Exception e) {
             String errorKey = componentName + "_" + index;
             log.error("组件 [{}] 执行异常! Step index: {}", componentName, index, e);

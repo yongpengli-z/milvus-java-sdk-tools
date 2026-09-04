@@ -1,0 +1,120 @@
+{
+  "task_id": 9948,
+  "status": "completed",
+  "grafana_from": "1779066190077",
+  "case_name": "tiered-4cu-L2",
+  "instance_id": "in01-b12f79b23db9050",
+  "namespace": "milvus-in01-b12f79b23db9050",
+  "target_metrics": {
+    "rss_peak": 8453668864,
+    "s3_binlog_size": 495923465619,
+    "stored_rows": 160000000,
+    "disk_quota": 858993459200
+  },
+  "qtp_checkpoint": {
+    "insert_target": {
+      "assertMessages": [],
+      "avg": 1.1466,
+      "commonResult": {
+        "result": "success"
+      },
+      "costTime": 27575.060546875,
+      "numEntries": 160000000,
+      "requestNum": 160000,
+      "rps": 5.80234432220459,
+      "tp50": 1.04,
+      "tp80": 1.515,
+      "tp85": 1.66,
+      "tp90": 1.859,
+      "tp98": 2.429,
+      "tp99": 2.679
+    },
+    "append": {},
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 3.8538,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 61.671,
+      "passRate": 100.0,
+      "requestNum": 16,
+      "rps": 0.25944123,
+      "tp50": 3.609,
+      "tp80": 4.576,
+      "tp85": 4.69,
+      "tp90": 4.727,
+      "tp98": 5.063,
+      "tp99": 5.063
+    },
+    "search_peak": {}
+  },
+  "peak_metrics": {
+    "peak_rss": 2220032,
+    "peak_s3_binlog": 552347170742,
+    "peak_stored_rows": 178204000
+  },
+  "qtp": {
+    "insert_target": {
+      "assertMessages": [],
+      "avg": 1.1466,
+      "commonResult": {
+        "result": "success"
+      },
+      "costTime": 27575.060546875,
+      "numEntries": 160000000,
+      "requestNum": 160000,
+      "rps": 5.80234432220459,
+      "tp50": 1.04,
+      "tp80": 1.515,
+      "tp85": 1.66,
+      "tp90": 1.859,
+      "tp98": 2.429,
+      "tp99": 2.679
+    },
+    "append": {
+      "assertMessages": [
+        "[ASSERT FAIL] insert exception: io.milvus.shaded.io.grpc.StatusRuntimeException: UNKNOWN"
+      ],
+      "avg": 0.196,
+      "commonResult": {
+        "message": "io.milvus.shaded.io.grpc.StatusRuntimeException: UNKNOWN",
+        "result": "exception"
+      },
+      "costTime": 3624.73095703125,
+      "numEntries": 18204000,
+      "requestNum": 18204,
+      "rps": 5.022165775299072,
+      "tp50": 0.128,
+      "tp80": 0.21,
+      "tp85": 0.248,
+      "tp90": 0.385,
+      "tp98": 0.692,
+      "tp99": 0.791
+    },
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 3.8538,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 61.671,
+      "passRate": 100.0,
+      "requestNum": 16,
+      "rps": 0.25944123,
+      "tp50": 3.609,
+      "tp80": 4.576,
+      "tp85": 4.69,
+      "tp90": 4.727,
+      "tp98": 5.063,
+      "tp99": 5.063
+    },
+    "search_peak": {
+      "result": "exception",
+      "errorMsg": "io.milvus.v2.exception.MilvusClientException: io.milvus.shaded.io.grpc.StatusRuntimeException: UNKNOWN"
+    }
+  },
+  "grafana_to": "1779098473465"
+}

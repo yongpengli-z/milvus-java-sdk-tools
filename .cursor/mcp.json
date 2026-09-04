@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "lark-mcp": {
+      "url": "https://open.feishu.cn/mcp/stream/mcp_zoyhYjflUni2wsCzurkMjINtV1Vrvy0zxMCRDjQYsIprmpVXYUYrTLuV_f2tf1VoxvqUKIIPaZA",
+      "type": "streamable-http"
+    }
+  }
+}

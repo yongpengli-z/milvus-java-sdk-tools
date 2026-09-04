@@ -1,0 +1,127 @@
+{
+  "task_id": 9964,
+  "status": "completed",
+  "grafana_from": "1779172909379",
+  "case_name": "tiered-8cu-L1",
+  "instance_id": "in01-fd3235587464900",
+  "namespace": "milvus-in01-fd3235587464900",
+  "target_metrics": {
+    "rss_peak": 14662946816,
+    "s3_binlog_size": 762084223981,
+    "stored_rows": 245871000,
+    "disk_quota": 1717986918400
+  },
+  "qtp_checkpoint": {
+    "insert_target": {
+      "assertMessages": [
+        "[ASSERT FAIL] insert exception: quota exceeded[reason=time tick long delay: force deny writing for time tick delay]"
+      ],
+      "avg": 0.9931,
+      "commonResult": {
+        "message": "quota exceeded[reason=time tick long delay: force deny writing for time tick delay]",
+        "result": "exception"
+      },
+      "costTime": 38313.8984375,
+      "numEntries": 245871000,
+      "requestNum": 245871,
+      "rps": 6.4172797203063965,
+      "tp50": 0.876,
+      "tp80": 1.331,
+      "tp85": 1.444,
+      "tp90": 1.604,
+      "tp98": 2.215,
+      "tp99": 2.407
+    },
+    "append": {},
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 0.1134,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 60.018,
+      "passRate": 100.0,
+      "requestNum": 529,
+      "rps": 8.814022,
+      "tp50": 0.048,
+      "tp80": 0.076,
+      "tp85": 0.114,
+      "tp90": 0.238,
+      "tp98": 0.839,
+      "tp99": 1.058
+    },
+    "search_peak": {}
+  },
+  "peak_metrics": {
+    "peak_rss": 18652839936,
+    "peak_s3_binlog": 1429369777768,
+    "peak_stored_rows": 461157000
+  },
+  "qtp": {
+    "insert_target": {
+      "assertMessages": [
+        "[ASSERT FAIL] insert exception: quota exceeded[reason=time tick long delay: force deny writing for time tick delay]"
+      ],
+      "avg": 0.9931,
+      "commonResult": {
+        "message": "quota exceeded[reason=time tick long delay: force deny writing for time tick delay]",
+        "result": "exception"
+      },
+      "costTime": 38313.8984375,
+      "numEntries": 245871000,
+      "requestNum": 245871,
+      "rps": 6.4172797203063965,
+      "tp50": 0.876,
+      "tp80": 1.331,
+      "tp85": 1.444,
+      "tp90": 1.604,
+      "tp98": 2.215,
+      "tp99": 2.407
+    },
+    "append": {
+      "assertMessages": [
+        "[ASSERT FAIL] insert exception: io.milvus.shaded.io.grpc.StatusRuntimeException: UNAVAILABLE: upstream connect error or disconnect/reset before headers. reset reason: remote reset"
+      ],
+      "avg": 0.8639,
+      "commonResult": {
+        "message": "io.milvus.shaded.io.grpc.StatusRuntimeException: UNAVAILABLE: upstream connect error or disconnect/reset before headers. reset reason: remote reset",
+        "result": "exception"
+      },
+      "costTime": 32006.91015625,
+      "numEntries": 215288000,
+      "requestNum": 215288,
+      "rps": 6.726297378540039,
+      "tp50": 0.823,
+      "tp80": 1.14,
+      "tp85": 1.228,
+      "tp90": 1.329,
+      "tp98": 1.653,
+      "tp99": 1.849
+    },
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 0.1134,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 60.018,
+      "passRate": 100.0,
+      "requestNum": 529,
+      "rps": 8.814022,
+      "tp50": 0.048,
+      "tp80": 0.076,
+      "tp85": 0.114,
+      "tp90": 0.238,
+      "tp98": 0.839,
+      "tp99": 1.058
+    },
+    "search_peak": {
+      "result": "exception",
+      "errorMsg": "java.lang.IndexOutOfBoundsException: Index -1 out of bounds for length 0"
+    }
+  },
+  "grafana_to": "1779271667735",
+  "grafana_dashboard_url": "https://grafana-vdc-dev.zilliz.cc/d/uLf5cJ3Ga/milvus2-6?orgId=1&var-datasource=dXFY2C0Vz&var-namespace=milvus-in01-fd3235587464900&var-instance=in01-fd3235587464900&from=1779172909379&to=1779271667735"
+}

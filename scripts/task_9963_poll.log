@@ -1,0 +1,30 @@
+[2026-05-19 14:38:59] Starting poll for task 9963 (tiered-1cu-L1), polling every 600s
+[2026-05-19 14:38:59] Redis status: 1
+[2026-05-19 14:49:01] Redis status: 1
+[2026-05-19 14:59:01] Redis status: 1
+[2026-05-19 15:09:01] Redis status: 1
+[2026-05-19 15:19:01] Redis status: 1
+[2026-05-19 15:29:01] Redis status: 1
+[2026-05-19 15:39:01] Redis status: 1
+[2026-05-19 15:49:01] Redis status: 1
+[2026-05-19 15:59:01] Redis status: 1
+[2026-05-19 16:09:01] Redis status: 1
+[2026-05-19 16:19:01] Redis status: 1
+[2026-05-19 16:29:01] Redis status: 1
+[2026-05-19 16:39:01] Redis status: 1
+[2026-05-19 16:49:02] Redis status: 1
+[2026-05-19 16:59:02] Redis status: 1
+[2026-05-19 17:09:02] Redis status: 1
+[2026-05-19 17:19:02] Redis status: 2
+[2026-05-19 17:19:02] === CHECKPOINT REACHED ===
+[2026-05-19 17:19:02] Resuming task...
+[2026-05-19 17:19:02] Resume: {'code': 200, 'message': '请求成功', 'data': 1}
+[2026-05-19 17:19:13] Redis status: 1
+[2026-05-19 17:29:13] Redis status: 1
+[2026-05-19 17:39:13] Redis status: 1
+[2026-05-19 17:49:13] Redis status: 1
+[2026-05-19 17:59:13] Redis status: 1
+[2026-05-19 18:09:13] Redis status: 1
+[2026-05-19 19:55:38] Error: <urlopen error [Errno 60] Operation timed out>
+[2026-05-20 00:48:26] Error: <urlopen error timed out>
+[2026-05-20 05:59:28] Error: <urlopen error timed out>

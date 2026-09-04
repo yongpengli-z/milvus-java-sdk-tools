@@ -115,6 +115,18 @@ public class AddCollectionFieldParams {
     private DataType elementType;
 
     /**
+     * Struct Schema（仅当 `dataType=DataType.Array` 且 `elementType=DataType.Struct` 时生效）。
+     * <p>
+     * 用于定义 Array of Struct 中 Struct 的子字段列表，复用 {@link StructFieldParams}。
+     * <p>
+     * 限制：
+     * - Struct 子字段不能是 Struct、Array、JSON
+     * - Struct 子字段可以包含向量字段，从而实现 Array of Vector
+     * - 动态添加 StructArray 字段要求 Milvus 3.0.0+，且字段必须 nullable=true、maxCapacity 必填
+     */
+    private List<StructFieldParams> structSchema;
+
+    /**
      * Array 最大容量（仅 Array 生效）。
      * <p>
      * 前端：`addCollectionFieldEdit.vue` -> "MaxCapacity"

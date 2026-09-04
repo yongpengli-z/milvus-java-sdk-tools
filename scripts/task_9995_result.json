@@ -1,0 +1,138 @@
+{
+  "task_id": 9995,
+  "case_name": "tiered-4cu-L2",
+  "status": "completed",
+  "target_metrics": {
+    "rss_peak": 7860383744,
+    "namespace_rss_peak": 7936794624,
+    "working_set_peak": 32772726784,
+    "s3_binlog_size": 495923546221,
+    "stored_rows": 160000000,
+    "disk_quota": 858993459200
+  },
+  "instance_id": "in01-595c4f9761cd0ff",
+  "namespace": "milvus-in01-595c4f9761cd0ff",
+  "grafana_from": "1779269848329",
+  "grafana_to": "1779442648329",
+  "peak_metrics": {
+    "peak_rss": 12089909248,
+    "peak_s3_binlog": 859025671454,
+    "peak_stored_rows": 277147000,
+    "peak_s3_binlog_gib_poll": 800.03
+  },
+  "qtp": {
+    "insert_target": {
+      "assertMessages": [],
+      "avg": 0.9954,
+      "commonResult": {
+        "result": "success"
+      },
+      "costTime": 23548.63671875,
+      "numEntries": 160000000,
+      "requestNum": 160000,
+      "rps": 6.794448375701904,
+      "tp50": 0.871,
+      "tp80": 1.294,
+      "tp85": 1.398,
+      "tp90": 1.554,
+      "tp98": 2.235,
+      "tp99": 2.469
+    },
+    "append": {
+      "assertMessages": [
+        "[ASSERT FAIL] insert exception: quota exceeded[reason=disk quota exceeded, please allocate more resources: cluster disk quota exceeded]"
+      ],
+      "avg": 1.0282,
+      "commonResult": {
+        "message": "quota exceeded[reason=disk quota exceeded, please allocate more resources: cluster disk quota exceeded]",
+        "result": "exception"
+      },
+      "costTime": 22000.71875,
+      "numEntries": 117147000,
+      "requestNum": 117147,
+      "rps": 5.324689865112305,
+      "tp50": 0.959,
+      "tp80": 1.486,
+      "tp85": 1.638,
+      "tp90": 1.84,
+      "tp98": 2.334,
+      "tp99": 2.473
+    },
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 5.2786,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 63.353,
+      "passRate": 100.0,
+      "requestNum": 12,
+      "rps": 0.18941486,
+      "tp50": 5.099,
+      "tp80": 5.892,
+      "tp85": 6.532,
+      "tp90": 6.532,
+      "tp98": 7.182,
+      "tp99": 7.182
+    },
+    "search_peak": {
+      "assertMessages": [],
+      "avg": 7.0019,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 63.019,
+      "passRate": 100.0,
+      "requestNum": 9,
+      "rps": 0.14281407,
+      "tp50": 6.891,
+      "tp80": 7.73,
+      "tp85": 7.73,
+      "tp90": 7.865,
+      "tp98": 7.865,
+      "tp99": 7.865
+    }
+  },
+  "qtp_checkpoint": {
+    "insert_target": {
+      "assertMessages": [],
+      "avg": 0.9954,
+      "commonResult": {
+        "result": "success"
+      },
+      "costTime": 23548.63671875,
+      "numEntries": 160000000,
+      "requestNum": 160000,
+      "rps": 6.794448375701904,
+      "tp50": 0.871,
+      "tp80": 1.294,
+      "tp85": 1.398,
+      "tp90": 1.554,
+      "tp98": 2.235,
+      "tp99": 2.469
+    },
+    "append": {},
+    "search_checkpoint": {
+      "assertMessages": [],
+      "avg": 5.2786,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 63.353,
+      "passRate": 100.0,
+      "requestNum": 12,
+      "rps": 0.18941486,
+      "tp50": 5.099,
+      "tp80": 5.892,
+      "tp85": 6.532,
+      "tp90": 6.532,
+      "tp98": 7.182,
+      "tp99": 7.182
+    },
+    "search_peak": {}
+  },
+  "grafana_dashboard_url": "https://grafana-vdc-dev.zilliz.cc/d/uLf5cJ3Ga/milvus2-6?orgId=1&var-datasource=dXFY2C0Vz&var-namespace=milvus-in01-595c4f9761cd0ff&var-instance=in01-595c4f9761cd0ff&from=1779269848329&to=1779442648329"
+}

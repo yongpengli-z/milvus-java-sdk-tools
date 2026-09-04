@@ -1,0 +1,99 @@
+{
+  "task_id": 9963,
+  "case_name": "tiered-1cu-L1",
+  "instance_id": "in01-221550afa1054b3",
+  "namespace": "milvus-in01-221550afa1054b3",
+  "grafana_from": "1779152685432",
+  "target_metrics": {
+    "rss_peak": null,
+    "s3_binlog_size": null,
+    "stored_rows": null,
+    "disk_quota": null
+  },
+  "peak_metrics": {
+    "peak_rss": 4723933184,
+    "peak_s3_binlog": 214759715049,
+    "peak_stored_rows": 69288000
+  },
+  "qtp": {
+    "insert_target": {
+      "assertMessages": [],
+      "avg": 1.3575,
+      "commonResult": {
+        "result": "success"
+      },
+      "costTime": 8185.4619140625,
+      "numEntries": 40000000,
+      "requestNum": 40000,
+      "rps": 4.886712551116943,
+      "tp50": 1.273,
+      "tp80": 1.759,
+      "tp85": 1.89,
+      "tp90": 2.044,
+      "tp98": 2.508,
+      "tp99": 2.69
+    },
+    "append": {
+      "assertMessages": [
+        "[ASSERT FAIL] insert exception: quota exceeded[reason=disk quota exceeded, please allocate more resources: cluster disk quota exceeded]"
+      ],
+      "avg": 1.2871,
+      "commonResult": {
+        "message": "quota exceeded[reason=disk quota exceeded, please allocate more resources: cluster disk quota exceeded]",
+        "result": "exception"
+      },
+      "costTime": 6331.337890625,
+      "numEntries": 29293000,
+      "requestNum": 29293,
+      "rps": 4.626668453216553,
+      "tp50": 1.215,
+      "tp80": 1.693,
+      "tp85": 1.822,
+      "tp90": 1.977,
+      "tp98": 2.376,
+      "tp99": 2.511
+    },
+    "search_checkpoint": {
+      "assertMessages": [
+        "[ASSERT WARN] search passRate=66.67% < 100%, 2/3 requests returned topK=10 results"
+      ],
+      "avg": 15.737,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 61.497,
+      "passRate": 66.66666666666667,
+      "requestNum": 3,
+      "rps": 0.048782866,
+      "tp50": 9.721,
+      "tp80": 21.753,
+      "tp85": 21.753,
+      "tp90": 21.753,
+      "tp98": 21.753,
+      "tp99": 21.753
+    },
+    "search_peak": {
+      "assertMessages": [],
+      "avg": 9.3716,
+      "commonResult": {
+        "result": "success"
+      },
+      "concurrencyNum": 1,
+      "costTime": 65.604,
+      "passRate": 100.0,
+      "requestNum": 7,
+      "rps": 0.106700815,
+      "tp50": 8.173,
+      "tp80": 9.472,
+      "tp85": 9.472,
+      "tp90": 16.294,
+      "tp98": 16.294,
+      "tp99": 16.294
+    }
+  },
+  "status": "completed",
+  "grafana_to": "1779239085432",
+  "grafana_dashboard_url": "https://grafana-vdc-dev.zilliz.cc/d/uLf5cJ3Ga/milvus2-6?orgId=1&var-datasource=dXFY2C0Vz&var-namespace=milvus-in01-221550afa1054b3&var-instance=in01-221550afa1054b3&from=1779152685432&to=1779239085432",
+  "note": "Rerun task 9963; append hit disk quota at ~29.3M rows after 40M target"
+}
