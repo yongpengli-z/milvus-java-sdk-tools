@@ -24,6 +24,7 @@
 | `targetQps` | double | 否 | `0` | |
 | `generalFilterRoleList` | List | 否 | `[]` | 不使用建议传 `[]` |
 | `ignoreError` | boolean | 否 | `false` | |
+| `timeout` | long | 否 | `3000` | 单次 hybridSearch 请求超时（毫秒），0 表示使用默认值 3000ms |
 | `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
 
 ## Collection 选择
@@ -67,7 +68,7 @@
     "numConcurrency": 10, "runningMinutes": 1, "runningCount": 0,
     "collectionRule": "", "collectionNamePrefix": "",
     "collectionRangeStart": -1, "collectionRangeEnd": -1,
-    "generalFilterRoleList": [], "ignoreError": true,
+    "generalFilterRoleList": [], "ignoreError": true, "timeout": 3000,
     "targetEndpoint": ""
   }
 }

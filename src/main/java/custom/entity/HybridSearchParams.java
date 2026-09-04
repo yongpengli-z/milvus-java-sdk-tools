@@ -196,6 +196,17 @@ public class HybridSearchParams {
     private boolean ignoreError;
 
     /**
+     * SDK 请求超时时间（毫秒）。
+     * <p>
+     * 前端：`hybridSearchEdit.vue` -> "Timeout(ms)"
+     * <p>
+     * 前端默认值：3000
+     * <p>
+     * 说明：每次 hybridSearch 请求的超时时间，0 表示使用默认值 3000ms。
+     */
+    private long timeout;
+
+    /**
      * 目标 endpoint（可选，用于 Global Cluster 场景）。
      * <ul>
      *   <li>"" / null / "primary" — 使用默认 primary client</li>

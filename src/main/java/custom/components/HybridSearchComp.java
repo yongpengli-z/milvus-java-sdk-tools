@@ -15,6 +15,7 @@ import custom.utils.MathUtil;
 import custom.utils.PeriodicStatsReporter;
 import custom.utils.QueryDatasetUtil;
 import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.client.RetryConfig;
 import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
@@ -346,7 +347,8 @@ public class HybridSearchComp {
                     long startItemTime = System.currentTimeMillis();
                     SearchResp hybridSearchResp = null;
                     try {
-                        hybridSearchResp = client.hybridSearch(hybridSearchReq);
+                        long timeoutMs = hybridSearchParams.getTimeout() > 0 ? hybridSearchParams.getTimeout() : 3000;
+                        hybridSearchResp = client.withTimeout(timeoutMs, TimeUnit.MILLISECONDS).withRetry(RetryConfig.builder().maxRetryTimes(1).build()).hybridSearch(hybridSearchReq);
                     } catch (Exception e) {
                         statsReporter.recordFailure();
                         log.error("线程[{}] hybridSearch error :{}", finalC, e.getMessage());
