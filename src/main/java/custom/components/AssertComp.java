@@ -129,6 +129,9 @@ public class AssertComp {
         MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams));
         AssertParams.QueryAssertion query = queryParams(assertion);
         String collectionName = resolveCollectionName(assertParams.getCollectionName(), assertParams.getCollectionRule());
+        if ("idsetequals".equals(metric)) {
+            return idSetEqualsMetric(client, assertParams, assertion, query, collectionName);
+        }
         String filter = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
         List<String> outputs = normalizeOutputs(assertion.getOutputs());
         if ("count".equals(metric) && outputs.isEmpty()) {
@@ -170,6 +173,81 @@ public class AssertComp {
             throw new IllegalArgumentException("unsupported query metric: " + metric);
         }
         return new MetricValue(actual, details);
+    }
+
+    /**
+     * idSetEquals：分别用 filter 和 compareFilter 各查一次，比对两次返回的主键集合是否一致。
+     * 用于验证谓词合并/改写类变更（如 ARRAY contains 合并）不改变查询结果。
+     * actual = 两集合是否相等（Boolean），配 operator=eq, expected=true 使用。
+     */
+    private static MetricValue idSetEqualsMetric(MilvusClientV2 client, AssertParams assertParams,
+                                                 AssertParams.AssertionItem assertion, AssertParams.QueryAssertion query,
+                                                 String collectionName) {
+        String filterA = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
+        String filterB = resolveFilter(query.getCompareFilter(), assertion.getGeneralFilterRoleList());
+        if (isBlank(filterA) || isBlank(filterB)) {
+            throw new IllegalArgumentException("idSetEquals assertion requires both filter and query.compareFilter");
+        }
+
+        DescribeCollectionResp describeResp = client.describeCollection(
+                DescribeCollectionReq.builder().collectionName(collectionName).build());
+        String pkName = null;
+        for (CreateCollectionReq.FieldSchema fieldSchema : describeResp.getCollectionSchema().getFieldSchemaList()) {
+            if (Boolean.TRUE.equals(fieldSchema.getIsPrimaryKey())) {
+                pkName = fieldSchema.getName();
+                break;
+            }
+        }
+        if (isBlank(pkName)) {
+            throw new IllegalStateException("cannot find primary key field in collection " + collectionName);
+        }
+        long limit = query.getLimit() > 0 ? query.getLimit() : 16384;
+
+        long startTime = System.currentTimeMillis();
+        java.util.Set<String> idsA = queryIdSet(client, collectionName, filterA, pkName, limit, assertion.getPartitionNames());
+        java.util.Set<String> idsB = queryIdSet(client, collectionName, filterB, pkName, limit, assertion.getPartitionNames());
+        long costMillis = System.currentTimeMillis() - startTime;
+        boolean equal = idsA.equals(idsB);
+
+        java.util.Set<String> onlyInA = new java.util.TreeSet<>(idsA);
+        onlyInA.removeAll(idsB);
+        java.util.Set<String> onlyInB = new java.util.TreeSet<>(idsB);
+        onlyInB.removeAll(idsA);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("collectionName", collectionName);
+        details.put("filterA", filterA);
+        details.put("filterB", filterB);
+        details.put("countA", idsA.size());
+        details.put("countB", idsB.size());
+        details.put("truncated", idsA.size() >= limit || idsB.size() >= limit);
+        details.put("onlyInA", onlyInA.stream().limit(10).collect(Collectors.toList()));
+        details.put("onlyInB", onlyInB.stream().limit(10).collect(Collectors.toList()));
+        details.put("costMillis", costMillis);
+        return new MetricValue(equal, details);
+    }
+
+    private static java.util.Set<String> queryIdSet(MilvusClientV2 client, String collectionName, String filter,
+                                                     String pkName, long limit, List<String> partitionNames) {
+        QueryReq queryReq = QueryReq.builder()
+                .collectionName(collectionName)
+                .outputFields(java.util.Collections.singletonList(pkName))
+                .filter(filter)
+                .consistencyLevel(ConsistencyLevel.BOUNDED)
+                .partitionNames(partitionNames == null ? new ArrayList<>() : partitionNames)
+                .limit(limit)
+                .build();
+        QueryResp queryResp = client.query(queryReq);
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        if (queryResp.getQueryResults() != null) {
+            for (QueryResp.QueryResult result : queryResp.getQueryResults()) {
+                Object pk = result.getEntity() == null ? null : result.getEntity().get(pkName);
+                if (pk != null) {
+                    ids.add(String.valueOf(pk));
+                }
+            }
+        }
+        return ids;
     }
 
     private static MetricValue searchMetric(AssertParams assertParams, AssertParams.AssertionItem assertion, String metric) {

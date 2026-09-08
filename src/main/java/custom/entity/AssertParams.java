@@ -158,6 +158,11 @@ public class AssertParams {
         private List<Object> ids;
         private long limit;
         private long offset;
+        /**
+         * idSetEquals 专用：与 filter 语义等价的第二个表达式。
+         * 两次 query 返回的主键集合做一致性比对（用于验证谓词合并/改写类变更的正确性）。
+         */
+        private String compareFilter;
     }
 
     @Data

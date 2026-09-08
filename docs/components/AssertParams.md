@@ -34,8 +34,9 @@
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
 | `ids` | List | 否 | 按 ID 查询 |
-| `limit` | long | 否 | query limit |
+| `limit` | long | 否 | query limit；`idSetEquals` 未配置时默认 16384 |
 | `offset` | long | 否 | query offset |
+| `compareFilter` | String | idSetEquals 必填 | 与 `filter` 语义等价的第二个表达式，两次 query 的主键集合做一致性比对 |
 
 ## SearchAssertion
 
@@ -67,6 +68,7 @@
 |------|--------|------|
 | `query` | `returnCount` | 一次 query 返回的 entity 数量 |
 | `query` | `count` | `count(*)` 返回的真实总量 |
+| `query` | `idSetEquals` | 用 `filter` 和 `query.compareFilter` 各查一次，比对返回的主键集合是否一致（actual=Boolean，配 `operator=eq, expected=true`）。用于验证谓词合并/改写类变更不改变查询结果 |
 | `search` | `returnCount` | 一次 search 第一个 query vector 返回的结果数 |
 | `search` | `totalReturnCount` | `nq > 1` 时所有 query vector 返回结果数总和 |
 | `describeIndex` | `indexedRows` | 指定 index 已完成索引的行数 |
@@ -102,6 +104,22 @@
           "ids": [],
           "limit": 0,
           "offset": 0
+        }
+      },
+      {
+        "type": "query",
+        "metric": "idSetEquals",
+        "operator": "eq",
+        "expected": true,
+        "filter": "array_contains(arr, 1) or array_contains(arr, 2) or array_contains(arr, 3)",
+        "outputs": [],
+        "partitionNames": [],
+        "generalFilterRoleList": [],
+        "query": {
+          "ids": [],
+          "limit": 0,
+          "offset": 0,
+          "compareFilter": "array_contains_any(arr, [1, 2, 3])"
         }
       },
       {
