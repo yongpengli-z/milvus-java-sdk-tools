@@ -46,3 +46,6 @@ scripts/capacity_orchestrator.log
 scripts/loki_*.py
 scripts/poll_task.py
 scripts/qtp_mcp.py
+
+# 本机 cursor skills 软链（绝对路径，勿入库，曾导致 argo git artifact checkout 失败）
+.cursor/skills/
