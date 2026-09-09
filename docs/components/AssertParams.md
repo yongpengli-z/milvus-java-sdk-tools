@@ -51,6 +51,8 @@
 | `indexAlgo` | String | search 可选 | 写入 searchParams 的 `index_algo` |
 | `timeout` | long | search 可选 | SDK 请求超时 ms，默认 `800` |
 | `vectorSampleSize` | int | search 可选 | search assertion 从 collection 抽样向量的数量，默认 `max(1000, nq)` |
+| `compareParams` | Object | search idSetEquals 必填 | 叠加在基础 searchParams 上的第二组参数（如 `{"offset":5}`），同一批向量各搜一次比对 ID 集合 |
+| `hybrid` | boolean | search 可选 | 默认 `false`。idSetEquals 时 true = 用 hybridSearch（单个 AnnSearchReq）执行比对，用于验证 hybrid_search 特有问题（如 offset 是否被忽略） |
 
 ## DescribeIndexAssertion
 
@@ -71,6 +73,7 @@
 | `query` | `idSetEquals` | 用 `filter` 和 `query.compareFilter` 各查一次，比对返回的主键集合是否一致（actual=Boolean，配 `operator=eq, expected=true`）。用于验证谓词合并/改写类变更不改变查询结果。**VACUOUS 防护：两集合均为空（两 filter 都查出 0 行）时判失败**——空集==空集无校验意义，需检查数据生成或过滤条件 |
 | `search` | `returnCount` | 一次 search 第一个 query vector 返回的结果数 |
 | `search` | `totalReturnCount` | `nq > 1` 时所有 query vector 返回结果数总和 |
+| `search` | `idSetEquals` | 同一批向量，用基础参数和叠加 `search.compareParams` 后的参数各搜一次，比对首个 query vector 返回的 ID 集合（actual=Boolean）。验证 offset 等参数是否生效：`operator=ne, expected=false` 表示两次结果必须不同。同样带 VACUOUS 防护（两集合均空判失败） |
 | `describeIndex` | `indexedRows` | 指定 index 已完成索引的行数 |
 | `describeIndex` | `totalRows` | 指定 index 需要索引的总行数 |
 | `describeIndex` | `pendingIndexRows` | 指定 index 待索引的行数 |

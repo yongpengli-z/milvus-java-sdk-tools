@@ -15,6 +15,8 @@ import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.index.request.DescribeIndexReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
+import io.milvus.v2.service.vector.request.AnnSearchReq;
+import io.milvus.v2.service.vector.request.HybridSearchReq;
 import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
@@ -257,6 +259,9 @@ public class AssertComp {
         MilvusClientV2 client = getMilvusClient(resolveTargetEndpoint(assertParams));
         AssertParams.SearchAssertion search = searchParams(assertion);
         String collectionName = resolveCollectionName(assertParams.getCollectionName(), assertParams.getCollectionRule());
+        if ("idsetequals".equals(metric)) {
+            return searchIdSetEqualsMetric(client, assertParams, assertion, search, collectionName);
+        }
         String filter = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
         int nq = search.getNq() > 0 ? search.getNq() : 1;
         int topK = search.getTopK() > 0 ? search.getTopK() : 1;
@@ -332,6 +337,136 @@ public class AssertComp {
             throw new IllegalArgumentException("unsupported search metric: " + metric);
         }
         return new MetricValue(actual, details);
+    }
+
+    /**
+     * search idSetEquals：同一批向量，用基础 searchParams 和叠加 compareParams 后的参数各搜一次，
+     * 比对首个 query vector 返回的 ID 集合。
+     * 用法：验证 offset 等参数是否生效（compareParams={"offset":5}，operator=ne，expected=false）。
+     */
+    private static MetricValue searchIdSetEqualsMetric(MilvusClientV2 client, AssertParams assertParams,
+                                                       AssertParams.AssertionItem assertion, AssertParams.SearchAssertion search,
+                                                       String collectionName) {
+        if (search.getCompareParams() == null || search.getCompareParams().isEmpty()) {
+            throw new IllegalArgumentException("search idSetEquals assertion requires search.compareParams");
+        }
+        String filter = resolveFilter(assertion.getFilter(), assertion.getGeneralFilterRoleList());
+        int nq = search.getNq() > 0 ? search.getNq() : 1;
+        int topK = search.getTopK() > 0 ? search.getTopK() : 1;
+        int sampleSize = search.getVectorSampleSize() > 0 ? search.getVectorSampleSize() : Math.max(1000, nq);
+        String annsField = search.getAnnsField();
+        if (isBlank(annsField)) {
+            throw new IllegalArgumentException("search assertion requires annsField");
+        }
+
+        DescribeCollectionResp describeCollectionResp = client.describeCollection(
+                DescribeCollectionReq.builder().collectionName(collectionName).build());
+        List<BaseVector> searchBaseVectors = providerSearchVectors(client, collectionName, annsField, sampleSize, describeCollectionResp);
+        if (searchBaseVectors == null || searchBaseVectors.isEmpty()) {
+            throw new IllegalStateException("no base vectors found for search assertion");
+        }
+        List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, nq);
+
+        Map<String, Object> baseParams = new HashMap<>();
+        baseParams.put("level", search.getSearchLevel() == 0 ? 1 : search.getSearchLevel());
+        if (!isBlank(search.getIndexAlgo())) {
+            baseParams.put("index_algo", search.getIndexAlgo());
+        }
+        Map<String, Object> paramsB = new HashMap<>(baseParams);
+        paramsB.putAll(search.getCompareParams());
+
+        long timeoutMs = search.getTimeout() > 0 ? search.getTimeout() : 800;
+        long startTime = System.currentTimeMillis();
+        java.util.Set<String> idsA = searchIdSet(client, collectionName, annsField, baseVectors, topK, baseParams,
+                filter, assertion, timeoutMs, search.isHybrid());
+        java.util.Set<String> idsB = searchIdSet(client, collectionName, annsField, baseVectors, topK, paramsB,
+                filter, assertion, timeoutMs, search.isHybrid());
+        long costMillis = System.currentTimeMillis() - startTime;
+
+        // VACUOUS 防护：两集合均为空时“相等”无校验意义，直接判失败
+        boolean vacuous = idsA.isEmpty() && idsB.isEmpty();
+        boolean equal = !vacuous && idsA.equals(idsB);
+
+        java.util.Set<String> onlyInA = new java.util.TreeSet<>(idsA);
+        onlyInA.removeAll(idsB);
+        java.util.Set<String> onlyInB = new java.util.TreeSet<>(idsB);
+        onlyInB.removeAll(idsA);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("collectionName", collectionName);
+        details.put("annsField", annsField);
+        details.put("topK", topK);
+        details.put("paramsA", baseParams);
+        details.put("paramsB", paramsB);
+        details.put("countA", idsA.size());
+        details.put("countB", idsB.size());
+        details.put("vacuous", vacuous);
+        details.put("onlyInA", onlyInA.stream().limit(10).collect(Collectors.toList()));
+        details.put("onlyInB", onlyInB.stream().limit(10).collect(Collectors.toList()));
+        details.put("costMillis", costMillis);
+        return new MetricValue(equal, details);
+    }
+
+    private static java.util.Set<String> searchIdSet(MilvusClientV2 client, String collectionName, String annsField,
+                                                      List<BaseVector> baseVectors, int topK, Map<String, Object> searchParams,
+                                                      String filter, AssertParams.AssertionItem assertion, long timeoutMs,
+                                                      boolean hybrid) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        if (hybrid) {
+            // hybridSearch 路径：单个 AnnSearchReq，params 为 JSON 字符串（SDK 会原样透传所有 key 到 search_params）
+            AnnSearchReq.AnnSearchReqBuilder annBuilder = AnnSearchReq.builder()
+                    .vectorFieldName(annsField)
+                    .vectors(baseVectors)
+                    .limit(topK)
+                    .params(com.alibaba.fastjson.JSON.toJSONString(searchParams));
+            if (!isBlank(filter)) {
+                annBuilder.filter(filter);
+            }
+            HybridSearchReq.HybridSearchReqBuilder hybridBuilder = HybridSearchReq.builder()
+                    .collectionName(collectionName)
+                    .searchRequests(java.util.Collections.singletonList(annBuilder.build()))
+                    .limit(topK)
+                    .consistencyLevel(ConsistencyLevel.BOUNDED);
+            if (assertion.getOutputs() != null && !assertion.getOutputs().isEmpty()) {
+                hybridBuilder.outFields(assertion.getOutputs());
+            }
+            SearchResp searchResp = client.withTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+                    .withRetry(RetryConfig.builder().maxRetryTimes(1).build())
+                    .hybridSearch(hybridBuilder.build());
+            if (searchResp.getSearchResults() != null && !searchResp.getSearchResults().isEmpty()
+                    && searchResp.getSearchResults().get(0) != null) {
+                for (SearchResp.SearchResult result : searchResp.getSearchResults().get(0)) {
+                    if (result.getId() != null) {
+                        ids.add(String.valueOf(result.getId()));
+                    }
+                }
+            }
+            return ids;
+        }
+        SearchReq searchReq = SearchReq.builder()
+                .topK(topK)
+                .outputFields(normalizeOutputs(assertion.getOutputs()))
+                .consistencyLevel(ConsistencyLevel.BOUNDED)
+                .collectionName(collectionName)
+                .searchParams(searchParams)
+                .filter(isBlank(filter) ? null : filter)
+                .data(baseVectors)
+                .annsField(annsField)
+                .partitionNames(assertion.getPartitionNames() == null ? new ArrayList<>() : assertion.getPartitionNames())
+                .build();
+        SearchResp searchResp = client.withTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .withRetry(RetryConfig.builder().maxRetryTimes(1).build())
+                .search(searchReq);
+        java.util.Set<String> searchIds = new java.util.HashSet<>();
+        if (searchResp.getSearchResults() != null && !searchResp.getSearchResults().isEmpty()
+                && searchResp.getSearchResults().get(0) != null) {
+            for (SearchResp.SearchResult result : searchResp.getSearchResults().get(0)) {
+                if (result.getId() != null) {
+                    searchIds.add(String.valueOf(result.getId()));
+                }
+            }
+        }
+        return searchIds;
     }
 
     private static MetricValue describeIndexMetric(AssertParams assertParams, AssertParams.AssertionItem assertion, String metric) {
