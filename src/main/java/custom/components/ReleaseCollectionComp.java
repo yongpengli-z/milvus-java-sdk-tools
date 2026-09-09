@@ -12,6 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
@@ -19,10 +23,17 @@ import static custom.BaseTest.milvusClientV2;
 @Slf4j
 public class ReleaseCollectionComp {
     public static ReleaseResult releaseCollection(ReleaseParams releaseParams) {
-        List<ReleaseResult.ReleaseResultItem> releaseResultList = new ArrayList<>();
-
-        for (String collectionName : resolveTargetCollections(releaseParams)) {
-            releaseResultList.add(releaseOne(collectionName));
+        List<String> targetCollections = resolveTargetCollections(releaseParams);
+        int numConcurrency = Math.min(Math.max(releaseParams.getNumConcurrency(), 1), 64);
+        List<ReleaseResult.ReleaseResultItem> releaseResultList;
+        if (numConcurrency <= 1 || targetCollections.size() <= 1) {
+            // 串行（默认，兼容旧行为）
+            releaseResultList = new ArrayList<>();
+            for (String collectionName : targetCollections) {
+                releaseResultList.add(releaseOne(collectionName));
+            }
+        } else {
+            releaseResultList = releaseConcurrently(targetCollections, numConcurrency);
         }
 
         // assertions
@@ -66,6 +77,53 @@ public class ReleaseCollectionComp {
         String collectionName = (releaseParams.getCollectionName() == null || releaseParams.getCollectionName().equalsIgnoreCase(""))
                 ? globalCollectionNames.get(globalCollectionNames.size() - 1) : releaseParams.getCollectionName();
         return Collections.singletonList(collectionName);
+    }
+
+    /**
+     * 并发 release：起 min(numConcurrency, collection数) 个 worker 线程，
+     * 所有 worker 从共享游标抢占下一个 collection，每个 collection 只被一个线程 release 一次，不重复、不漏。
+     * 结果按目标列表原始顺序返回，保证与串行模式的输出一一对应。
+     */
+    private static List<ReleaseResult.ReleaseResultItem> releaseConcurrently(List<String> targetCollections, int numConcurrency) {
+        int workers = Math.min(numConcurrency, targetCollections.size());
+        log.info("Release 并发模式：{} 个 collection，{} 个 worker（请求并发度 {}）",
+                targetCollections.size(), workers, numConcurrency);
+        AtomicInteger cursor = new AtomicInteger(0);
+        // 按下标占位，保证结果顺序与目标列表一致
+        ReleaseResult.ReleaseResultItem[] slotResults = new ReleaseResult.ReleaseResultItem[targetCollections.size()];
+        ExecutorService executorService = Executors.newFixedThreadPool(workers);
+        try {
+            for (int i = 0; i < workers; i++) {
+                executorService.submit(() -> {
+                    int idx;
+                    while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
+                        slotResults[idx] = releaseOne(targetCollections.get(idx));
+                    }
+                });
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Release 并发执行被中断: {}", e.getMessage());
+        } finally {
+            executorService.shutdownNow();
+        }
+        List<ReleaseResult.ReleaseResultItem> releaseResultList = new ArrayList<>(targetCollections.size());
+        for (int i = 0; i < targetCollections.size(); i++) {
+            ReleaseResult.ReleaseResultItem item = slotResults[i];
+            if (item == null) {
+                // 仅在被中断时可能出现：占位为未执行
+                item = ReleaseResult.ReleaseResultItem.builder()
+                        .collectionName(targetCollections.get(i))
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message("release not executed (interrupted)").build())
+                        .build();
+            }
+            releaseResultList.add(item);
+        }
+        return releaseResultList;
     }
 
     private static ReleaseResult.ReleaseResultItem releaseOne(String collectionName) {
