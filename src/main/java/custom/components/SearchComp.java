@@ -258,6 +258,14 @@ public class SearchComp {
         }
         long requestNum = 0;
         long successNum = 0;
+        // group-by strict 模式下每次请求返回 topK*groupSize 条（topK 为组数，每组严格 groupSize 条）
+        final int expectedPerRequest;
+        if (searchParams.getGroupByField() != null && !searchParams.getGroupByField().isEmpty()
+                && searchParams.getGroupSize() > 1 && searchParams.isStrictGroupSize()) {
+            expectedPerRequest = searchParams.getTopK() * searchParams.getGroupSize();
+        } else {
+            expectedPerRequest = searchParams.getTopK();
+        }
         CommonResult commonResult;
         SearchResultA searchResultA;
         List<Float> costTimeTotal = new ArrayList<>();
@@ -265,7 +273,7 @@ public class SearchComp {
             try {
                 SearchResult searchResult = future.get();
                 requestNum += searchResult.getResultNum().size();
-                successNum += searchResult.getResultNum().stream().filter(x -> x == searchParams.getTopK()).count();
+                successNum += searchResult.getResultNum().stream().filter(x -> x == expectedPerRequest).count();
                 costTimeTotal.addAll(searchResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
@@ -280,7 +288,7 @@ public class SearchComp {
         long endTimeTotal = System.currentTimeMillis();
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         log.info(
-                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "%");
+                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "% (expectedPerRequest=" + expectedPerRequest + ")");
         log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
         log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
@@ -297,11 +305,11 @@ public class SearchComp {
             assertMessages.add("[ASSERT FAIL] search requestNum == 0, no search was executed");
         }
         if (passRate < 50.0f) {
-            assertMessages.add(String.format("[ASSERT FAIL] search passRate=%.2f%% < 50%%, %d/%d requests returned topK=%d results",
-                    passRate, successNum, requestNum, searchParams.getTopK()));
+            assertMessages.add(String.format("[ASSERT FAIL] search passRate=%.2f%% < 50%%, %d/%d requests returned expectedCount=%d results",
+                    passRate, successNum, requestNum, expectedPerRequest));
         } else if (passRate < 100.0f) {
-            assertMessages.add(String.format("[ASSERT WARN] search passRate=%.2f%% < 100%%, %d/%d requests returned topK=%d results",
-                    passRate, successNum, requestNum, searchParams.getTopK()));
+            assertMessages.add(String.format("[ASSERT WARN] search passRate=%.2f%% < 100%%, %d/%d requests returned expectedCount=%d results",
+                    passRate, successNum, requestNum, expectedPerRequest));
         }
         if (requestNum > 0 && requestNum / searchTotalTime <= 0) {
             assertMessages.add("[ASSERT FAIL] search RPS <= 0");
