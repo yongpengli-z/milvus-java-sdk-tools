@@ -77,6 +77,37 @@ public class SearchParams {
     private String filter;
 
     /**
+     * Group-by 字段名（可选，search 分组聚合）。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Group By Field"
+     * <p>
+     * 前端默认值：""（空字符串，不分组）
+     * <p>
+     * 非空时按该标量字段分组返回；配合 {@link #groupSize} 与 {@link #strictGroupSize} 使用。
+     */
+    private String groupByField;
+
+    /**
+     * 每组返回条数（group_size），仅 {@link #groupByField} 非空时生效。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Group Size"
+     * <p>
+     * 前端默认值：0（不传，服务端默认 1）
+     */
+    private int groupSize;
+
+    /**
+     * 严格组大小（strict_group_size），仅 {@link #groupByField} 非空时生效。
+     * <p>
+     * 前端：`searchEdit.vue` -> "Strict Group Size"
+     * <p>
+     * 前端默认值：false
+     * <p>
+     * true 时每组严格返回 groupSize 条（不足则少返回）；false 时组数优先、组内条数可不足。
+     */
+    private boolean strictGroupSize;
+
+    /**
      * 并发线程数。
      * <p>
      * 前端：`searchEdit.vue` -> "Concurrency Num"

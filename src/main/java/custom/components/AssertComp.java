@@ -289,7 +289,7 @@ public class AssertComp {
             searchLevel.put("index_algo", search.getIndexAlgo());
         }
 
-        SearchReq searchReq = SearchReq.builder()
+        SearchReq.SearchReqBuilder searchReqBuilder = SearchReq.builder()
                 .topK(topK)
                 .outputFields(normalizeOutputs(assertion.getOutputs()))
                 .consistencyLevel(ConsistencyLevel.BOUNDED)
@@ -298,8 +298,15 @@ public class AssertComp {
                 .filter(isBlank(filter) ? null : filter)
                 .data(baseVectors)
                 .annsField(annsField)
-                .partitionNames(assertion.getPartitionNames() == null ? new ArrayList<>() : assertion.getPartitionNames())
-                .build();
+                .partitionNames(assertion.getPartitionNames() == null ? new ArrayList<>() : assertion.getPartitionNames());
+        if (!isBlank(search.getGroupByField())) {
+            searchReqBuilder.groupByFieldName(search.getGroupByField());
+            if (search.getGroupSize() > 0) {
+                searchReqBuilder.groupSize(search.getGroupSize());
+            }
+            searchReqBuilder.strictGroupSize(search.isStrictGroupSize());
+        }
+        SearchReq searchReq = searchReqBuilder.build();
 
         long timeoutMs = search.getTimeout() > 0 ? search.getTimeout() : 800;
         long startTime = System.currentTimeMillis();
@@ -321,6 +328,11 @@ public class AssertComp {
         details.put("collectionName", collectionName);
         details.put("filter", filter);
         details.put("annsField", annsField);
+        if (!isBlank(search.getGroupByField())) {
+            details.put("groupByField", search.getGroupByField());
+            details.put("groupSize", search.getGroupSize());
+            details.put("strictGroupSize", search.isStrictGroupSize());
+        }
         details.put("nq", nq);
         details.put("topK", topK);
         details.put("resultCounts", resultCounts);

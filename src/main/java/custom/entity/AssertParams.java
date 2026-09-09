@@ -176,6 +176,15 @@ public class AssertParams {
         private long timeout;
         private int vectorSampleSize;
         /**
+         * Group-by 字段名（可选）。非空时 search 断言按该字段分组执行，
+         * 配合 groupSize/strictGroupSize；用于验证 group-by 相关行为（如 PR#53306）。
+         */
+        private String groupByField;
+        /** 每组返回条数（group_size），仅 groupByField 非空时生效，0=服务端默认 1 */
+        private int groupSize;
+        /** 严格组大小（strict_group_size），仅 groupByField 非空时生效 */
+        private boolean strictGroupSize;
+        /**
          * search idSetEquals 专用：叠加在基础 searchParams 上的第二组参数（如 {"offset":5}）。
          * 同一批向量分别用基础参数和叠加后参数各搜一次，比对首个 query vector 返回的 ID 集合。
          * 配 operator=ne（expected=false）断言两次结果不同（如验证 offset 生效）；

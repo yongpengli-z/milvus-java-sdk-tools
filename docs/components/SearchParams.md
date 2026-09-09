@@ -28,6 +28,9 @@
 | `partitionNames` | List | 否 | `[]` | |
 | `ignoreError` | boolean | 否 | `false` | |
 | `timeout` | long | 否 | `800` | SDK 请求超时（ms），0=默认 800ms |
+| `groupByField` | String | 否 | `""` | group-by 分组字段名，非空时按该标量字段分组返回 |
+| `groupSize` | int | 否 | `0` | 每组返回条数（group_size），仅 groupByField 非空时生效，0=服务端默认 1 |
+| `strictGroupSize` | boolean | 否 | `false` | 严格组大小（strict_group_size），true=每组严格返回 groupSize 条（不足则少返回） |
 | `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
 
 ## Collection 池过滤与分割
@@ -78,6 +81,7 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 ## 注意事项
 
 - **性能测试建议**：添加多个 SearchParams 组件，设置不同 `numConcurrency`（1/5/10/20/50）递增压力。
+- **group-by 搜索**：`groupByField` 非空即启用分组。strict 优化路径（2.6.23+，PR#53306）生效条件：`strictGroupSize=true` + `groupSize>1` + `nq=1`。group-by 时建议 `outputs` 显式包含分组字段以便核对结果。
 
 ## JSON 示例
 
@@ -86,6 +90,23 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
   "SearchParams_0": {
     "annsField": "vec", "nq": 1, "topK": 10, "outputs": ["*"],
     "numConcurrency": 10, "runningMinutes": 1, "runningCount": 0,
+    "collectionRule": "", "collectionNamePrefix": "",
+    "collectionRangeStart": -1, "collectionRangeEnd": -1,
+    "queryDataset": "", "randomVector": true,
+    "generalFilterRoleList": [], "partitionNames": [],
+    "targetEndpoint": ""
+  }
+}
+```
+
+strict group-by（每组 3 条，共 50 条，输出分组字段）：
+
+```json
+{
+  "SearchParams_0": {
+    "annsField": "vec", "nq": 1, "topK": 50, "outputs": ["grp"],
+    "groupByField": "grp", "groupSize": 3, "strictGroupSize": true,
+    "numConcurrency": 1, "runningMinutes": 1, "runningCount": 100,
     "collectionRule": "", "collectionNamePrefix": "",
     "collectionRangeStart": -1, "collectionRangeEnd": -1,
     "queryDataset": "", "randomVector": true,

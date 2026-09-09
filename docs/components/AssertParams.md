@@ -51,6 +51,9 @@
 | `indexAlgo` | String | search 可选 | 写入 searchParams 的 `index_algo` |
 | `timeout` | long | search 可选 | SDK 请求超时 ms，默认 `800` |
 | `vectorSampleSize` | int | search 可选 | search assertion 从 collection 抽样向量的数量，默认 `max(1000, nq)` |
+| `groupByField` | String | search 可选 | group-by 分组字段名，非空时按该字段分组执行 search |
+| `groupSize` | int | search 可选 | 每组返回条数（group_size），仅 groupByField 非空时生效，0=服务端默认 1 |
+| `strictGroupSize` | boolean | search 可选 | 严格组大小（strict_group_size），仅 groupByField 非空时生效，默认 `false` |
 | `compareParams` | Object | search idSetEquals 必填 | 叠加在基础 searchParams 上的第二组参数（如 `{"offset":5}`），同一批向量各搜一次比对 ID 集合 |
 | `hybrid` | boolean | search 可选 | 默认 `false`。idSetEquals 时 true = 用 hybridSearch（单个 AnnSearchReq）执行比对，用于验证 hybrid_search 特有问题（如 offset 是否被忽略） |
 

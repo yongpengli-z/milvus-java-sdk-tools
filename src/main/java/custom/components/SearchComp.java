@@ -186,7 +186,7 @@ public class SearchComp {
                             String currentCollection = finalCollectionPool != null
                                     ? CommonFunction.nextCollectionPerRequest(finalCollectionPool)
                                     : finalCollection;
-                            SearchReq searchReq = SearchReq.builder()
+                            SearchReq.SearchReqBuilder searchReqBuilder = SearchReq.builder()
                                     .topK(searchParams.getTopK())
                                     .outputFields(finalOutputs)
                                     .consistencyLevel(ConsistencyLevel.BOUNDED)
@@ -195,8 +195,15 @@ public class SearchComp {
                                     .filter(filter)
                                     .data(randomBaseVectors)
                                     .annsField(searchParams.getAnnsField())
-                                    .partitionNames(searchParams.getPartitionNames() == null || searchParams.getPartitionNames().isEmpty() ? new ArrayList<>() : searchParams.getPartitionNames())
-                                    .build();
+                                    .partitionNames(searchParams.getPartitionNames() == null || searchParams.getPartitionNames().isEmpty() ? new ArrayList<>() : searchParams.getPartitionNames());
+                            if (searchParams.getGroupByField() != null && !searchParams.getGroupByField().isEmpty()) {
+                                searchReqBuilder.groupByFieldName(searchParams.getGroupByField());
+                                if (searchParams.getGroupSize() > 0) {
+                                    searchReqBuilder.groupSize(searchParams.getGroupSize());
+                                }
+                                searchReqBuilder.strictGroupSize(searchParams.isStrictGroupSize());
+                            }
+                            SearchReq searchReq = searchReqBuilder.build();
                             long startItemTime = System.currentTimeMillis();
                             SearchResp search = null;
                             try {
