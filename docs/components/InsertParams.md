@@ -49,6 +49,8 @@
 
 ## 注意事项
 
+- **整型 Array 元素为确定性小范围值**：Int8/Int16/Int32/Int64 元素的 Array 字段，行 i 的元素为 `(i+k)%100`（k=元素下标），保证 array_contains 类断言有数据可命中；其他元素类型（VarChar/Float 等）仍为随机生成。
+
 - **InsertParams 没有顶层 `dataset` 字段**。数据集只能通过 `fieldDataSourceList` 指定。
 - **性能测试建议**：添加多个 InsertParams 组件，设置不同 `numConcurrency`（1/5/10/20）递增压力。
 - **多组件避免重复数据**：为每个组件设置不同 `startId`，确保 ID 范围不重叠。

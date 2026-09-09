@@ -207,7 +207,9 @@ public class AssertComp {
         java.util.Set<String> idsA = queryIdSet(client, collectionName, filterA, pkName, limit, assertion.getPartitionNames());
         java.util.Set<String> idsB = queryIdSet(client, collectionName, filterB, pkName, limit, assertion.getPartitionNames());
         long costMillis = System.currentTimeMillis() - startTime;
-        boolean equal = idsA.equals(idsB);
+        // VACUOUS 防护：两集合均为空时“相等”无校验意义，直接判失败，强迫检查数据/过滤条件
+        boolean vacuous = idsA.isEmpty() && idsB.isEmpty();
+        boolean equal = !vacuous && idsA.equals(idsB);
 
         java.util.Set<String> onlyInA = new java.util.TreeSet<>(idsA);
         onlyInA.removeAll(idsB);
@@ -223,6 +225,7 @@ public class AssertComp {
         details.put("truncated", idsA.size() >= limit || idsB.size() >= limit);
         details.put("onlyInA", onlyInA.stream().limit(10).collect(Collectors.toList()));
         details.put("onlyInB", onlyInB.stream().limit(10).collect(Collectors.toList()));
+        details.put("vacuous", vacuous);
         details.put("costMillis", costMillis);
         return new MetricValue(equal, details);
     }

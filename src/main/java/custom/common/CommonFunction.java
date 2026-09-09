@@ -752,7 +752,18 @@ public class CommonFunction {
             row.add(fieldName, gson.toJsonTree((double) countIndex * 0.1f));
         }
         if (dataType == DataType.Array) {
-            List<Object> list = MathUtil.providerArrayData(elementType, dimOrLength, lengthForCapacity);
+            List<Object> list;
+            if (elementType == DataType.Int8 || elementType == DataType.Int16
+                    || elementType == DataType.Int32 || elementType == DataType.Int64) {
+                // 整型数组元素用确定性小范围值 (countIndex+k)%100（与标量 Int 的 countIndex%32767 风格一致），
+                // 保证 array_contains 类断言有数据可命中；全 int 域随机会导致过滤恒空、断言空转
+                list = new ArrayList<>();
+                for (int k = 0; k < dimOrLength; k++) {
+                    list.add((countIndex + k) % 100);
+                }
+            } else {
+                list = MathUtil.providerArrayData(elementType, dimOrLength, lengthForCapacity);
+            }
             row.add(fieldName, gson.toJsonTree(list));
         }
         if (dataType == DataType.Bool) {

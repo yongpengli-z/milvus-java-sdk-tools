@@ -68,7 +68,7 @@
 |------|--------|------|
 | `query` | `returnCount` | 一次 query 返回的 entity 数量 |
 | `query` | `count` | `count(*)` 返回的真实总量 |
-| `query` | `idSetEquals` | 用 `filter` 和 `query.compareFilter` 各查一次，比对返回的主键集合是否一致（actual=Boolean，配 `operator=eq, expected=true`）。用于验证谓词合并/改写类变更不改变查询结果 |
+| `query` | `idSetEquals` | 用 `filter` 和 `query.compareFilter` 各查一次，比对返回的主键集合是否一致（actual=Boolean，配 `operator=eq, expected=true`）。用于验证谓词合并/改写类变更不改变查询结果。**VACUOUS 防护：两集合均为空（两 filter 都查出 0 行）时判失败**——空集==空集无校验意义，需检查数据生成或过滤条件 |
 | `search` | `returnCount` | 一次 search 第一个 query vector 返回的结果数 |
 | `search` | `totalReturnCount` | `nq > 1` 时所有 query vector 返回结果数总和 |
 | `describeIndex` | `indexedRows` | 指定 index 已完成索引的行数 |
