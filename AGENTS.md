@@ -22,6 +22,7 @@
 - FieldParams 的 boolean 字段（primaryKey/autoId/partitionKey/nullable/enableMatch/enableAnalyzer）即使 false 也建议显式给。
 - `enableMatch: true` 必须同时 `enableAnalyzer: true`；BM25 function 的 inputField 必须 `enableAnalyzer: true`。
 - SDK 请求超时：Search/HybridSearch 通过 `client.withTimeout(timeoutMs).withRetry(maxRetryTimes=1)` 实现，`timeout<=0` 时用默认值（Search=800ms，HybridSearch=3000ms）。
+- **严禁把本机软链/绝对路径文件提交入库**（2026-09 事故）：`.cursor/skills/` 下 127 个指向 `/Users/yongpengli/...` 的绝对路径软链被 dcbb2f0 误提交，Linux 克隆后为断链，导致 argo git artifact init 阶段 go-git checkout 报 `worktree contains unstaged changes`（exit 64），tcbj 定时任务全部失败。已在 a19e2ce 移除并加 `.cursor/skills/` 到 .gitignore。提交前用 `git ls-files -s | awk '$1==120000'` 检查无 symlink。
 
 ## 与 milvus-auto-test 工作流的关系
 
