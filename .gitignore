@@ -47,5 +47,5 @@ scripts/loki_*.py
 scripts/poll_task.py
 scripts/qtp_mcp.py
 
-# 本机 cursor skills 软链（绝对路径，勿入库，曾导致 argo git artifact checkout 失败）
-.cursor/skills/
+# 本机 cursor 工具配置/软链（含 mcp.json token、skills 绝对路径软链，勿入库）
+.cursor/
