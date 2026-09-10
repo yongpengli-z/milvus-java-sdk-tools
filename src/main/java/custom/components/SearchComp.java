@@ -220,21 +220,18 @@ public class SearchComp {
                             }
                             long endItemTime = System.currentTimeMillis();
                             float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
+                            // getSearchResults() 返回 List<List<SearchResult>>，外层size=nq，内层size=每个query的结果数
+                            // 取第一个查询向量的结果数量来判断是否返回了topK条结果
+                            int hitCount = (search == null || search.getSearchResults().isEmpty()) ? 0 : search.getSearchResults().get(0).size();
                             log.debug("线程[" + finalC + "]  search cost:" + costTimeItem + " s" + "，collection：" + currentCollection + "，result size：" + search.getSearchResults().size() + ",");
-                            // sequence_per_request 模式：每次 search 打印使用的 collection 及耗时
+                            // sequence_per_request 模式：每次 search 打印使用的 collection、耗时及命中数量
                             if (finalCollectionPool != null) {
-                                log.info("线程[" + finalC + "] search collection: " + currentCollection + "，cost: " + costTimeItem + " s");
+                                log.info("线程[" + finalC + "] search collection: " + currentCollection + "，cost: " + costTimeItem + " s，hit count: " + hitCount);
                             }
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime(costTimeItem);
 //                            returnNum.add(search.getSearchResults().get(0).size());
-                            // getSearchResults() 返回 List<List<SearchResult>>，外层size=nq，内层size=每个query的结果数
-                            // 取第一个查询向量的结果数量来判断是否返回了topK条结果
-                            if (search == null || search.getSearchResults().isEmpty()) {
-                                returnNum.add(0);
-                            } else {
-                                returnNum.add(search.getSearchResults().get(0).size());
-                            }
+                            returnNum.add(hitCount);
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("线程[" + finalC + "] 已经 search :" + returnNum.size() + "次");
                                 lastPrintTime = System.currentTimeMillis();

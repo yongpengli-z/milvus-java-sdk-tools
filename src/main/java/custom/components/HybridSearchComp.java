@@ -366,10 +366,13 @@ public class HybridSearchComp {
                     long endItemTime = System.currentTimeMillis();
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
                     int resultSize = hybridSearchResp != null ? hybridSearchResp.getSearchResults().size() : 0;
+                    // 外层 size 是 nq，内层 size 才是每个 query 的命中数量
+                    int hitCount = (hybridSearchResp == null || hybridSearchResp.getSearchResults().isEmpty())
+                            ? 0 : hybridSearchResp.getSearchResults().get(0).size();
                     log.debug("线程[{}] hybridSearch cost:{} s，collection：{}，result size：{}", finalC, costTimeItem, currentCollection, resultSize);
-                    // sequence_per_request 模式：每次 hybridSearch 打印使用的 collection 及耗时
+                    // sequence_per_request 模式：每次 hybridSearch 打印使用的 collection、耗时及命中数量
                     if (finalCollectionPool != null) {
-                        log.info("线程[{}] hybridSearch collection: {}，cost: {} s", finalC, currentCollection, costTimeItem);
+                        log.info("线程[{}] hybridSearch collection: {}，cost: {} s，hit count: {}", finalC, currentCollection, costTimeItem, hitCount);
                     }
                     costTime.add(costTimeItem);
                     statsReporter.recordCostTime(costTimeItem);
