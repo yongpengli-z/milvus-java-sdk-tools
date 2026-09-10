@@ -91,14 +91,19 @@ public class ReleaseCollectionComp {
         AtomicInteger cursor = new AtomicInteger(0);
         // 按下标占位，保证结果顺序与目标列表一致
         ReleaseResult.ReleaseResultItem[] slotResults = new ReleaseResult.ReleaseResultItem[targetCollections.size()];
-        ExecutorService executorService = Executors.newFixedThreadPool(workers);
+        AtomicInteger threadIndex = new AtomicInteger(0);
+        ExecutorService executorService = Executors.newFixedThreadPool(workers,
+                runnable -> new Thread(runnable, "release-worker-" + threadIndex.getAndIncrement()));
         try {
             for (int i = 0; i < workers; i++) {
                 executorService.submit(() -> {
+                    int count = 0;
                     int idx;
                     while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
                         slotResults[idx] = releaseOne(targetCollections.get(idx));
+                        count++;
                     }
+                    log.info("线程[{}] 完成，共 release {} 个 collection", Thread.currentThread().getName(), count);
                 });
             }
             executorService.shutdown();
@@ -127,15 +132,17 @@ public class ReleaseCollectionComp {
     }
 
     private static ReleaseResult.ReleaseResultItem releaseOne(String collectionName) {
-        log.info("Release collection [" + collectionName + "]");
+        log.info("线程[" + Thread.currentThread().getName() + "] Release collection [" + collectionName + "]");
         try {
             milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()
                     .collectionName(collectionName).build());
+            log.info("线程[" + Thread.currentThread().getName() + "] Release collection [" + collectionName + "] 成功");
             return ReleaseResult.ReleaseResultItem.builder()
                     .collectionName(collectionName)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result).build()).build();
         } catch (Exception e) {
+            log.warn("线程[" + Thread.currentThread().getName() + "] Release collection [" + collectionName + "] 失败: " + e.getMessage());
             return ReleaseResult.ReleaseResultItem.builder()
                     .collectionName(collectionName)
                     .commonResult(CommonResult.builder()
