@@ -808,8 +808,27 @@ public class ComponentSchedule {
         String uri = "http://qtp-server.zilliz.cc/customize-task/query/status?redisKey=" + redisKey;
         String s = HttpClientUtils.doGet(uri);
         log.debug("request qtp:" + s);
-        JSONObject jsonObject = JSON.parseObject(s);
-        return jsonObject.getInteger("data");
+        // QTP server 查询失败（网络超时/非 200 等）时 doGet 返回 null，
+        // 暂停/终止状态查询是辅助功能，一次网络抖动不应 NPE 中断长时间测试，容错为 RUNNING 继续执行
+        if (s == null || s.isEmpty()) {
+            log.warn("queryTaskRedisValue: QTP server 无响应，按 RUNNING 继续执行");
+            return TaskStatusEnum.RUNNING.status;
+        }
+        JSONObject jsonObject;
+        try {
+            jsonObject = JSON.parseObject(s);
+        } catch (Exception e) {
+            log.warn("queryTaskRedisValue: 解析响应失败，按 RUNNING 继续执行: {}, body={}",
+                    e.getMessage(), s.length() > 200 ? s.substring(0, 200) : s);
+            return TaskStatusEnum.RUNNING.status;
+        }
+        Integer data = jsonObject == null ? null : jsonObject.getInteger("data");
+        if (data == null) {
+            log.warn("queryTaskRedisValue: 响应缺少 data 字段，按 RUNNING 继续执行: {}",
+                    s.length() > 200 ? s.substring(0, 200) : s);
+            return TaskStatusEnum.RUNNING.status;
+        }
+        return data;
     }
 
     public static int waitIfTaskPaused() {
