@@ -16,12 +16,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class ReleaseCollectionComp {
+    /** 结果明细条数上限，超过则截断为失败明细，防止结果 JSON 过大上传失败 */
+    private static final int MAX_DETAIL_ITEMS = 200;
+    /** 截断时最多保留的失败明细条数 */
+    private static final int MAX_FAILURE_ITEMS = 50;
+
     public static ReleaseResult releaseCollection(ReleaseParams releaseParams) {
         List<String> targetCollections = resolveTargetCollections(releaseParams);
         int numConcurrency = Math.min(Math.max(releaseParams.getNumConcurrency(), 1), 64);
@@ -46,7 +52,32 @@ public class ReleaseCollectionComp {
         if (!assertMessages.isEmpty()) {
             log.warn("ReleaseCollection assertions: " + assertMessages);
         }
-        return ReleaseResult.builder().releaseResultList(releaseResultList).assertMessages(assertMessages).build();
+
+        int totalCount = releaseResultList.size();
+        int failCount = (int) releaseResultList.stream()
+                .filter(item -> item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result))
+                .count();
+        int successCount = totalCount - failCount;
+        boolean truncated = false;
+        // collection 太多时全量明细会导致结果 JSON 过大、上传 QTP 失败，
+        // 只保留部分失败明细，总数看 totalCount/successCount/failCount
+        if (totalCount > MAX_DETAIL_ITEMS) {
+            truncated = true;
+            releaseResultList = releaseResultList.stream()
+                    .filter(item -> item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result))
+                    .limit(MAX_FAILURE_ITEMS)
+                    .collect(Collectors.toList());
+            log.info("Release 结果明细过大（{} 条），截断为 {} 条失败明细，总数统计: total={}, success={}, fail={}",
+                    totalCount, releaseResultList.size(), totalCount, successCount, failCount);
+        }
+        return ReleaseResult.builder()
+                .releaseResultList(releaseResultList)
+                .assertMessages(assertMessages)
+                .totalCount(totalCount)
+                .successCount(successCount)
+                .failCount(failCount)
+                .truncated(truncated)
+                .build();
     }
 
     /**
