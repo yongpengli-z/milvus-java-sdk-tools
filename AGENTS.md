@@ -23,6 +23,7 @@
 - `enableMatch: true` 必须同时 `enableAnalyzer: true`；BM25 function 的 inputField 必须 `enableAnalyzer: true`。
 - SDK 请求超时：Search/HybridSearch 通过 `client.withTimeout(timeoutMs).withRetry(maxRetryTimes=1)` 实现，`timeout<=0` 时用默认值（Search=800ms，HybridSearch=3000ms）。
 - **严禁把本机软链/绝对路径文件提交入库**（2026-09 事故）：`.cursor/skills/` 下 127 个指向 `/Users/yongpengli/...` 的绝对路径软链被 dcbb2f0 误提交，Linux 克隆后为断链，导致 argo git artifact init 阶段 go-git checkout 报 `worktree contains unstaged changes`（exit 64），tcbj 定时任务全部失败。已在 a19e2ce 移除并加 `.cursor/skills/` 到 .gitignore。提交前用 `git ls-files -s | awk '$1==120000'` 检查无 symlink。
+- **QTP server 状态查询必须 fail-open**（2026-09 #13252 事故）：`queryTaskRedisValue` 遇 QTP server SocketTimeout 时 `doGet` 返回 null，`JSON.parseObject(null)` NPE 导致主流程 exit 1，1.6h 长跑测试在步骤切换处白死。凡调用 QTP server 的辅助功能（暂停/终止查询、结果上报）都必须容忍网络失败，绝不能让其影响测试主流程。
 
 ## 与 milvus-auto-test 工作流的关系
 
