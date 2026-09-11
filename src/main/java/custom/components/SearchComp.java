@@ -286,7 +286,7 @@ public class SearchComp {
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         log.info(
                 "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "% (expectedPerRequest=" + expectedPerRequest + ")");
-        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg :" + requestNum / searchTotalTime);
+        log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg(成功请求) :" + successNum / searchTotalTime + " ,RPS avg(含失败) :" + requestNum / searchTotalTime);
         log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
         log.info("TP98:" + MathUtil.calculateTP99(costTimeTotal, 0.98f));
@@ -308,7 +308,7 @@ public class SearchComp {
             assertMessages.add(String.format("[ASSERT WARN] search passRate=%.2f%% < 100%%, %d/%d requests returned expectedCount=%d results",
                     passRate, successNum, requestNum, expectedPerRequest));
         }
-        if (requestNum > 0 && requestNum / searchTotalTime <= 0) {
+        if (requestNum > 0 && successNum / searchTotalTime <= 0) {
             assertMessages.add("[ASSERT FAIL] search RPS <= 0");
         }
         if (!assertMessages.isEmpty()) {
@@ -316,7 +316,8 @@ public class SearchComp {
         }
         CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         searchResultA = SearchResultA.builder()
-                .rps(requestNum / searchTotalTime)
+                // rps 只统计成功请求（返回条数符合预期的），失败请求返回快会虚高 QPS
+                .rps(successNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)

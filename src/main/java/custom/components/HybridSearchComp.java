@@ -430,7 +430,7 @@ public class HybridSearchComp {
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         log.info("Total hybridSearch {} 次数 ,cost: {} seconds! pass rate:{}%",
                 requestNum, searchTotalTime, (float) (100.0 * successNum / requestNum));
-        log.info("Total 线程数 {} ,RPS avg :{}", hybridSearchParams.getNumConcurrency(), requestNum / searchTotalTime);
+        log.info("Total 线程数 {} ,RPS avg(成功请求) :{} ,RPS avg(含失败) :{}", hybridSearchParams.getNumConcurrency(), successNum / searchTotalTime, requestNum / searchTotalTime);
         log.info("Avg:{}", MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:{}", MathUtil.calculateTP99(costTimeTotal, 0.99f));
         log.info("TP98:{}", MathUtil.calculateTP99(costTimeTotal, 0.98f));
@@ -458,7 +458,8 @@ public class HybridSearchComp {
         }
         CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         hybridSearchResult = HybridSearchResult.builder()
-                .rps(requestNum / searchTotalTime)
+                // rps 只统计成功请求（有结果返回的），失败请求返回快会虚高 QPS
+                .rps(successNum / searchTotalTime)
                 .concurrencyNum(hybridSearchParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)
