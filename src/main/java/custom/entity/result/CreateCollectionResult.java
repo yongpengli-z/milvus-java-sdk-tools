@@ -17,11 +17,21 @@ public class CreateCollectionResult {
     Integer successCount;
     Integer failCount;
     Boolean truncated;
+    /** 延迟统计（秒），基于每个 collection 的实际 create 耗时 */
+    Double avg;
+    Double tp99;
+    Double tp98;
+    Double tp90;
+    Double tp85;
+    Double tp80;
+    Double tp50;
 
     @Data
     @Builder
     public static class CreateCollectionResultItem {
         String collectionName;
+        /** 该 collection 的 create 耗时（秒）；未执行的占位项为 -1 */
+        float costTime;
         CommonResult commonResult;
     }
 }

@@ -60,7 +60,7 @@ public class ReleaseParams {
      * >1 时起固定数量的 worker 线程并发 release：所有 worker 从共享游标抢任务，
      * 每个 collection 只会被一个线程 release 一次，不重复、不漏。
      * 实际并发度 = min(numConcurrency, collection 数)，如只有 1 个 collection 填 5 也只起 1 个线程。
-     * 上限 64，防止误配打满客户端。
+     * 不限制上限，请根据被测实例规格合理设置。
      * <p>
      * 前端默认值：1
      */

@@ -20,6 +20,14 @@ public class CreateIndexResult {
     Integer successCount;
     Integer failCount;
     Boolean truncated;
+    /** 延迟统计（秒），基于每个 collection 的实际建索引耗时 */
+    Double avg;
+    Double tp99;
+    Double tp98;
+    Double tp90;
+    Double tp85;
+    Double tp80;
+    Double tp50;
 
     @Data
     @Builder

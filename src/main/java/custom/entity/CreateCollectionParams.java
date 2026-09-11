@@ -118,7 +118,7 @@ public class CreateCollectionParams {
      * <p>
      * >1 时起固定数量 worker 线程并发创建，所有 worker 从共享游标抢任务，
      * 每个 collection 只被一个线程创建一次。实际并发度 = min(numConcurrency, createCount)。
-     * 上限 64。
+     * 不限制上限，请根据被测实例规格合理设置。
      * <p>
      * 前端默认值：1
      */

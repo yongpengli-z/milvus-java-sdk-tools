@@ -2,6 +2,7 @@ package custom.components;
 
 import custom.common.CommonFunction;
 import custom.entity.CreateIndexParams;
+import custom.utils.MathUtil;
 import custom.entity.result.CommonResult;
 import custom.entity.result.CreateIndexResult;
 import custom.entity.result.ResultEnum;
@@ -76,7 +77,7 @@ public class CreateIndexComp {
         List<String> targetCollections = CommonFunction.filterCollectionPool(globalCollectionNames,
                 params.getCollectionNamePrefix(), params.getCollectionRangeStart(), params.getCollectionRangeEnd());
         String databaseName = params.getDatabaseName() == null ? "" : params.getDatabaseName();
-        int numConcurrency = Math.min(Math.max(params.getNumConcurrency(), 1), 64);
+        int numConcurrency = Math.max(params.getNumConcurrency(), 1);
         log.info("CreateIndex 多 collection 模式：共 {} 个，并发度 {}", targetCollections.size(),
                 Math.min(numConcurrency, targetCollections.size()));
 
@@ -122,6 +123,7 @@ public class CreateIndexComp {
             if (item == null) {
                 item = CreateIndexResult.CreateIndexResultItem.builder()
                         .collectionName(targetCollections.get(i))
+                        .costTime(-1)
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.EXCEPTION.result)
                                 .message("createIndex not executed (interrupted)").build())
@@ -165,6 +167,11 @@ public class CreateIndexComp {
                 .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
                 .count();
         int successCount = totalCount - failCount;
+        // 延迟统计：基于实际执行的建索引耗时（占位项 costTime=-1 不计入）
+        List<Float> costTimeTotal = resultList.stream()
+                .filter(item -> item.getCostTime() >= 0)
+                .map(CreateIndexResult.CreateIndexResultItem::getCostTime)
+                .collect(Collectors.toList());
         List<String> assertMessages = resultList.stream()
                 .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
                 .map(item -> "[ASSERT FAIL] createIndex [" + item.getCollectionName() + "] failed: "
@@ -200,6 +207,13 @@ public class CreateIndexComp {
                 .successCount(successCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .avg(MathUtil.calculateAverage(costTimeTotal))
+                .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
+                .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
+                .tp90(MathUtil.calculateTP99(costTimeTotal, 0.90f))
+                .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
+                .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
+                .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .build();
     }
 }

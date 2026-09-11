@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import custom.utils.MathUtil;
+
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
@@ -30,7 +32,7 @@ public class ReleaseCollectionComp {
 
     public static ReleaseResult releaseCollection(ReleaseParams releaseParams) {
         List<String> targetCollections = resolveTargetCollections(releaseParams);
-        int numConcurrency = Math.min(Math.max(releaseParams.getNumConcurrency(), 1), 64);
+        int numConcurrency = Math.max(releaseParams.getNumConcurrency(), 1);
         List<ReleaseResult.ReleaseResultItem> releaseResultList;
         if (numConcurrency <= 1 || targetCollections.size() <= 1) {
             // 串行（默认，兼容旧行为）
@@ -58,6 +60,11 @@ public class ReleaseCollectionComp {
                 .filter(item -> item.getCommonResult().getResult().equals(ResultEnum.EXCEPTION.result))
                 .count();
         int successCount = totalCount - failCount;
+        // 延迟统计：基于实际执行的 release 耗时（占位项 costTime=-1 不计入）
+        List<Float> costTimeTotal = releaseResultList.stream()
+                .filter(item -> item.getCostTime() >= 0)
+                .map(ReleaseResult.ReleaseResultItem::getCostTime)
+                .collect(Collectors.toList());
         boolean truncated = false;
         // collection 太多时全量明细会导致结果 JSON 过大、上传 QTP 失败，
         // 只保留部分失败明细，总数看 totalCount/successCount/failCount
@@ -77,6 +84,13 @@ public class ReleaseCollectionComp {
                 .successCount(successCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .avg(MathUtil.calculateAverage(costTimeTotal))
+                .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
+                .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
+                .tp90(MathUtil.calculateTP99(costTimeTotal, 0.90f))
+                .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
+                .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
+                .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .build();
     }
 
@@ -149,9 +163,10 @@ public class ReleaseCollectionComp {
         for (int i = 0; i < targetCollections.size(); i++) {
             ReleaseResult.ReleaseResultItem item = slotResults[i];
             if (item == null) {
-                // 仅在被中断时可能出现：占位为未执行
+                // 仅在被中断时可能出现：占位为未执行，costTime=-1 不计入延迟统计
                 item = ReleaseResult.ReleaseResultItem.builder()
                         .collectionName(targetCollections.get(i))
+                        .costTime(-1)
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.EXCEPTION.result)
                                 .message("release not executed (interrupted)").build())
@@ -164,18 +179,23 @@ public class ReleaseCollectionComp {
 
     private static ReleaseResult.ReleaseResultItem releaseOne(String collectionName) {
         log.info("线程[" + Thread.currentThread().getName() + "] Release collection [" + collectionName + "]");
+        long startTime = System.currentTimeMillis();
         try {
             milvusClientV2.releaseCollection(ReleaseCollectionReq.builder()
                     .collectionName(collectionName).build());
-            log.info("线程[" + Thread.currentThread().getName() + "] Release collection [" + collectionName + "] 成功");
+            float costTime = (float) ((System.currentTimeMillis() - startTime) / 1000.00);
+            log.info("线程[" + Thread.currentThread().getName() + "] Release collection [" + collectionName + "] 成功，cost: " + costTime + " s");
             return ReleaseResult.ReleaseResultItem.builder()
                     .collectionName(collectionName)
+                    .costTime(costTime)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result).build()).build();
         } catch (Exception e) {
+            float costTime = (float) ((System.currentTimeMillis() - startTime) / 1000.00);
             log.warn("线程[" + Thread.currentThread().getName() + "] Release collection [" + collectionName + "] 失败: " + e.getMessage());
             return ReleaseResult.ReleaseResultItem.builder()
                     .collectionName(collectionName)
+                    .costTime(costTime)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.EXCEPTION.result)
                             .message(e.getMessage()).build())

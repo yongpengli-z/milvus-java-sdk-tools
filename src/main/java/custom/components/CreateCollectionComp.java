@@ -20,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import custom.utils.MathUtil;
+
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
@@ -101,7 +103,7 @@ public class CreateCollectionComp {
             return createCollection(params);
         }
         int createCount = params.getCreateCount();
-        int workers = Math.min(Math.min(Math.max(params.getNumConcurrency(), 1), 64), createCount);
+        int workers = Math.min(Math.max(params.getNumConcurrency(), 1), createCount);
         log.info("Create 批量模式：前缀[{}]，共 {} 个 collection，{} 个 worker（请求并发度 {}）",
                 prefix, createCount, workers, params.getNumConcurrency());
 
@@ -138,6 +140,7 @@ public class CreateCollectionComp {
             if (item == null) {
                 item = CreateCollectionResult.CreateCollectionResultItem.builder()
                         .collectionName(prefix + String.format("%07d", i + 1))
+                        .costTime(-1)
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.EXCEPTION.result)
                                 .message("create not executed (interrupted)").build())
@@ -150,6 +153,7 @@ public class CreateCollectionComp {
 
     private static CreateCollectionResult.CreateCollectionResultItem createOne(CreateCollectionParams params, String collectionName) {
         log.info("线程[" + Thread.currentThread().getName() + "] Create collection [" + collectionName + "]");
+        long startTime = System.currentTimeMillis();
         try {
             String created = CommonFunction.genCommonCollection(collectionName,
                     params.isEnableDynamic(), params.getShardNum(), params.getNumPartitions(),
@@ -158,15 +162,19 @@ public class CreateCollectionComp {
             synchronized (globalCollectionNames) {
                 globalCollectionNames.add(created);
             }
-            log.info("线程[" + Thread.currentThread().getName() + "] Create collection [" + created + "] 成功");
+            float costTime = (float) ((System.currentTimeMillis() - startTime) / 1000.00);
+            log.info("线程[" + Thread.currentThread().getName() + "] Create collection [" + created + "] 成功，cost: " + costTime + " s");
             return CreateCollectionResult.CreateCollectionResultItem.builder()
                     .collectionName(created)
+                    .costTime(costTime)
                     .commonResult(CommonResult.builder().result(ResultEnum.SUCCESS.result).build())
                     .build();
         } catch (Exception e) {
+            float costTime = (float) ((System.currentTimeMillis() - startTime) / 1000.00);
             log.warn("线程[" + Thread.currentThread().getName() + "] Create collection [" + collectionName + "] 失败: " + e.getMessage());
             return CreateCollectionResult.CreateCollectionResultItem.builder()
                     .collectionName(collectionName)
+                    .costTime(costTime)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.FAIL.result)
                             .message(e.getMessage()).build())
@@ -181,6 +189,11 @@ public class CreateCollectionComp {
                 .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
                 .count();
         int successCount = totalCount - failCount;
+        // 延迟统计：基于实际执行的 create 耗时（占位项 costTime=-1 不计入）
+        List<Float> costTimeTotal = resultList.stream()
+                .filter(item -> item.getCostTime() >= 0)
+                .map(CreateCollectionResult.CreateCollectionResultItem::getCostTime)
+                .collect(Collectors.toList());
         List<String> assertMessages = resultList.stream()
                 .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
                 .map(item -> "[ASSERT FAIL] createCollection [" + item.getCollectionName() + "] failed: "
@@ -213,6 +226,13 @@ public class CreateCollectionComp {
                 .successCount(successCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .avg(MathUtil.calculateAverage(costTimeTotal))
+                .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
+                .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
+                .tp90(MathUtil.calculateTP99(costTimeTotal, 0.90f))
+                .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
+                .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
+                .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .build();
     }
 

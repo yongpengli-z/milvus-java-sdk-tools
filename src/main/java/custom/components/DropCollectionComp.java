@@ -19,6 +19,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import custom.utils.MathUtil;
 
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
@@ -77,6 +80,11 @@ public class DropCollectionComp {
         int failCount = (int) dropCollectionResultList.stream()
                 .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
                 .count();
+        // 延迟统计：基于实际执行的 drop 耗时（占位项 costTime=-1 不计入）
+        List<Float> costTimeTotal = dropCollectionResultList.stream()
+                .filter(item -> item.getCostTime() >= 0)
+                .map(DropCollectionResult.DropCollectionResultItem::getCostTime)
+                .collect(Collectors.toList());
         boolean truncated = false;
         // collection 太多时全量明细会导致结果 JSON 过大、上传 QTP 失败，
         // 只保留部分失败明细，总数看 totalCount/successCount/failCount
@@ -85,7 +93,7 @@ public class DropCollectionComp {
             dropCollectionResultList = dropCollectionResultList.stream()
                     .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
                     .limit(MAX_FAILURE_ITEMS)
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
             log.info("Drop 结果明细过大（{} 条），截断为 {} 条失败明细，总数统计: total={}, success={}, fail={}",
                     totalCount, dropCollectionResultList.size(), totalCount, totalCount - failCount, failCount);
         }
@@ -96,6 +104,13 @@ public class DropCollectionComp {
                 .successCount(totalCount - failCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .avg(MathUtil.calculateAverage(costTimeTotal))
+                .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
+                .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
+                .tp90(MathUtil.calculateTP99(costTimeTotal, 0.90f))
+                .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
+                .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
+                .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
                 .build();
     }
 
@@ -105,7 +120,7 @@ public class DropCollectionComp {
      */
     private static List<DropCollectionResult.DropCollectionResultItem> dropBatch(List<String> collectionNames,
                                                                                  DropCollectionParams params) {
-        int numConcurrency = Math.min(Math.max(params.getNumConcurrency(), 1), 64);
+        int numConcurrency = Math.max(params.getNumConcurrency(), 1);
         if (numConcurrency <= 1 || collectionNames.size() <= 1) {
             List<DropCollectionResult.DropCollectionResultItem> list = new ArrayList<>();
             for (String collectionName : collectionNames) {
@@ -148,6 +163,7 @@ public class DropCollectionComp {
             if (item == null) {
                 item = DropCollectionResult.DropCollectionResultItem.builder()
                         .collectionName(collectionNames.get(i))
+                        .costTime(-1)
                         .commonResult(CommonResult.builder()
                                 .result(ResultEnum.EXCEPTION.result)
                                 .message("drop not executed (interrupted)").build())
@@ -182,6 +198,7 @@ public class DropCollectionComp {
     }
 
     private static DropCollectionResult.DropCollectionResultItem dropOneCollection(String collectionName, String databaseName) {
+        long startTime = System.currentTimeMillis();
         try {
             log.info("线程[" + Thread.currentThread().getName() + "] Drop collection: " + collectionName);
             dropAliasesForCollection(collectionName, databaseName);
@@ -194,16 +211,21 @@ public class DropCollectionComp {
             synchronized (globalCollectionNames) {
                 globalCollectionNames.remove(collectionName);
             }
+            float costTime = (float) ((System.currentTimeMillis() - startTime) / 1000.00);
+            log.info("线程[" + Thread.currentThread().getName() + "] Drop collection [" + collectionName + "] 成功，cost: " + costTime + " s");
             return DropCollectionResult.DropCollectionResultItem.builder()
                     .collectionName(collectionName)
+                    .costTime(costTime)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result)
                             .build())
                     .build();
         } catch (Exception e) {
+            float costTime = (float) ((System.currentTimeMillis() - startTime) / 1000.00);
             log.warn("线程[" + Thread.currentThread().getName() + "] Drop collection [" + collectionName + "] 失败: " + e.getMessage());
             return DropCollectionResult.DropCollectionResultItem.builder()
                     .collectionName(collectionName)
+                    .costTime(costTime)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.FAIL.result)
                             .message(e.getMessage())

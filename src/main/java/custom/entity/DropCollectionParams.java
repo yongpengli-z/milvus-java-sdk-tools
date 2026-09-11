@@ -51,7 +51,7 @@ public class DropCollectionParams {
      * <p>
      * >1 时起固定数量 worker 线程并发删除（前缀匹配多个 或 dropAll 时生效），
      * 所有 worker 从共享游标抢任务，每个 collection 只被一个线程删除一次。
-     * 实际并发度 = min(numConcurrency, 待删数量)。上限 64。
+     * 实际并发度 = min(numConcurrency, 待删数量)。不限制上限，请合理设置。
      * <p>
      * 前端默认值：1
      */
