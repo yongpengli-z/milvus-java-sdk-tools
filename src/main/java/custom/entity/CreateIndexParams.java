@@ -43,4 +43,38 @@ public class CreateIndexParams {
      */
     private List<IndexParams> indexParams;
 
+    /**
+     * Collection 名称前缀过滤（可选）。
+     * <p>
+     * 非空时进入多 collection 模式：对 globalCollectionNames 池子按前缀过滤后逐个建索引，
+     * 与 {@link #collectionRangeStart}/{@link #collectionRangeEnd} 可叠加（先前缀、再区间过滤）。
+     * <p>
+     * 前端默认值：""
+     */
+    private String collectionNamePrefix;
+
+    /**
+     * Collection 区间起始（可选，默认 -1 不启用）。
+     * >=0 时进入区间模式。若前缀命中的名称是 前缀+纯数字后缀，按后缀数值过滤 [rangeStart, rangeEnd)，
+     * 前导零不影响；否则按名称排序后取下标切片。
+     */
+    private int collectionRangeStart = -1;
+
+    /**
+     * Collection 区间结束（开区间，可选，默认 -1）。
+     * <=0 表示不限制上界/取到末尾。
+     */
+    private int collectionRangeEnd = -1;
+
+    /**
+     * 建索引并发度（可选，默认 1 串行）。
+     * <p>
+     * >1 时起固定数量 worker 线程并发建索引，所有 worker 从共享游标抢任务，
+     * 每个 collection 只被一个线程处理一次。实际并发度 = min(numConcurrency, collection 数)。
+     * 上限 64。
+     * <p>
+     * 前端默认值：1
+     */
+    private int numConcurrency = 1;
+
 }
