@@ -104,6 +104,7 @@ public class CreateCollectionComp {
         }
         int createCount = params.getCreateCount();
         int workers = Math.min(Math.max(params.getNumConcurrency(), 1), createCount);
+        long startTimeTotal = System.currentTimeMillis();
         log.info("Create 批量模式：前缀[{}]，共 {} 个 collection，{} 个 worker（请求并发度 {}）",
                 prefix, createCount, workers, params.getNumConcurrency());
 
@@ -148,7 +149,8 @@ public class CreateCollectionComp {
             }
             resultList.add(item);
         }
-        return buildBatchResult(resultList, prefix);
+        float totalCostTime = (float) ((System.currentTimeMillis() - startTimeTotal) / 1000.00);
+        return buildBatchResult(resultList, prefix, totalCostTime);
     }
 
     private static CreateCollectionResult.CreateCollectionResultItem createOne(CreateCollectionParams params, String collectionName) {
@@ -183,7 +185,7 @@ public class CreateCollectionComp {
     }
 
     private static CreateCollectionResult buildBatchResult(
-            List<CreateCollectionResult.CreateCollectionResultItem> resultList, String prefix) {
+            List<CreateCollectionResult.CreateCollectionResultItem> resultList, String prefix, float totalCostTime) {
         int totalCount = resultList.size();
         int failCount = (int) resultList.stream()
                 .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
@@ -226,6 +228,8 @@ public class CreateCollectionComp {
                 .successCount(successCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .totalCostTime(totalCostTime)
+                .rps(totalCostTime > 0 ? successCount / totalCostTime : 0)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))

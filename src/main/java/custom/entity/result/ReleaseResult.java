@@ -18,6 +18,10 @@ public class ReleaseResult {
     Integer failCount;
     /** true 表示 releaseResultList 因数量过大被截断，只保留部分失败明细 */
     Boolean truncated;
+    /** 总耗时（秒），批量模式下为整个批量操作的墙钟时间 */
+    Float totalCostTime;
+    /** 每秒成功操作数 = successCount / totalCostTime */
+    Double rps;
     /** 延迟统计（秒），基于每个 collection 的实际 release 耗时 */
     Double avg;
     Double tp99;

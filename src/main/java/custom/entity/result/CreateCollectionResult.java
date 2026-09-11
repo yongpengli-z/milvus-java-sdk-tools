@@ -17,6 +17,10 @@ public class CreateCollectionResult {
     Integer successCount;
     Integer failCount;
     Boolean truncated;
+    /** 总耗时（秒），批量模式下为整个批量操作的墙钟时间 */
+    Float totalCostTime;
+    /** 每秒成功操作数 = successCount / totalCostTime */
+    Double rps;
     /** 延迟统计（秒），基于每个 collection 的实际 create 耗时 */
     Double avg;
     Double tp99;

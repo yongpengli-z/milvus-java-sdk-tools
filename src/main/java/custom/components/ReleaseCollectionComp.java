@@ -31,6 +31,7 @@ public class ReleaseCollectionComp {
     private static final int MAX_FAILURE_ITEMS = 50;
 
     public static ReleaseResult releaseCollection(ReleaseParams releaseParams) {
+        long startTimeTotal = System.currentTimeMillis();
         List<String> targetCollections = resolveTargetCollections(releaseParams);
         int numConcurrency = Math.max(releaseParams.getNumConcurrency(), 1);
         List<ReleaseResult.ReleaseResultItem> releaseResultList;
@@ -77,6 +78,9 @@ public class ReleaseCollectionComp {
             log.info("Release 结果明细过大（{} 条），截断为 {} 条失败明细，总数统计: total={}, success={}, fail={}",
                     totalCount, releaseResultList.size(), totalCount, successCount, failCount);
         }
+        float totalCostTime = (float) ((System.currentTimeMillis() - startTimeTotal) / 1000.00);
+        // rps = 每秒成功 release 数（与 search 口径一致，只计成功请求）
+        double rps = totalCostTime > 0 ? successCount / totalCostTime : 0;
         return ReleaseResult.builder()
                 .releaseResultList(releaseResultList)
                 .assertMessages(assertMessages)
@@ -84,6 +88,8 @@ public class ReleaseCollectionComp {
                 .successCount(successCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .totalCostTime(totalCostTime)
+                .rps(rps)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))

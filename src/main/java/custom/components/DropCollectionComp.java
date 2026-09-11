@@ -34,6 +34,7 @@ public class DropCollectionComp {
     private static final int MAX_FAILURE_ITEMS = 50;
 
     public static DropCollectionResult dropCollection(DropCollectionParams dropCollectionParams) {
+        long startTimeTotal = System.currentTimeMillis();
         List<DropCollectionResult.DropCollectionResultItem> dropCollectionResultList;
         if (dropCollectionParams.isCollectionNameUsePrefix()
                 && dropCollectionParams.getCollectionName() != null
@@ -97,6 +98,9 @@ public class DropCollectionComp {
             log.info("Drop 结果明细过大（{} 条），截断为 {} 条失败明细，总数统计: total={}, success={}, fail={}",
                     totalCount, dropCollectionResultList.size(), totalCount, totalCount - failCount, failCount);
         }
+        float totalCostTime = (float) ((System.currentTimeMillis() - startTimeTotal) / 1000.00);
+        // rps = 每秒成功 drop 数（只计成功请求）
+        double rps = totalCostTime > 0 ? (totalCount - failCount) / totalCostTime : 0;
         return DropCollectionResult.builder()
                 .dropCollectionResultList(dropCollectionResultList)
                 .assertMessages(assertMessages)
@@ -104,6 +108,8 @@ public class DropCollectionComp {
                 .successCount(totalCount - failCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .totalCostTime(totalCostTime)
+                .rps(rps)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))

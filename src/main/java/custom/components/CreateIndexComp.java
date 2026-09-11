@@ -207,6 +207,8 @@ public class CreateIndexComp {
                 .successCount(successCount)
                 .failCount(failCount)
                 .truncated(truncated)
+                .totalCostTime(totalCost)
+                .rps(totalCost > 0 ? successCount / totalCost : 0)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
