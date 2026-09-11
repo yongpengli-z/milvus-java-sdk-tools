@@ -14,6 +14,7 @@ import io.milvus.v2.service.collection.response.ListCollectionsResp;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static custom.BaseTest.envEnum;
@@ -59,11 +60,26 @@ public class RestoreBackupComp {
                     if (restoreState == 1) {
                         CommonResult commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result)
                                 .message("Restore success").build();
-                        // 重新刷新collectionList
+                        // 重新刷新collectionList（restore 成功后 collection 可见有延迟，轮询到非空）
                         globalCollectionNames.clear();
-                        ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
-                        List<String> collectionNames =
-                                listCollectionsResp.getCollectionNames();
+                        LocalDateTime visibleDeadline = LocalDateTime.now().plusMinutes(5);
+                        List<String> collectionNames = new ArrayList<>();
+                        while (LocalDateTime.now().isBefore(visibleDeadline)) {
+                            ListCollectionsResp listCollectionsResp = milvusClientV2.listCollections();
+                            collectionNames = listCollectionsResp.getCollectionNames();
+                            if (collectionNames != null && !collectionNames.isEmpty()) {
+                                break;
+                            }
+                            log.info("Restore 成功后 collection 暂不可见，15s 后重试 listCollections...");
+                            try {
+                                Thread.sleep(1000 * 15);
+                            } catch (InterruptedException e) {
+                                log.error(e.getMessage());
+                            }
+                        }
+                        if (collectionNames == null || collectionNames.isEmpty()) {
+                            log.warn("Restore 成功但等待 5 分钟后 collection 仍不可见");
+                        }
                         log.info("List collection: " + CommonFunction.summarizeForLog(collectionNames));
                         globalCollectionNames.addAll(collectionNames);
                         return RestoreBackupResult.builder().commonResult(commonResult).build();
