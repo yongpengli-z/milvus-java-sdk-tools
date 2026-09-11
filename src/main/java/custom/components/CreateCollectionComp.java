@@ -229,7 +229,7 @@ public class CreateCollectionComp {
                 .failCount(failCount)
                 .truncated(truncated)
                 .totalCostTime(totalCostTime)
-                .rps(totalCostTime > 0 ? successCount / totalCostTime : 0)
+                .rps(totalCostTime > 0 ? successCount / (double) totalCostTime : 0d)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
                 .tp98(MathUtil.calculateTP99(costTimeTotal, 0.98f))
