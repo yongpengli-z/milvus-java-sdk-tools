@@ -104,6 +104,26 @@ public class CreateCollectionParams {
      */
     private String databaseName;
 
+    /**
+     * 批量创建数量（可选，默认 1 单个创建）。
+     * <p>
+     * >1 时需配合 collectionNameUsePrefix=true 且 collectionName 非空：
+     * 按 `collectionName + 7位数字序号`（如 multi_tenant_0000001）批量创建，
+     * 数字后缀可被 search/release 的区间过滤直接命中。
+     */
+    private int createCount = 1;
+
+    /**
+     * 创建并发度（可选，默认 1 串行）。
+     * <p>
+     * >1 时起固定数量 worker 线程并发创建，所有 worker 从共享游标抢任务，
+     * 每个 collection 只被一个线程创建一次。实际并发度 = min(numConcurrency, createCount)。
+     * 上限 64。
+     * <p>
+     * 前端默认值：1
+     */
+    private int numConcurrency = 1;
+
     @Data
     public static class PropertyM {
         /**

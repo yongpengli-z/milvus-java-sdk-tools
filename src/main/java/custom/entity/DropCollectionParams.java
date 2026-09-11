@@ -45,4 +45,15 @@ public class DropCollectionParams {
      * 前端默认值：""（空字符串）
      */
     private String databaseName;
+
+    /**
+     * 删除并发度（可选，默认 1 串行）。
+     * <p>
+     * >1 时起固定数量 worker 线程并发删除（前缀匹配多个 或 dropAll 时生效），
+     * 所有 worker 从共享游标抢任务，每个 collection 只被一个线程删除一次。
+     * 实际并发度 = min(numConcurrency, 待删数量)。上限 64。
+     * <p>
+     * 前端默认值：1
+     */
+    private int numConcurrency = 1;
 }

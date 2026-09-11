@@ -15,20 +15,30 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static custom.BaseTest.globalCollectionNames;
 import static custom.BaseTest.milvusClientV2;
 
 @Slf4j
 public class DropCollectionComp {
+    /** 结果明细条数上限，超过则截断为失败明细，防止结果 JSON 过大上传失败 */
+    private static final int MAX_DETAIL_ITEMS = 200;
+    /** 截断时最多保留的失败明细条数 */
+    private static final int MAX_FAILURE_ITEMS = 50;
+
     public static DropCollectionResult dropCollection(DropCollectionParams dropCollectionParams) {
-        List<DropCollectionResult.DropCollectionResultItem> dropCollectionResultList = new ArrayList<>();
+        List<DropCollectionResult.DropCollectionResultItem> dropCollectionResultList;
         if (dropCollectionParams.isCollectionNameUsePrefix()
                 && dropCollectionParams.getCollectionName() != null
                 && !dropCollectionParams.getCollectionName().equalsIgnoreCase("")) {
             List<String> collectionNames = collectionNamesByPrefix(dropCollectionParams.getCollectionName(), dropCollectionParams.getDatabaseName());
             log.info("Drop collections by prefix [{}], dropAll [{}]: {}", dropCollectionParams.getCollectionName(), dropCollectionParams.isDropAll(), CommonFunction.summarizeForLog(collectionNames));
             if (collectionNames.isEmpty()) {
+                dropCollectionResultList = new ArrayList<>();
                 dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
                         .collectionName(dropCollectionParams.getCollectionName())
                         .commonResult(CommonResult.builder()
@@ -37,23 +47,21 @@ public class DropCollectionComp {
                                 .build())
                         .build());
             } else if (dropCollectionParams.isDropAll()) {
-                for (String collectionName : collectionNames) {
-                    dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
-                }
+                dropCollectionResultList = dropBatch(collectionNames, dropCollectionParams);
             } else {
                 String collectionName = collectionNames.get(collectionNames.size() - 1);
-                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
+                dropCollectionResultList = new ArrayList<>();
+                dropCollectionResultList.add(dropOneCollection(collectionName, dropCollectionParams.getDatabaseName()));
             }
         } else if (dropCollectionParams.isDropAll()) {
             List<String> collectionNames = listCollectionNames(dropCollectionParams.getDatabaseName());
             log.info("Drop all collections: " + CommonFunction.summarizeForLog(collectionNames));
-            for (String collectionName : collectionNames) {
-                dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
-            }
+            dropCollectionResultList = dropBatch(collectionNames, dropCollectionParams);
         } else {
             String collectionName = (dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase("")) ?
                     globalCollectionNames.get(globalCollectionNames.size() - 1) : dropCollectionParams.getCollectionName();
-            dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionResultList);
+            dropCollectionResultList = new ArrayList<>();
+            dropCollectionResultList.add(dropOneCollection(collectionName, dropCollectionParams.getDatabaseName()));
         }
         // assertions
         List<String> assertMessages = new ArrayList<>();
@@ -65,7 +73,89 @@ public class DropCollectionComp {
         if (!assertMessages.isEmpty()) {
             log.warn("DropCollection assertions: " + assertMessages);
         }
-        return DropCollectionResult.builder().dropCollectionResultList(dropCollectionResultList).assertMessages(assertMessages).build();
+        int totalCount = dropCollectionResultList.size();
+        int failCount = (int) dropCollectionResultList.stream()
+                .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
+                .count();
+        boolean truncated = false;
+        // collection 太多时全量明细会导致结果 JSON 过大、上传 QTP 失败，
+        // 只保留部分失败明细，总数看 totalCount/successCount/failCount
+        if (totalCount > MAX_DETAIL_ITEMS) {
+            truncated = true;
+            dropCollectionResultList = dropCollectionResultList.stream()
+                    .filter(item -> !ResultEnum.SUCCESS.result.equals(item.getCommonResult().getResult()))
+                    .limit(MAX_FAILURE_ITEMS)
+                    .collect(java.util.stream.Collectors.toList());
+            log.info("Drop 结果明细过大（{} 条），截断为 {} 条失败明细，总数统计: total={}, success={}, fail={}",
+                    totalCount, dropCollectionResultList.size(), totalCount, totalCount - failCount, failCount);
+        }
+        return DropCollectionResult.builder()
+                .dropCollectionResultList(dropCollectionResultList)
+                .assertMessages(assertMessages)
+                .totalCount(totalCount)
+                .successCount(totalCount - failCount)
+                .failCount(failCount)
+                .truncated(truncated)
+                .build();
+    }
+
+    /**
+     * 批量删除：numConcurrency>1 时起 min(并发数, 待删数) 个 worker，从共享游标抢任务，
+     * 每个 collection 只被一个线程删除一次；结果按目标列表原始顺序返回。
+     */
+    private static List<DropCollectionResult.DropCollectionResultItem> dropBatch(List<String> collectionNames,
+                                                                                 DropCollectionParams params) {
+        int numConcurrency = Math.min(Math.max(params.getNumConcurrency(), 1), 64);
+        if (numConcurrency <= 1 || collectionNames.size() <= 1) {
+            List<DropCollectionResult.DropCollectionResultItem> list = new ArrayList<>();
+            for (String collectionName : collectionNames) {
+                list.add(dropOneCollection(collectionName, params.getDatabaseName()));
+            }
+            return list;
+        }
+        int workers = Math.min(numConcurrency, collectionNames.size());
+        log.info("Drop 并发模式：{} 个 collection，{} 个 worker（请求并发度 {}）",
+                collectionNames.size(), workers, numConcurrency);
+        AtomicInteger cursor = new AtomicInteger(0);
+        DropCollectionResult.DropCollectionResultItem[] slotResults =
+                new DropCollectionResult.DropCollectionResultItem[collectionNames.size()];
+        AtomicInteger threadIndex = new AtomicInteger(0);
+        ExecutorService executorService = Executors.newFixedThreadPool(workers,
+                runnable -> new Thread(runnable, "drop-worker-" + threadIndex.getAndIncrement()));
+        try {
+            for (int i = 0; i < workers; i++) {
+                executorService.submit(() -> {
+                    int count = 0;
+                    int idx;
+                    while ((idx = cursor.getAndIncrement()) < collectionNames.size()) {
+                        slotResults[idx] = dropOneCollection(collectionNames.get(idx), params.getDatabaseName());
+                        count++;
+                    }
+                    log.info("线程[{}] 完成，共 drop {} 个 collection", Thread.currentThread().getName(), count);
+                });
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Drop 并发执行被中断: {}", e.getMessage());
+        } finally {
+            executorService.shutdownNow();
+        }
+        List<DropCollectionResult.DropCollectionResultItem> list = new ArrayList<>(collectionNames.size());
+        for (int i = 0; i < collectionNames.size(); i++) {
+            DropCollectionResult.DropCollectionResultItem item = slotResults[i];
+            if (item == null) {
+                item = DropCollectionResult.DropCollectionResultItem.builder()
+                        .collectionName(collectionNames.get(i))
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.EXCEPTION.result)
+                                .message("drop not executed (interrupted)").build())
+                        .build();
+            }
+            list.add(item);
+        }
+        return list;
     }
 
     private static List<String> collectionNamesByPrefix(String prefix, String databaseName) {
@@ -91,10 +181,9 @@ public class DropCollectionComp {
         return listCollectionsResp.getCollectionNames();
     }
 
-    private static void dropOneCollection(String collectionName, String databaseName,
-                                          List<DropCollectionResult.DropCollectionResultItem> dropCollectionResultList) {
+    private static DropCollectionResult.DropCollectionResultItem dropOneCollection(String collectionName, String databaseName) {
         try {
-            log.info("Drop collection: " + collectionName);
+            log.info("线程[" + Thread.currentThread().getName() + "] Drop collection: " + collectionName);
             dropAliasesForCollection(collectionName, databaseName);
             DropCollectionReq dropCollectionReq = DropCollectionReq.builder()
                     .collectionName(collectionName).build();
@@ -102,21 +191,24 @@ public class DropCollectionComp {
                 dropCollectionReq.setDatabaseName(databaseName);
             }
             milvusClientV2.dropCollection(dropCollectionReq);
-            globalCollectionNames.remove(collectionName);
-            dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
+            synchronized (globalCollectionNames) {
+                globalCollectionNames.remove(collectionName);
+            }
+            return DropCollectionResult.DropCollectionResultItem.builder()
                     .collectionName(collectionName)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.SUCCESS.result)
                             .build())
-                    .build());
+                    .build();
         } catch (Exception e) {
-            dropCollectionResultList.add(DropCollectionResult.DropCollectionResultItem.builder()
+            log.warn("线程[" + Thread.currentThread().getName() + "] Drop collection [" + collectionName + "] 失败: " + e.getMessage());
+            return DropCollectionResult.DropCollectionResultItem.builder()
                     .collectionName(collectionName)
                     .commonResult(CommonResult.builder()
                             .result(ResultEnum.FAIL.result)
                             .message(e.getMessage())
                             .build())
-                    .build());
+                    .build();
         }
     }
 
