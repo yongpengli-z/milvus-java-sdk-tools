@@ -15,8 +15,11 @@ public class AlterInstanceIndexClusterParams {
      * 前端：`alterInstanceIndexClusterEdit.vue` -> "instanceId"
      * <p>
      * 前端默认值：""（空字符串）
+     * <p>
+     * 注意：裸 JSON 不传该 key 时 fastjson 反序列化为 null，
+     * CloudOpsServiceUtils.alterIndexCluster 判空前会 NPE，必须给默认值。
      */
-    String instanceId;
+    String instanceId = "";
 
     /**
      * IndexClusterId。
