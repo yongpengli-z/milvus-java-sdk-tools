@@ -238,6 +238,17 @@ public class CommonFunction {
      * @param indexParams    index field集合
      */
     public static void createCommonIndex(String collectionName, List<IndexParams> indexParams, String databaseName) {
+        createCommonIndex(collectionName, indexParams, databaseName, true);
+    }
+
+    /**
+     * 创建通用索引
+     *
+     * @param collectionName collection name
+     * @param indexParams    index field集合
+     * @param waitIndexFinished true=轮询 describeIndex 直到 Finished 才返回；false=createIndex RPC 成功即返回
+     */
+    public static void createCommonIndex(String collectionName, List<IndexParams> indexParams, String databaseName, boolean waitIndexFinished) {
         log.info("indexParams.size():" + indexParams.size());
         List<IndexParam> indexParamList = new ArrayList<>();
         DescribeCollectionResp describeCollectionResp = milvusClientV2.describeCollection(DescribeCollectionReq.builder().collectionName((collectionName == null || collectionName.equals("")) ? globalCollectionNames.get(globalCollectionNames.size() - 1) : collectionName).build());
@@ -312,6 +323,10 @@ public class CommonFunction {
             createIndexReq.setDatabaseName(databaseName);
         }
         milvusClientV2.createIndex(createIndexReq);
+        if (!waitIndexFinished) {
+            log.info("create index " + indexParamList + " ,waitIndexFinished=false, return without waiting index build");
+            return;
+        }
         // 查询索引是否建完
         List<Boolean> indexStateList = new ArrayList<>(Collections.nCopies(indexParamList.size(), false));
         long startTimeTotal = System.currentTimeMillis();

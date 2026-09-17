@@ -55,7 +55,7 @@ public class DropCollectionComp {
             } else {
                 String collectionName = collectionNames.get(collectionNames.size() - 1);
                 dropCollectionResultList = new ArrayList<>();
-                dropCollectionResultList.add(dropOneCollection(collectionName, dropCollectionParams.getDatabaseName()));
+                dropCollectionResultList.add(dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionParams.isSkipAliasCheck()));
             }
         } else if (dropCollectionParams.isDropAll()) {
             List<String> collectionNames = listCollectionNames(dropCollectionParams.getDatabaseName());
@@ -65,7 +65,7 @@ public class DropCollectionComp {
             String collectionName = (dropCollectionParams.getCollectionName() == null || dropCollectionParams.getCollectionName().equalsIgnoreCase("")) ?
                     globalCollectionNames.get(globalCollectionNames.size() - 1) : dropCollectionParams.getCollectionName();
             dropCollectionResultList = new ArrayList<>();
-            dropCollectionResultList.add(dropOneCollection(collectionName, dropCollectionParams.getDatabaseName()));
+            dropCollectionResultList.add(dropOneCollection(collectionName, dropCollectionParams.getDatabaseName(), dropCollectionParams.isSkipAliasCheck()));
         }
         // assertions
         List<String> assertMessages = new ArrayList<>();
@@ -130,7 +130,7 @@ public class DropCollectionComp {
         if (numConcurrency <= 1 || collectionNames.size() <= 1) {
             List<DropCollectionResult.DropCollectionResultItem> list = new ArrayList<>();
             for (String collectionName : collectionNames) {
-                list.add(dropOneCollection(collectionName, params.getDatabaseName()));
+                list.add(dropOneCollection(collectionName, params.getDatabaseName(), params.isSkipAliasCheck()));
             }
             return list;
         }
@@ -149,7 +149,7 @@ public class DropCollectionComp {
                     int count = 0;
                     int idx;
                     while ((idx = cursor.getAndIncrement()) < collectionNames.size()) {
-                        slotResults[idx] = dropOneCollection(collectionNames.get(idx), params.getDatabaseName());
+                        slotResults[idx] = dropOneCollection(collectionNames.get(idx), params.getDatabaseName(), params.isSkipAliasCheck());
                         count++;
                     }
                     log.info("线程[{}] 完成，共 drop {} 个 collection", Thread.currentThread().getName(), count);
@@ -203,11 +203,13 @@ public class DropCollectionComp {
         return listCollectionsResp.getCollectionNames();
     }
 
-    private static DropCollectionResult.DropCollectionResultItem dropOneCollection(String collectionName, String databaseName) {
+    private static DropCollectionResult.DropCollectionResultItem dropOneCollection(String collectionName, String databaseName, boolean skipAliasCheck) {
         long startTime = System.currentTimeMillis();
         try {
             log.info("线程[" + Thread.currentThread().getName() + "] Drop collection: " + collectionName);
-            dropAliasesForCollection(collectionName, databaseName);
+            if (!skipAliasCheck) {
+                dropAliasesForCollection(collectionName, databaseName);
+            }
             DropCollectionReq dropCollectionReq = DropCollectionReq.builder()
                     .collectionName(collectionName).build();
             if (databaseName != null && !databaseName.equalsIgnoreCase("")) {

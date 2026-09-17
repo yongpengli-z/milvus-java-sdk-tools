@@ -56,4 +56,16 @@ public class DropCollectionParams {
      * 前端默认值：1
      */
     private int numConcurrency = 1;
+
+    /**
+     * 是否跳过 alias 检查（可选，默认 false）。
+     * <p>
+     * false：每个 collection drop 前先 listAliases（有 alias 则先删 alias），
+     * costTime 包含 listAliases + dropCollection 两次 RPC；
+     * true：跳过 alias 检查直接 dropCollection，单次 RPC，
+     * 适合压测 dropCollection 本身的真实延迟/QPS（目标 collection 无 alias 时使用）。
+     * <p>
+     * 前端默认值：false
+     */
+    private boolean skipAliasCheck = false;
 }

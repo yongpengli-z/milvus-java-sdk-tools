@@ -41,7 +41,7 @@ public class CreateIndexComp {
         }
         try {
             long startTimeTotal = System.currentTimeMillis();
-            CommonFunction.createCommonIndex(collectionName, createIndexParams.getIndexParams(), databaseName);
+            CommonFunction.createCommonIndex(collectionName, createIndexParams.getIndexParams(), databaseName, createIndexParams.isWaitIndexFinished());
             long endTimeTotal = System.currentTimeMillis();
             float indexCost = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
             commonResult = CommonResult.builder().result(ResultEnum.SUCCESS.result).build();
@@ -139,7 +139,7 @@ public class CreateIndexComp {
         log.info("线程[" + Thread.currentThread().getName() + "] CreateIndex collection [" + collectionName + "]");
         long startTime = System.currentTimeMillis();
         try {
-            CommonFunction.createCommonIndex(collectionName, params.getIndexParams(), databaseName);
+            CommonFunction.createCommonIndex(collectionName, params.getIndexParams(), databaseName, params.isWaitIndexFinished());
             float costTime = (float) ((System.currentTimeMillis() - startTime) / 1000.00);
             log.info("线程[" + Thread.currentThread().getName() + "] CreateIndex collection [" + collectionName + "] 成功，cost: " + costTime + " s");
             return CreateIndexResult.CreateIndexResultItem.builder()

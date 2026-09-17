@@ -77,4 +77,15 @@ public class CreateIndexParams {
      */
     private int numConcurrency = 1;
 
+    /**
+     * 是否等待索引构建完成（可选，默认 true）。
+     * <p>
+     * true：createIndex RPC 返回后轮询 describeIndex，直到 IndexState == Finished 才返回；
+     * false：createIndex RPC 成功即返回，不等待索引构建完成（异步模式），
+     * 适合压测服务端 createIndex 请求本身的真实处理能力（避免 1s 轮询粒度成为延迟地板）。
+     * <p>
+     * 前端默认值：true
+     */
+    private boolean waitIndexFinished = true;
+
 }
