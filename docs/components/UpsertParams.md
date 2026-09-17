@@ -22,6 +22,8 @@
 | `nullableRatio` | double | 否 | `0.5` | |
 | `partialUpdate` | boolean | 否 | `false` | 是否启用部分更新 |
 | `updateFieldNames` | List | 否 | `[]` | 部分更新的字段名列表（仅 `partialUpdate=true` 时生效） |
+| `pkFromFilter` | String | 否 | `""` | 非空时：upsert 前先按该 filter 查询现有 PK（上限 min(numEntries,16384)），用真实 PK 作为 upsert 主键（不足循环复用）。用于"upsert 已有行"场景（如 autoID PK 保留验证） |
+| `verifyPkPreserved` | boolean | 否 | `false` | 仅 `pkFromFilter` 非空时生效：upsert 后用同一 filter 重查 PK 集合与发送集合双向比对，结果写入 assertMessages |
 | `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
 
 ## targetEndpoint

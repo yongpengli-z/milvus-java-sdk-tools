@@ -16,9 +16,12 @@ import custom.utils.DatasetUtil;
 import custom.utils.PeriodicStatsReporter;
 import custom.utils.RetryLogUtil;
 import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.common.ConsistencyLevel;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
+import io.milvus.v2.service.vector.request.QueryReq;
 import io.milvus.v2.service.vector.request.UpsertReq;
+import io.milvus.v2.service.vector.response.QueryResp;
 import io.milvus.v2.service.vector.response.UpsertResp;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +108,39 @@ public class UpsertComp {
             }
         }
 
+        // pkFromFilter：先按 filter 查询现有 PK，作为 upsert 行的主键来源（验证 autoID upsert PK 保留等场景）
+        final String primaryFieldName = describeCollectionResp.getPrimaryFieldName();
+        List<Object> pkPool = null;
+        if (upsertParams.getPkFromFilter() != null && !upsertParams.getPkFromFilter().isEmpty()) {
+            long pkLimit = Math.max(1, Math.min(upsertParams.getNumEntries(), 16384));
+            QueryResp pkResp = client.query(QueryReq.builder()
+                    .collectionName(collectionName)
+                    .outputFields(Collections.singletonList(primaryFieldName))
+                    .filter(upsertParams.getPkFromFilter())
+                    .consistencyLevel(ConsistencyLevel.STRONG)
+                    .limit(pkLimit)
+                    .build());
+            pkPool = new ArrayList<>();
+            if (pkResp.getQueryResults() != null) {
+                for (QueryResp.QueryResult qr : pkResp.getQueryResults()) {
+                    Object pk = qr.getEntity() == null ? null : qr.getEntity().get(primaryFieldName);
+                    if (pk != null) {
+                        pkPool.add(pk);
+                    }
+                }
+            }
+            log.info("pkFromFilter [{}] 命中 {} 个现有 PK，将作为 upsert 主键来源", upsertParams.getPkFromFilter(), pkPool.size());
+            if (pkPool.isEmpty()) {
+                return UpsertResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.FAIL.result)
+                                .message("pkFromFilter 未查到任何 PK: " + upsertParams.getPkFromFilter()).build())
+                        .assertMessages(Collections.singletonList("[ASSERT FAIL] pkFromFilter 查询无结果: " + upsertParams.getPkFromFilter()))
+                        .build();
+            }
+        }
+        final List<Object> finalPkPool = pkPool;
+
         // 1. 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
         if (upsertParams.getTargetQps() > 0) {
@@ -155,6 +191,18 @@ public class UpsertComp {
                             List<JsonObject> jsonObjects = CommonFunction.genCommonData(upsertParams.getBatchSize(),
                                     (r * upsertParams.getBatchSize() + upsertParams.getStartId()), upsertParams.getGeneralDataRoleList(), upsertParams.getNumEntries(), upsertParams.getStartId(), describeCollectionResp, finalFieldDatasetInfoMap, upsertParams.getLengthFactor(), true,
                                     fieldsToGen, upsertParams.getNullableRatio());
+                            // pkFromFilter 模式：用查到的真实 PK 覆盖生成的主键（全局行号取模循环复用）
+                            if (finalPkPool != null) {
+                                for (int i = 0; i < jsonObjects.size(); i++) {
+                                    Object pk = finalPkPool.get((int) ((r * upsertParams.getBatchSize() + i) % finalPkPool.size()));
+                                    JsonObject row = jsonObjects.get(i);
+                                    if (pk instanceof Number) {
+                                        row.addProperty(primaryFieldName, ((Number) pk).longValue());
+                                    } else {
+                                        row.addProperty(primaryFieldName, String.valueOf(pk));
+                                    }
+                                }
+                            }
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                                 log.info("线程[" + finalC + "]导入数据 " + upsertParams.getBatchSize() + "条，范围: " + (r * upsertParams.getBatchSize() + upsertParams.getStartId()) + "~" + ((r + 1) * upsertParams.getBatchSize() + upsertParams.getStartId()));
                             }
@@ -256,6 +304,47 @@ public class UpsertComp {
         }
         if (totalEntries == 0) {
             assertMessages.add("[ASSERT FAIL] upsert numEntries == 0");
+        }
+        // verifyPkPreserved：upsert 后用同一 filter 重查 PK 集合，与发送集合双向比对（验证 autoID upsert 保留主键）
+        if (pkPool != null && !pkPool.isEmpty() && upsertParams.isVerifyPkPreserved()) {
+            try {
+                Set<String> sentPks = new HashSet<>();
+                int used = (int) Math.min(upsertParams.getNumEntries(), pkPool.size());
+                for (int i = 0; i < used; i++) {
+                    sentPks.add(String.valueOf(pkPool.get(i)));
+                }
+                QueryResp afterResp = client.query(QueryReq.builder()
+                        .collectionName(collectionName)
+                        .outputFields(Collections.singletonList(primaryFieldName))
+                        .filter(upsertParams.getPkFromFilter())
+                        .consistencyLevel(ConsistencyLevel.STRONG)
+                        .limit(16384)
+                        .build());
+                Set<String> afterPks = new HashSet<>();
+                if (afterResp.getQueryResults() != null) {
+                    for (QueryResp.QueryResult qr : afterResp.getQueryResults()) {
+                        Object pk = qr.getEntity() == null ? null : qr.getEntity().get(primaryFieldName);
+                        if (pk != null) {
+                            afterPks.add(String.valueOf(pk));
+                        }
+                    }
+                }
+                Set<String> missing = new TreeSet<>(sentPks);
+                missing.removeAll(afterPks);
+                Set<String> unexpected = new TreeSet<>(afterPks);
+                unexpected.removeAll(sentPks);
+                if (missing.isEmpty() && unexpected.isEmpty()) {
+                    assertMessages.add(String.format("[ASSERT PASS] upsert pkPreserved: %d/%d sent PKs preserved after upsert",
+                            sentPks.size(), sentPks.size()));
+                } else {
+                    assertMessages.add(String.format("[ASSERT FAIL] upsert pkPreserved: %d/%d sent PKs missing, %d unexpected new PKs (missing sample: %s)",
+                            missing.size(), sentPks.size(), unexpected.size(),
+                            missing.stream().limit(10).collect(Collectors.toList())));
+                }
+            } catch (Exception e) {
+                log.error("verifyPkPreserved 查询异常", e);
+                assertMessages.add("[ASSERT FAIL] verifyPkPreserved query error: " + e.getMessage());
+            }
         }
         if (!assertMessages.isEmpty()) {
             log.warn("Upsert assertions: " + assertMessages);

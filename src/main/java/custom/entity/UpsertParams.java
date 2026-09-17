@@ -177,6 +177,30 @@ public class UpsertParams {
     private List<UpdateFieldName> updateFieldNames;
 
     /**
+     * PK 来源过滤表达式（可选）。
+     * <p>
+     * 非空时：upsert 前先按该 filter 查询 collection 现有主键（单次查询上限 min(numEntries, 16384)），
+     * 用查到的真实 PK 作为 upsert 行的主键（行数多于 PK 数时循环复用），用于验证"upsert 已有行"场景
+     * （如 autoID 集合的 PK 保留，PR#53158）。
+     * <p>
+     * 前端：`upsertEdit.vue` -> "PK From Filter"
+     * <p>
+     * 前端默认值：""（空字符串，保持原逻辑：pk 按 startId+countIndex 生成）
+     */
+    private String pkFromFilter;
+
+    /**
+     * upsert 完成后校验发送的 PK 集合是否原样保留（仅 {@link #pkFromFilter} 非空时生效）。
+     * <p>
+     * 用同一 filter 重新查询 PK 集合，与发送集合双向比对（缺失/新增都报），结果写入 assertMessages。
+     * <p>
+     * 前端：`upsertEdit.vue` -> "Verify PK Preserved"
+     * <p>
+     * 前端默认值：false
+     */
+    private boolean verifyPkPreserved;
+
+    /**
      * 目标 endpoint（可选，用于 Global Cluster 场景）。
      * <ul>
      *   <li>"" / null / "primary" — 使用默认 primary client</li>
