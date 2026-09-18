@@ -211,6 +211,15 @@ public class ResourceManagerServiceUtils {
             Map<String, String> header = buildRmProxyUserHeader("modify param");
             String s = HttpClientUtils.doPostJson(url, header, JSONObject.parseObject(body).toJSONString());
             log.info("Modify [" + params + "] response:" + s);
+            // Code=40052: The cluster param no need to modify. 参数已是目标值，视为成功，后续 verify 会再确认
+            try {
+                Integer code = JSONObject.parseObject(s).getInteger("Code");
+                if (code != null && code == 40052) {
+                    log.info("Modify [{}] skipped, param already has desired value (40052)", params.getParamName());
+                    continue;
+                }
+            } catch (Exception ignored) {
+            }
             String error = parseRmError("modify", params.getParamName(), s);
             if (error != null) {
                 errors.add(error);
