@@ -45,13 +45,30 @@ public class ModifyParamsComp {
             }
         }
 
-        // 统一使用新的参数 override API（旧 add/modify 接口已被冻结）
+        // 优先使用新的参数 override API（旧 add/modify 接口在部分环境被冻结）
         List<String> rmErrors = new ArrayList<>();
         List<ModifyParams.Params> allParams = new ArrayList<>();
         allParams.addAll(needModifyParams);
         allParams.addAll(needAddParams);
         if (!allParams.isEmpty()) {
             rmErrors.addAll(ResourceManagerServiceUtils.applyParamOverrides(modifyParams.getInstanceId(), allParams));
+        }
+        if (!rmErrors.isEmpty()) {
+            // override API 失败（如 etcd gateway 不通）时回退 legacy RM add/modify
+            log.warn("[ModifyParams] override API failed, fallback to legacy RM add/modify. override errors: {}", rmErrors);
+            List<String> legacyErrors = new ArrayList<>();
+            if (!needModifyParams.isEmpty()) {
+                legacyErrors.addAll(ResourceManagerServiceUtils.modifyParams(modifyParams.getInstanceId(), needModifyParams));
+            }
+            if (!needAddParams.isEmpty()) {
+                legacyErrors.addAll(ResourceManagerServiceUtils.addParams(modifyParams.getInstanceId(), needAddParams));
+            }
+            if (legacyErrors.isEmpty()) {
+                log.info("[ModifyParams] fallback to legacy RM add/modify succeeded");
+                rmErrors.clear();
+            } else {
+                rmErrors.addAll(legacyErrors);
+            }
         }
         if (!rmErrors.isEmpty()) {
             return ModifyParamsResult.builder()
