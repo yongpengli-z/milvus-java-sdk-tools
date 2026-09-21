@@ -3,7 +3,7 @@ package custom.common;
 import custom.config.EnvEnum;
 
 public enum BackupDatasetEnum {
-    AWS_LAION_768D_1M("aws-laion-768d-1m", "laion_768d_1m", EnvEnum.AWS_WEST, "laion", 768, 1_000_000L, "backup11_6a5e6e322049eb5", "in01-d97eed4bad83877"),
+    AWS_LAION_768D_2_5M("aws-laion-768d-2.5m", "laion_768d_2.5m", EnvEnum.AWS_WEST, "laion", 768, 2_500_000L, "backup11_6a5e6e322049eb5", "in01-d97eed4bad83877"),
     AWS_LAION_768D_8M("aws-laion-768d-8m", "laion_768d_8m", EnvEnum.AWS_WEST, "laion", 768, 8_000_000L, "backup11_9eb2bf7571e5638", "in01-6ac3a6811b1d9f1"),
     AWS_LAION_768D_40M("aws-laion-768d-40m", "laion_768d_40m", EnvEnum.AWS_WEST, "laion", 768, 40_000_000L, "backup11_9668da2c3f00b3a", "in01-1e65192c6585f6e");
 
@@ -30,7 +30,7 @@ public enum BackupDatasetEnum {
     /**
      * 根据 presetName 或枚举常量名查找预置备份（忽略大小写）。
      *
-     * @param name 例如 "aws-laion-768d-1m" 或 "AWS_LAION_768D_1M"
+     * @param name 例如 "aws-laion-768d-2.5m" 或 "AWS_LAION_768D_2_5M"
      * @return 匹配的 BackupDatasetEnum，未找到返回 null
      */
     public static BackupDatasetEnum fromName(String name) {
@@ -49,7 +49,7 @@ public enum BackupDatasetEnum {
      * 根据页面下拉值和当前环境查找预置备份。
      *
      * @param env 当前运行环境
-     * @param selectName 页面下拉值，例如 "laion_768d_1m"
+     * @param selectName 页面下拉值，例如 "laion_768d_2.5m"
      * @return 匹配的 BackupDatasetEnum，未找到返回 null
      */
     public static BackupDatasetEnum findBySelectName(EnvEnum env, String selectName) {

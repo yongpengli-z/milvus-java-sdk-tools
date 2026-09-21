@@ -25,7 +25,7 @@ public class RestoreBackupParams {
      * <p>
      * 页面推荐传环境无关的下拉值，后端会按当前环境从 BackupDatasetEnum 自动解析 backupId。
      * <p>
-     * 示例："laion_768d_1m" 或 "laion_768d_8m"
+     * 示例："laion_768d_2.5m" 或 "laion_768d_8m"
      */
     private String backupPreset;
 
