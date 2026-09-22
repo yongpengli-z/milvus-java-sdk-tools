@@ -31,10 +31,10 @@ public class HelmDeleteInstanceParams {
     /**
      * 是否删除 PVC（持久化存储卷）。
      * <p>
-     * true：同时删除关联的 PVC，彻底清理数据
+     * true：同时删除关联的 PVC（按 release 名匹配，覆盖 minio 等不带 instance 标签的子组件 PVC）
      * false：保留 PVC，数据可恢复
      * <p>
-     * 前端默认值：false
+     * 前端默认值：true
      */
     boolean deletePvcs;
 

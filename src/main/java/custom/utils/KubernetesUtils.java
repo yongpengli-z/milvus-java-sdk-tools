@@ -3,6 +3,7 @@ package custom.utils;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.Config;
@@ -474,6 +475,176 @@ public class KubernetesUtils {
         }
 
         return deletedCount;
+    }
+
+    /**
+     * 判断资源名是否属于指定 Helm release。
+     * <p>
+     * 匹配规则：等于 release 名、以 "<release>-" 开头、或包含 "-<release>-"
+     * （覆盖 etcd PVC 的 data-<release>-etcd-0 形态）。
+     * <p>
+     * 注意：按名称匹配存在前缀碰撞的理论风险（如 release 名 "my-milvus" 会匹配 "my-milvus-2-..."），
+     * 测试环境 release 名通常带随机后缀，可接受。
+     */
+    private static boolean isReleaseResource(String name, String releaseName) {
+        return name != null
+                && (name.equals(releaseName)
+                || name.startsWith(releaseName + "-")
+                || name.contains("-" + releaseName + "-"));
+    }
+
+    /**
+     * 按 release 名删除命名空间下关联的 PVC。
+     * <p>
+     * 相比按标签删除，能覆盖不带 app.kubernetes.io/instance 标签的子组件 PVC（如 minio 子 chart）。
+     *
+     * @param coreApi     CoreV1Api 实例
+     * @param namespace   命名空间
+     * @param releaseName Helm release 名
+     * @return 删除的 PVC 数量
+     */
+    public static int deletePvcsByReleaseName(CoreV1Api coreApi, String namespace, String releaseName) {
+        int deletedCount = 0;
+        try {
+            V1PersistentVolumeClaimList pvcList = coreApi.listNamespacedPersistentVolumeClaim(
+                    namespace,
+                    null, null, null, null, null, null, null, null, null, null);
+            for (V1PersistentVolumeClaim pvc : pvcList.getItems()) {
+                String pvcName = pvc.getMetadata() != null ? pvc.getMetadata().getName() : null;
+                if (!isReleaseResource(pvcName, releaseName)) {
+                    continue;
+                }
+                try {
+                    coreApi.deleteNamespacedPersistentVolumeClaim(
+                            pvcName, namespace, null, null, null, null, null, null);
+                    log.info("Deleted PVC: " + pvcName);
+                    deletedCount++;
+                } catch (ApiException e) {
+                    log.error("Failed to delete PVC: " + pvcName, e);
+                }
+            }
+        } catch (ApiException e) {
+            log.error("Failed to list PVCs", e);
+        }
+        return deletedCount;
+    }
+
+    /**
+     * 按 release 名兜底清理命名空间下的残留资源（Deployment/StatefulSet/Service/Pod/Secret/PVC）。
+     * <p>
+     * 用于 helm install 失败或 release secret 丢失后 helm uninstall 不可用的场景。
+     * 删除顺序无关，级联删除交给 K8s。
+     *
+     * @param coreApi     CoreV1Api 实例
+     * @param appsApi     AppsV1Api 实例
+     * @param namespace   命名空间
+     * @param releaseName Helm release 名
+     * @return 删除的资源总数
+     */
+    public static int deleteResourcesByReleaseName(
+            CoreV1Api coreApi,
+            AppsV1Api appsApi,
+            String namespace,
+            String releaseName) {
+
+        int deleted = 0;
+        try {
+            V1DeploymentList deployments = appsApi.listNamespacedDeployment(
+                    namespace, null, null, null, null, null, null, null, null, null, null);
+            for (V1Deployment d : deployments.getItems()) {
+                String name = d.getMetadata() != null ? d.getMetadata().getName() : null;
+                if (!isReleaseResource(name, releaseName)) {
+                    continue;
+                }
+                try {
+                    appsApi.deleteNamespacedDeployment(name, namespace, null, null, null, null, null, null);
+                    log.info("Deleted Deployment: " + name);
+                    deleted++;
+                } catch (ApiException e) {
+                    log.error("Failed to delete Deployment: " + name, e);
+                }
+            }
+        } catch (ApiException e) {
+            log.error("Failed to list Deployments", e);
+        }
+        try {
+            V1StatefulSetList statefulSets = appsApi.listNamespacedStatefulSet(
+                    namespace, null, null, null, null, null, null, null, null, null, null);
+            for (V1StatefulSet s : statefulSets.getItems()) {
+                String name = s.getMetadata() != null ? s.getMetadata().getName() : null;
+                if (!isReleaseResource(name, releaseName)) {
+                    continue;
+                }
+                try {
+                    appsApi.deleteNamespacedStatefulSet(name, namespace, null, null, null, null, null, null);
+                    log.info("Deleted StatefulSet: " + name);
+                    deleted++;
+                } catch (ApiException e) {
+                    log.error("Failed to delete StatefulSet: " + name, e);
+                }
+            }
+        } catch (ApiException e) {
+            log.error("Failed to list StatefulSets", e);
+        }
+        try {
+            V1ServiceList services = coreApi.listNamespacedService(
+                    namespace, null, null, null, null, null, null, null, null, null, null);
+            for (V1Service svc : services.getItems()) {
+                String name = svc.getMetadata() != null ? svc.getMetadata().getName() : null;
+                if (!isReleaseResource(name, releaseName)) {
+                    continue;
+                }
+                try {
+                    coreApi.deleteNamespacedService(name, namespace, null, null, null, null, null, null);
+                    log.info("Deleted Service: " + name);
+                    deleted++;
+                } catch (ApiException e) {
+                    log.error("Failed to delete Service: " + name, e);
+                }
+            }
+        } catch (ApiException e) {
+            log.error("Failed to list Services", e);
+        }
+        try {
+            V1PodList pods = coreApi.listNamespacedPod(
+                    namespace, null, null, null, null, null, null, null, null, null, null);
+            for (V1Pod pod : pods.getItems()) {
+                String name = pod.getMetadata() != null ? pod.getMetadata().getName() : null;
+                if (!isReleaseResource(name, releaseName)) {
+                    continue;
+                }
+                try {
+                    coreApi.deleteNamespacedPod(name, namespace, null, null, null, null, null, null);
+                    log.info("Deleted Pod: " + name);
+                    deleted++;
+                } catch (ApiException e) {
+                    log.error("Failed to delete Pod: " + name, e);
+                }
+            }
+        } catch (ApiException e) {
+            log.error("Failed to list Pods", e);
+        }
+        try {
+            V1SecretList secrets = coreApi.listNamespacedSecret(
+                    namespace, null, null, null, null, null, null, null, null, null, null);
+            for (V1Secret secret : secrets.getItems()) {
+                String name = secret.getMetadata() != null ? secret.getMetadata().getName() : null;
+                if (!isReleaseResource(name, releaseName)) {
+                    continue;
+                }
+                try {
+                    coreApi.deleteNamespacedSecret(name, namespace, null, null, null, null, null, null);
+                    log.info("Deleted Secret: " + name);
+                    deleted++;
+                } catch (ApiException e) {
+                    log.error("Failed to delete Secret: " + name, e);
+                }
+            }
+        } catch (ApiException e) {
+            log.error("Failed to list Secrets", e);
+        }
+        deleted += deletePvcsByReleaseName(coreApi, namespace, releaseName);
+        return deleted;
     }
 
     /**

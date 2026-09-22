@@ -6,6 +6,7 @@ import custom.entity.result.HelmDeleteInstanceResult;
 import custom.entity.result.ResultEnum;
 import custom.utils.HelmUtils;
 import custom.utils.KubernetesUtils;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,7 +50,7 @@ public class HelmDeleteInstanceComp {
                 }
             }
             if (namespace == null || namespace.isEmpty()) {
-                namespace = "chaos-testing";
+                namespace = "milvus-qtp";
             }
 
             // kubeconfig 路径由 EnvEnum 控制
@@ -59,8 +60,26 @@ public class HelmDeleteInstanceComp {
             // 1. 检查 Release 是否存在
             log.info("Step 1: Checking if release exists...");
             if (!HelmUtils.releaseExists(releaseName, namespace, kubeconfigPath)) {
-                log.warn("Release does not exist: " + releaseName);
-                return buildFailResult("Release does not exist: " + releaseName, startTime, releaseName, false, false);
+                // helm install 失败或 release secret 丢失后 helm uninstall 不可用，按 release 名兜底清理残留资源
+                log.warn("Release does not exist: " + releaseName + ", fallback to delete residual resources by name");
+                CoreV1Api fallbackCoreApi = KubernetesUtils.createCoreV1Api(kubeconfigPath);
+                AppsV1Api fallbackAppsApi = new AppsV1Api();
+                int cleaned = KubernetesUtils.deleteResourcesByReleaseName(fallbackCoreApi, fallbackAppsApi, namespace, releaseName);
+                if (cleaned > 0) {
+                    log.info("Fallback cleanup done, deleted " + cleaned + " residual resources");
+                    return HelmDeleteInstanceResult.builder()
+                            .commonResult(CommonResult.builder()
+                                    .result(ResultEnum.SUCCESS.result)
+                                    .message("Release 不存在，已按 release 名清理 " + cleaned + " 个残留资源")
+                                    .build())
+                            .releaseName(releaseName)
+                            .costSeconds((int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now()))
+                            .pvcsDeleted(true)
+                            .namespaceDeleted(false)
+                            .build();
+                }
+                return buildFailResult("Release does not exist: " + releaseName + "，且未发现同名残留资源",
+                        startTime, releaseName, false, false);
             }
 
             // 2. 卸载 Helm Release
@@ -84,11 +103,10 @@ public class HelmDeleteInstanceComp {
             // 4. 删除 PVC（如果需要）
             if (params.isDeletePvcs()) {
                 log.info("Step 3: Deleting PVCs...");
-                String labelSelector = "app.kubernetes.io/instance=" + releaseName;
-                int deletedCount = KubernetesUtils.deletePvcs(coreApi, namespace, labelSelector);
+                // 按 release 名匹配删除：minio 等子组件的 PVC 不带 app.kubernetes.io/instance 标签，按标签会漏
+                int deletedCount = KubernetesUtils.deletePvcsByReleaseName(coreApi, namespace, releaseName);
                 log.info("Deleted " + deletedCount + " PVCs");
-                pvcsDeleted = deletedCount > 0 || deletedCount == 0; // true if operation completed
-                pvcsDeleted = true;
+                pvcsDeleted = deletedCount > 0;
             }
 
             // 5. 等待资源清理
