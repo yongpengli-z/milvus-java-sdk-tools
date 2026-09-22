@@ -48,6 +48,15 @@ public class HelmCreateInstanceComp {
         String releaseName = params.getReleaseName();
         String imageTag = params.getMilvusImageTag() != null ? params.getMilvusImageTag() : "default";
 
+        // 0. milvusImageTag 必填校验：留空会静默使用 Chart 默认 tag（appVersion），该 tag 在镜像仓库往往不存在，
+        //    导致 Pod ImagePullBackOff，helm install 直到超时（context deadline exceeded）才失败，排查成本高
+        if (params.getMilvusImageTag() == null || params.getMilvusImageTag().isEmpty()) {
+            log.error("milvusImageTag is empty, fail fast");
+            ComponentSchedule.initInstanceStatus(releaseName, "--", imageTag, InstanceStatusEnum.CREATE_FAILED.code);
+            return buildFailResult("milvusImageTag 不能为空：留空会使用 Chart 默认 tag，该 tag 在镜像仓库往往不存在，"
+                    + "导致 Pod ImagePullBackOff、helm install 超时。请填写镜像仓库实际存在的 tag", startTime, releaseName);
+        }
+
         try {
             // 1. 初始化 K8s 客户端
             log.info("Step 1: Initializing Kubernetes client...");
@@ -106,7 +115,8 @@ public class HelmCreateInstanceComp {
             if (!installResult.isSuccess()) {
                 log.error("Helm install failed: " + installResult.getStderr());
                 ComponentSchedule.updateInstanceStatus(releaseName, "--", imageTag, InstanceStatusEnum.CREATE_FAILED.code);
-                return buildFailResult("Helm install failed: " + installResult.getStderr(), startTime, releaseName);
+                return buildFailResult("Helm install failed (image=" + getImageRepositoryFromEnv() + ":" + imageTag + "): "
+                        + installResult.getStderr(), startTime, releaseName);
             }
             log.info("Helm install completed successfully");
 
@@ -719,7 +729,7 @@ public class HelmCreateInstanceComp {
      */
     private static String getImageRepositoryFromEnv() {
         if (envEnum == null) {
-            return "harbor.milvus.io/milvus/milvus";
+            return "harbor.milvus.io/milvusdb/milvus";
         }
         switch (envEnum) {
             case AWS_WEST:
@@ -727,7 +737,8 @@ public class HelmCreateInstanceComp {
             case AZURE_WEST:
                 return "harbor-us-vdc.zilliz.cc/milvusdb/milvus";
             default:
-                return "harbor.milvus.io/milvus/milvus";
+                // harbor.milvus.io 上 milvus 镜像实际路径是 milvusdb/milvus（nightly: 3.0-YYYYMMDD-sha）
+                return "harbor.milvus.io/milvusdb/milvus";
         }
     }
 

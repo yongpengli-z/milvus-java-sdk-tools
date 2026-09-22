@@ -25,7 +25,7 @@
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
 | `milvusMode` | String | 是 | `standalone` | `standalone` 或 `cluster` |
-| `milvusImageTag` | String | 否 | | 镜像 Tag，不填用 Chart 默认 |
+| `milvusImageTag` | String | 是 | | 镜像 Tag，**必填，为空直接报错失败**（不再回退 Chart 默认——默认 tag 在仓库往往不存在会导致 ImagePullBackOff 超时）。fouram 用 nightly tag，如 `3.0-20260922-78d1d720` |
 
 ### 依赖组件（HelmDependencyConfig）
 
@@ -95,7 +95,7 @@ HelmComponentConfig（仅 `cluster` 模式）：`proxyConfig`/`queryNodeConfig`/
 {
   "HelmCreateInstanceParams_0": {
     "namespace": "milvus-qtp", "releaseName": "my-milvus",
-    "milvusMode": "standalone", "milvusImageTag": "v2.5.0",
+    "milvusMode": "standalone", "milvusImageTag": "3.0-20260922-78d1d720",
     "waitTimeoutMinutes": 30
   }
 }
@@ -107,7 +107,7 @@ HelmComponentConfig（仅 `cluster` 模式）：`proxyConfig`/`queryNodeConfig`/
 {
   "HelmCreateInstanceParams_0": {
     "namespace": "milvus-prod", "releaseName": "milvus-cluster",
-    "milvusMode": "cluster", "milvusImageTag": "v2.5.0",
+    "milvusMode": "cluster", "milvusImageTag": "3.0-20260922-78d1d720",
     "deployArchitecture": "default",
     "queryNodeConfig": {"replicas": 3, "cpuRequest": "1", "cpuLimit": "4", "memoryRequest": "2Gi", "memoryLimit": "8Gi"},
     "etcdConfig": {"useExternal": false, "enabled": true, "replicaCount": 3, "storageSize": "10Gi"},
@@ -122,7 +122,7 @@ HelmComponentConfig（仅 `cluster` 模式）：`proxyConfig`/`queryNodeConfig`/
 {
   "HelmCreateInstanceParams_0": {
     "namespace": "milvus-qtp", "releaseName": "milvus-woodpecker",
-    "milvusMode": "cluster", "milvusImageTag": "v2.6.0",
+    "milvusMode": "cluster", "milvusImageTag": "3.0-20260922-78d1d720",
     "woodpeckerConfig": {"enabled": true, "storageType": "minio"},
     "waitTimeoutMinutes": 30
   }

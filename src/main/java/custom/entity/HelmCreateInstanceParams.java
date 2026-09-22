@@ -101,13 +101,14 @@ public class HelmCreateInstanceParams {
     String milvusMode;
 
     /**
-     * Milvus 镜像版本/Tag。
+     * Milvus 镜像版本/Tag（必填，为空直接报错失败）。
      * <p>
-     * 示例值：`v2.4.0`、`v2.3.5`、`v2.5.0`
+     * 注意：留空不再回退 Chart 默认版本——Chart 默认 tag（appVersion）在镜像仓库往往不存在，
+     * 会导致 Pod ImagePullBackOff、helm install 直到超时才失败。
      * <p>
-     * 如果为空，使用 Chart 默认版本。
+     * 示例值（fouram nightly 格式）：`3.0-20260922-78d1d720`；release tag 如 `v2.5.0`（须仓库中存在）
      * <p>
-     * 前端默认值：""（空字符串，使用 Chart 默认）
+     * 前端默认值：""（空字符串，提交前必填）
      */
     String milvusImageTag;
 
