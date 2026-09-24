@@ -83,6 +83,7 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 - **性能测试建议**：添加多个 SearchParams 组件，设置不同 `numConcurrency`（1/5/10/20/50）递增压力。
 - **group-by 搜索**：`groupByField` 非空即启用分组。strict 优化路径（2.6.23+，PR#53306）生效条件：`strictGroupSize=true` + `groupSize>1` + `nq=1`。group-by 时建议 `outputs` 显式包含分组字段以便核对结果。
 - **group-by 下 passRate 口径**：strict 模式（`strictGroupSize=true` 且 `groupSize>1`）每次请求期望返回 `topK*groupSize` 条（topK 为组数），passRate 按此判定；非 strict 分组仍按 `== topK` 判定。
+- **sparse 向量搜索的 passRate 口径**：`annsField` 为 SparseFloatVector（含 BM25 function 输出字段）时自动识别，pass = 请求无异常即成功，不要求返回满 topK（BM25/稀疏搜索返回不满 topK 属正常）；dense 向量仍按"返回条数 == 期望数"判定。最终日志会额外打印 sparse 模式的 avg hit count。
 
 ## JSON 示例
 

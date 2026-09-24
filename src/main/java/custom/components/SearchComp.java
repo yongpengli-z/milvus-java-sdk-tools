@@ -14,6 +14,7 @@ import custom.utils.PeriodicStatsReporter;
 import custom.utils.QueryDatasetUtil;
 import io.milvus.v2.client.RetryConfig;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -74,6 +75,20 @@ public class SearchComp {
                 isUseFunction = true;
                 break;
             }
+        }
+        // 判定 annsField 是否为 sparse 向量（BM25 function 的输出字段也是 SparseFloatVector，天然覆盖）
+        // sparse 搜索返回不满 topK 属正常现象，passRate 口径改为"请求无异常即成功"
+        String annsBaseField = searchParams.getAnnsField();
+        int bracketIdx = annsBaseField.indexOf('[');
+        if (bracketIdx > 0) {
+            annsBaseField = annsBaseField.substring(0, bracketIdx);
+        }
+        final String finalAnnsBaseField = annsBaseField;
+        boolean isSparseField = collectionSchema.getFieldSchemaList().stream()
+                .anyMatch(f -> f.getName().equalsIgnoreCase(finalAnnsBaseField)
+                        && f.getDataType() == DataType.SparseFloatVector);
+        if (isSparseField) {
+            log.info("annsField[{}] 为 SparseFloatVector，passRate 口径：请求无异常即成功（不要求返回满 topK）", searchParams.getAnnsField());
         }
         //先处理search里数据生成的规则，先进行排序处理
         List<GeneralDataRole> generalDataRoleList = null;
@@ -215,7 +230,8 @@ public class SearchComp {
                                 if (searchParams.isIgnoreError()) {
                                     log.error("线程[" + finalC + "] Ignore error, continue search...... ");
                                 }
-                                returnNum.add(0);
+                                // -1 为异常哨兵，与"正常返回但 0 命中"区分（sparse 搜索 0 命中属正常）
+                                returnNum.add(-1);
                                 continue;
                             }
                             long endItemTime = System.currentTimeMillis();
@@ -255,7 +271,9 @@ public class SearchComp {
         }
         long requestNum = 0;
         long successNum = 0;
+        long hitSum = 0;
         // group-by strict 模式下每次请求返回 topK*groupSize 条（topK 为组数，每组严格 groupSize 条）
+        // sparse 向量搜索（如 BM25）返回不满 topK 属正常，pass 口径为"请求无异常即成功"（returnNum 里 -1 为异常哨兵）
         final int expectedPerRequest;
         if (searchParams.getGroupByField() != null && !searchParams.getGroupByField().isEmpty()
                 && searchParams.getGroupSize() > 1 && searchParams.isStrictGroupSize()) {
@@ -270,7 +288,9 @@ public class SearchComp {
             try {
                 SearchResult searchResult = future.get();
                 requestNum += searchResult.getResultNum().size();
-                successNum += searchResult.getResultNum().stream().filter(x -> x == expectedPerRequest).count();
+                successNum += searchResult.getResultNum().stream()
+                        .filter(x -> isSparseField ? x >= 0 : x == expectedPerRequest).count();
+                hitSum += searchResult.getResultNum().stream().filter(x -> x >= 0).mapToInt(Integer::intValue).sum();
                 costTimeTotal.addAll(searchResult.getCostTime());
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
@@ -285,7 +305,9 @@ public class SearchComp {
         long endTimeTotal = System.currentTimeMillis();
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         log.info(
-                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum) + "% (expectedPerRequest=" + expectedPerRequest + ")");
+                "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum)
+                        + (isSparseField ? "% (sparse: 无异常即成功, avg hit count=" + (successNum == 0 ? 0 : String.format("%.1f", (double) hitSum / successNum)) + ")"
+                        : "% (expectedPerRequest=" + expectedPerRequest + ")"));
         log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg(成功请求) :" + successNum / searchTotalTime + " ,RPS avg(含失败) :" + requestNum / searchTotalTime);
         log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:" + MathUtil.calculateTP99(costTimeTotal, 0.99f));
@@ -301,12 +323,13 @@ public class SearchComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] search requestNum == 0, no search was executed");
         }
+        String passDesc = isSparseField
+                ? String.format("%d/%d requests completed without exception (sparse, 返回不满 topK 属正常)", successNum, requestNum)
+                : String.format("%d/%d requests returned expectedCount=%d results", successNum, requestNum, expectedPerRequest);
         if (passRate < 50.0f) {
-            assertMessages.add(String.format("[ASSERT FAIL] search passRate=%.2f%% < 50%%, %d/%d requests returned expectedCount=%d results",
-                    passRate, successNum, requestNum, expectedPerRequest));
+            assertMessages.add(String.format("[ASSERT FAIL] search passRate=%.2f%% < 50%%, %s", passRate, passDesc));
         } else if (passRate < 100.0f) {
-            assertMessages.add(String.format("[ASSERT WARN] search passRate=%.2f%% < 100%%, %d/%d requests returned expectedCount=%d results",
-                    passRate, successNum, requestNum, expectedPerRequest));
+            assertMessages.add(String.format("[ASSERT WARN] search passRate=%.2f%% < 100%%, %s", passRate, passDesc));
         }
         if (requestNum > 0 && successNum / searchTotalTime <= 0) {
             assertMessages.add("[ASSERT FAIL] search RPS <= 0");
@@ -316,7 +339,7 @@ public class SearchComp {
         }
         CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         searchResultA = SearchResultA.builder()
-                // rps 只统计成功请求（返回条数符合预期的），失败请求返回快会虚高 QPS
+                // rps 只统计成功请求（dense：返回条数符合预期；sparse：无异常即成功），失败请求返回快会虚高 QPS
                 .rps(successNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())
                 .costTime(searchTotalTime)

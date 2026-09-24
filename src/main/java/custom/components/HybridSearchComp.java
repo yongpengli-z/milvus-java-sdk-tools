@@ -7,8 +7,6 @@ import custom.entity.HybridSearchParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.HybridSearchResult;
 import custom.entity.result.ResultEnum;
-import custom.exception.CustomException;
-import custom.exception.CustomExceptionCode;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.utils.MathUtil;
@@ -354,14 +352,10 @@ public class HybridSearchComp {
                         log.error("线程[{}] hybridSearch error :{}", finalC, e.getMessage());
                         if (hybridSearchParams.isIgnoreError()) {
                             log.error("线程[{}] Ignore error, continue hybridSearch......", finalC);
-                            returnNum.add(0);
-                            continue;
                         }
-                        if (e instanceof CustomException) {
-                            throw (CustomException) e;
-                        }
-                        throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
-                                "hybridSearch request failed: " + e.getMessage(), e);
+                        // -1 为异常哨兵，与"正常返回但 0 命中"区分（sparse/BM25 子请求 0 命中属正常）
+                        returnNum.add(-1);
+                        continue;
                     }
                     long endItemTime = System.currentTimeMillis();
                     float costTimeItem = (float) ((endItemTime - startItemTime) / 1000.00);
@@ -376,7 +370,8 @@ public class HybridSearchComp {
                     }
                     costTime.add(costTimeItem);
                     statsReporter.recordCostTime(costTimeItem);
-                    returnNum.add(resultSize);
+                    // 记录每个 query 的实际命中数（外层 size=nq 无统计意义）
+                    returnNum.add(hitCount);
 
                     if (System.currentTimeMillis() - lastPrintTime >= 60000) {
                         log.info("线程[{}] 已经 hybridSearch :{}次", finalC, returnNum.size());
@@ -404,6 +399,7 @@ public class HybridSearchComp {
 
         long requestNum = 0;
         long successNum = 0;
+        long hitSum = 0;
         CommonResult commonResult;
         HybridSearchResult hybridSearchResult;
         List<Float> costTimeTotal = new ArrayList<>();
@@ -411,7 +407,10 @@ public class HybridSearchComp {
             try {
                 HybridSearchResultInner result = future.get();
                 requestNum += result.getResultNum().size();
-                successNum += result.getResultNum().stream().filter(x -> x > 0).count();
+                // pass 口径：无异常即成功（-1 为异常哨兵）。hybridSearch 多路融合后不要求返回满 topK，
+                // 含 sparse/BM25 子请求时返回不满 topK 属正常
+                successNum += result.getResultNum().stream().filter(x -> x >= 0).count();
+                hitSum += result.getResultNum().stream().filter(x -> x >= 0).mapToInt(Integer::intValue).sum();
                 if (result.getCostTime() != null) {
                     costTimeTotal.addAll(result.getCostTime());
                 }
@@ -428,8 +427,9 @@ public class HybridSearchComp {
         }
         long endTimeTotal = System.currentTimeMillis();
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
-        log.info("Total hybridSearch {} 次数 ,cost: {} seconds! pass rate:{}%",
-                requestNum, searchTotalTime, (float) (100.0 * successNum / requestNum));
+        log.info("Total hybridSearch {} 次数 ,cost: {} seconds! pass rate:{}% (无异常即成功, avg hit count={})",
+                requestNum, searchTotalTime, (float) (100.0 * successNum / requestNum),
+                successNum == 0 ? 0 : String.format("%.1f", (double) hitSum / successNum));
         log.info("Total 线程数 {} ,RPS avg(成功请求) :{} ,RPS avg(含失败) :{}", hybridSearchParams.getNumConcurrency(), successNum / searchTotalTime, requestNum / searchTotalTime);
         log.info("Avg:{}", MathUtil.calculateAverage(costTimeTotal));
         log.info("TP99:{}", MathUtil.calculateTP99(costTimeTotal, 0.99f));
@@ -447,10 +447,10 @@ public class HybridSearchComp {
             assertMessages.add("[ASSERT FAIL] hybridSearch requestNum == 0, no search was executed");
         }
         if (passRate < 50.0f) {
-            assertMessages.add(String.format("[ASSERT FAIL] hybridSearch passRate=%.2f%% < 50%%, %d/%d requests returned results",
+            assertMessages.add(String.format("[ASSERT FAIL] hybridSearch passRate=%.2f%% < 50%%, %d/%d requests completed without exception",
                     passRate, successNum, requestNum));
         } else if (passRate < 100.0f) {
-            assertMessages.add(String.format("[ASSERT WARN] hybridSearch passRate=%.2f%% < 100%%, %d/%d requests returned results",
+            assertMessages.add(String.format("[ASSERT WARN] hybridSearch passRate=%.2f%% < 100%%, %d/%d requests completed without exception",
                     passRate, successNum, requestNum));
         }
         if (!assertMessages.isEmpty()) {
@@ -458,7 +458,7 @@ public class HybridSearchComp {
         }
         CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         hybridSearchResult = HybridSearchResult.builder()
-                // rps 只统计成功请求（有结果返回的），失败请求返回快会虚高 QPS
+                // rps 只统计成功请求（无异常即成功），失败请求返回快会虚高 QPS
                 .rps(successNum / searchTotalTime)
                 .concurrencyNum(hybridSearchParams.getNumConcurrency())
                 .costTime(searchTotalTime)

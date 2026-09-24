@@ -16,7 +16,7 @@
 
 ## 关键实现细节（踩过的坑）
 
-- **passRate 口径**：SearchComp 的 passRate = "返回结果数 == 期望数 的请求占比"，不是请求成功率。BM25/稀疏搜索返回不满 topK 属正常。期望数：普通 search = topK；group-by strict（groupByField 非空 + groupSize>1 + strictGroupSize=true）= topK*groupSize（topK 是组数，每组严格 groupSize 条）。
+- **passRate 口径**：SearchComp 的 passRate = "返回结果数 == 期望数 的请求占比"，不是请求成功率。期望数：普通 search = topK；group-by strict（groupByField 非空 + groupSize>1 + strictGroupSize=true）= topK*groupSize（topK 是组数，每组严格 groupSize 条）。**例外**：annsField 为 SparseFloatVector（含 BM25 function 输出）时自动识别为稀疏搜索，pass 口径改为"请求无异常即成功"——BM25/稀疏搜索返回不满 topK 属正常，不再拉低 passRate/rps。HybridSearchComp 固定为"无异常即成功"口径（多路融合不要求满 topK），异常记 -1 哨兵并继续跑，不中断组件。
 - **Text 数据类型仅 Milvus 3.0+ 支持**；2.6 实例用 VarChar + maxLength + enableAnalyzer 走 BM25。
 - **云上实例（CreateInstanceParams 创建）所有索引必须 AUTOINDEX**；explicit 索引类型（HNSW 等）仅 Helm/本地环境可用。
 - FieldParams 的 boolean 字段（primaryKey/autoId/partitionKey/nullable/enableMatch/enableAnalyzer）即使 false 也建议显式给。
