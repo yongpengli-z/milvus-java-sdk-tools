@@ -50,7 +50,8 @@ public class UpsertComp {
         if (multiMode) {
             return upsertMulti(upsertParams, fieldDatasetInfoMap);
         }
-        return doUpsertOne(upsertParams, resolveSingleCollectionName(upsertParams), fieldDatasetInfoMap);
+        return doUpsertOne(upsertParams, resolveSingleCollectionName(upsertParams), fieldDatasetInfoMap,
+                Math.max(upsertParams.getNumConcurrency(), 1));
     }
 
     /** 单 collection 模式：按 collectionRule 从池子/显式名解析目标 collection。 */
@@ -97,7 +98,7 @@ public class UpsertComp {
                     int count = 0;
                     int idx;
                     while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
-                        slotResults[idx] = doUpsertOne(upsertParams, targetCollections.get(idx), fieldDatasetInfoMap);
+                        slotResults[idx] = doUpsertOne(upsertParams, targetCollections.get(idx), fieldDatasetInfoMap, 1);
                         count++;
                     }
                     log.info("线程[{}] 完成，共 upsert {} 个 collection", Thread.currentThread().getName(), count);
@@ -153,7 +154,8 @@ public class UpsertComp {
 
     /** 单 collection upsert：把 numEntries 按 batchSize 分批 upsert 到指定 collection。数据集信息由入口统一预加载后传入。 */
     private static UpsertResult doUpsertOne(UpsertParams upsertParams, String collectionName,
-                                            Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap) {
+                                            Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap,
+                                            int perCollectionConcurrency) {
         MilvusClientV2 client = getMilvusClient(upsertParams.getTargetEndpoint());
         log.info("Upsert 使用 endpoint: {}", describeTargetEndpoint(upsertParams.getTargetEndpoint()));
 
@@ -177,7 +179,7 @@ public class UpsertComp {
             log.info("Partial Update enabled, update fields: " + fieldNames);
         }
         long startTimeTotal = System.currentTimeMillis();
-        ExecutorService executorService = Executors.newFixedThreadPool(upsertParams.getNumConcurrency());
+        ExecutorService executorService = Executors.newFixedThreadPool(perCollectionConcurrency);
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
@@ -226,7 +228,7 @@ public class UpsertComp {
         PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("Upsert");
         statsReporter.start();
         Map<String, InsertComp.FieldDatasetInfo> finalFieldDatasetInfoMap = fieldDatasetInfoMap;
-        for (int c = 0; c < upsertParams.getNumConcurrency(); c++) {
+        for (int c = 0; c < perCollectionConcurrency; c++) {
             RateLimiter finalRateLimiter = rateLimiter;
             int finalC = c;
             String finalCollectionName = collectionName;
@@ -239,8 +241,8 @@ public class UpsertComp {
                         int retryCount = 0;
                         long lastPrintTime = System.currentTimeMillis();
                         LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(upsertParams.getRunningMinutes());
-                        for (long r = ((upsertRounds / upsertParams.getNumConcurrency()) * finalC);
-                             r < ((upsertRounds / upsertParams.getNumConcurrency()) * (finalC + 1));
+                        for (long r = upsertRounds * finalC / perCollectionConcurrency;
+                             r < upsertRounds * (finalC + 1) / perCollectionConcurrency;
                              r++) {
                             // 时间和数据量谁先到都结束
                             if (upsertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {

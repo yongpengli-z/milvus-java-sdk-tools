@@ -46,7 +46,8 @@ public class InsertComp {
         if (multiMode) {
             return insertMulti(insertParams, fieldDatasetInfoMap);
         }
-        return doInsertOne(insertParams, resolveSingleCollectionName(insertParams), fieldDatasetInfoMap);
+        return doInsertOne(insertParams, resolveSingleCollectionName(insertParams), fieldDatasetInfoMap,
+                Math.max(insertParams.getNumConcurrency(), 1));
     }
 
     /** 预加载字段级数据集信息（遍历数据集目录 + 统计各文件行数），整个 Insert/Upsert 步骤只执行一次（UpsertComp 复用）。 */
@@ -118,7 +119,7 @@ public class InsertComp {
                     int count = 0;
                     int idx;
                     while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
-                        slotResults[idx] = doInsertOne(insertParams, targetCollections.get(idx), fieldDatasetInfoMap);
+                        slotResults[idx] = doInsertOne(insertParams, targetCollections.get(idx), fieldDatasetInfoMap, 1);
                         count++;
                     }
                     log.info("线程[{}] 完成，共 insert {} 个 collection", Thread.currentThread().getName(), count);
@@ -184,9 +185,11 @@ public class InsertComp {
                 .build();
     }
 
-    /** 单 collection 写入：把 numEntries 按 batchSize 分批写入指定 collection。数据集信息由入口统一预加载后传入。 */
+    /** 单 collection 写入：把 numEntries 按 batchSize 分批写入指定 collection。数据集信息由入口统一预加载后传入。
+     *  perCollectionConcurrency：本 collection 内部并发线程数（单表模式=numConcurrency；多表模式=1，串行写单表，由外层控制 collection 级并发）。 */
     private static InsertResult doInsertOne(InsertParams insertParams, String collectionName,
-                                            Map<String, FieldDatasetInfo> fieldDatasetInfoMap) {
+                                            Map<String, FieldDatasetInfo> fieldDatasetInfoMap,
+                                            int perCollectionConcurrency) {
         MilvusClientV2 client = getMilvusClient(insertParams.getTargetEndpoint());
         log.info("Insert 使用 endpoint: {}", describeTargetEndpoint(insertParams.getTargetEndpoint()));
 
@@ -195,7 +198,7 @@ public class InsertComp {
         float insertTotalTime;
         log.info("Insert collection [" + collectionName + "]  from id:" + insertParams.getStartId() + "total insert " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
-        ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
+        ExecutorService executorService = Executors.newFixedThreadPool(perCollectionConcurrency);
         ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
@@ -211,7 +214,7 @@ public class InsertComp {
         PeriodicStatsReporter statsReporter = new PeriodicStatsReporter("Insert");
         statsReporter.start();
         Map<String, FieldDatasetInfo> finalFieldDatasetInfoMap = fieldDatasetInfoMap;
-        for (int c = 0; c < insertParams.getNumConcurrency(); c++) {
+        for (int c = 0; c < perCollectionConcurrency; c++) {
             RateLimiter finalRateLimiter = rateLimiter;
             int finalC = c;
             String finalCollectionName = collectionName;
@@ -224,8 +227,8 @@ public class InsertComp {
                         int retryCount = 0;
                         long lastPrintTime = System.currentTimeMillis();
                         LocalDateTime endRunningTime = LocalDateTime.now().plusMinutes(insertParams.getRunningMinutes());
-                        for (long r = (insertRounds / insertParams.getNumConcurrency()) * finalC;
-                             r < (insertRounds / insertParams.getNumConcurrency()) * (finalC + 1);
+                        for (long r = insertRounds * finalC / perCollectionConcurrency;
+                             r < insertRounds * (finalC + 1) / perCollectionConcurrency;
                              r++) {
                             // 时间和数据量谁先到都结束
                             if (insertParams.getRunningMinutes() > 0L && LocalDateTime.now().isAfter(endRunningTime)) {
