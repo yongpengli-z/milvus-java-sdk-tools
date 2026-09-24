@@ -14,4 +14,8 @@ public class UpsertResult {
     long requestNum;
     double rps;
     List<String> assertMessages;
+    long totalCount;
+    long successCount;
+    long failCount;
+    boolean truncated;
 }

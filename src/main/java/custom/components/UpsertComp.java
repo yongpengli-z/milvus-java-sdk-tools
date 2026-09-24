@@ -29,19 +29,32 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static custom.BaseTest.*;
 
 @Slf4j
 public class UpsertComp {
-    public static UpsertResult upsertCollection(UpsertParams upsertParams) {
-        MilvusClientV2 client = getMilvusClient(upsertParams.getTargetEndpoint());
-        log.info("Upsert 使用 endpoint: {}", describeTargetEndpoint(upsertParams.getTargetEndpoint()));
 
-        // 先search collection
-        // 判断collection获取规则
-        String collectionName = "";
+    /**
+     * 入口：判断单 collection / 多 collection 模式。
+     * 设置 collectionNamePrefix（非空）或 collectionRangeStart（>=0）时进入多 collection 模式：
+     * 对 globalCollectionNames 池子按前缀+区间过滤后，**每个** collection 各 upsert numEntries 条。
+     */
+    public static UpsertResult upsertCollection(UpsertParams upsertParams) {
+        boolean multiMode = (upsertParams.getCollectionNamePrefix() != null
+                && !upsertParams.getCollectionNamePrefix().equalsIgnoreCase(""))
+                || upsertParams.getCollectionRangeStart() >= 0;
+        if (multiMode) {
+            return upsertMulti(upsertParams);
+        }
+        return doUpsertOne(upsertParams, resolveSingleCollectionName(upsertParams));
+    }
+
+    /** 单 collection 模式：按 collectionRule 从池子/显式名解析目标 collection。 */
+    private static String resolveSingleCollectionName(UpsertParams upsertParams) {
+        String collectionName;
         Random random = new Random();
         if (upsertParams.getCollectionRule() == null || upsertParams.getCollectionRule().equalsIgnoreCase("")) {
             collectionName = (upsertParams.getCollectionName() == null ||
@@ -58,7 +71,88 @@ public class UpsertComp {
                     upsertParams.getCollectionName().equalsIgnoreCase(""))
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : upsertParams.getCollectionName();
         }
+        return collectionName;
+    }
 
+    /** 多 collection 模式：并发（numConcurrency=并发 collection 数）对每个命中 collection upsert numEntries 条。 */
+    private static UpsertResult upsertMulti(UpsertParams upsertParams) {
+        List<String> targetCollections = CommonFunction.filterCollectionPool(globalCollectionNames,
+                upsertParams.getCollectionNamePrefix(), upsertParams.getCollectionRangeStart(), upsertParams.getCollectionRangeEnd());
+        int numConcurrency = Math.max(upsertParams.getNumConcurrency(), 1);
+        log.info("Upsert 多 collection 模式：共 {} 个 collection，并发 collection 数 {}，每个 upsert {} 条",
+                targetCollections.size(), Math.min(numConcurrency, targetCollections.size()), upsertParams.getNumEntries());
+
+        long startTimeTotal = System.currentTimeMillis();
+        UpsertResult[] slotResults = new UpsertResult[targetCollections.size()];
+        int workers = Math.min(numConcurrency, targetCollections.size());
+        AtomicInteger cursor = new AtomicInteger(0);
+        AtomicInteger threadIndex = new AtomicInteger(0);
+        ExecutorService executorService = Executors.newFixedThreadPool(workers,
+                runnable -> new Thread(runnable, "upsert-multi-worker-" + threadIndex.getAndIncrement()));
+        try {
+            for (int i = 0; i < workers; i++) {
+                executorService.submit(() -> {
+                    int count = 0;
+                    int idx;
+                    while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
+                        slotResults[idx] = doUpsertOne(upsertParams, targetCollections.get(idx));
+                        count++;
+                    }
+                    log.info("线程[{}] 完成，共 upsert {} 个 collection", Thread.currentThread().getName(), count);
+                });
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(6, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Upsert 多 collection 并发执行被中断: {}", e.getMessage());
+        } finally {
+            executorService.shutdownNow();
+        }
+        float totalCostTime = (float) ((System.currentTimeMillis() - startTimeTotal) / 1000.00);
+
+        long success = 0, fail = 0, totalEntries = 0;
+        List<String> assertMessages = new ArrayList<>();
+        for (int i = 0; i < targetCollections.size(); i++) {
+            UpsertResult r = slotResults[i];
+            String cn = targetCollections.get(i);
+            if (r == null || r.getCommonResult() == null
+                    || !ResultEnum.SUCCESS.result.equals(r.getCommonResult().getResult())) {
+                fail++;
+                String msg = (r != null && r.getCommonResult() != null) ? r.getCommonResult().getMessage() : "upsert not executed (interrupted)";
+                assertMessages.add("[ASSERT FAIL] upsert [" + cn + "] failed: " + msg);
+                continue;
+            }
+            success++;
+            totalEntries += r.getNumEntries();
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Upsert(multi) assertions: " + assertMessages);
+        }
+        CommonResult commonResult = CommonResult.builder()
+                .result(fail == 0 ? ResultEnum.SUCCESS.result
+                        : (success == 0 ? ResultEnum.FAIL.result : ResultEnum.WARNING.result))
+                .message(fail == 0 ? "" : fail + "/" + targetCollections.size() + " collections upsert failed")
+                .build();
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
+        return UpsertResult.builder()
+                .commonResult(commonResult)
+                .numEntries(totalEntries)
+                .requestNum(success)
+                .costTime(totalCostTime)
+                .rps(totalCostTime > 0 ? totalEntries / (double) totalCostTime : 0d)
+                .assertMessages(assertMessages)
+                .totalCount(targetCollections.size())
+                .successCount(success)
+                .failCount(fail)
+                .truncated(false)
+                .build();
+    }
+
+    /** 单 collection upsert：把 numEntries 按 batchSize 分批 upsert 到指定 collection。 */
+    private static UpsertResult doUpsertOne(UpsertParams upsertParams, String collectionName) {
+        MilvusClientV2 client = getMilvusClient(upsertParams.getTargetEndpoint());
+        log.info("Upsert 使用 endpoint: {}", describeTargetEndpoint(upsertParams.getTargetEndpoint()));
 
         //先处理upsert里数据生成的规则，先进行排序处理
         if (upsertParams.getGeneralDataRoleList() != null && upsertParams.getGeneralDataRoleList().size() > 0) {
@@ -70,7 +164,7 @@ public class UpsertComp {
         // 要循环upsert的次数--insertRounds
         long upsertRounds = upsertParams.getNumEntries() / upsertParams.getBatchSize();
         float upsertTotalTime = 0;
-        log.info("Upsert collection [" + upsertParams.getCollectionName() + "]  from id:" + upsertParams.getStartId() + " , total " + upsertParams.getNumEntries() + " entities... ");
+        log.info("Upsert collection [" + collectionName + "]  from id:" + upsertParams.getStartId() + " , total " + upsertParams.getNumEntries() + " entities... ");
         if (upsertParams.isPartialUpdate()) {
             List<String> fieldNames = upsertParams.getUpdateFieldNames() == null ? Collections.emptyList()
                     : upsertParams.getUpdateFieldNames().stream()
