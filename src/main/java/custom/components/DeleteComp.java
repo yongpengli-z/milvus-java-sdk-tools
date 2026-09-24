@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static custom.BaseTest.*;
 
@@ -34,6 +35,13 @@ import static custom.BaseTest.*;
 @Slf4j
 public class DeleteComp {
     public static DeleteResult delete(DeleteParams deleteParams) {
+        boolean multiMode = (deleteParams.getCollectionNamePrefix() != null
+                && !deleteParams.getCollectionNamePrefix().equalsIgnoreCase(""))
+                || deleteParams.getCollectionRangeStart() >= 0;
+        if (multiMode) {
+            return deleteMulti(deleteParams);
+        }
+
         MilvusClientV2 client = getMilvusClient(deleteParams.getTargetEndpoint());
         log.info("Delete 使用 endpoint: {}", describeTargetEndpoint(deleteParams.getTargetEndpoint()));
 
@@ -47,6 +55,85 @@ public class DeleteComp {
 
         // 并发持续删除模式：每轮先 query 出 PK，再按 PK 删除
         return deleteConcurrent(client, deleteParams, collection);
+    }
+
+    /**
+     * 多 collection 模式：对池子中命中的每个 collection 各执行一次单发删除（按 ids/filter）；
+     * numConcurrency 语义为「并发 collection 数」。
+     */
+    private static DeleteResult deleteMulti(DeleteParams deleteParams) {
+        List<String> targetCollections = CommonFunction.filterCollectionPool(globalCollectionNames,
+                deleteParams.getCollectionNamePrefix(), deleteParams.getCollectionRangeStart(), deleteParams.getCollectionRangeEnd());
+        MilvusClientV2 client = getMilvusClient(deleteParams.getTargetEndpoint());
+        int numConcurrency = Math.max(deleteParams.getNumConcurrency(), 1);
+        int workers = Math.min(numConcurrency, targetCollections.size());
+        log.info("Delete 多 collection 模式：共 {} 个 collection，并发 collection 数 {}，每个单发删除",
+                targetCollections.size(), workers);
+
+        long startTimeTotal = System.currentTimeMillis();
+        DeleteResult[] slotResults = new DeleteResult[targetCollections.size()];
+        AtomicInteger cursor = new AtomicInteger(0);
+        AtomicInteger threadIndex = new AtomicInteger(0);
+        ExecutorService executorService = Executors.newFixedThreadPool(workers,
+                runnable -> new Thread(runnable, "delete-multi-worker-" + threadIndex.getAndIncrement()));
+        try {
+            for (int i = 0; i < workers; i++) {
+                executorService.submit(() -> {
+                    int idx;
+                    while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
+                        slotResults[idx] = deleteSingle(client, deleteParams, targetCollections.get(idx));
+                    }
+                });
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(6, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Delete 多 collection 并发执行被中断: {}", e.getMessage());
+        } finally {
+            executorService.shutdownNow();
+        }
+        float totalCostTime = (float) ((System.currentTimeMillis() - startTimeTotal) / 1000.00);
+
+        long success = 0, fail = 0, totalDeleted = 0;
+        List<String> assertMessages = new ArrayList<>();
+        for (int i = 0; i < targetCollections.size(); i++) {
+            DeleteResult r = slotResults[i];
+            String cn = targetCollections.get(i);
+            if (r == null || r.getCommonResult() == null
+                    || !ResultEnum.SUCCESS.result.equals(r.getCommonResult().getResult())) {
+                fail++;
+                String msg = (r != null && r.getCommonResult() != null) ? r.getCommonResult().getMessage() : "delete not executed (interrupted)";
+                assertMessages.add("[ASSERT FAIL] delete [" + cn + "] failed: " + msg);
+                continue;
+            }
+            success++;
+            totalDeleted += (r.getDeletedCount() == null ? 0L : r.getDeletedCount());
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Delete(multi) assertions: " + assertMessages);
+        }
+        double passRate = targetCollections.isEmpty() ? 0 : 100.0 * success / targetCollections.size();
+        CommonResult commonResult = CommonResult.builder()
+                .result(fail == 0 ? ResultEnum.SUCCESS.result
+                        : (success == 0 ? ResultEnum.FAIL.result : ResultEnum.WARNING.result))
+                .message(fail == 0 ? "" : fail + "/" + targetCollections.size() + " collections delete failed")
+                .build();
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
+        return DeleteResult.builder()
+                .deletedCount(totalDeleted)
+                .concurrencyNum(workers)
+                .costTime(totalCostTime)
+                .rps(totalCostTime > 0 ? (float) (success / (double) totalCostTime) : 0f)
+                .requestNum(success)
+                .passRate(passRate)
+                .commonResult(commonResult)
+                .assertMessages(assertMessages)
+                .totalCount(targetCollections.size())
+                .successCount(success)
+                .failCount(fail)
+                .truncated(false)
+                .build();
     }
 
     /**

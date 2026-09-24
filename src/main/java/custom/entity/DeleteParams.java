@@ -23,6 +23,30 @@ public class DeleteParams {
     String collectionName;
 
     /**
+     * Collection 名称前缀过滤（可选）。
+     * <p>
+     * 非空时进入「多 collection 模式」：对 globalCollectionNames 池子按前缀过滤后，
+     * 逐个 collection 各执行一次删除（按 ids/filter，等价单次删除）；
+     * 与 {@link #collectionRangeStart}/{@link #collectionRangeEnd} 可叠加（先前缀、再区间过滤）。
+     * <p>
+     * 前端默认值：""
+     */
+    String collectionNamePrefix;
+
+    /**
+     * Collection 区间起始（可选，默认 -1 不启用）。
+     * >=0 时进入多 collection 区间模式。若前缀命中的名称是 前缀+纯数字后缀，按后缀数值过滤 [rangeStart, rangeEnd)，
+     * 前导零不影响；否则按名称排序后取下标切片。
+     */
+    int collectionRangeStart = -1;
+
+    /**
+     * Collection 区间结束（开区间，可选，默认 -1）。
+     * <=0 表示不限制上界/取到末尾。
+     */
+    int collectionRangeEnd = -1;
+
+    /**
      * 要删除的主键 ID 列表（可选）。
      * <p>
      * 前端：`deleteEdit.vue` -> "IDs"（逗号分隔输入）
