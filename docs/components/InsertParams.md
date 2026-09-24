@@ -36,6 +36,7 @@
 - 此模式下 `collectionRule`/`collectionName` 被忽略。
 - `numConcurrency` 语义变为**并发 collection 数**（每个 collection 内部按 `batchSize` 串行写）。
 - 返回结果为聚合值：`totalCount`/`successCount`/`failCount`，`numEntries` 为所有 collection 写入总量，`rps` 按整体耗时计算。
+- 数据集信息（`fieldDataSourceList` 对应的数据集目录遍历与文件行数统计）在整个 Insert 步骤只预加载一次，所有 collection 共用同一套数据集，不会逐 collection 重复检查。
 
 典型用途：`new_col_15k_` 前缀 + 区间切分，将 10w 个 collection 的灌数任务分片到多个 task 并行执行。
 

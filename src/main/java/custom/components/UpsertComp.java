@@ -3,16 +3,13 @@ package custom.components;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonObject;
 import custom.common.CommonFunction;
-import custom.common.DatasetEnum;
 import custom.entity.UpsertParams;
 import custom.entity.result.CommonResult;
 import custom.entity.result.ResultEnum;
 import custom.entity.result.UpsertResult;
-import custom.pojo.FieldDataSource;
 import custom.pojo.GeneralDataRole;
 import custom.pojo.RandomRangeParams;
 import custom.pojo.UpdateFieldName;
-import custom.utils.DatasetUtil;
 import custom.utils.PeriodicStatsReporter;
 import custom.utils.RetryLogUtil;
 import io.milvus.v2.client.MilvusClientV2;
@@ -46,10 +43,14 @@ public class UpsertComp {
         boolean multiMode = (upsertParams.getCollectionNamePrefix() != null
                 && !upsertParams.getCollectionNamePrefix().equalsIgnoreCase(""))
                 || upsertParams.getCollectionRangeStart() >= 0;
+        // 数据集信息只依赖 fieldDataSourceList，与 collection 无关：整个 Upsert 步骤只预加载一次，
+        // 多 collection 模式下所有 collection 共用同一套数据集，避免逐 collection 重复遍历检查数据集文件
+        Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap =
+                InsertComp.preloadFieldDatasetInfo(upsertParams.getFieldDataSourceList());
         if (multiMode) {
-            return upsertMulti(upsertParams);
+            return upsertMulti(upsertParams, fieldDatasetInfoMap);
         }
-        return doUpsertOne(upsertParams, resolveSingleCollectionName(upsertParams));
+        return doUpsertOne(upsertParams, resolveSingleCollectionName(upsertParams), fieldDatasetInfoMap);
     }
 
     /** 单 collection 模式：按 collectionRule 从池子/显式名解析目标 collection。 */
@@ -75,7 +76,8 @@ public class UpsertComp {
     }
 
     /** 多 collection 模式：并发（numConcurrency=并发 collection 数）对每个命中 collection upsert numEntries 条。 */
-    private static UpsertResult upsertMulti(UpsertParams upsertParams) {
+    private static UpsertResult upsertMulti(UpsertParams upsertParams,
+                                            Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap) {
         List<String> targetCollections = CommonFunction.filterCollectionPool(globalCollectionNames,
                 upsertParams.getCollectionNamePrefix(), upsertParams.getCollectionRangeStart(), upsertParams.getCollectionRangeEnd());
         int numConcurrency = Math.max(upsertParams.getNumConcurrency(), 1);
@@ -95,7 +97,7 @@ public class UpsertComp {
                     int count = 0;
                     int idx;
                     while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
-                        slotResults[idx] = doUpsertOne(upsertParams, targetCollections.get(idx));
+                        slotResults[idx] = doUpsertOne(upsertParams, targetCollections.get(idx), fieldDatasetInfoMap);
                         count++;
                     }
                     log.info("线程[{}] 完成，共 upsert {} 个 collection", Thread.currentThread().getName(), count);
@@ -149,8 +151,9 @@ public class UpsertComp {
                 .build();
     }
 
-    /** 单 collection upsert：把 numEntries 按 batchSize 分批 upsert 到指定 collection。 */
-    private static UpsertResult doUpsertOne(UpsertParams upsertParams, String collectionName) {
+    /** 单 collection upsert：把 numEntries 按 batchSize 分批 upsert 到指定 collection。数据集信息由入口统一预加载后传入。 */
+    private static UpsertResult doUpsertOne(UpsertParams upsertParams, String collectionName,
+                                            Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap) {
         MilvusClientV2 client = getMilvusClient(upsertParams.getTargetEndpoint());
         log.info("Upsert 使用 endpoint: {}", describeTargetEndpoint(upsertParams.getTargetEndpoint()));
 
@@ -178,29 +181,6 @@ public class UpsertComp {
         ArrayList<Future<UpsertComp.UpsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
-
-        // 预加载字段级数据集信息
-        Map<String, InsertComp.FieldDatasetInfo> fieldDatasetInfoMap = new HashMap<>();
-        if (upsertParams.getFieldDataSourceList() != null) {
-            for (FieldDataSource fds : upsertParams.getFieldDataSourceList()) {
-                if (fds.getFieldName() == null || fds.getFieldName().isEmpty()
-                        || fds.getDataset() == null || fds.getDataset().isEmpty()) {
-                    continue;
-                }
-                DatasetEnum fieldDatasetEnum = resolveDatasetEnum(fds.getDataset());
-                if (fieldDatasetEnum == null) {
-                    log.error("字段[{}]配置的数据集名称[{}]无效，跳过", fds.getFieldName(), fds.getDataset());
-                    continue;
-                }
-                List<String> fieldFileNames = DatasetUtil.providerFileNames(fieldDatasetEnum);
-                List<Long> fieldFileSizeList = DatasetUtil.providerFileSize(fieldFileNames, fieldDatasetEnum);
-                fieldDatasetInfoMap.put(fds.getFieldName(),
-                        new InsertComp.FieldDatasetInfo(fieldDatasetEnum, fieldFileNames, fieldFileSizeList));
-                log.info("字段[{}]使用数据集[{}]，文件数量：{}，总行数：{}",
-                        fds.getFieldName(), fds.getDataset(), fieldFileNames.size(),
-                        fieldFileSizeList.stream().mapToLong(Long::longValue).sum());
-            }
-        }
 
         // pkFromFilter：先按 filter 查询现有 PK，作为 upsert 行的主键来源（验证 autoID upsert PK 保留等场景）
         final String primaryFieldName = describeCollectionResp.getPrimaryFieldName();
@@ -455,10 +435,6 @@ public class UpsertComp {
         statsReporter.stop();
         executorService.shutdown();
         return upsertResult;
-    }
-
-    private static DatasetEnum resolveDatasetEnum(String datasetName) {
-        return DatasetEnum.fromName(datasetName);
     }
 
     @Data

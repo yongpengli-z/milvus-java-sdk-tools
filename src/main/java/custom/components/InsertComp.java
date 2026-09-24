@@ -40,10 +40,39 @@ public class InsertComp {
         boolean multiMode = (insertParams.getCollectionNamePrefix() != null
                 && !insertParams.getCollectionNamePrefix().equalsIgnoreCase(""))
                 || insertParams.getCollectionRangeStart() >= 0;
+        // 数据集信息只依赖 fieldDataSourceList，与 collection 无关：整个 Insert 步骤只预加载一次，
+        // 多 collection 模式下所有 collection 共用同一套数据集，避免逐 collection 重复遍历检查数据集文件
+        Map<String, FieldDatasetInfo> fieldDatasetInfoMap = preloadFieldDatasetInfo(insertParams.getFieldDataSourceList());
         if (multiMode) {
-            return insertMulti(insertParams);
+            return insertMulti(insertParams, fieldDatasetInfoMap);
         }
-        return doInsertOne(insertParams, resolveSingleCollectionName(insertParams));
+        return doInsertOne(insertParams, resolveSingleCollectionName(insertParams), fieldDatasetInfoMap);
+    }
+
+    /** 预加载字段级数据集信息（遍历数据集目录 + 统计各文件行数），整个 Insert/Upsert 步骤只执行一次（UpsertComp 复用）。 */
+    public static Map<String, FieldDatasetInfo> preloadFieldDatasetInfo(List<FieldDataSource> fieldDataSourceList) {
+        Map<String, FieldDatasetInfo> fieldDatasetInfoMap = new HashMap<>();
+        if (fieldDataSourceList != null) {
+            for (FieldDataSource fds : fieldDataSourceList) {
+                if (fds.getFieldName() == null || fds.getFieldName().isEmpty()
+                        || fds.getDataset() == null || fds.getDataset().isEmpty()) {
+                    continue;
+                }
+                DatasetEnum fieldDatasetEnum = resolveDatasetEnum(fds.getDataset());
+                if (fieldDatasetEnum == null) {
+                    log.error("字段[{}]配置的数据集名称[{}]无效，跳过", fds.getFieldName(), fds.getDataset());
+                    continue;
+                }
+                List<String> fieldFileNames = DatasetUtil.providerFileNames(fieldDatasetEnum);
+                List<Long> fieldFileSizeList = DatasetUtil.providerFileSize(fieldFileNames, fieldDatasetEnum);
+                fieldDatasetInfoMap.put(fds.getFieldName(),
+                        new FieldDatasetInfo(fieldDatasetEnum, fieldFileNames, fieldFileSizeList));
+                log.info("字段[{}]使用数据集[{}]，文件数量：{}，总行数：{}",
+                        fds.getFieldName(), fds.getDataset(), fieldFileNames.size(),
+                        fieldFileSizeList.stream().mapToLong(Long::longValue).sum());
+            }
+        }
+        return fieldDatasetInfoMap;
     }
 
     /** 单 collection 模式：按 collectionRule 从池子/显式名解析目标 collection。 */
@@ -69,7 +98,7 @@ public class InsertComp {
     }
 
     /** 多 collection 模式：并发（numConcurrency=并发 collection 数）对每个命中 collection 写入 numEntries 条。 */
-    private static InsertResult insertMulti(InsertParams insertParams) {
+    private static InsertResult insertMulti(InsertParams insertParams, Map<String, FieldDatasetInfo> fieldDatasetInfoMap) {
         List<String> targetCollections = CommonFunction.filterCollectionPool(globalCollectionNames,
                 insertParams.getCollectionNamePrefix(), insertParams.getCollectionRangeStart(), insertParams.getCollectionRangeEnd());
         int numConcurrency = Math.max(insertParams.getNumConcurrency(), 1);
@@ -89,7 +118,7 @@ public class InsertComp {
                     int count = 0;
                     int idx;
                     while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
-                        slotResults[idx] = doInsertOne(insertParams, targetCollections.get(idx));
+                        slotResults[idx] = doInsertOne(insertParams, targetCollections.get(idx), fieldDatasetInfoMap);
                         count++;
                     }
                     log.info("线程[{}] 完成，共 insert {} 个 collection", Thread.currentThread().getName(), count);
@@ -155,8 +184,9 @@ public class InsertComp {
                 .build();
     }
 
-    /** 单 collection 写入：把 numEntries 按 batchSize 分批写入指定 collection。 */
-    private static InsertResult doInsertOne(InsertParams insertParams, String collectionName) {
+    /** 单 collection 写入：把 numEntries 按 batchSize 分批写入指定 collection。数据集信息由入口统一预加载后传入。 */
+    private static InsertResult doInsertOne(InsertParams insertParams, String collectionName,
+                                            Map<String, FieldDatasetInfo> fieldDatasetInfoMap) {
         MilvusClientV2 client = getMilvusClient(insertParams.getTargetEndpoint());
         log.info("Insert 使用 endpoint: {}", describeTargetEndpoint(insertParams.getTargetEndpoint()));
 
@@ -169,29 +199,6 @@ public class InsertComp {
         ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
-
-        // 预加载字段级数据集信息
-        Map<String, FieldDatasetInfo> fieldDatasetInfoMap = new HashMap<>();
-        if (insertParams.getFieldDataSourceList() != null) {
-            for (FieldDataSource fds : insertParams.getFieldDataSourceList()) {
-                if (fds.getFieldName() == null || fds.getFieldName().isEmpty()
-                        || fds.getDataset() == null || fds.getDataset().isEmpty()) {
-                    continue;
-                }
-                DatasetEnum fieldDatasetEnum = resolveDatasetEnum(fds.getDataset());
-                if (fieldDatasetEnum == null) {
-                    log.error("字段[{}]配置的数据集名称[{}]无效，跳过", fds.getFieldName(), fds.getDataset());
-                    continue;
-                }
-                List<String> fieldFileNames = DatasetUtil.providerFileNames(fieldDatasetEnum);
-                List<Long> fieldFileSizeList = DatasetUtil.providerFileSize(fieldFileNames, fieldDatasetEnum);
-                fieldDatasetInfoMap.put(fds.getFieldName(),
-                        new FieldDatasetInfo(fieldDatasetEnum, fieldFileNames, fieldFileSizeList));
-                log.info("字段[{}]使用数据集[{}]，文件数量：{}，总行数：{}",
-                        fds.getFieldName(), fds.getDataset(), fieldFileNames.size(),
-                        fieldFileSizeList.stream().mapToLong(Long::longValue).sum());
-            }
-        }
 
         // 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;

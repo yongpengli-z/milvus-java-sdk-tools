@@ -40,6 +40,7 @@
 - `numConcurrency` 语义变为**并发 collection 数**（每个 collection 内部按 `batchSize` 串行）。
 - `pkFromFilter`/`verifyPkPreserved`/`partialUpdate` 等仍按**每个 collection** 独立生效。
 - 返回结果为聚合值：`totalCount`/`successCount`/`failCount`，`numEntries` 为所有 collection 写入总量。
+- 数据集信息（`fieldDataSourceList` 对应的数据集目录遍历与文件行数统计）在整个 Upsert 步骤只预加载一次，所有 collection 共用同一套数据集，不会逐 collection 重复检查。
 
 ```json
 {
