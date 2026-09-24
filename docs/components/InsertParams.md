@@ -8,6 +8,9 @@
 |------|------|:----:|--------|------|
 | `collectionName` | String | 否 | `""` | |
 | `collectionRule` | String | 是 | `""` | `random`/`sequence`/空 |
+| `collectionNamePrefix` | String | 否 | `""` | 非空时进入**多 collection 模式**：对池子中前缀命中的**每个** collection 各写入 `numEntries` 条 |
+| `collectionRangeStart` | int | 否 | `-1` | 区间起始（`>=0` 启用多 collection 模式）。数字后缀按后缀数值；否则按名称排序后下标切片 |
+| `collectionRangeEnd` | int | 否 | `-1` | 区间结束（开区间，`<=0` 表示到末尾） |
 | `partitionName` | String | 否 | `""` | |
 | `startId` | long | 是 | `0` | 起始 ID |
 | `numEntries` | long | 是 | `1500000` | 总写入量 |
@@ -22,6 +25,30 @@
 | `lengthFactor` | double | 否 | `0` | 随机长度系数 0~1。>0 时长度固定为 `maxLength * lengthFactor` |
 | `nullableRatio` | double | 否 | `0.5` | nullable 字段的 null 值比例 0~1 |
 | `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
+
+## 多 collection 模式
+
+设置 `collectionNamePrefix`（非空）或 `collectionRangeStart`（`>=0`）即进入多 collection 模式：
+
+- 目标集合 = 对 `globalCollectionNames` 池子先按 `collectionNamePrefix` 过滤，再按 `[collectionRangeStart, collectionRangeEnd)` 切分（复用 `CommonFunction.filterCollectionPool`，与 Search/Load/Release 一致）。
+- 过滤规则：前缀命中名称为「前缀+纯数字后缀」时按后缀数值过滤（前导零不影响）；否则按名称排序后取下标切片。`collectionRangeEnd<=0` 表示到末尾。
+- **对命中的每个 collection 各写入 `numEntries` 条**（不是总量平均分配）。
+- 此模式下 `collectionRule`/`collectionName` 被忽略。
+- `numConcurrency` 语义变为**并发 collection 数**（每个 collection 内部按 `batchSize` 串行写）。
+- 返回结果为聚合值：`totalCount`/`successCount`/`failCount`，`numEntries` 为所有 collection 写入总量，`rps` 按整体耗时计算。
+
+典型用途：`new_col_15k_` 前缀 + 区间切分，将 10w 个 collection 的灌数任务分片到多个 task 并行执行。
+
+```json
+{
+  "InsertParams_0": {
+    "collectionNamePrefix": "new_col_15k_",
+    "collectionRangeStart": 0, "collectionRangeEnd": 10000,
+    "numEntries": 15000, "batchSize": 1000, "numConcurrency": 10,
+    "fieldDataSourceList": [], "generalDataRoleList": []
+  }
+}
+```
 
 ## targetEndpoint
 

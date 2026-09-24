@@ -129,8 +129,36 @@ public class InsertParams {
      * 前端：`insertEdit.vue` -> "Collection Rule"
      * <p>
      * 前端默认值：""（None）
+     * <p>
+     * 注意：当设置了 {@link #collectionNamePrefix}（非空）或 {@link #collectionRangeStart}（>=0）时，
+     * 进入「多 collection 模式」，会忽略本字段，改为对池中命中的**每个** collection 各写入
+     * {@link #numEntries} 条数据（见多 collection 模式说明）。
      */
     private String collectionRule;
+
+    /**
+     * Collection 名称前缀过滤（可选）。
+     * <p>
+     * 非空时进入多 collection 模式：对 globalCollectionNames 池子按前缀过滤后，
+     * 逐个 collection 各写入 {@link #numEntries} 条数据；
+     * 与 {@link #collectionRangeStart}/{@link #collectionRangeEnd} 可叠加（先前缀、再区间过滤）。
+     * <p>
+     * 前端默认值：""
+     */
+    private String collectionNamePrefix;
+
+    /**
+     * Collection 区间起始（可选，默认 -1 不启用）。
+     * >=0 时进入多 collection 区间模式。若前缀命中的名称是 前缀+纯数字后缀，按后缀数值过滤 [rangeStart, rangeEnd)，
+     * 前导零不影响；否则按名称排序后取下标切片。
+     */
+    private int collectionRangeStart = -1;
+
+    /**
+     * Collection 区间结束（开区间，可选，默认 -1）。
+     * <=0 表示不限制上界/取到末尾。
+     */
+    private int collectionRangeEnd = -1;
 
     /**
      * 目标 QPS（每秒请求数）。

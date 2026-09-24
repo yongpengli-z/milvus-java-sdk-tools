@@ -24,21 +24,32 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static custom.BaseTest.*;
 
 @Slf4j
 public class InsertComp {
-    public static InsertResult insertCollection(InsertParams insertParams) {
-        MilvusClientV2 client = getMilvusClient(insertParams.getTargetEndpoint());
-        log.info("Insert 使用 endpoint: {}", describeTargetEndpoint(insertParams.getTargetEndpoint()));
 
+    /**
+     * 入口：判断单 collection / 多 collection 模式。
+     * 设置 collectionNamePrefix（非空）或 collectionRangeStart（>=0）时进入多 collection 模式：
+     * 对 globalCollectionNames 池子按前缀+区间过滤后，**每个** collection 各写入 numEntries 条。
+     */
+    public static InsertResult insertCollection(InsertParams insertParams) {
+        boolean multiMode = (insertParams.getCollectionNamePrefix() != null
+                && !insertParams.getCollectionNamePrefix().equalsIgnoreCase(""))
+                || insertParams.getCollectionRangeStart() >= 0;
+        if (multiMode) {
+            return insertMulti(insertParams);
+        }
+        return doInsertOne(insertParams, resolveSingleCollectionName(insertParams));
+    }
+
+    /** 单 collection 模式：按 collectionRule 从池子/显式名解析目标 collection。 */
+    private static String resolveSingleCollectionName(InsertParams insertParams) {
         Random random = new Random();
-        // 要循环insert的次数--insertRounds
-        long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
-        float insertTotalTime;
-        // 判断collection获取规则
-        String collectionName = "";
+        String collectionName;
         if (insertParams.getCollectionRule() == null || insertParams.getCollectionRule().equalsIgnoreCase("")) {
             collectionName = (insertParams.getCollectionName() == null ||
                     insertParams.getCollectionName().equalsIgnoreCase(""))
@@ -54,6 +65,104 @@ public class InsertComp {
                     insertParams.getCollectionName().equalsIgnoreCase(""))
                     ? globalCollectionNames.get(globalCollectionNames.size() - 1) : insertParams.getCollectionName();
         }
+        return collectionName;
+    }
+
+    /** 多 collection 模式：并发（numConcurrency=并发 collection 数）对每个命中 collection 写入 numEntries 条。 */
+    private static InsertResult insertMulti(InsertParams insertParams) {
+        List<String> targetCollections = CommonFunction.filterCollectionPool(globalCollectionNames,
+                insertParams.getCollectionNamePrefix(), insertParams.getCollectionRangeStart(), insertParams.getCollectionRangeEnd());
+        int numConcurrency = Math.max(insertParams.getNumConcurrency(), 1);
+        log.info("Insert 多 collection 模式：共 {} 个 collection，并发 collection 数 {}，每个写 {} 条",
+                targetCollections.size(), Math.min(numConcurrency, targetCollections.size()), insertParams.getNumEntries());
+
+        long startTimeTotal = System.currentTimeMillis();
+        InsertResult[] slotResults = new InsertResult[targetCollections.size()];
+        int workers = Math.min(numConcurrency, targetCollections.size());
+        AtomicInteger cursor = new AtomicInteger(0);
+        AtomicInteger threadIndex = new AtomicInteger(0);
+        ExecutorService executorService = Executors.newFixedThreadPool(workers,
+                runnable -> new Thread(runnable, "insert-multi-worker-" + threadIndex.getAndIncrement()));
+        try {
+            for (int i = 0; i < workers; i++) {
+                executorService.submit(() -> {
+                    int count = 0;
+                    int idx;
+                    while ((idx = cursor.getAndIncrement()) < targetCollections.size()) {
+                        slotResults[idx] = doInsertOne(insertParams, targetCollections.get(idx));
+                        count++;
+                    }
+                    log.info("线程[{}] 完成，共 insert {} 个 collection", Thread.currentThread().getName(), count);
+                });
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(6, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Insert 多 collection 并发执行被中断: {}", e.getMessage());
+        } finally {
+            executorService.shutdownNow();
+        }
+        float totalCostTime = (float) ((System.currentTimeMillis() - startTimeTotal) / 1000.00);
+
+        long success = 0, fail = 0, totalEntries = 0;
+        double wavg = 0;
+        double maxTp99 = 0, maxTp98 = 0, maxTp90 = 0, maxTp85 = 0, maxTp80 = 0, maxTp50 = 0;
+        List<String> assertMessages = new ArrayList<>();
+        for (int i = 0; i < targetCollections.size(); i++) {
+            InsertResult r = slotResults[i];
+            String cn = targetCollections.get(i);
+            if (r == null || r.getCommonResult() == null
+                    || !ResultEnum.SUCCESS.result.equals(r.getCommonResult().getResult())) {
+                fail++;
+                String msg = (r != null && r.getCommonResult() != null) ? r.getCommonResult().getMessage() : "insert not executed (interrupted)";
+                assertMessages.add("[ASSERT FAIL] insert [" + cn + "] failed: " + msg);
+                continue;
+            }
+            success++;
+            totalEntries += r.getNumEntries();
+            wavg += r.getAvg() * Math.max(r.getRequestNum(), 1);
+            maxTp99 = Math.max(maxTp99, r.getTp99());
+            maxTp98 = Math.max(maxTp98, r.getTp98());
+            maxTp90 = Math.max(maxTp90, r.getTp90());
+            maxTp85 = Math.max(maxTp85, r.getTp85());
+            maxTp80 = Math.max(maxTp80, r.getTp80());
+            maxTp50 = Math.max(maxTp50, r.getTp50());
+        }
+        if (!assertMessages.isEmpty()) {
+            log.warn("Insert(multi) assertions: " + assertMessages);
+        }
+        CommonResult commonResult = CommonResult.builder()
+                .result(fail == 0 ? ResultEnum.SUCCESS.result
+                        : (success == 0 ? ResultEnum.FAIL.result : ResultEnum.WARNING.result))
+                .message(fail == 0 ? "" : fail + "/" + targetCollections.size() + " collections insert failed")
+                .build();
+        CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
+        double avg = success > 0 ? wavg / Math.max(totalEntries / Math.max(insertParams.getBatchSize(), 1), 1) : 0;
+        return InsertResult.builder()
+                .commonResult(commonResult)
+                .numEntries(totalEntries)
+                .requestNum(success)
+                .costTime(totalCostTime)
+                .rps(totalCostTime > 0 ? totalEntries / (double) totalCostTime : 0d)
+                .avg(avg)
+                .tp99(maxTp99).tp98(maxTp98).tp90(maxTp90).tp85(maxTp85).tp80(maxTp80).tp50(maxTp50)
+                .assertMessages(assertMessages)
+                .totalCount(targetCollections.size())
+                .successCount(success)
+                .failCount(fail)
+                .truncated(false)
+                .build();
+    }
+
+    /** 单 collection 写入：把 numEntries 按 batchSize 分批写入指定 collection。 */
+    private static InsertResult doInsertOne(InsertParams insertParams, String collectionName) {
+        MilvusClientV2 client = getMilvusClient(insertParams.getTargetEndpoint());
+        log.info("Insert 使用 endpoint: {}", describeTargetEndpoint(insertParams.getTargetEndpoint()));
+
+        // 要循环insert的次数--insertRounds
+        long insertRounds = insertParams.getNumEntries() / insertParams.getBatchSize();
+        float insertTotalTime;
         log.info("Insert collection [" + collectionName + "]  from id:" + insertParams.getStartId() + "total insert " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(insertParams.getNumConcurrency());
@@ -205,7 +314,6 @@ public class InsertComp {
             try {
                 InsertResultItem insertResultItem = future.get();
                 long count = insertResultItem.getInsertCnt().stream().filter(x -> x != 0).count();
-//                double sum = insertResultItem.getCostTime().stream().mapToDouble(Float::floatValue).sum();
                 exceptionFinally = insertResultItem.getExceptionMessage() != null ? insertResultItem.getExceptionMessage() : exceptionFinally;
                 log.info("线程返回结果[InsertCnt]: " + insertResultItem.getInsertCnt());
                 log.info("线程返回结果[CostTime]: " + insertResultItem.getCostTime());

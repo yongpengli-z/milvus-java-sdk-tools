@@ -21,4 +21,8 @@ public class InsertResult {
     double tp80;
     double tp50;
     List<String> assertMessages;
+    long totalCount;
+    long successCount;
+    long failCount;
+    boolean truncated;
 }
