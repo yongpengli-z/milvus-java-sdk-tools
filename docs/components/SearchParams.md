@@ -37,6 +37,7 @@
 
 Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组件维护）中选择：
 
+- 显式指定 `collectionName` 且 `collectionRule` 为空时直接使用该名称，**不依赖池子**（池子只由 Initial/Create/Restore 填充，Initial 仅列 default db；对 backup 恢复/非 default db 的既有 collection，池子为空也能搜）。只有用池子选择能力（`collectionRule`/`collectionNamePrefix`/区间）且池子为空时才报错
 - `collectionRule`：`""`=显式 `collectionName` 或池子最后一个；`random`=池内随机；`sequence`=按步骤轮询（每步骤选一个，整个步骤固定）；`sequence_per_request`=**每个请求**轮换取下一个（全局原子游标，跨线程唯一；总请求数 ≤ 池子大小时每个 collection 恰好被搜一次，适合测多 collection 并发上限 QPS）
 - `collectionNamePrefix`：非空时先按前缀过滤池子再做选择；匹配不到直接报错
 - `collectionRangeStart`/`collectionRangeEnd`：>=0 启用区间模式，取 `[start,end)`（开区间，`end`<=0 表示到末尾）。两种模式：

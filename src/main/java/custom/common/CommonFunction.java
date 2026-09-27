@@ -1584,9 +1584,20 @@ public class CommonFunction {
 
     /**
      * 解析 search/hybridSearch 的目标 collection（带区间切片）。
+     * <p>
+     * 显式指定 collectionName 且未启用池子选择规则（collectionRule 为空）时直接返回该名称，
+     * 不依赖 globalCollectionNames 池子——池子仅由 Initial/Create/Restore 组件维护，
+     * 且 Initial 只列 default db；对已存在 collection 的实例（如 backup 恢复、非 default db）
+     * 池子可能为空，不应阻断显式指定的 collection。
+     * 使用 collectionNamePrefix/collectionRange/collectionRule 等池子选择能力时，池子为空仍报错。
      */
     public static String resolveSearchCollection(String collectionRule, String collectionName, String collectionNamePrefix,
                                                  int rangeStart, int rangeEnd) {
+        boolean noPoolRule = collectionRule == null || collectionRule.equalsIgnoreCase("");
+        boolean hasExplicitName = collectionName != null && !collectionName.equalsIgnoreCase("");
+        if (noPoolRule && hasExplicitName) {
+            return collectionName;
+        }
         List<String> pool = resolveSearchCollectionPool(collectionNamePrefix, rangeStart, rangeEnd);
         return selectFromPool(collectionRule, collectionName, pool);
     }

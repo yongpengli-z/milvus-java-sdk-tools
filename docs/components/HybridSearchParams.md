@@ -29,7 +29,7 @@
 
 ## Collection 选择
 
-与 SearchParams 一致：`collectionRule` 新增 `sequence_per_request`（每个 hybridSearch 请求轮换取下一个 collection，全局原子游标跨线程唯一，总请求数 ≤ 池子大小时每个 collection 恰好被搜一次）；`collectionNamePrefix` 前缀过滤与 `collectionRangeStart/End` 区间过滤可叠加（先前缀、再区间——前缀命中 `前缀+纯数字后缀` 时按后缀数值过滤，前导零不影响；否则排序后按下标切片）。
+与 SearchParams 一致：显式指定 `collectionName` 且 `collectionRule` 为空时直接使用该名称，不依赖池子（池子为空也能跑，见 SearchParams.md「Collection 池过滤与分割」）；`collectionRule` 新增 `sequence_per_request`（每个 hybridSearch 请求轮换取下一个 collection，全局原子游标跨线程唯一，总请求数 ≤ 池子大小时每个 collection 恰好被搜一次）；`collectionNamePrefix` 前缀过滤与 `collectionRangeStart/End` 区间过滤可叠加（先前缀、再区间——前缀命中 `前缀+纯数字后缀` 时按后缀数值过滤，前导零不影响；否则排序后按下标切片）。
 `sequence_per_request` 模式下 schema/BM25 Function 检测以池子第一个 collection 为基准，假设池内 collection 同构。
 
 ## targetEndpoint
