@@ -135,7 +135,11 @@ public class SearchComp {
         float searchTotalTime;
         long startTimeTotal = System.currentTimeMillis();
         Map<String, Object> searchLevel = new HashMap<>();
-        searchLevel.put("level", searchParams.getSearchLevel() == 0 ? 1 : searchParams.getSearchLevel());
+        // sparse（含 BM25 function 输出字段）不注入 level：level 是 dense/AUTOINDEX 的搜索参数，
+        // 生产 sparse 请求只带 {} 或 {"drop_ratio_search": ...}；sparse 路上 searchLevel 忽略
+        if (!isSparseField) {
+            searchLevel.put("level", searchParams.getSearchLevel() == 0 ? 1 : searchParams.getSearchLevel());
+        }
         if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
             searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }

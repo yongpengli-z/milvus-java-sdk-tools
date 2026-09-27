@@ -10,6 +10,7 @@ import custom.pojo.RandomRangeParams;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.client.RetryConfig;
 import io.milvus.v2.common.ConsistencyLevel;
+import io.milvus.v2.common.DataType;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
@@ -284,7 +285,10 @@ public class AssertComp {
         }
 
         Map<String, Object> searchLevel = new HashMap<>();
-        searchLevel.put("level", search.getSearchLevel() == 0 ? 1 : search.getSearchLevel());
+        // sparse（含 BM25 function 输出字段）不注入 level，与 SearchComp 行为一致；dense 路径不变
+        if (!isSparseAnnsField(describeCollectionResp, annsField)) {
+            searchLevel.put("level", search.getSearchLevel() == 0 ? 1 : search.getSearchLevel());
+        }
         if (!isBlank(search.getIndexAlgo())) {
             searchLevel.put("index_algo", search.getIndexAlgo());
         }
@@ -380,7 +384,10 @@ public class AssertComp {
         List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, nq);
 
         Map<String, Object> baseParams = new HashMap<>();
-        baseParams.put("level", search.getSearchLevel() == 0 ? 1 : search.getSearchLevel());
+        // sparse（含 BM25 function 输出字段）不注入 level，与 SearchComp 行为一致；dense 路径不变
+        if (!isSparseAnnsField(describeCollectionResp, annsField)) {
+            baseParams.put("level", search.getSearchLevel() == 0 ? 1 : search.getSearchLevel());
+        }
         if (!isBlank(search.getIndexAlgo())) {
             baseParams.put("index_algo", search.getIndexAlgo());
         }
@@ -567,6 +574,22 @@ public class AssertComp {
             }
         }
         return CommonFunction.providerSearchVectorDataset(client, collectionName, sampleSize, annsField);
+    }
+
+    /**
+     * 判定 annsField 是否为 SparseFloatVector（BM25 function 的输出字段也是 SparseFloatVector，天然覆盖）。
+     * sparse 搜索不注入 level 搜索参数（与 SearchComp 行为一致）。
+     */
+    private static boolean isSparseAnnsField(DescribeCollectionResp describeCollectionResp, String annsField) {
+        String annsBaseField = annsField;
+        int bracketIdx = annsBaseField.indexOf('[');
+        if (bracketIdx > 0) {
+            annsBaseField = annsBaseField.substring(0, bracketIdx);
+        }
+        final String finalAnnsBaseField = annsBaseField;
+        return describeCollectionResp.getCollectionSchema().getFieldSchemaList().stream()
+                .anyMatch(f -> f.getName().equalsIgnoreCase(finalAnnsBaseField)
+                        && f.getDataType() == DataType.SparseFloatVector);
     }
 
     private static Object extractCount(QueryResp queryResp, List<String> outputs) {

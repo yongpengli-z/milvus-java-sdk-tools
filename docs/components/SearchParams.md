@@ -21,7 +21,7 @@
 | `runningMinutes` | long | 是 | `10` | 按时间循环 |
 | `runningCount` | long | 否 | `0` | 按次数循环：>0 时每线程跑满 N 次后停止（次数优先，不再看时间） |
 | `randomVector` | boolean | 是 | `true` | |
-| `searchLevel` | int | 否 | `1` | |
+| `searchLevel` | int | 否 | `1` | dense 搜索参数 `{"level": N}`；**sparse（含 BM25 function 输出字段）忽略**，sparse 请求不注入 level |
 | `indexAlgo` | String | 否 | `""` | |
 | `targetQps` | double | 否 | `0` | |
 | `generalFilterRoleList` | List | 否 | `[]` | filter 占位符替换规则。不使用传 `[]` |

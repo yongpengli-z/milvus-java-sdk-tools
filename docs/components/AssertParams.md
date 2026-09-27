@@ -47,7 +47,7 @@
 | `annsField` | String | search 必填 | search 向量字段名 |
 | `nq` | int | search 可选 | 默认 `1` |
 | `topK` | int | search 可选 | 默认 `1` |
-| `searchLevel` | int | search 可选 | 默认 `1` |
+| `searchLevel` | int | search 可选 | 默认 `1`；dense 搜索参数 `{"level": N}`；sparse（含 BM25 function 输出字段）忽略，不注入 level |
 | `indexAlgo` | String | search 可选 | 写入 searchParams 的 `index_algo` |
 | `timeout` | long | search 可选 | SDK 请求超时 ms，默认 `800` |
 | `vectorSampleSize` | int | search 可选 | search assertion 从 collection 抽样向量的数量，默认 `max(1000, nq)` |
