@@ -304,7 +304,16 @@ public class HybridSearchComp {
                     }
 
                     if (annSearchReqList.isEmpty()) {
-                        log.warn("线程[{}] annSearchReqList 为空，跳过本次请求", finalC);
+                        log.warn("线程[{}] annSearchReqList 为空（所有字段查询输入均为空），本次请求计为失败跳过", finalC);
+                        statsReporter.recordFailure();
+                        // -1 为异常哨兵：跳过的请求必须计入次数，否则次数模式（runningCount）循环条件
+                        // returnNum.size() < runningCount 永远成立，导致无限循环刷日志（15449 实测 7 分钟 120 万行）
+                        returnNum.add(-1);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
                         continue;
                     }
 
