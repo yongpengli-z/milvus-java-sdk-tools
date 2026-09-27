@@ -176,6 +176,10 @@ public class SearchComp {
                         int requestCount = 0;
                         long lastLogTime = System.currentTimeMillis();
                         long lastPrintTime = System.currentTimeMillis();
+                        // filter 打印用独立时间戳：不能与"已经 search"进度打印共用 lastPrintTime——
+                        // 迭代首尾相接，进度打印（迭代末尾，会重置时间戳）总是先于 filter 打印
+                        // （下一次迭代开头）执行，共用变量会导致 filter 打印永远差一拍、永不触发
+                        long lastFilterPrintTime = System.currentTimeMillis();
                         while (countMode ? returnNum.size() < runningCount : LocalDateTime.now().isBefore(endTime)) {
                             // 3. QPS控制点（如果需要）
                             if (finalRateLimiter != null) {
@@ -197,8 +201,9 @@ public class SearchComp {
                                     log.debug("search random:{}", replaceFilterParams);
                                     filter = CommonFunction.replaceFilterPlaceholder(filter, generalFilterRole, replaceFilterParams);
                                 }
-                                if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                if (System.currentTimeMillis() - lastFilterPrintTime >= 60000) {
                                     log.info("线程[" + finalC + "] search filter:{}", filter);
+                                    lastFilterPrintTime = System.currentTimeMillis();
                                 }
                             }
                             // sequence_per_request 模式：每个请求取池子里下一个 collection（全局游标，跨线程唯一）

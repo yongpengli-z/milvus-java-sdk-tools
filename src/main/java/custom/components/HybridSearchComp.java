@@ -210,6 +210,9 @@ public class HybridSearchComp {
                 int requestCount = 0;
                 long lastLogTime = System.currentTimeMillis();
                 long lastPrintTime = System.currentTimeMillis();
+                // filter 打印用独立时间戳（与 SearchComp 同理：进度打印在迭代末尾重置共享时间戳，
+                // 会导致迭代开头的 filter 打印永远达不到阈值）
+                long lastFilterPrintTime = System.currentTimeMillis();
 
                 // 准备当前线程的向量数据
                 Map<String, List<BaseVector>> threadVectorsMap = new HashMap<>();
@@ -279,8 +282,9 @@ public class HybridSearchComp {
                                     processedFilter = CommonFunction.replaceFilterPlaceholder(processedFilter, generalFilterRole, replaceFilterParams);
                                 }
                                 filter = processedFilter;
-                                if (System.currentTimeMillis() - lastPrintTime >= 60000) {
+                                if (System.currentTimeMillis() - lastFilterPrintTime >= 60000) {
                                     log.info("线程[{}] 字段[{}] hybridSearch filter:{}", finalC, annsField, filter);
+                                    lastFilterPrintTime = System.currentTimeMillis();
                                 }
                             }
                         }
