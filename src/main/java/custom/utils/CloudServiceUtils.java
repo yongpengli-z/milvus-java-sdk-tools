@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import custom.config.CloudServiceUserInfo;
 import custom.entity.CreateGlobalClusterParams;
+import custom.entity.InitialParams;
 import custom.entity.CreateQueryClusterParams;
 import custom.entity.CreateSecondaryParams;
 import custom.entity.ResumeInstanceParams;
@@ -73,6 +74,63 @@ public class CloudServiceUtils {
         log.info("[cloudService][login user info]\n- accountEmail={}\n- accountName={}\n- userId={}\n- proxyUserId={}\n- orgId={}\n- defaultProjectId={}",
                 userName, accountName, userId, csUserInfo.getProxyUserId(), strings.get(0), defaultProject);
         return csUserInfo;
+    }
+
+
+    /**
+     * 使用 QTP 注入的提交人云账号登录 cloud-service。
+     * 与 {@link #queryUserIdOfCloudService} 的差异：org/project 直接取 account 里的
+     * orgId/projectId，不再查 listOrg/providerDefaultProject。
+     * <p>
+     * fail-open：account 为空、email/password 为空、或任何异常都返回 null，由调用方回退默认账号。
+     */
+    public static CloudServiceUserInfo loginWithCloudAccount(InitialParams.CloudAccount account) {
+        if (account == null || account.getEmail() == null || account.getEmail().isEmpty()
+                || account.getPassword() == null || account.getPassword().isEmpty()) {
+            log.info("[cloudService][cloudAccount] email/password 为空，无法使用提交人云账号登录");
+            return null;
+        }
+        try {
+            String loginUrl = envConfig.getCloudServiceHost().replace("cloud-service", "cloud-account")
+                    + "/account/inner/v1/account/login";
+            log.info("[cloudService][cloudAccount login] accountEmail={}", account.getEmail());
+            String jsonParam = "{\"Email\":\"" + account.getEmail() + "\",\"Password\":\"" + account.getPassword() + "\"}";
+            Map<String, String> header = new HashMap<>();
+            header.put("recaptcha-challenge-response", "[]");
+            String loginResp = HttpClientUtils.doPostJson(loginUrl, header, jsonParam);
+            String token = JSON.parseObject(loginResp).getJSONObject("Data").getString("Token");
+            String userId = JSON.parseObject(loginResp).getJSONObject("Data").getJSONObject("AccountInfo").getString("UserId");
+            CloudServiceUserInfo csUserInfo = new CloudServiceUserInfo();
+            csUserInfo.setToken(token);
+            csUserInfo.setUserId(userId);
+            csUserInfo.setAccountName(account.getEmail());
+            List<String> orgIdList = new ArrayList<>();
+            orgIdList.add(account.getOrgId());
+            csUserInfo.setOrgIdList(orgIdList);
+            csUserInfo.setDefaultProjectId(account.getProjectId());
+            // 查询 proxyUserId，失败则用 account.userId（再退化为登录返回的 userId）
+            String proxyUserId = null;
+            try {
+                String respCUS = CloudUserServiceUtils.getProxyUserId(account.getOrgId());
+                if (JSON.parseObject(respCUS).getInteger("Code") == 0) {
+                    proxyUserId = JSON.parseObject(respCUS).getJSONObject("Data").getString("proxyUserId");
+                }
+            } catch (Exception e) {
+                log.warn("[cloudService][cloudAccount] 查询 proxyUserId 失败: {}", e.getMessage());
+            }
+            if (proxyUserId == null || proxyUserId.isEmpty()) {
+                proxyUserId = account.getUserId() != null && !account.getUserId().isEmpty()
+                        ? account.getUserId() : userId;
+                log.info("[cloudService][cloudAccount] 未查询到 proxyUserId，使用 {} 替代", proxyUserId);
+            }
+            csUserInfo.setProxyUserId(proxyUserId);
+            log.info("[cloudService][cloudAccount login user info]\n- accountEmail={}\n- userId={}\n- proxyUserId={}\n- orgId={}\n- projectId={}",
+                    account.getEmail(), userId, proxyUserId, account.getOrgId(), account.getProjectId());
+            return csUserInfo;
+        } catch (Exception e) {
+            log.warn("[cloudService][cloudAccount] 登录失败，将回退默认账号: {}", e.getMessage());
+            return null;
+        }
     }
 
 

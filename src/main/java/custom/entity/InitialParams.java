@@ -27,4 +27,23 @@ public class InitialParams {
      * 默认值："INFO"
      */
     String logLevel = "INFO";
+
+    /**
+     * QTP 注入的提交人云账号；存在时优先于默认账号。
+     * <p>
+     * 实例将创建到 orgId 的 projectId（提交人专属 project）下。
+     * password 为空串时（老数据）无法登录，自动回退默认账号。
+     */
+    CloudAccount cloudAccount;
+
+    @Data
+    public static class CloudAccount {
+        String email;
+        String password;
+        String userId;
+        String orgId;
+        String projectId;
+        String projectName;
+        String apiKey;
+    }
 }

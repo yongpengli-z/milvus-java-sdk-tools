@@ -365,6 +365,25 @@ public class BaseTest {
                     log.warn("加载环境配置失败，继续执行不依赖 VDC 配置的步骤: {}", configEx.getMessage());
                 }
             }
+            // QTP 注入的提交人云账号：存在且登录成功时优先于默认账号（fail-open，失败回退默认账号）
+            if (!initialParams.isEmpty()) {
+                try {
+                    InitialParams.CloudAccount cloudAccount =
+                            JSONObject.parseObject(initialParams, InitialParams.class).getCloudAccount();
+                    if (cloudAccount != null) {
+                        CloudServiceUserInfo cloudAccountInfo = CloudServiceUtils.loginWithCloudAccount(cloudAccount);
+                        if (cloudAccountInfo != null) {
+                            cloudServiceUserInfo = cloudAccountInfo;
+                            log.info("使用提交人云账号: email={}, orgId={}, projectId={}",
+                                    cloudAccount.getEmail(), cloudAccount.getOrgId(), cloudAccount.getProjectId());
+                        } else {
+                            log.warn("cloudAccount 登录失败，将回退默认账号");
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("解析/登录 cloudAccount 异常，将回退默认账号: {}", e.getMessage());
+                }
+            }
             if (!uri.equalsIgnoreCase("")) {
                 if (GlobalClusterUtils.isGlobalEndpoint(uri)) {
                     log.info("检测到 Global Endpoint: {}", uri);

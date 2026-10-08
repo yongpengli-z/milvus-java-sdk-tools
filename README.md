@@ -18,7 +18,7 @@
 | `-Duri` | 是* | Milvus URI（如 `http://localhost:19530` 或 cloud https endpoint）。*使用 `CreateInstanceParams` / `HelmCreateInstanceParams` 创建实例时可不传 |
 | `-Dtoken` | 否 | Milvus token。不传时可能从内部 API 获取 |
 | `-Denv` | 是 | 环境标识，见下文 env 枚举 |
-| `-Dinitial_params` | 是 | JSON 字符串，至少传 `{"cleanCollection": false}` |
+| `-Dinitial_params` | 是 | JSON 字符串，至少传 `{"cleanCollection": false}`。可选 `cloudAccount` 字段（`email/password/userId/orgId/projectId/projectName/apiKey`）：QTP 注入的提交人云账号，存在且密码非空时用它登录 cloud-service 并指定 org/project，替代默认账号；登录失败自动回退默认账号 |
 | `-Dcustomize_params` | 是 | JSON 字符串，本文核心 |
 
 ### 三种获取 Milvus 实例的方式
