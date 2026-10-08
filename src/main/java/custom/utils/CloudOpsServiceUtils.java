@@ -24,11 +24,26 @@ import static custom.BaseTest.newInstanceInfo;
 
 @Slf4j
 public class CloudOpsServiceUtils {
-    private static Map<String, String> buildCloudOpsAuthHeader() {
+    /**
+     * Tencent(Stage) 的 cloud-ops 网关只接受 X-API-Key 认证，sa_token header/cookie 一律 401
+     * （同 testplatform commit ed3e63a 的适配）；其他环境沿用 sa_token + cookie。
+     */
+    private static boolean isTencentCloudOps() {
+        String host = envConfig.getCloudOpsServiceHost();
+        String regionId = envConfig.getRegionId();
+        return (host != null && host.contains("tencent"))
+                || (regionId != null && regionId.startsWith("tc-"));
+    }
+
+    public static Map<String, String> buildCloudOpsAuthHeader() {
         Map<String, String> header = new HashMap<>();
         String token = envConfig.getCloudOpsServiceToken();
-        header.put("sa_token", token);
-        header.put("cookie", "sa_token=" + token);
+        if (isTencentCloudOps()) {
+            header.put("X-API-Key", token);
+        } else {
+            header.put("sa_token", token);
+            header.put("cookie", "sa_token=" + token);
+        }
         return header;
     }
 
@@ -45,8 +60,7 @@ public class CloudOpsServiceUtils {
                 + "&syncMilvusConfig=true"
                 + "&syncHookConfig=true"
                 + "&syncDeploymentConfig=true";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         String response = HttpClientUtils.doPost(url, header, null);
         log.info("rolling upgrade instance {}: {}", instanceId, response);
         return response;
@@ -54,8 +68,7 @@ public class CloudOpsServiceUtils {
 
     public static String listDBVersionByKeywords(String keywords,int insType) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, String> paramsDB = new HashMap<>();
         paramsDB.put("currentPage", "1");
         paramsDB.put("pageSize", "100");
@@ -69,8 +82,7 @@ public class CloudOpsServiceUtils {
 
     public static String listTagByKeywords(String keywords,int insType) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/release_version";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, String> paramsTag = new HashMap<>();
         paramsTag.put("currentPage", "1");
         paramsTag.put("pageSize", "100");
@@ -99,14 +111,17 @@ public class CloudOpsServiceUtils {
         }
         List<String> lists = new ArrayList<>();
         for (String keyword : keywordList) {
-            JSONObject jsonResponse = JSON.parseObject(listDBVersionByKeywords(keyword,insType));
-            JSONObject jsonResponse2 = JSON.parseObject(listTagByKeywords(keyword,insType));
+            String dbResp = listDBVersionByKeywords(keyword, insType);
+            String tagResp = listTagByKeywords(keyword, insType);
+            JSONObject jsonResponse = JSON.parseObject(dbResp);
+            JSONObject jsonResponse2 = JSON.parseObject(tagResp);
             // 请求失败（非200或异常）时 doGet 返回空串，parseObject 结果为 null，这里直接抛出带上下文的异常
             if (jsonResponse == null || jsonResponse.getJSONObject("data") == null
                     || jsonResponse2 == null || jsonResponse2.getJSONObject("data") == null) {
                 throw new RuntimeException("查询镜像版本接口失败(release_version 返回为空或无 data)，关键字: " + keyword
                         + ", insType: " + insType + ", regionId: " + envConfig.getRegionId()
-                        + "，请检查 cloud-ops 服务是否可用");
+                        + "，dbVersion响应: " + abbreviate(dbResp) + "，tag响应: " + abbreviate(tagResp)
+                        + "。若 code=401 为鉴权问题（tencent 环境需 X-API-Key），其余请检查 cloud-ops 服务是否可用");
             }
             // 获取data-list
             JSONArray jsonArray = jsonResponse.getJSONObject("data").getJSONArray("list");
@@ -145,8 +160,7 @@ public class CloudOpsServiceUtils {
 
     public static String listRunningIndexPool() {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/index/cluster";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, String> params = new HashMap<>();
         params.put("currentPage", "1");
         params.put("pageSize", "100");
@@ -218,8 +232,7 @@ public class CloudOpsServiceUtils {
     public static String updateIndexPool(IndexPoolInfo indexPoolInfo) {
         log.info("update index pool params:" + JSONObject.toJSONString(indexPoolInfo));
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/index/cluster";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         String s = HttpClientUtils.doPut(url, header, JSONObject.toJSONString(indexPoolInfo));
         log.info("updateIndexPool:" + s);
         return s;
@@ -228,8 +241,7 @@ public class CloudOpsServiceUtils {
     public static String alterIndexCluster(AlterInstanceIndexClusterParams alterInstanceIndexClusterParams) {
         String instanceId = alterInstanceIndexClusterParams.getInstanceId().equalsIgnoreCase("") ? newInstanceInfo.getInstanceId() : alterInstanceIndexClusterParams.getInstanceId();
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/index/cluster/instance/alterCluster";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, Object> body = new HashMap<>();
         body.put("instanceId", instanceId);
         body.put("newClusterId", alterInstanceIndexClusterParams.getIndexClusterId());
@@ -249,8 +261,7 @@ public class CloudOpsServiceUtils {
                 + "&syncMilvusConfig=true"
                 + "&syncHookConfig=true"
                 + "&syncDeploymentConfig=true";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         String s = HttpClientUtils.doPost(url, header, null);
         log.info("ops restart instance {}: {}", instanceIdTemp, s);
         return s;
@@ -322,12 +333,19 @@ public class CloudOpsServiceUtils {
         return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
     }
 
+    /** 响应摘要：报错信息里只带前 200 字符，避免整段响应刷屏。 */
+    private static String abbreviate(String s) {
+        if (s == null || s.isEmpty()) {
+            return "<empty>";
+        }
+        return s.length() > 200 ? s.substring(0, 200) + "..." : s;
+    }
+
     public static String restoreBackup(RestoreBackupParams restoreBackupParams) {
         String toInstanceId = restoreBackupParams.getToInstanceId();
         String instanceId = (toInstanceId == null || toInstanceId.isEmpty()) ? newInstanceInfo.getInstanceId() : toInstanceId;
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/restore/restore_backup";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, Object> body = new HashMap<>();
         body.put("backupId", restoreBackupParams.getBackupId());
         body.put("fromInstanceId", restoreBackupParams.getFromInstanceId());
@@ -344,8 +362,7 @@ public class CloudOpsServiceUtils {
 
     public static String queryInstanceIdByBackupId(String backupId) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/backup/total_page";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, String> body = new HashMap<>();
         body.put("currentPage", "1");
         body.put("pageSize", "20");
@@ -357,8 +374,7 @@ public class CloudOpsServiceUtils {
 
     public static String queryRestoreBackupStatus(String jobId) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/restore/total_page";
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = buildCloudOpsAuthHeader();
         Map<String, String> body = new HashMap<>();
         body.put("currentPage", "1");
         body.put("pageSize", "20");

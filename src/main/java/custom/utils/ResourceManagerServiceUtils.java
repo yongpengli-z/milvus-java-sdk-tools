@@ -283,8 +283,7 @@ public class ResourceManagerServiceUtils {
                 + "&instanceId=" + instanceIdTemp
                 + "&currentPage=1&pageSize=200";
         log.info("[listParams] Query override params from: {}", overrideUrl);
-        Map<String, String> overrideHeader = new HashMap<>();
-        overrideHeader.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> overrideHeader = CloudOpsServiceUtils.buildCloudOpsAuthHeader();
         String overrideResp = HttpClientUtils.doGet(overrideUrl, overrideHeader, null);
         log.info("[listParams] Override response (first 500 chars): {}", overrideResp == null ? "null" : (overrideResp.length() > 500 ? overrideResp.substring(0, 500) + "..." : overrideResp));
         try {
@@ -375,8 +374,7 @@ public class ResourceManagerServiceUtils {
             body.put("paramName", params.getParamName());
             body.put("paramValue", params.getParamValue());
             body.put("action", "SET");
-            Map<String, String> header = new HashMap<>();
-            header.put("sa_token", envConfig.getCloudOpsServiceToken());
+            Map<String, String> header = CloudOpsServiceUtils.buildCloudOpsAuthHeader();
             header.put("RequestId", "qtp-java-tools-" + MathUtil.genRandomString(10));
             String s = HttpClientUtils.doPostJson(url, header, body.toJSONString());
             log.info("Override param [" + params + "] response:" + s);
@@ -871,8 +869,7 @@ public class ResourceManagerServiceUtils {
 
     private static String describeGlobalClusterEndpointFromOps(String globalClusterId) {
         String url = envConfig.getCloudOpsServiceHost() + "/api/v1/ops/resource/custInstance/globalCluster/" + globalClusterId;
-        Map<String, String> header = new HashMap<>();
-        header.put("sa_token", envConfig.getCloudOpsServiceToken());
+        Map<String, String> header = CloudOpsServiceUtils.buildCloudOpsAuthHeader();
         String resp = HttpClientUtils.doGet(url, header, null);
         log.info("[cloud-ops][describe global cluster]: {}", resp);
         String connectAddress = parseGlobalEndpoint(resp, "globalEndpoint", "GlobalEndpoint", "ConnectAddress", "connectAddress");
