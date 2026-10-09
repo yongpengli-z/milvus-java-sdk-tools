@@ -14,4 +14,15 @@ public class SearchAggregationResult {
     private List<List<SearchResp.SearchResult>> searchResults;
     private List<List<AggregationBucket>> aggregationBuckets;
     private List<String> assertMessages;
+    private Integer concurrencyNum;
+    private Long requestNum;
+    private Long rpcSuccessNum;
+    private Long rpcFailureNum;
+    private Double rps;
+    private Double requestRps;
+    private Double avg;
+    private Double tp50;
+    private Double tp90;
+    private Double tp99;
+    private Double costTime;
 }

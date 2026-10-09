@@ -11,6 +11,10 @@ public class SearchResultA{
     CommonResult commonResult;
     int concurrencyNum;
     long requestNum;
+    long rpcSuccessNum;
+    long rpcFailureNum;
+    float requestRps;
+    float rpcSuccessRps;
     double passRate;
     float costTime;
     float rps;

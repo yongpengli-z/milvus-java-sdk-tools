@@ -12,6 +12,7 @@
 | `collectionRangeStart` | int | 否 | `-1` | 池区间起始，>=0 启用区间模式（见下文） |
 | `collectionRangeEnd` | int | 否 | `-1` | 池区间结束（开区间），<=0 表示到末尾 |
 | `queryDataset` | String | 否 | `""` | query 数据集名称（见下文「Query 数据集」），不从底库捞查询输入 |
+| `queryVectors` | List<List<Float>> | 否 | `null` | 显式 FloatVector query corpus，与 `queryDataset` 互斥；至少包含 `nq` 条同维有限值向量 |
 | `annsField` | String | **是** | | 向量字段名。**强烈建议显式指定** |
 | `nq` | int | 是 | `1` | query vectors 数量 |
 | `topK` | int | 是 | `1` | |
@@ -29,6 +30,9 @@
 | `ignoreError` | boolean | 否 | `false` | |
 | `timeout` | long | 否 | `800` | SDK 请求超时（ms），0=默认 800ms |
 | `groupByField` | String | 否 | `""` | group-by 分组字段名，非空时按该标量字段分组返回 |
+| `groupByFields` | List<String> | 否 | `null` | 通过 `group_by_fields` 传一列或多列，与 `groupByField` 互斥；JSON path 只能单列 |
+| `groupByJsonType` | String | 否 | `null` | 单列 JSON path 分组的类型转换：`Bool`/`Int8`/`Int16`/`Int32`/`Int64`/`VarChar`；数值叶子建议显式设置 |
+| `groupByStrictCast` | Boolean | 否 | `null` | 单列 JSON path 分组时传 `strict_cast`；未设置则使用服务端默认 |
 | `groupSize` | int | 否 | `0` | 每组返回条数（group_size），仅 groupByField 非空时生效，0=服务端默认 1 |
 | `strictGroupSize` | boolean | 否 | `false` | 严格组大小（strict_group_size），true=每组严格返回 groupSize 条（不足则少返回） |
 | `targetEndpoint` | String | 否 | `""` | Global Cluster 目标入口：`primary`/`global`/`secondary`/`secondary_0`，也可直接传 URI |
@@ -53,7 +57,9 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 | `widetable` | vector（FloatVec，768d） | `/test/milvus/raw_data/widetable/emb_768.npy`（10000 条） |
 | `widetable_bm25` | text（EmbeddedText，BM25 查询文本） | `/test/milvus/raw_data/widetable/bm25_title_short.txt`（2000 条） |
 
-填错名称会 log.warn 告警并回退为从底库捞取。
+填错名称会直接报错，不再静默回退为从底库捞取。
+
+`queryVectors` 是可在 Search 与 SearchAggregation 配置中复用的显式 FloatVector 池；`randomVector=false` 时固定取前 `nq` 条，`true` 时每次从池中取样。
 
 ## 按次数运行
 
@@ -82,9 +88,10 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 ## 注意事项
 
 - **性能测试建议**：添加多个 SearchParams 组件，设置不同 `numConcurrency`（1/5/10/20/50）递增压力。
-- **group-by 搜索**：`groupByField` 非空即启用分组。strict 优化路径（2.6.23+，PR#53306）生效条件：`strictGroupSize=true` + `groupSize>1` + `nq=1`。group-by 时建议 `outputs` 显式包含分组字段以便核对结果。
+- **group-by 搜索**：`groupByField` 保留单列旧请求；`groupByFields` 经 search params 传新协议（允许单列或多列），其中 JSON path 写为 `meta["g100"]` 且只可单列；数值 JSON 叶子可配 `groupByJsonType="Int64"`，不配时服务端默认按字符串取值；多列与 JSON path 组合会报错。strict 优化路径（2.6.23+，PR#53306）生效条件：`strictGroupSize=true` + `groupSize>1` + `nq=1`。
 - **group-by 下 passRate 口径**：strict 模式（`strictGroupSize=true` 且 `groupSize>1`）每次请求期望返回 `topK*groupSize` 条（topK 为组数），passRate 按此判定；非 strict 分组仍按 `== topK` 判定。
 - **sparse 向量搜索的 passRate 口径**：`annsField` 为 SparseFloatVector（含 BM25 function 输出字段）时自动识别，pass = 请求无异常即成功，不要求返回满 topK（BM25/稀疏搜索返回不满 topK 属正常）；dense 向量仍按"返回条数 == 期望数"判定。最终日志会额外打印 sparse 模式的 avg hit count。
+- **RPC 统计**：`rpcSuccessNum`/`rpcFailureNum`/`requestRps`（所有尝试）/`rpcSuccessRps`（成功 RPC）与原有基于 hit 数的 `passRate`/`rps` 分开；GroupBy 非 strict 或 `nq>1` 时，不要用旧 `passRate` 代替请求成功率或结果正确性。
 
 ## JSON 示例
 
