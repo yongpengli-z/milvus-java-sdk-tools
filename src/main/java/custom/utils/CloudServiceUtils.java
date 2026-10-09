@@ -10,6 +10,8 @@ import custom.entity.CreateQueryClusterParams;
 import custom.entity.CreateSecondaryParams;
 import custom.entity.ResumeInstanceParams;
 import custom.entity.StopInstanceParams;
+import custom.exception.CustomException;
+import custom.exception.CustomExceptionCode;
 import custom.pojo.InstanceInfo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,9 +49,10 @@ public class CloudServiceUtils {
         header.put("recaptcha-challenge-response", "[]");
         String loginResp = HttpClientUtils.doPostJson(loginUrl, header, jsonParam);
         log.info("loginResp:" + loginResp);
-        String token = JSON.parseObject(loginResp).getJSONObject("Data").getString("Token");
-        String userId = JSON.parseObject(loginResp).getJSONObject("Data").getJSONObject("AccountInfo").getString("UserId");
-        String accountName = JSON.parseObject(loginResp).getJSONObject("Data").getJSONObject("AccountInfo").getString("AccountName");
+        JSONObject loginData = parseLoginResponse(loginResp, userName, usingDefaultAccount);
+        String token = loginData.getString("Token");
+        String userId = loginData.getJSONObject("AccountInfo").getString("UserId");
+        String accountName = loginData.getJSONObject("AccountInfo").getString("AccountName");
         CloudServiceUserInfo csUserInfo = new CloudServiceUserInfo();
         csUserInfo.setUserId(userId);
         csUserInfo.setToken(token);
@@ -78,6 +81,28 @@ public class CloudServiceUtils {
 
 
     /**
+     * 解析 cloud-account 登录响应，校验 Code==0、Data/Token/AccountInfo 非空；
+     * 失败时抛出带 accountEmail/code/message 的明确异常，避免裸 NPE。
+     */
+    private static JSONObject parseLoginResponse(String loginResp, String accountEmail, boolean usingDefaultAccount) {
+        JSONObject respJson = (loginResp == null || loginResp.isEmpty()) ? null : JSON.parseObject(loginResp);
+        Integer code = respJson == null ? null : respJson.getInteger("Code");
+        String message = respJson == null ? null : respJson.getString("Message");
+        JSONObject data = respJson == null ? null : respJson.getJSONObject("Data");
+        String token = data == null ? null : data.getString("Token");
+        if (code == null || code != 0 || token == null || token.isEmpty() || data.getJSONObject("AccountInfo") == null) {
+            String hint = usingDefaultAccount
+                    ? "。注入的提交人账号不可用或未注入，且默认账号在该环境不存在或未注册"
+                    : "";
+            throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
+                    "cloud-service 登录失败: accountEmail=" + accountEmail + ", code=" + code
+                            + ", message=" + message + hint);
+        }
+        return data;
+    }
+
+
+    /**
      * 使用 QTP 注入的提交人云账号登录 cloud-service。
      * 与 {@link #queryUserIdOfCloudService} 的差异：org/project 直接取 account 里的
      * orgId/projectId，不再查 listOrg/providerDefaultProject。
@@ -98,8 +123,10 @@ public class CloudServiceUtils {
             Map<String, String> header = new HashMap<>();
             header.put("recaptcha-challenge-response", "[]");
             String loginResp = HttpClientUtils.doPostJson(loginUrl, header, jsonParam);
-            String token = JSON.parseObject(loginResp).getJSONObject("Data").getString("Token");
-            String userId = JSON.parseObject(loginResp).getJSONObject("Data").getJSONObject("AccountInfo").getString("UserId");
+            // parseLoginResponse 对 Code!=0/Data null 抛 CustomException，由外层 catch 转为 fail-open 返回 null
+            JSONObject loginData = parseLoginResponse(loginResp, account.getEmail(), false);
+            String token = loginData.getString("Token");
+            String userId = loginData.getJSONObject("AccountInfo").getString("UserId");
             CloudServiceUserInfo csUserInfo = new CloudServiceUserInfo();
             csUserInfo.setToken(token);
             csUserInfo.setUserId(userId);
