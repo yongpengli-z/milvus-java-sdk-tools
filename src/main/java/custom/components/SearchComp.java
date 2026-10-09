@@ -36,6 +36,33 @@ import static custom.BaseTest.*;
 @Slf4j
 public class SearchComp {
     public static SearchResultA searchCollection(SearchParams searchParams) {
+        validateCaptureConfig(searchParams);
+        List<String> groupByFields = searchParams.getGroupByFields();
+        boolean pluralGroupBy = groupByFields != null && !groupByFields.isEmpty();
+        if (pluralGroupBy) {
+            if (searchParams.getGroupByField() != null && !searchParams.getGroupByField().trim().isEmpty()) {
+                throw new IllegalArgumentException("groupByField and groupByFields are mutually exclusive");
+            }
+            for (String field : groupByFields) {
+                if (field == null || field.trim().isEmpty() || field.contains(",")) {
+                    throw new IllegalArgumentException("groupByFields entries must be nonempty field expressions without commas");
+                }
+            }
+            if (groupByFields.size() > 1 && groupByFields.stream().anyMatch(f -> f.contains("["))) {
+                throw new IllegalArgumentException("JSON paths are not supported in multi-field groupByFields");
+            }
+        }
+        String onlyGroupField = pluralGroupBy && groupByFields.size() == 1
+                ? groupByFields.get(0) : searchParams.getGroupByField();
+        boolean jsonPathGroupBy = onlyGroupField != null && onlyGroupField.contains("[");
+        if ((searchParams.getGroupByJsonType() != null || searchParams.getGroupByStrictCast() != null)
+                && !jsonPathGroupBy) {
+            throw new IllegalArgumentException("groupByJsonType and groupByStrictCast require a single JSON path group field");
+        }
+        if (searchParams.getGroupByJsonType() != null && !Arrays.asList(
+                "Bool", "Int8", "Int16", "Int32", "Int64", "VarChar").contains(searchParams.getGroupByJsonType())) {
+            throw new IllegalArgumentException("unsupported groupByJsonType: " + searchParams.getGroupByJsonType());
+        }
         // 根据 targetEndpoint 选择 client
         MilvusClientV2 client = getMilvusClient(searchParams.getTargetEndpoint());
         log.info("Search 使用 endpoint: {}", describeTargetEndpoint(searchParams.getTargetEndpoint()));
@@ -101,11 +128,17 @@ public class SearchComp {
 
         }
         List<BaseVector> searchBaseVectors;
+        if (searchParams.getQueryVectors() != null && searchParams.getQueryDataset() != null
+                && !searchParams.getQueryDataset().trim().isEmpty()) {
+            throw new IllegalArgumentException("queryVectors and queryDataset are mutually exclusive");
+        }
         QueryDatasetEnum queryDatasetEnum = QueryDatasetEnum.fromName(searchParams.getQueryDataset());
         if (searchParams.getQueryDataset() != null && !searchParams.getQueryDataset().equalsIgnoreCase("") && queryDatasetEnum == null) {
             log.warn("queryDataset={} 未匹配到 QueryDatasetEnum，回退为从collection里捞取查询输入", searchParams.getQueryDataset());
         }
-        if (queryDatasetEnum != null) {
+        if (searchParams.getQueryVectors() != null) {
+            searchBaseVectors = AdvancedSearchSupport.explicitFloatVectors(searchParams.getQueryVectors(), searchParams.getNq());
+        } else if (queryDatasetEnum != null) {
             // 指定了 query 数据集：不从底库捞，全量加载数据集文件作为查询输入
             log.info("使用query数据集 {} 全量加载search查询输入", queryDatasetEnum.datasetName);
             searchBaseVectors = QueryDatasetUtil.providerAllQueryVectors(queryDatasetEnum);
@@ -122,7 +155,9 @@ public class SearchComp {
         }
 
         // 如果不随机，则随机一个
-        List<BaseVector> baseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
+        List<BaseVector> baseVectors = searchParams.getQueryVectors() == null
+                ? CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq())
+                : AdvancedSearchSupport.queryBatch(searchBaseVectors, searchParams.getNq(), 0);
 
         ArrayList<Future<SearchResult>> list = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(searchParams.getNumConcurrency());
@@ -143,6 +178,7 @@ public class SearchComp {
         if (searchParams.getIndexAlgo() != null && !searchParams.getIndexAlgo().equalsIgnoreCase("")) {
             searchLevel.put("index_algo", searchParams.getIndexAlgo());
         }
+        addGroupBySearchParams(searchLevel, searchParams);
         // 1. 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
         if (searchParams.getTargetQps() > 0) {
@@ -187,6 +223,9 @@ public class SearchComp {
                             }
                             if (searchParams.isRandomVector()) {
                                 randomBaseVectors = CommonFunction.providerSearchVectorByNq(searchBaseVectors, searchParams.getNq());
+                            } else if (searchParams.getQueryVectors() != null) {
+                                randomBaseVectors = AdvancedSearchSupport.queryBatch(searchBaseVectors, searchParams.getNq(),
+                                        finalC + (long) returnNum.size() * searchParams.getNq());
                             }
                             // 配置filter
                             String filter = searchParams.getFilter();
@@ -220,7 +259,7 @@ public class SearchComp {
                                     .data(randomBaseVectors)
                                     .annsField(searchParams.getAnnsField())
                                     .partitionNames(searchParams.getPartitionNames() == null || searchParams.getPartitionNames().isEmpty() ? new ArrayList<>() : searchParams.getPartitionNames());
-                            if (searchParams.getGroupByField() != null && !searchParams.getGroupByField().isEmpty()) {
+                            if (!pluralGroupBy && searchParams.getGroupByField() != null && !searchParams.getGroupByField().isEmpty()) {
                                 searchReqBuilder.groupByFieldName(searchParams.getGroupByField());
                                 if (searchParams.getGroupSize() > 0) {
                                     searchReqBuilder.groupSize(searchParams.getGroupSize());
@@ -255,6 +294,9 @@ public class SearchComp {
                             }
                             costTime.add(costTimeItem);
                             statsReporter.recordCostTime(costTimeItem);
+                            if (searchParams.isCaptureSearchResults()) {
+                                searchResult.setSearchResults(search.getSearchResults());
+                            }
 //                            returnNum.add(search.getSearchResults().get(0).size());
                             returnNum.add(hitCount);
                             if (System.currentTimeMillis() - lastPrintTime >= 60000) {
@@ -279,12 +321,15 @@ public class SearchComp {
             list.add(future);
         }
         long requestNum = 0;
+        long rpcSuccessNum = 0;
         long successNum = 0;
         long hitSum = 0;
+        boolean rpcOnlyPass = isSparseField || pluralGroupBy;
+        List<List<SearchResp.SearchResult>> capturedSearchResults = null;
         // group-by strict 模式下每次请求返回 topK*groupSize 条（topK 为组数，每组严格 groupSize 条）
         // sparse 向量搜索（如 BM25）返回不满 topK 属正常，pass 口径为"请求无异常即成功"（returnNum 里 -1 为异常哨兵）
         final int expectedPerRequest;
-        if (searchParams.getGroupByField() != null && !searchParams.getGroupByField().isEmpty()
+        if ((pluralGroupBy || (searchParams.getGroupByField() != null && !searchParams.getGroupByField().isEmpty()))
                 && searchParams.getGroupSize() > 1 && searchParams.isStrictGroupSize()) {
             expectedPerRequest = searchParams.getTopK() * searchParams.getGroupSize();
         } else {
@@ -297,10 +342,13 @@ public class SearchComp {
             try {
                 SearchResult searchResult = future.get();
                 requestNum += searchResult.getResultNum().size();
-                successNum += searchResult.getResultNum().stream()
-                        .filter(x -> isSparseField ? x >= 0 : x == expectedPerRequest).count();
+                rpcSuccessNum += searchResult.getResultNum().stream().filter(x -> x >= 0).count();
+                successNum += countPassingRequests(searchResult.getResultNum(), rpcOnlyPass, expectedPerRequest);
                 hitSum += searchResult.getResultNum().stream().filter(x -> x >= 0).mapToInt(Integer::intValue).sum();
                 costTimeTotal.addAll(searchResult.getCostTime());
+                if (searchParams.isCaptureSearchResults()) {
+                    capturedSearchResults = searchResult.getSearchResults();
+                }
             } catch (InterruptedException | ExecutionException e) {
                 log.error("search 统计异常:" + e.getMessage());
                 commonResult = CommonResult.builder()
@@ -315,7 +363,8 @@ public class SearchComp {
         searchTotalTime = (float) ((endTimeTotal - startTimeTotal) / 1000.00);
         log.info(
                 "Total search " + requestNum + "次数 ,cost: " + searchTotalTime + " seconds! pass rate:" + (float) (100.0 * successNum / requestNum)
-                        + (isSparseField ? "% (sparse: 无异常即成功, avg hit count=" + (successNum == 0 ? 0 : String.format("%.1f", (double) hitSum / successNum)) + ")"
+                        + (pluralGroupBy ? "% (plural GroupBy: RPC success)"
+                        : isSparseField ? "% (sparse: 无异常即成功, avg hit count=" + (successNum == 0 ? 0 : String.format("%.1f", (double) hitSum / successNum)) + ")"
                         : "% (expectedPerRequest=" + expectedPerRequest + ")"));
         log.info("Total 线程数 " + searchParams.getNumConcurrency() + " ,RPS avg(成功请求) :" + successNum / searchTotalTime + " ,RPS avg(含失败) :" + requestNum / searchTotalTime);
         log.info("Avg:" + MathUtil.calculateAverage(costTimeTotal));
@@ -332,8 +381,9 @@ public class SearchComp {
         if (requestNum == 0) {
             assertMessages.add("[ASSERT FAIL] search requestNum == 0, no search was executed");
         }
-        String passDesc = isSparseField
-                ? String.format("%d/%d requests completed without exception (sparse, 返回不满 topK 属正常)", successNum, requestNum)
+        String passDesc = rpcOnlyPass
+                ? String.format("%d/%d requests completed without exception (%s)", successNum, requestNum,
+                        pluralGroupBy ? "plural GroupBy" : "sparse")
                 : String.format("%d/%d requests returned expectedCount=%d results", successNum, requestNum, expectedPerRequest);
         if (passRate < 50.0f) {
             assertMessages.add(String.format("[ASSERT FAIL] search passRate=%.2f%% < 50%%, %s", passRate, passDesc));
@@ -348,11 +398,15 @@ public class SearchComp {
         }
         CommonResult.markWarningIfAssertFail(commonResult, assertMessages);
         searchResultA = SearchResultA.builder()
-                // rps 只统计成功请求（dense：返回条数符合预期；sparse：无异常即成功），失败请求返回快会虚高 QPS
+                // New plural GroupBy and sparse search use RPC success; legacy dense paths keep hit-count semantics.
                 .rps(successNum / searchTotalTime)
                 .concurrencyNum(searchParams.getNumConcurrency())
                 .costTime(searchTotalTime)
                 .requestNum(requestNum)
+                .rpcSuccessNum(rpcSuccessNum)
+                .rpcFailureNum(requestNum - rpcSuccessNum)
+                .requestRps(requestNum / searchTotalTime)
+                .rpcSuccessRps(rpcSuccessNum / searchTotalTime)
                 .passRate(passRate)
                 .avg(MathUtil.calculateAverage(costTimeTotal))
                 .tp99(MathUtil.calculateTP99(costTimeTotal, 0.99f))
@@ -361,6 +415,7 @@ public class SearchComp {
                 .tp85(MathUtil.calculateTP99(costTimeTotal, 0.85f))
                 .tp80(MathUtil.calculateTP99(costTimeTotal, 0.80f))
                 .tp50(MathUtil.calculateTP99(costTimeTotal, 0.50f))
+                .searchResults(capturedSearchResults)
                 .commonResult(commonResult)
                 .assertMessages(assertMessages)
                 .build();
@@ -369,9 +424,38 @@ public class SearchComp {
         return searchResultA;
     }
 
+    static void validateCaptureConfig(SearchParams params) {
+        if (params.isCaptureSearchResults()
+                && (params.getNumConcurrency() != 1 || params.getRunningCount() != 1)) {
+            throw new IllegalArgumentException("captureSearchResults requires numConcurrency=1 and runningCount=1");
+        }
+    }
+
+    static void addGroupBySearchParams(Map<String, Object> searchLevel, SearchParams params) {
+        List<String> fields = params.getGroupByFields();
+        if (fields != null && !fields.isEmpty()) {
+            searchLevel.put("group_by_fields", fields.stream().map(String::trim).collect(Collectors.joining(",")));
+            if (params.getGroupSize() > 0) {
+                searchLevel.put("group_size", params.getGroupSize());
+            }
+            searchLevel.put("strict_group_size", params.isStrictGroupSize());
+        }
+        if (params.getGroupByJsonType() != null) {
+            searchLevel.put("json_type", params.getGroupByJsonType());
+        }
+        if (params.getGroupByStrictCast() != null) {
+            searchLevel.put("strict_cast", params.getGroupByStrictCast());
+        }
+    }
+
+    static long countPassingRequests(List<Integer> hitCounts, boolean rpcOnlyPass, int expectedPerRequest) {
+        return hitCounts.stream().filter(x -> rpcOnlyPass ? x >= 0 : x == expectedPerRequest).count();
+    }
+
     @Data
     public static class SearchResult {
         private List<Float> costTime;
         private List<Integer> resultNum;
+        private List<List<SearchResp.SearchResult>> searchResults;
     }
 }

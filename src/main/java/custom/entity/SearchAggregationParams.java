@@ -18,6 +18,12 @@ public class SearchAggregationParams {
     private AggregationParams aggregation;
     private long timeout;
     private String targetEndpoint;
+    /** Explicit FloatVector corpus; the same vectors can be supplied to SearchParams. */
+    private List<List<Float>> queryVectors;
+    /** Zero preserves one-shot behavior; positive values enable closed-loop performance mode. */
+    private int numConcurrency;
+    private long runningMinutes;
+    private long runningCount;
 
     @Data
     public static class AggregationParams {

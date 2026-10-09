@@ -198,10 +198,20 @@ public class InsertComp {
         float insertTotalTime;
         log.info("Insert collection [" + collectionName + "]  from id:" + insertParams.getStartId() + "total insert " + insertParams.getNumEntries() + " entities... ");
         long startTimeTotal = System.currentTimeMillis();
-        ExecutorService executorService = Executors.newFixedThreadPool(perCollectionConcurrency);
         ArrayList<Future<InsertResultItem>> list = new ArrayList<>();
         // 提前获取collectionSchema，避免每次生成数据时候重复调用describe接口
         DescribeCollectionResp describeCollectionResp = client.describeCollection(DescribeCollectionReq.builder().collectionName(collectionName).build());
+        Set<String> configuredSourceFields = new HashSet<>(fieldDatasetInfoMap.keySet());
+        if (insertParams.getFieldDataSourceList() != null) {
+            for (FieldDataSource source : insertParams.getFieldDataSourceList()) {
+                if (source != null && source.getFieldName() != null) {
+                    configuredSourceFields.add(source.getFieldName());
+                }
+            }
+        }
+        CommonFunction.validateDeterministicInsertRules(insertParams.getGeneralDataRoleList(),
+                describeCollectionResp, configuredSourceFields);
+        ExecutorService executorService = Executors.newFixedThreadPool(perCollectionConcurrency);
 
         // 创建RateLimiter实例（根据配置的QPS）
         RateLimiter rateLimiter = null;
