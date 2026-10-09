@@ -133,8 +133,8 @@ public class SearchComp {
             throw new IllegalArgumentException("queryVectors and queryDataset are mutually exclusive");
         }
         QueryDatasetEnum queryDatasetEnum = QueryDatasetEnum.fromName(searchParams.getQueryDataset());
-        if (searchParams.getQueryDataset() != null && !searchParams.getQueryDataset().trim().isEmpty() && queryDatasetEnum == null) {
-            throw new IllegalArgumentException("unknown queryDataset: " + searchParams.getQueryDataset());
+        if (searchParams.getQueryDataset() != null && !searchParams.getQueryDataset().equalsIgnoreCase("") && queryDatasetEnum == null) {
+            log.warn("queryDataset={} 未匹配到 QueryDatasetEnum，回退为从collection里捞取查询输入", searchParams.getQueryDataset());
         }
         if (searchParams.getQueryVectors() != null) {
             searchBaseVectors = AdvancedSearchSupport.explicitFloatVectors(searchParams.getQueryVectors(), searchParams.getNq());

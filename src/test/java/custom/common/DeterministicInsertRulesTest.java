@@ -58,6 +58,21 @@ class DeterministicInsertRulesTest {
                 rules, collection, Collections.emptySet()));
     }
 
+    @Test
+    void hashModeWithWhitespaceUsesHashDistribution() {
+        DescribeCollectionResp collection = collection();
+        GeneralDataRole hash = rule("filter_bucket", "hash", 100);
+        hash.setSeed(42L);
+        GeneralDataRole paddedHash = rule("filter_bucket", " hash ", 100);
+        paddedHash.setSeed(42L);
+
+        List<JsonObject> expected = generate(collection, Collections.singletonList(hash), 0, 20);
+        List<JsonObject> actual = generate(collection, Collections.singletonList(paddedHash), 0, 20);
+        for (int i = 0; i < expected.size(); i++) {
+            assertEquals(expected.get(i).get("filter_bucket"), actual.get(i).get("filter_bucket"));
+        }
+    }
+
     private static List<JsonObject> generate(DescribeCollectionResp collection, List<GeneralDataRole> rules,
                                              long startId, long count) {
         return CommonFunction.genCommonData(count, startId, rules, 10_000_000, 0, collection,

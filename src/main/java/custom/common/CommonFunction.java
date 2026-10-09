@@ -828,7 +828,7 @@ public class CommonFunction {
     private static void applyDeterministicInsertRule(JsonObject row, GeneralDataRole rule, long rowIndex, DataType fieldType) {
         long divisor = rule.getDivisor() == null ? 1 : rule.getDivisor();
         long bucket;
-        if ("hash".equalsIgnoreCase(rule.getGenerationMode())) {
+        if ("hash".equalsIgnoreCase(rule.getGenerationMode().trim())) {
             long value = rowIndex ^ (rule.getSeed() == null ? 0 : rule.getSeed());
             value ^= value >>> 33;
             value *= 0xff51afd7ed558ccdL;

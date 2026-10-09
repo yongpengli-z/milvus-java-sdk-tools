@@ -58,7 +58,7 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 | `widetable` | vector（FloatVec，768d） | `/test/milvus/raw_data/widetable/emb_768.npy`（10000 条） |
 | `widetable_bm25` | text（EmbeddedText，BM25 查询文本） | `/test/milvus/raw_data/widetable/bm25_title_short.txt`（2000 条） |
 
-填错名称会直接报错，不再静默回退为从底库捞取。
+填错名称会 log.warn 告警并回退为从底库捞取。
 
 `queryVectors` 是可在 Search 与 SearchAggregation 配置中复用的显式 FloatVector 池；`randomVector=false` 时各 worker 按请求次数循环取 `nq` 条（与 Aggregation 的性能模式一致），`true` 时每次从池中随机取样。
 
