@@ -97,6 +97,9 @@ public class SearchParams {
     /** Explicit reusable FloatVector query corpus; mutually exclusive with queryDataset. */
     private List<List<Float>> queryVectors;
 
+    /** Return full results for one-request correctness preflight, not performance runs. */
+    private boolean captureSearchResults;
+
     /**
      * 每组返回条数（group_size），仅 {@link #groupByField} 非空时生效。
      * <p>

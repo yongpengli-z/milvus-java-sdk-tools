@@ -89,6 +89,14 @@ final class AdvancedSearchSupport {
         return result;
     }
 
+    static List<BaseVector> queryBatch(List<BaseVector> vectors, int nq, long offset) {
+        List<BaseVector> batch = new ArrayList<>(nq);
+        for (int i = 0; i < nq; i++) {
+            batch.add(vectors.get((int) Math.floorMod(offset + i, vectors.size())));
+        }
+        return batch;
+    }
+
     static SearchReq.SearchReqBuilder baseRequest(String collection, String annsField, int topK,
                                                    List<String> outputFields, String filter,
                                                    List<String> partitionNames, List<BaseVector> vectors) {

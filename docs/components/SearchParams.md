@@ -13,6 +13,7 @@
 | `collectionRangeEnd` | int | 否 | `-1` | 池区间结束（开区间），<=0 表示到末尾 |
 | `queryDataset` | String | 否 | `""` | query 数据集名称（见下文「Query 数据集」），不从底库捞查询输入 |
 | `queryVectors` | List<List<Float>> | 否 | `null` | 显式 FloatVector query corpus，与 `queryDataset` 互斥；至少包含 `nq` 条同维有限值向量 |
+| `captureSearchResults` | boolean | 否 | `false` | 仅用于单次正确性预检；要求 `numConcurrency=1`、`runningCount=1`，结果包含完整 `searchResults` |
 | `annsField` | String | **是** | | 向量字段名。**强烈建议显式指定** |
 | `nq` | int | 是 | `1` | query vectors 数量 |
 | `topK` | int | 是 | `1` | |
@@ -59,7 +60,7 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 
 填错名称会直接报错，不再静默回退为从底库捞取。
 
-`queryVectors` 是可在 Search 与 SearchAggregation 配置中复用的显式 FloatVector 池；`randomVector=false` 时固定取前 `nq` 条，`true` 时每次从池中取样。
+`queryVectors` 是可在 Search 与 SearchAggregation 配置中复用的显式 FloatVector 池；`randomVector=false` 时各 worker 按请求次数循环取 `nq` 条（与 Aggregation 的性能模式一致），`true` 时每次从池中随机取样。
 
 ## 按次数运行
 
@@ -89,9 +90,10 @@ Search 的目标 collection 从进程内全局池（Initial/Create/Restore 组�
 
 - **性能测试建议**：添加多个 SearchParams 组件，设置不同 `numConcurrency`（1/5/10/20/50）递增压力。
 - **group-by 搜索**：`groupByField` 保留单列旧请求；`groupByFields` 经 search params 传新协议（允许单列或多列），其中 JSON path 写为 `meta["g100"]` 且只可单列；数值 JSON 叶子可配 `groupByJsonType="Int64"`，不配时服务端默认按字符串取值；多列与 JSON path 组合会报错。strict 优化路径（2.6.23+，PR#53306）生效条件：`strictGroupSize=true` + `groupSize>1` + `nq=1`。
-- **group-by 下 passRate 口径**：strict 模式（`strictGroupSize=true` 且 `groupSize>1`）每次请求期望返回 `topK*groupSize` 条（topK 为组数），passRate 按此判定；非 strict 分组仍按 `== topK` 判定。
+- **group-by 下 passRate 口径**：新 `groupByFields` 路径按 RPC 成功率统计，不对返回条数作语义断言；旧 `groupByField` 路径保持原有 hit 数口径，strict 模式期望 `topK*groupSize` 条，非 strict 模式期望 `topK` 条。
+- **结果预检**：`captureSearchResults=true` 仅允许单 worker、单请求，并将 SDK 返回的命中实体/分数写入步骤结果；测案需在 `outputs` 中指定待检查字段，并自行验证分组语义，性能步骤保持默认 `false`。
 - **sparse 向量搜索的 passRate 口径**：`annsField` 为 SparseFloatVector（含 BM25 function 输出字段）时自动识别，pass = 请求无异常即成功，不要求返回满 topK（BM25/稀疏搜索返回不满 topK 属正常）；dense 向量仍按"返回条数 == 期望数"判定。最终日志会额外打印 sparse 模式的 avg hit count。
-- **RPC 统计**：`rpcSuccessNum`/`rpcFailureNum`/`requestRps`（所有尝试）/`rpcSuccessRps`（成功 RPC）与原有基于 hit 数的 `passRate`/`rps` 分开；GroupBy 非 strict 或 `nq>1` 时，不要用旧 `passRate` 代替请求成功率或结果正确性。
+- **RPC 统计**：`rpcSuccessNum`/`rpcFailureNum`/`requestRps`（所有尝试）/`rpcSuccessRps`（成功 RPC）与旧路径基于 hit 数的 `passRate`/`rps` 分开；新 `groupByFields` 的 `passRate`/`rps` 仅表示 RPC 成功，不表示结果正确。
 
 ## JSON 示例
 

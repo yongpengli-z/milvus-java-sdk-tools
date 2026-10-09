@@ -53,7 +53,7 @@ public class SearchAggregationComp {
             }
             SearchReq request = AdvancedSearchSupport.baseRequest(prepared.collection, params.getAnnsField(),
                             params.getTopK(), params.getOutputFields(), params.getFilter(),
-                            params.getPartitionNames(), queryBatch(prepared.vectors, params.getNq(), 0))
+                            params.getPartitionNames(), AdvancedSearchSupport.queryBatch(prepared.vectors, params.getNq(), 0))
                     .searchAggregation(aggregation)
                     .build();
             long timeout = params.getTimeout() > 0 ? params.getTimeout() : 800;
@@ -98,7 +98,7 @@ public class SearchAggregationComp {
                     WorkerStats stats = new WorkerStats();
                     while (params.getRunningCount() > 0 ? stats.requestNum < params.getRunningCount()
                             : System.nanoTime() < deadline) {
-                        List<BaseVector> vectors = queryBatch(prepared.vectors, params.getNq(),
+                        List<BaseVector> vectors = AdvancedSearchSupport.queryBatch(prepared.vectors, params.getNq(),
                                 workerIndex + stats.requestNum * params.getNq());
                         SearchReq request = AdvancedSearchSupport.baseRequest(prepared.collection, params.getAnnsField(),
                                         params.getTopK(), params.getOutputFields(), params.getFilter(),
@@ -159,14 +159,6 @@ public class SearchAggregationComp {
             reporter.stop();
             executor.shutdownNow();
         }
-    }
-
-    private static List<BaseVector> queryBatch(List<BaseVector> vectors, int nq, long offset) {
-        List<BaseVector> batch = new ArrayList<>(nq);
-        for (int i = 0; i < nq; i++) {
-            batch.add(vectors.get((int) Math.floorMod(offset + i, vectors.size())));
-        }
-        return batch;
     }
 
     private static final class WorkerStats {
