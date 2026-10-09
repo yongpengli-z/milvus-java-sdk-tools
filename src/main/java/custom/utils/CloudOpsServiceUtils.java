@@ -25,25 +25,17 @@ import static custom.BaseTest.newInstanceInfo;
 @Slf4j
 public class CloudOpsServiceUtils {
     /**
-     * Tencent(Stage) 的 cloud-ops 网关只接受 X-API-Key 认证，sa_token header/cookie 一律 401
-     * （同 testplatform commit ed3e63a 的适配）；其他环境沿用 sa_token + cookie。
+     * cloud-ops 鉴权头：X-API-Key 与 sa_token（header + cookie）三种通发，不分环境。
+     * 实测（global + tencent stage）：cloud-ops 对 X-API-Key / sa_token 任一有效即放行，
+     * 另一个无效不影响。各环境 vdcConfig.json 的 cloud_ops_service_token 混存两种 token 类型，
+     * 按环境分流会一直踩坑（tcbj 任务 16188：vdcConfig 存 sa_token 但代码对 tencent 强制 X-API-Key 导致 401）。
      */
-    private static boolean isTencentCloudOps() {
-        String host = envConfig.getCloudOpsServiceHost();
-        String regionId = envConfig.getRegionId();
-        return (host != null && host.contains("tencent"))
-                || (regionId != null && regionId.startsWith("tc-"));
-    }
-
     public static Map<String, String> buildCloudOpsAuthHeader() {
         Map<String, String> header = new HashMap<>();
         String token = envConfig.getCloudOpsServiceToken();
-        if (isTencentCloudOps()) {
-            header.put("X-API-Key", token);
-        } else {
-            header.put("sa_token", token);
-            header.put("cookie", "sa_token=" + token);
-        }
+        header.put("X-API-Key", token);
+        header.put("sa_token", token);
+        header.put("cookie", "sa_token=" + token);
         return header;
     }
 
