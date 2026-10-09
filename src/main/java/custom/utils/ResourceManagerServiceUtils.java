@@ -10,6 +10,7 @@ import custom.entity.CreateSecondaryParams;
 import custom.entity.DeleteInstanceParams;
 import custom.entity.ModifyParams;
 import custom.entity.RollingUpgradeParams;
+import custom.pojo.InstanceInfo;
 import custom.pojo.ParamInfo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,6 +81,39 @@ public class ResourceManagerServiceUtils {
         header.put("SourceApp", "Cloud-Meta");
         log.info("head-requestId: " + requestId);
         return HttpClientUtils.doGet(url, header, null);
+    }
+
+    /**
+     * RM 免密实例列表（替代 cloud-service /cloud/v1/instance/list，无需 session token）。
+     * 响应字段见 zilliz-cloud common-sdk GetInstanceListResponse：Data.Instances[] 含
+     * InstanceId/InstanceName/Status，无 ConnectAddress（URI 需走 describeInstance 拿）。
+     * <p>
+     * fail-open：解析失败/异常返回空列表并 warn，调用方（如同名查重）按"无重名"继续。
+     */
+    public static List<InstanceInfo> listInstances() {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/list?regionId="
+                + envConfig.getRegionId() + "&perPageNum=200";
+        List<InstanceInfo> instanceInfoList = new ArrayList<>();
+        try {
+            String s = HttpClientUtils.doGet(url, buildRmProxyUserHeader("list instance"), null);
+            log.info("[rm-service][list instance]: " + s);
+            JSONObject resp = JSONObject.parseObject(s);
+            JSONObject data = resp == null ? null : resp.getJSONObject("Data");
+            JSONArray instances = data == null ? null : data.getJSONArray("Instances");
+            if (instances == null) {
+                log.warn("[rm-service][list instance] 响应缺少 Data.Instances，按空列表处理");
+                return instanceInfoList;
+            }
+            for (int i = 0; i < instances.size(); i++) {
+                InstanceInfo instanceInfo = new InstanceInfo();
+                instanceInfo.setInstanceId(instances.getJSONObject(i).getString("InstanceId"));
+                instanceInfo.setInstanceName(instances.getJSONObject(i).getString("InstanceName"));
+                instanceInfoList.add(instanceInfo);
+            }
+        } catch (Exception e) {
+            log.warn("[rm-service][list instance] 查询失败，按空列表处理: {}", e.getMessage());
+        }
+        return instanceInfoList;
     }
 
     public static String rollingUpgrade(RollingUpgradeParams rollingUpgradeParams) {

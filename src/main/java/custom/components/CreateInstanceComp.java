@@ -33,9 +33,9 @@ public class CreateInstanceComp {
         if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
             cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
-        // check是否存在同名的实例
+        // check是否存在同名的实例（RM 免密接口；查询失败返回空列表，按无重名继续）
         List<InstanceInfo> instanceInfoList =
-                CloudServiceUtils.listInstance();
+                ResourceManagerServiceUtils.listInstances();
         boolean isExist = false;
         for (InstanceInfo instanceInfo : instanceInfoList) {
             if (instanceInfo.getInstanceName().equalsIgnoreCase(createInstanceParams.getInstanceName())) {
@@ -140,19 +140,13 @@ public class CreateInstanceComp {
                 break;
             }
             if (status == null || status == InstanceStatusEnum.RUNNING) {
-                List<InstanceInfo> instanceInfos = CloudServiceUtils.listInstance();
-                if (instanceInfos.size() > 0) {
-                    for (InstanceInfo instanceInfo : instanceInfos) {
-                        if (instanceInfo.getInstanceName().equalsIgnoreCase(createInstanceParams.getInstanceName())) {
-                            if (status == null || status == InstanceStatusEnum.RUNNING) {
-                                createSuccess = true;
-                                newInstanceInfo.setInstanceId(instanceInfo.getInstanceId());
-                                newInstanceInfo.setUri(instanceInfo.getUri());
-                                newInstanceInfo.setInstanceName(instanceInfo.getInstanceName());
-                            }
-                            break;
-                        }
-                    }
+                // RM list 响应不含 ConnectAddress，用 describe 拿 URI（同样免密）
+                String connectAddress = describeConnectAddress(instanceId);
+                if (connectAddress != null && !connectAddress.isEmpty()) {
+                    createSuccess = true;
+                    newInstanceInfo.setInstanceId(instanceId);
+                    newInstanceInfo.setUri(connectAddress);
+                    newInstanceInfo.setInstanceName(createInstanceParams.getInstanceName());
                 }
             }
             if (createSuccess) {
@@ -270,6 +264,18 @@ public class CreateInstanceComp {
             return status;
         } catch (Exception e) {
             log.warn("[CreateInstance] describe instance status failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private static String describeConnectAddress(String instanceId) {
+        try {
+            String descResp = ResourceManagerServiceUtils.describeInstance(instanceId);
+            JSONObject jo = JSONObject.parseObject(descResp);
+            JSONObject data = jo == null ? null : jo.getJSONObject("Data");
+            return data == null ? null : data.getString("ConnectAddress");
+        } catch (Exception e) {
+            log.warn("[CreateInstance] describe instance connect address failed: {}", e.getMessage());
             return null;
         }
     }
