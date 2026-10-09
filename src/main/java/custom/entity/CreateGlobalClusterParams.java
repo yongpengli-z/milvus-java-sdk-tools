@@ -14,11 +14,6 @@ import java.util.List;
 @Data
 public class CreateGlobalClusterParams {
 
-    // ==================== 账号相关（可选，留空使用默认登录） ====================
-
-    String accountEmail;
-    String accountPassword;
-
     // ==================== Primary 实例参数 ====================
 
     /** 主实例所在 regionId，例如 aws-us-west-2 */

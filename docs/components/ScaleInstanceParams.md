@@ -9,8 +9,6 @@
 | `instanceId` | String | 否 | `""` | 留空使用当前实例 |
 | `targetCuType` | String | 否 | `""` | 目标 CU（如 `class-8-enterprise`），留空不修改 |
 | `targetReplica` | int | 否 | `1` | 目标副本数，0=不修改 |
-| `accountEmail` | String | 否 | `""` | |
-| `accountPassword` | String | 否 | `""` | |
 
 ## classId 与 replica 编码规则
 

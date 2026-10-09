@@ -40,24 +40,6 @@ public class ModifyParams {
      */
     List<Params> paramsList;
 
-    /**
-     * 账号邮箱（可选）。
-     * <p>
-     * 前端：`modifyParamsEdit.vue` -> "Account Email"
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountEmail;
-
-    /**
-     * 账号密码（可选）。
-     * <p>
-     * 前端：`modifyParamsEdit.vue` -> "Account Password"
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountPassword;
-
     @Data
     public static class Params {
         /**

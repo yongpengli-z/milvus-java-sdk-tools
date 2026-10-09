@@ -17,22 +17,4 @@ public class RestartInstanceParams {
      * 前端默认值：""（空字符串）
      */
     String instanceId;
-
-    /**
-     * 账号邮箱（可选）。
-     * <p>
-     * 前端：`restartInstanceEdit.vue` -> "Account Email"
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountEmail;
-
-    /**
-     * 账号密码（可选）。
-     * <p>
-     * 前端：`restartInstanceEdit.vue` -> "Account Password"
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountPassword;
 }

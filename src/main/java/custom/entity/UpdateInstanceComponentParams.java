@@ -35,9 +35,6 @@ public class UpdateInstanceComponentParams {
      */
     String instanceId;
 
-    String accountEmail;
-    String accountPassword;
-
     /**
      * 每个 NodeCategory 的目标规格。同一个 (category, replicaIndex) 组合建议不要重复出现，
      * 如果出现，按 list 顺序依次执行，后者会覆盖前者。

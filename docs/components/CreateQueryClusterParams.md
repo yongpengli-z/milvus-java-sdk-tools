@@ -18,8 +18,6 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
 | `maxQueryNodeReplicas` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created |
 | `vectorLakeDbVersion` | String | No | `""` | Expected `in06` version. If set, the component creates `in06` when absent and upgrades it before creating `in07` |
 | `queryClusterDbVersion` | String | No | `""` | Optional `in07` QueryNode version to apply after creation |
-| `accountEmail` | String | No | default account | Cloud account email |
-| `accountPassword` | String | No | default account | Cloud account password |
 
 ## Notes
 
@@ -47,9 +45,7 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
     "regionId": "aws-us-west-2",
     "sessionTTL": "30m",
     "vectorLakeDbVersion": "vectorlake-20260509-xxxxxxx",
-    "queryClusterDbVersion": "querycluster-20260509-yyyyyyy",
-    "accountEmail": "",
-    "accountPassword": ""
+    "queryClusterDbVersion": "querycluster-20260509-yyyyyyy"
   }
 }
 ```

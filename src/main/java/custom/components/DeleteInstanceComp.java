@@ -56,11 +56,8 @@ public class DeleteInstanceComp {
     }
 
     private static void ensureAccount(DeleteInstanceParams params) {
-        if (params.getAccountEmail() != null && !params.getAccountEmail().equalsIgnoreCase("")) {
-            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(params.getAccountEmail(), params.getAccountPassword());
-            return;
-        }
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
+        // 只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
+        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
             cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
     }

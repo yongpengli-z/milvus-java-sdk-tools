@@ -17,13 +17,9 @@ import static custom.BaseTest.cloudServiceUserInfo;
 @Slf4j
 public class ResumeInstanceComp {
     public static ResumeInstanceResult resumeInstance(ResumeInstanceParams resumeInstanceParams){
-        // 检查账号
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
-            if (resumeInstanceParams.getAccountEmail() == null || resumeInstanceParams.getAccountEmail().equalsIgnoreCase("")) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-            } else {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(resumeInstanceParams.getAccountEmail(), resumeInstanceParams.getAccountPassword());
-            }
+        // 检查账号：只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
+        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
 
         // 检查实例状态

@@ -8,8 +8,6 @@
 |------|------|:----:|--------|------|
 | `useCloudTestApi` | boolean | 是 | `false` | 是否使用 Cloud-Test API 删除实例 |
 | `instanceId` | String | 否 | `""` | 留空使用当前实例；可传普通实例 ID、Global Cluster ID、primary ID 或 secondary ID |
-| `accountEmail` | String | 否 | `""` | |
-| `accountPassword` | String | 否 | `""` | |
 
 ## Global Cluster 删除行为
 

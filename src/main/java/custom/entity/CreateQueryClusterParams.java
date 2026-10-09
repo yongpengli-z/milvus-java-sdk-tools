@@ -1,6 +1,5 @@
 package custom.entity;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 
 @Data
@@ -16,8 +15,4 @@ public class CreateQueryClusterParams {
 
     String vectorLakeDbVersion;
     String queryClusterDbVersion;
-
-    String accountEmail;
-    @JSONField(serialize = false)
-    String accountPassword;
 }

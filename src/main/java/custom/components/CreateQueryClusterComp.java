@@ -125,15 +125,11 @@ public class CreateQueryClusterComp {
     }
 
     private static void ensureCloudServiceLogin(CreateQueryClusterParams params) {
+        // 只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
         if (cloudServiceUserInfo.getUserId() != null && !cloudServiceUserInfo.getUserId().isEmpty()) {
             return;
         }
-        if (params.getAccountEmail() == null || params.getAccountEmail().isEmpty()) {
-            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-        } else {
-            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(
-                    params.getAccountEmail(), params.getAccountPassword());
-        }
+        cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
     }
 
     private static String prepareVectorLake(CreateQueryClusterParams params, String projectId, String regionId,

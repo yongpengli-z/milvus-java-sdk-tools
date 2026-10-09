@@ -18,13 +18,9 @@ import static custom.BaseTest.*;
 public class ScaleInstanceComp {
     public static ScaleInstanceResult scaleInstance(ScaleInstanceParams scaleInstanceParams) {
         long startTime = System.currentTimeMillis();
-        // 检查账号
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
-            if (scaleInstanceParams.getAccountEmail() == null || scaleInstanceParams.getAccountEmail().equalsIgnoreCase("")) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-            } else {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(scaleInstanceParams.getAccountEmail(), scaleInstanceParams.getAccountPassword());
-            }
+        // 检查账号：只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
+        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
         String instanceId = (scaleInstanceParams.getInstanceId() == null || scaleInstanceParams.getInstanceId().equalsIgnoreCase(""))
                 ? newInstanceInfo.getInstanceId() : scaleInstanceParams.getInstanceId();

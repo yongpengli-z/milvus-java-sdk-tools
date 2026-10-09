@@ -39,14 +39,9 @@ public class UpdateInstanceComponentComp {
     public static UpdateInstanceComponentResult updateInstanceComponent(UpdateInstanceComponentParams params) {
         long startTs = System.currentTimeMillis();
 
-        // 1) 账号登录（与其它 Comp 保持一致）
+        // 1) 账号登录（与其它 Comp 保持一致）：只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
         if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
-            if (params.getAccountEmail() == null || params.getAccountEmail().isEmpty()) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-            } else {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(
-                        params.getAccountEmail(), params.getAccountPassword());
-            }
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
 
         List<ChangeRecord> changes = new ArrayList<>();
@@ -172,8 +167,6 @@ public class UpdateInstanceComponentComp {
         // 5) 全部 update 成功后 restart，等待 RUNNING 让配置真正生效
         RestartInstanceParams restartParams = new RestartInstanceParams();
         restartParams.setInstanceId(instanceId);
-        restartParams.setAccountEmail(params.getAccountEmail());
-        restartParams.setAccountPassword(params.getAccountPassword());
         RestartInstanceResult restartResult = RestartInstanceComp.restartInstance(restartParams);
 
         int totalCost = (int) ((System.currentTimeMillis() - startTs) / 1000L);

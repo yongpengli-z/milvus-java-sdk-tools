@@ -15,8 +15,6 @@
 | `rootPassword` | String | 是 | `Milvus123` | root/db_admin 密码 |
 | `roleUse` | String | 是 | `root` | 连接角色：`root` 或 `db_admin` |
 | `useHours` | int | 是 | `10` | 使用时长（小时） |
-| `accountEmail` | String | 否 | `""` | 留空使用默认账号 |
-| `accountPassword` | String | 否 | `""` | |
 | `bizCritical` | boolean | 否 | `false` | 是否重保 |
 | `monopolized` | boolean | 否 | `false` | 是否独占模式 |
 | `qnBreakUp` | boolean | 否 | `false` | 是否打散 QN |

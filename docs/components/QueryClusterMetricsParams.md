@@ -12,8 +12,6 @@
 | `clusterId` | String | 否 | `newInstanceInfo.instanceId` | 目标 cluster/instance ID |
 | `apiKey` | String | 否 | 自动获取 | 推荐显式传 Zilliz Cloud API key；为空时会按账号自动查询 managed API key；发送为 `Authorization: Bearer <apiKey>` |
 | `apiKeySystemProperty` | String | 否 | `zilliz.apiKey` | 从 JVM property 读取 API key 的 key 名 |
-| `accountEmail` | String | 否 | 默认测试账号 | 自动获取 API key 时使用的账号；为空时调用默认账号登录 |
-| `accountPassword` | String | 否 | | `accountEmail` 对应密码 |
 | `start` | String | 条件 | | UTC ISO 8601 时间；`period` 为空时需要与 `end` 同时传 |
 | `end` | String | 条件 | | UTC ISO 8601 时间；`period` 为空时需要与 `start` 同时传 |
 | `period` | String | 条件 | | ISO 8601 duration，例如 `PT24H`；传了 `period` 可不传 `start/end` |
@@ -72,14 +70,12 @@
 }
 ```
 
-指定账号，自动获取该账号下的 managed API key：
+复用当前登录态（QTP 注入的提交人账号，或默认账号），自动获取该账号下的 managed API key：
 
 ```json
 {
   "QueryClusterMetricsParams_0": {
     "clusterId": "inxx-xxxxxxxxxxxxxxx",
-    "accountEmail": "your-account@example.com",
-    "accountPassword": "your-password",
     "start": "2024-06-30T16:09:53Z",
     "end": "2024-07-01T16:09:53Z",
     "granularity": "PT6H",
@@ -97,7 +93,7 @@
 1. `apiKey`
 2. `-Dzilliz.apiKey`
 3. `ZILLIZ_API_KEY`
-4. 使用 `accountEmail/accountPassword` 或当前登录态调用 `/cloud/v1/apikey/list-managed-key` 获取 `type=1` 的 managed key
+4. 使用当前登录态（QTP 注入的提交人账号，未注入时为默认账号）调用 `/cloud/v1/apikey/list-managed-key` 获取 `type=1` 的 managed key
 5. 已有实例 token / cloud-service token 兜底
 
 Base URL 解析：

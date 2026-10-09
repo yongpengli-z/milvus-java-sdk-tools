@@ -29,14 +29,11 @@ import static custom.BaseTest.*;
 public class CreateInstanceComp {
     public static CreateInstanceResult createInstance(CreateInstanceParams createInstanceParams) {
         LocalDateTime startTime = LocalDateTime.now();
-        // 登录cloudService获取账户信息 // 检查账号
-        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
-            if (createInstanceParams.getAccountEmail() == null || createInstanceParams.getAccountEmail().equalsIgnoreCase("")) {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
-            } else {
-                cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(createInstanceParams.getAccountEmail(), createInstanceParams.getAccountPassword());
-            }
-        }        // check是否存在同名的实例
+        // 登录cloudService获取账户信息 // 检查账号：只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
+        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
+            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
+        }
+        // check是否存在同名的实例
         List<InstanceInfo> instanceInfoList =
                 CloudServiceUtils.listInstance();
         boolean isExist = false;

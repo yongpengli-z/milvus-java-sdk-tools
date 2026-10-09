@@ -257,11 +257,7 @@ public class QueryClusterMetricsComp {
     }
 
     private static void ensureCloudServiceLogin(QueryClusterMetricsParams params) {
-        if (params != null && hasText(params.getAccountEmail())) {
-            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(
-                    params.getAccountEmail(), params.getAccountPassword());
-            return;
-        }
+        // 只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
         if (cloudServiceUserInfo != null && hasText(cloudServiceUserInfo.getToken())
                 && cloudServiceUserInfo.getOrgIdList() != null && !cloudServiceUserInfo.getOrgIdList().isEmpty()) {
             log.info("QueryClusterMetrics reuse current cloud-service login account={}",

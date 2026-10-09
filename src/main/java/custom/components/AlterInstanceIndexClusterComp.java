@@ -19,10 +19,8 @@ import static custom.BaseTest.newInstanceInfo;
 @Slf4j
 public class AlterInstanceIndexClusterComp {
     public static AlterInstanceIndexClusterResult alterIndexCluster(AlterInstanceIndexClusterParams alterInstanceIndexClusterParams){
-        // 检查账号（如果指定了 accountEmail 则强制用该账号登录）
-        if (alterInstanceIndexClusterParams.getAccountEmail() != null && !alterInstanceIndexClusterParams.getAccountEmail().equalsIgnoreCase("")) {
-            cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(alterInstanceIndexClusterParams.getAccountEmail(), alterInstanceIndexClusterParams.getAccountPassword());
-        } else if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("")) {
+        // 检查账号：只用全局 cloudServiceUserInfo（QTP 注入的提交人账号），为空才回退默认账号
+        if (cloudServiceUserInfo.getUserId() == null || cloudServiceUserInfo.getUserId().isEmpty()) {
             cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
         String s = CloudOpsServiceUtils.alterIndexCluster(alterInstanceIndexClusterParams);

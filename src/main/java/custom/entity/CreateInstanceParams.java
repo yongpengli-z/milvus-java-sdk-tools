@@ -67,26 +67,6 @@ public class CreateInstanceParams {
     int instanceType = 1;
 
     /**
-     * 创建实例所使用的账号邮箱（可选）。
-     * <p>
-     * 前端：`createInstanceEdit.vue` -> "Account Email"
-     * <p>
-     * 留空：后端会使用默认/临时账号登录并创建实例（具体见 CreateInstanceComp 的账号检查逻辑）。
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountEmail;
-
-    /**
-     * 创建实例所使用的账号密码（可选）。
-     * <p>
-     * 前端：`createInstanceEdit.vue` -> "Account Password"
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountPassword;
-
-    /**
      * 实例副本数（replica）。
      * <p>
      * 前端：`createInstanceEdit.vue` -> "Replica"

@@ -37,22 +37,4 @@ public class ScaleInstanceParams {
      * 前端默认值：0
      */
     int targetReplica;
-
-    /**
-     * 账号邮箱（可选）。
-     * <p>
-     * 前端：`scaleInstanceEdit.vue` -> "Account Email"
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountEmail;
-
-    /**
-     * 账号密码（可选）。
-     * <p>
-     * 前端：`scaleInstanceEdit.vue` -> "Account Password"
-     * <p>
-     * 前端默认值：""（空字符串）
-     */
-    String accountPassword;
 }

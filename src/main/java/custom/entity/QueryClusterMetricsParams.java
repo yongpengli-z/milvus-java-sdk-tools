@@ -32,17 +32,6 @@ public class QueryClusterMetricsParams {
     private String apiKeySystemProperty;
 
     /**
-     * Account email used to login cloud-service and auto fetch managed API key.
-     * Empty value uses the default test account.
-     */
-    private String accountEmail;
-
-    /**
-     * Account password used with accountEmail.
-     */
-    private String accountPassword;
-
-    /**
      * Start timestamp in ISO 8601 UTC format. Use with end when period is empty.
      */
     private String start;

@@ -18,11 +18,6 @@ import java.util.List;
 @Data
 public class CreateSecondaryParams {
 
-    // ==================== 账号相关（可选，留空使用默认登录） ====================
-
-    String accountEmail;
-    String accountPassword;
-
     // ==================== 目标实例标识 ====================
 
     /** 已有普通实例 ID（场景 A：standalone → Global Cluster） */
