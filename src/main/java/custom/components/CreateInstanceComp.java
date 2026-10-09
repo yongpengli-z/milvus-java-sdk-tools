@@ -34,14 +34,20 @@ public class CreateInstanceComp {
             cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
         }
         // check是否存在同名的实例（RM 免密接口；查询失败返回空列表，按无重名继续）
+        // 注意：RM /list 不返回 InstanceName（zilliz-cloud GetInstanceListService 构建响应时未填该字段），
+        // 同名查重为 best-effort（实际不生效）；RM 允许同名实例，以 instanceId 为唯一标识。
         List<InstanceInfo> instanceInfoList =
                 ResourceManagerServiceUtils.listInstances();
         boolean isExist = false;
         for (InstanceInfo instanceInfo : instanceInfoList) {
-            if (instanceInfo.getInstanceName().equalsIgnoreCase(createInstanceParams.getInstanceName())) {
+            String instanceName = instanceInfo.getInstanceName();
+            if (instanceName != null && instanceName.equalsIgnoreCase(createInstanceParams.getInstanceName())) {
                 isExist = true;
                 break;
             }
+        }
+        if (!isExist && !instanceInfoList.isEmpty()) {
+            log.debug("RM /list 未返回 InstanceName，同名查重实际不生效，按无重名继续（实例数={}）", instanceInfoList.size());
         }
         if (isExist) {
             int costSeconds = (int) ChronoUnit.SECONDS.between(startTime, LocalDateTime.now());

@@ -86,7 +86,8 @@ public class ResourceManagerServiceUtils {
     /**
      * RM 免密实例列表（替代 cloud-service /cloud/v1/instance/list，无需 session token）。
      * 响应字段见 zilliz-cloud common-sdk GetInstanceListResponse：Data.Instances[] 含
-     * InstanceId/InstanceName/Status，无 ConnectAddress（URI 需走 describeInstance 拿）。
+     * InstanceId/Status 等；**InstanceName 恒为 null**（GetInstanceListService 构建响应时未填），
+     * 也无 ConnectAddress（URI 需走 describeInstance 拿）。
      * <p>
      * fail-open：解析失败/异常返回空列表并 warn，调用方（如同名查重）按"无重名"继续。
      */
@@ -105,9 +106,13 @@ public class ResourceManagerServiceUtils {
                 return instanceInfoList;
             }
             for (int i = 0; i < instances.size(); i++) {
+                JSONObject item = instances.getJSONObject(i);
+                if (item == null) {
+                    continue;
+                }
                 InstanceInfo instanceInfo = new InstanceInfo();
-                instanceInfo.setInstanceId(instances.getJSONObject(i).getString("InstanceId"));
-                instanceInfo.setInstanceName(instances.getJSONObject(i).getString("InstanceName"));
+                instanceInfo.setInstanceId(item.getString("InstanceId"));
+                instanceInfo.setInstanceName(item.getString("InstanceName"));
                 instanceInfoList.add(instanceInfo);
             }
         } catch (Exception e) {
