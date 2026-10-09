@@ -35,8 +35,8 @@ public class StopInstanceComp {
                             .message("instance status can't stop!"+"Current status:" + instanceStatusByCode).build()).build();
         }
 
-        // stop
-        String stopResult = CloudServiceUtils.stopInstance(stopInstanceParams);
+        // stop（RM 直连免密）
+        String stopResult = ResourceManagerServiceUtils.stopInstanceByRm(stopInstanceParams.getInstanceId());
         JSONObject stopJO = JSONObject.parseObject(stopResult);
         if (stopJO.getInteger("Code") != 0) {
             return StopInstanceResult.builder()

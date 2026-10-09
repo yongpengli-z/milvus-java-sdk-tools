@@ -107,13 +107,22 @@ public class CloudServiceUtils {
      * 与 {@link #queryUserIdOfCloudService} 的差异：org/project 直接取 account 里的
      * orgId/projectId，不再查 listOrg/providerDefaultProject。
      * <p>
-     * fail-open：account 为空、email/password 为空、或任何异常都返回 null，由调用方回退默认账号。
+     * password 为空（老数据）时不登录，直接用注入的 userId/orgId/projectId 构造身份信息（token 留空），
+     * 仅 RM 直连操作可用（create/stop/resume/restart/delete/describe/list 等）；
+     * 需要 session token 的 cloud-service 组件会在云端返回未授权，属预期。
+     * <p>
+     * fail-open：account/email 为空、或登录过程任何异常都返回 null，由调用方回退默认账号。
      */
     public static CloudServiceUserInfo loginWithCloudAccount(InitialParams.CloudAccount account) {
-        if (account == null || account.getEmail() == null || account.getEmail().isEmpty()
-                || account.getPassword() == null || account.getPassword().isEmpty()) {
-            log.info("[cloudService][cloudAccount] email/password 为空，无法使用提交人云账号登录");
+        if (account == null || account.getEmail() == null || account.getEmail().isEmpty()) {
+            log.info("[cloudService][cloudAccount] email 为空，无法使用提交人云账号");
             return null;
+        }
+        if (account.getPassword() == null || account.getPassword().isEmpty()) {
+            CloudServiceUserInfo csUserInfo = buildUserInfoFromCloudAccount(account, null, account.getUserId());
+            log.info("[cloudService][cloudAccount] 无密码，未登录 cloud-service，仅 RM 直连操作可用\n- accountEmail={}\n- userId={}\n- proxyUserId={}\n- orgId={}\n- projectId={}",
+                    account.getEmail(), csUserInfo.getUserId(), csUserInfo.getProxyUserId(), account.getOrgId(), account.getProjectId());
+            return csUserInfo;
         }
         try {
             String loginUrl = envConfig.getCloudServiceHost().replace("cloud-service", "cloud-account")
@@ -127,37 +136,46 @@ public class CloudServiceUtils {
             JSONObject loginData = parseLoginResponse(loginResp, account.getEmail(), false);
             String token = loginData.getString("Token");
             String userId = loginData.getJSONObject("AccountInfo").getString("UserId");
-            CloudServiceUserInfo csUserInfo = new CloudServiceUserInfo();
-            csUserInfo.setToken(token);
-            csUserInfo.setUserId(userId);
-            csUserInfo.setAccountName(account.getEmail());
-            List<String> orgIdList = new ArrayList<>();
-            orgIdList.add(account.getOrgId());
-            csUserInfo.setOrgIdList(orgIdList);
-            csUserInfo.setDefaultProjectId(account.getProjectId());
-            // 查询 proxyUserId，失败则用 account.userId（再退化为登录返回的 userId）
-            String proxyUserId = null;
-            try {
-                String respCUS = CloudUserServiceUtils.getProxyUserId(account.getOrgId());
-                if (JSON.parseObject(respCUS).getInteger("Code") == 0) {
-                    proxyUserId = JSON.parseObject(respCUS).getJSONObject("Data").getString("proxyUserId");
-                }
-            } catch (Exception e) {
-                log.warn("[cloudService][cloudAccount] 查询 proxyUserId 失败: {}", e.getMessage());
-            }
-            if (proxyUserId == null || proxyUserId.isEmpty()) {
-                proxyUserId = account.getUserId() != null && !account.getUserId().isEmpty()
-                        ? account.getUserId() : userId;
-                log.info("[cloudService][cloudAccount] 未查询到 proxyUserId，使用 {} 替代", proxyUserId);
-            }
-            csUserInfo.setProxyUserId(proxyUserId);
+            CloudServiceUserInfo csUserInfo = buildUserInfoFromCloudAccount(account, token, userId);
             log.info("[cloudService][cloudAccount login user info]\n- accountEmail={}\n- userId={}\n- proxyUserId={}\n- orgId={}\n- projectId={}",
-                    account.getEmail(), userId, proxyUserId, account.getOrgId(), account.getProjectId());
+                    account.getEmail(), userId, csUserInfo.getProxyUserId(), account.getOrgId(), account.getProjectId());
             return csUserInfo;
         } catch (Exception e) {
             log.warn("[cloudService][cloudAccount] 登录失败，将回退默认账号: {}", e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * 用 cloudAccount 注入的 orgId/projectId 构造 CloudServiceUserInfo；
+     * proxyUserId 走 cloud-user-service org/find（免密），失败回退 account.userId，再退化为 userId。
+     */
+    private static CloudServiceUserInfo buildUserInfoFromCloudAccount(InitialParams.CloudAccount account,
+                                                                      String token, String userId) {
+        CloudServiceUserInfo csUserInfo = new CloudServiceUserInfo();
+        csUserInfo.setToken(token);
+        csUserInfo.setUserId(userId);
+        csUserInfo.setAccountName(account.getEmail());
+        List<String> orgIdList = new ArrayList<>();
+        orgIdList.add(account.getOrgId());
+        csUserInfo.setOrgIdList(orgIdList);
+        csUserInfo.setDefaultProjectId(account.getProjectId());
+        String proxyUserId = null;
+        try {
+            String respCUS = CloudUserServiceUtils.getProxyUserId(account.getOrgId());
+            if (JSON.parseObject(respCUS).getInteger("Code") == 0) {
+                proxyUserId = JSON.parseObject(respCUS).getJSONObject("Data").getString("proxyUserId");
+            }
+        } catch (Exception e) {
+            log.warn("[cloudService][cloudAccount] 查询 proxyUserId 失败: {}", e.getMessage());
+        }
+        if (proxyUserId == null || proxyUserId.isEmpty()) {
+            proxyUserId = account.getUserId() != null && !account.getUserId().isEmpty()
+                    ? account.getUserId() : userId;
+            log.info("[cloudService][cloudAccount] 未查询到 proxyUserId，使用 {} 替代", proxyUserId);
+        }
+        csUserInfo.setProxyUserId(proxyUserId);
+        return csUserInfo;
     }
 
 

@@ -35,8 +35,8 @@ public class ResumeInstanceComp {
                             .message("instance status can't resume !"+"Current status:" + instanceStatusByCode).build()).build();
         }
 
-        // stop
-        String stopResult = CloudServiceUtils.resumeInstance(resumeInstanceParams);
+        // resume（RM 直连免密）
+        String stopResult = ResourceManagerServiceUtils.resumeInstanceByRm(resumeInstanceParams.getInstanceId());
         JSONObject stopJO = JSONObject.parseObject(stopResult);
         if (stopJO.getInteger("Code") != 0) {
             return ResumeInstanceResult.builder()

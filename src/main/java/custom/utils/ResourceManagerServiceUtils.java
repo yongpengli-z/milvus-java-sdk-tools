@@ -458,6 +458,39 @@ public class ResourceManagerServiceUtils {
         return s;
     }
 
+    /**
+     * RM 直连 stop（免密，替代 cloud-service /cloud/v1/instance/stop）。
+     * 请求体字段见 zilliz-cloud common-sdk StopInstanceRequest：instanceId + enableChildJobCenter。
+     */
+    public static String stopInstanceByRm(String instanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/stop";
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        String body = "{\n" +
+                "  \"enableChildJobCenter\": false,\n" +
+                "  \"instanceId\": \"" + instanceIdTemp + "\"\n" +
+                "}";
+        String resp = postToRmAsProxyUser(url, JSONObject.parseObject(body).toJSONString(), "stop instance");
+        log.info("[rm-service][stop instance]: " + resp);
+        return resp;
+    }
+
+    /**
+     * RM 直连 resume（免密，替代 cloud-service /cloud/v1/instance/resume）。
+     * 请求体字段见 zilliz-cloud common-sdk ResumeInstanceRequest：instanceId + force + skipUpgrade。
+     */
+    public static String resumeInstanceByRm(String instanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/resume";
+        String instanceIdTemp = (instanceId == null || instanceId.equalsIgnoreCase("")) ? newInstanceInfo.getInstanceId() : instanceId;
+        String body = "{\n" +
+                "  \"force\": false,\n" +
+                "  \"instanceId\": \"" + instanceIdTemp + "\",\n" +
+                "  \"skipUpgrade\": false\n" +
+                "}";
+        String resp = postToRmAsProxyUser(url, JSONObject.parseObject(body).toJSONString(), "resume instance");
+        log.info("[rm-service][resume instance]: " + resp);
+        return resp;
+    }
+
     public static String updateLabel(String instanceId) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/update_biz_critical?InstanceId=" + instanceId;
         Gson gson = new Gson();
