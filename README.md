@@ -127,11 +127,12 @@
 | 组件 | 功能 | 详情 |
 |------|------|------|
 | CreateInstanceParams | 管控创建 Milvus 实例（cuType / dbVersion / replica） | [详情](docs/components/CreateInstanceParams.md) |
-| DeleteInstanceParams | 删除实例 | [详情](docs/components/DeleteInstanceParams.md) |
+| CreateQueryClusterParams | 创建 On-Demand QueryCluster（in07，自动复用/创建 in06 VL 底座，支持 apiKey 免密通道） | [详情](docs/components/CreateQueryClusterParams.md) |
+| DeleteInstanceParams | 删除实例（in07 走专属通道并级联回收空闲 in06） | [详情](docs/components/DeleteInstanceParams.md) |
 | StopInstanceParams | 停止实例 | [详情](docs/components/StopInstanceParams.md) |
 | ResumeInstanceParams | 恢复实例 | [详情](docs/components/ResumeInstanceParams.md) |
 | RestartInstanceParams | 重启实例 | [详情](docs/components/RestartInstanceParams.md) |
-| RollingUpgradeParams | 滚动升级 | [详情](docs/components/RollingUpgradeParams.md) |
+| RollingUpgradeParams | 滚动升级（支持指定 instanceId，in01/in06/in07） | [详情](docs/components/RollingUpgradeParams.md) |
 | ModifyParams | 修改运行参数 | [详情](docs/components/ModifyParams.md) |
 | ScaleInstanceParams | 升降配（CU / replica） | [详情](docs/components/ScaleInstanceParams.md) |
 | UpdateIndexPoolParams | 更新索引池 | [详情](docs/components/UpdateIndexPoolParams.md) |
