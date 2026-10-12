@@ -3,6 +3,7 @@ package custom.components;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import custom.common.ComponentSchedule;
 import custom.common.InstanceStatusEnum;
 import custom.entity.DeleteInstanceParams;
 import custom.entity.result.CommonResult;
@@ -31,7 +32,8 @@ public class DeleteInstanceComp {
 
     /**
      * 删除 QueryCluster(in07)：有 session token 走 cloud-service，无 token 走 OpenAPI(apiKey)。
-     * VL(in06) 是 (project, region) 共享底座，不随 QC 删除。
+     * QC 删完后级联清理 VL(in06) 共享底座——但仅当 (project, region) 下已无任何 QC，
+     * 避免删到其他任务正在复用的底座。
      */
     private static DeleteInstanceResult deleteQueryCluster(String clusterId) {
         long startTime = System.currentTimeMillis();
@@ -57,12 +59,75 @@ public class DeleteInstanceComp {
             return buildResult(ResultEnum.EXCEPTION.result, "delete query cluster failed: " + getMessage(respJO), 0);
         }
         boolean gone = waitQueryClusterGone(clusterId, openApi, projectId, regionId);
+        if (gone) {
+            cascadeDeleteIdleVectorLake(openApi, projectId, regionId);
+        }
         int costSeconds = elapsedSeconds(startTime);
         if (gone) {
             return buildResult(ResultEnum.SUCCESS.result, null, costSeconds);
         }
         return buildResult(ResultEnum.WARNING.result,
                 "Delete query cluster [" + clusterId + "] time out!", costSeconds);
+    }
+
+    /**
+     * QC 删完后，若 (project, region) 下已无 QC，则删除 VL 底座（UAT 资源回收）。
+     * fail-open：VL 删除失败不影响 QC 删除结果。
+     */
+    private static void cascadeDeleteIdleVectorLake(boolean openApi, String projectId, String regionId) {
+        try {
+            if (queryClusterExists(openApi, projectId, regionId)) {
+                log.info("[DeleteQueryCluster] 还有其它 QueryCluster 复用 VL，保留底座");
+                return;
+            }
+            String vectorLakeId = ResourceManagerServiceUtils.findVectorLakeInstanceId();
+            if (vectorLakeId == null || vectorLakeId.isEmpty()) {
+                log.info("[DeleteQueryCluster] 未找到 VL 实例，无需级联删除");
+                return;
+            }
+            log.info("[DeleteQueryCluster] 级联删除空闲 VL: {}", vectorLakeId);
+            String delResp = ResourceManagerServiceUtils.deleteVectorLakeById(vectorLakeId);
+            JSONObject delJO = JSON.parseObject(delResp);
+            if (!isSuccess(delJO)) {
+                log.warn("[DeleteQueryCluster] 级联删除 VL 失败: {}", getMessage(delJO));
+                return;
+            }
+            // VL 删除是异步 workflow（delete_vectorlake_ins），轮询等收敛
+            LocalDateTime endTime = LocalDateTime.now().plusMinutes(10);
+            while (LocalDateTime.now().isBefore(endTime)) {
+                String describeResp = ResourceManagerServiceUtils.describeInstance(vectorLakeId);
+                JSONObject data = JSON.parseObject(describeResp).getJSONObject("Data");
+                if (data == null) {
+                    break;
+                }
+                Integer status = data.getInteger("Status");
+                if (status != null && status == InstanceStatusEnum.DELETED.code) {
+                    break;
+                }
+                Thread.sleep(15000);
+            }
+            ComponentSchedule.updateInstanceStatus(vectorLakeId, "", "", InstanceStatusEnum.DELETED.code);
+        } catch (Exception e) {
+            log.warn("[DeleteQueryCluster] 级联删除 VL 异常（不影响 QC 删除结果）: {}", e.getMessage());
+        }
+    }
+
+    private static boolean queryClusterExists(boolean openApi, String projectId, String regionId) {
+        String resp = openApi
+                ? CloudServiceUtils.listQueryClustersByOpenApi(projectId, regionId)
+                : CloudServiceUtils.listQueryClusters(projectId, regionId);
+        JSONObject jo = JSON.parseObject(resp);
+        Object dataRaw = jo.get("Data") != null ? jo.get("Data") : jo.get("data");
+        JSONArray clusters = null;
+        if (dataRaw instanceof JSONArray) {
+            clusters = (JSONArray) dataRaw;
+        } else if (dataRaw instanceof JSONObject) {
+            clusters = ((JSONObject) dataRaw).getJSONArray("onDemandClusters");
+            if (clusters == null) {
+                clusters = ((JSONObject) dataRaw).getJSONArray("OnDemandClusters");
+            }
+        }
+        return clusters != null && !clusters.isEmpty();
     }
 
     private static boolean waitQueryClusterGone(String clusterId, boolean openApi, String projectId, String regionId) {

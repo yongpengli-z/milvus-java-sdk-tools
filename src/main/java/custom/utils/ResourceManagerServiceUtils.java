@@ -228,6 +228,21 @@ public class ResourceManagerServiceUtils {
     }
 
     /**
+     * RM 直连删除 VectorLake(in06)。对齐 cloud-service 的 VL 删除参数
+     * （backupId=no_need_backup + force=true，见 InstanceRemoteService.deleteVectorLakeInstance）。
+     */
+    public static String deleteVectorLakeById(String instanceId) {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/delete";
+        String body = "{\n" +
+                "  \"backupId\": \"no_need_backup\",\n" +
+                "  \"force\": true,\n" +
+                "  \"instanceId\": \"" + instanceId + "\",\n" +
+                "  \"storageDelay\": 0\n" +
+                "}";
+        return postToRmAsProxyUser(url, JSONObject.parseObject(body).toJSONString(), "delete vectorlake");
+    }
+
+    /**
      * RM 层删除 Global Cluster secondary。
      * <p>
      * 对应接口 POST /resource/v1/global_cluster/milvus/delete_secondary。

@@ -17,8 +17,10 @@
 - **QueryCluster ID（`in07-` 前缀）**：走专属删除通道——有 session token 调
   cloud-service `DELETE /cloud/v1/vectorlake/query-cluster/{id}`，无密码账号（有注入
   apiKey）走 OpenAPI `DELETE /v2/clusters/onDemandClusters/{id}`。in07 不能走 RM 通用删除
-  （activity-provider 无 ins_type=7 分发，NPE 假成功）。VL(in06) 是 (project, region)
-  共享底座，**不随 QC 删除**。
+  （activity-provider 无 ins_type=7 分发，NPE 假成功）。QC 删除成功后**级联清理
+  VL(in06) 底座**：仅当该 (project, region) 下已无任何 QC 才删（RM 直连
+  `DeleteVectorLakeInstanceService` 通道），避免删到其他任务正在复用的底座；
+  级联失败不影响 QC 删除结果。
 - secondary ID：只调用 RM `/resource/v1/global_cluster/milvus/delete_secondary` 删除该 secondary。
 - Global Cluster ID：删除全部 secondary 后调用 RM `/resource/v1/global_cluster/milvus/disband`，保留 primary。
 - primary ID：删除全部 secondary，disband Global Cluster，再调用 RM `/resource/v1/instance/milvus/delete` 删除 primary。
