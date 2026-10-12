@@ -424,6 +424,38 @@ public class HttpClientUtils {
     }
 
     /**
+     * 发送HTTP_DELETE请求（无 body），返回响应正文。
+     */
+    public static String doDelete(String url, Map<String, String> headers) {
+        log.info("=====请求地址:" + url);
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpResponse response = null;
+        String resultString = "";
+        try {
+            org.apache.http.client.methods.HttpDelete httpDelete = new org.apache.http.client.methods.HttpDelete(url);
+            if (headers != null) {
+                for (String key : headers.keySet()) {
+                    httpDelete.setHeader(key, headers.get(key));
+                }
+            }
+            response = httpClient.execute(httpDelete);
+            resultString = EntityUtils.toString(response.getEntity(), "utf-8");
+            log.info("=====响应参数:" + resultString);
+        } catch (Exception e) {
+            log.error("系统错误:", e);
+        } finally {
+            try {
+                if (response != null) {
+                    response.close();
+                }
+            } catch (IOException e) {
+                log.error("系统错误:", e);
+            }
+        }
+        return resultString;
+    }
+
+    /**
      * 发送HTTP_GET请求
      *
      * @see -该方法会自动关闭连接,释放资源

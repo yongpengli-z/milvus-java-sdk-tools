@@ -27,6 +27,81 @@ public class DeleteInstanceComp {
     private static final int DEFAULT_WAIT_TIMEOUT_MINUTES = 30;
     private static final int GLOBAL_ROLE_PRIMARY = 1;
     private static final int GLOBAL_ROLE_SECONDARY = 2;
+    private static final String QUERY_CLUSTER_ID_PREFIX = "in07-";
+
+    /**
+     * 删除 QueryCluster(in07)：有 session token 走 cloud-service，无 token 走 OpenAPI(apiKey)。
+     * VL(in06) 是 (project, region) 共享底座，不随 QC 删除。
+     */
+    private static DeleteInstanceResult deleteQueryCluster(String clusterId) {
+        long startTime = System.currentTimeMillis();
+        String projectId = cloudServiceUserInfo.getDefaultProjectId();
+        String regionId = envConfig.getRegionId();
+        boolean noToken = cloudServiceUserInfo.getToken() == null || cloudServiceUserInfo.getToken().isEmpty();
+        boolean openApi = noToken && CloudServiceUtils.openApiChannelAvailable();
+        if (noToken && !openApi) {
+            return buildResult(ResultEnum.EXCEPTION.result,
+                    "delete query cluster 需要 session token 或注入 apiKey，当前账号两者都没有", 0);
+        }
+        log.info("[DeleteQueryCluster] clusterId={}, channel={}", clusterId, openApi ? "open-api(apiKey)" : "cloud-service(token)");
+        String resp = openApi
+                ? CloudServiceUtils.deleteQueryClusterByOpenApi(clusterId)
+                : CloudServiceUtils.deleteQueryCluster(projectId, regionId, clusterId);
+        JSONObject respJO;
+        try {
+            respJO = JSON.parseObject(resp);
+        } catch (Exception e) {
+            return buildResult(ResultEnum.EXCEPTION.result, "delete query cluster resp parse failed: " + resp, 0);
+        }
+        if (!isSuccess(respJO)) {
+            return buildResult(ResultEnum.EXCEPTION.result, "delete query cluster failed: " + getMessage(respJO), 0);
+        }
+        boolean gone = waitQueryClusterGone(clusterId, openApi, projectId, regionId);
+        int costSeconds = elapsedSeconds(startTime);
+        if (gone) {
+            return buildResult(ResultEnum.SUCCESS.result, null, costSeconds);
+        }
+        return buildResult(ResultEnum.WARNING.result,
+                "Delete query cluster [" + clusterId + "] time out!", costSeconds);
+    }
+
+    private static boolean waitQueryClusterGone(String clusterId, boolean openApi, String projectId, String regionId) {
+        LocalDateTime endTime = LocalDateTime.now().plusMinutes(10);
+        while (LocalDateTime.now().isBefore(endTime)) {
+            try {
+                String resp = openApi
+                        ? CloudServiceUtils.getQueryClusterByOpenApi(clusterId)
+                        : CloudServiceUtils.getQueryCluster(projectId, regionId, clusterId);
+                JSONObject jo = JSON.parseObject(resp);
+                Integer code = jo.getInteger("Code") != null ? jo.getInteger("Code") : jo.getInteger("code");
+                if (code == null || code != 0) {
+                    // 99201(No VectorLake)/99202(Query cluster not found)/message 含 not found 都视为已删
+                    String message = jo.getString("Message") != null ? jo.getString("Message") : jo.getString("message");
+                    if ((code != null && (code == 99201 || code == 99202))
+                            || (message != null && message.toLowerCase().contains("not found"))) {
+                        return true;
+                    }
+                } else {
+                    JSONObject data = jo.getJSONObject("Data") != null ? jo.getJSONObject("Data") : jo.getJSONObject("data");
+                    String status = data == null ? null
+                            : (data.getString("status") != null ? data.getString("status") : data.getString("Status"));
+                    if (status != null && status.equalsIgnoreCase("DELETED")) {
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("[DeleteQueryCluster] wait gone check error: {}", e.getMessage());
+            }
+            try {
+                Thread.sleep(15000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return false;
+    }
+
 
     public static DeleteInstanceResult deleteInstance(DeleteInstanceParams deleteInstanceParams) {
         ensureAccount(deleteInstanceParams);
@@ -34,6 +109,12 @@ public class DeleteInstanceComp {
         String targetInstanceId = resolveTargetInstanceId(deleteInstanceParams);
         if (targetInstanceId == null || targetInstanceId.isEmpty()) {
             return buildResult(ResultEnum.EXCEPTION.result, "instanceId is empty, cannot delete instance", 0);
+        }
+
+        // in07 QueryCluster 必须走专属删除通道：activity-provider 的通用 delete 分发没有
+        // ins_type=7（NPE 假成功），且 in07 不可能是 global cluster 成员，提前短路。
+        if (targetInstanceId.startsWith(QUERY_CLUSTER_ID_PREFIX)) {
+            return deleteQueryCluster(targetInstanceId);
         }
 
         GlobalDeleteContext globalDeleteContext;

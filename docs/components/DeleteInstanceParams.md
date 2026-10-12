@@ -14,6 +14,11 @@
 组件不会要求额外参数，只根据 `instanceId` 判断删除范围：
 
 - 普通实例 ID：调用 RM `/resource/v1/instance/milvus/delete` 删除该实例。
+- **QueryCluster ID（`in07-` 前缀）**：走专属删除通道——有 session token 调
+  cloud-service `DELETE /cloud/v1/vectorlake/query-cluster/{id}`，无密码账号（有注入
+  apiKey）走 OpenAPI `DELETE /v2/clusters/onDemandClusters/{id}`。in07 不能走 RM 通用删除
+  （activity-provider 无 ins_type=7 分发，NPE 假成功）。VL(in06) 是 (project, region)
+  共享底座，**不随 QC 删除**。
 - secondary ID：只调用 RM `/resource/v1/global_cluster/milvus/delete_secondary` 删除该 secondary。
 - Global Cluster ID：删除全部 secondary 后调用 RM `/resource/v1/global_cluster/milvus/disband`，保留 primary。
 - primary ID：删除全部 secondary，disband Global Cluster，再调用 RM `/resource/v1/instance/milvus/delete` 删除 primary。

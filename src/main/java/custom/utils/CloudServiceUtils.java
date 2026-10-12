@@ -573,4 +573,26 @@ public class CloudServiceUtils {
         return resp;
     }
 
+    /**
+     * 删除 QueryCluster(in07)：cloud-service token 通道。
+     * 注意 in07 不能走 RM /resource/v1/instance/milvus/delete（activity-provider 无 ins_type=7 分发，会 NPE 假成功）。
+     */
+    public static String deleteQueryCluster(String projectId, String regionId, String clusterId) {
+        String url = envConfig.getCloudServiceHost() + "/cloud/v1/vectorlake/query-cluster/" + clusterId
+                + "?projectId=" + projectId + "&regionId=" + regionId;
+        String resp = HttpClientUtils.doDelete(url, buildCloudServiceHeader());
+        log.info("[cloud-service][delete query cluster] clusterId={}, resp={}", clusterId, resp);
+        return resp;
+    }
+
+    /**
+     * 删除 QueryCluster(in07)：OpenAPI apiKey 通道（无密码账号）。
+     */
+    public static String deleteQueryClusterByOpenApi(String clusterId) {
+        String url = resolveOpenApiBaseUrl() + "/v2/clusters/onDemandClusters/" + clusterId;
+        String resp = HttpClientUtils.doDelete(url, buildOpenApiHeader());
+        log.info("[open-api][delete query cluster] clusterId={}, resp={}", clusterId, resp);
+        return resp;
+    }
+
 }
