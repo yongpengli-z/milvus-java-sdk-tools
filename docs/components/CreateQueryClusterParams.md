@@ -27,6 +27,7 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
 | `projectName` | String | No | `""` | Used only when `projectId` is empty |
 | `regionId` | String | No | 任务 env 的 regionId | Target region（一般不填） |
 | `sessionTTL` | String | No | `30m` | VectorLake session TTL if a new `in06` is created |
+| `useHours` | int | No | `24` | 实例保留小时数（QTP 到期清理用，组件本身不消费）；0 = 任务跑完即删 |
 | `maxQueryNodeCU` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created（仅 JSON 配置，不在前端表单） |
 | `maxQueryNodeReplicas` | Integer | No | backend default | VectorLake capacity setting if a new `in06` is created（仅 JSON 配置，不在前端表单） |
 | `vectorLakeDbVersion` | String | No | `""` | Expected `in06` version. If set, the component creates `in06` when absent and upgrades it before creating `in07` |

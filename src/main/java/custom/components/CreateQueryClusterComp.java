@@ -176,6 +176,8 @@ public class CreateQueryClusterComp {
                         InstanceStatusEnum.CREATE_FAILED.code);
                 throw new CustomException(CustomExceptionCode.TIMEOUT, "VectorLake create timeout.");
             }
+            ComponentSchedule.updateInstanceStatus(vectorLakeId, "", params.getVectorLakeDbVersion(),
+                    InstanceStatusEnum.RUNNING.code);
             exists = true;
             vectorLakeData = getData(describeVectorLake(projectId, regionId));
         }
@@ -233,6 +235,8 @@ public class CreateQueryClusterComp {
                         InstanceStatusEnum.CREATE_FAILED.code);
                 throw new CustomException(CustomExceptionCode.TIMEOUT, "VectorLake is not RUNNING, status: " + status);
             }
+            ComponentSchedule.updateInstanceStatus(vectorLakeId, "", params.getVectorLakeDbVersion(),
+                    InstanceStatusEnum.RUNNING.code);
         }
         if (hasText(params.getVectorLakeDbVersion())) {
             ensureVectorLakeVersion(vectorLakeId, params.getVectorLakeDbVersion(), startTime);
