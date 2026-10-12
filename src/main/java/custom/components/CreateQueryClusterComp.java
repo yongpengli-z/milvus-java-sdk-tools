@@ -334,7 +334,9 @@ public class CreateQueryClusterComp {
                 JSONObject data = getData(jo);
                 String status = getString(data, "status", "Status");
                 log.info("[CreateQueryCluster] current status: {}", status);
-                if ("RUNNING".equalsIgnoreCase(status)) {
+                // SUSPENDED 是 QC 创建成功的正常态：QN Deployment replicas=0（scale-to-zero），
+                // 首次查询才冷启动。RUNNING/SUSPENDED 都算创建完成。
+                if ("RUNNING".equalsIgnoreCase(status) || "SUSPENDED".equalsIgnoreCase(status)) {
                     return data;
                 }
                 if ("ABNORMAL".equalsIgnoreCase(status) || "DELETED".equalsIgnoreCase(status)) {
