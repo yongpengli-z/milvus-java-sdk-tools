@@ -12,11 +12,12 @@
 
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|:----:|--------|------|
+| `instanceId` | String | 否 | `""` | 目标实例。留空 = 当前任务实例；支持 in01/in06/in07，可对任意已有实例升级 |
 | `targetDbVersion` | String | 是 | `""` | 目标版本。`in07` 传空或 `latest-release` 时由 RM 选择最新 QueryCluster 版本；`in06` 需要传精确 dbVersion |
 | `forceRestart` | boolean | 是 | `true` | `in01` 表示 forceRestart；`in07` 映射为 force，允许升级 live QN pods |
 
 ## JSON 示例
 
 ```json
-{"RollingUpgradeParams_0": {"targetDbVersion": "v2.5.0", "forceRestart": true}}
+{"RollingUpgradeParams_0": {"instanceId": "in07-xxxxxxxxxxxxxxx", "targetDbVersion": "v3.0.3-nightly-dd1135bb7-5963", "forceRestart": true}}
 ```

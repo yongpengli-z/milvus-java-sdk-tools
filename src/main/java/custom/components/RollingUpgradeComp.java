@@ -26,7 +26,9 @@ public class RollingUpgradeComp {
         if(cloudServiceUserInfo.getUserId()==null || cloudServiceUserInfo.getUserId().equalsIgnoreCase("") ){
             cloudServiceUserInfo= CloudServiceUtils.queryUserIdOfCloudService(null,null);
         }
-        String instanceId = newInstanceInfo.getInstanceId();
+        String instanceId = rollingUpgradeParams.getInstanceId() == null
+                || rollingUpgradeParams.getInstanceId().isEmpty()
+                ? newInstanceInfo.getInstanceId() : rollingUpgradeParams.getInstanceId();
         if (instanceId == null || instanceId.equalsIgnoreCase("")) {
             return failResult("instanceId is required for rolling upgrade");
         }
