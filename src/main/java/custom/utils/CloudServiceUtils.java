@@ -160,6 +160,7 @@ public class CloudServiceUtils {
         orgIdList.add(account.getOrgId());
         csUserInfo.setOrgIdList(orgIdList);
         csUserInfo.setDefaultProjectId(account.getProjectId());
+        csUserInfo.setApiKey(account.getApiKey());
         String proxyUserId = null;
         try {
             String respCUS = CloudUserServiceUtils.getProxyUserId(account.getOrgId());
@@ -455,6 +456,120 @@ public class CloudServiceUtils {
 
         String resp = HttpClientUtils.doPostJson(url, buildCloudServiceHeader(), body.toJSONString());
         log.info("[cloud-service][create secondary] body={}, resp={}", body.toJSONString(), resp);
+        return resp;
+    }
+
+    // ==================== OpenAPI (apiKey) 通道 ====================
+    // 无密码账号（token 为空）时，On-Demand/QueryCluster 走 cloud-control-api 的公开 OpenAPI，
+    // Bearer apiKey 鉴权即可，无需 session token。
+
+    /**
+     * 由 cloudServiceHost 推导 OpenAPI host：cloud-service.xxx -> api.xxx。
+     * 推导失败返回空串，调用方应视为 OpenAPI 通道不可用。
+     */
+    public static String resolveOpenApiBaseUrl() {
+        String cloudServiceHost = envConfig == null ? null : envConfig.getCloudServiceHost();
+        if (cloudServiceHost == null || cloudServiceHost.isEmpty()) {
+            return "";
+        }
+        try {
+            java.net.URI uri = java.net.URI.create(cloudServiceHost.trim().replaceAll("/+$", ""));
+            String host = uri.getHost();
+            if (host == null || !host.startsWith("cloud-service.")) {
+                return "";
+            }
+            String scheme = uri.getScheme() == null ? "https" : uri.getScheme();
+            return scheme + "://api." + host.substring("cloud-service.".length())
+                    + (uri.getPort() > 0 ? ":" + uri.getPort() : "");
+        } catch (Exception e) {
+            log.warn("[open-api] 无法从 cloudServiceHost={} 推导 api host: {}", cloudServiceHost, e.getMessage());
+            return "";
+        }
+    }
+
+    public static boolean openApiChannelAvailable() {
+        return cloudServiceUserInfo.getApiKey() != null && !cloudServiceUserInfo.getApiKey().isEmpty()
+                && !resolveOpenApiBaseUrl().isEmpty();
+    }
+
+    private static Map<String, String> buildOpenApiHeader() {
+        Map<String, String> header = new HashMap<>();
+        header.put("Authorization", "Bearer " + cloudServiceUserInfo.getApiKey());
+        if (cloudServiceUserInfo.getOrgIdList() != null && !cloudServiceUserInfo.getOrgIdList().isEmpty()) {
+            header.put("OrgId", cloudServiceUserInfo.getOrgIdList().get(0));
+        }
+        if (cloudServiceUserInfo.getProxyUserId() != null && !cloudServiceUserInfo.getProxyUserId().isEmpty()) {
+            header.put("UserId", cloudServiceUserInfo.getProxyUserId());
+        }
+        if (cloudServiceUserInfo.getUserId() != null && !cloudServiceUserInfo.getUserId().isEmpty()) {
+            header.put("RealUserId", cloudServiceUserInfo.getUserId());
+        }
+        header.put("RequestId", "qtp-java-tools-" + System.currentTimeMillis());
+        return header;
+    }
+
+    /**
+     * OpenAPI 创建 On-Demand(QueryCluster)。注意字段差异：sessionTTL 映射为 autoSuspend。
+     */
+    public static String createQueryClusterByOpenApi(CreateQueryClusterParams params, String projectId, String regionId) {
+        String url = resolveOpenApiBaseUrl() + "/v2/clusters/createOnDemandCluster";
+        JSONObject body = new JSONObject();
+        body.put("projectId", projectId);
+        body.put("regionId", regionId);
+        body.put("clusterName", params.getClusterName());
+        body.put("cuSize", params.getCuSize());
+        body.put("autoSuspend", params.getSessionTTL() == null || params.getSessionTTL().isEmpty()
+                ? "30m" : params.getSessionTTL());
+        if (params.getMaxQueryNodeCU() != null) {
+            body.put("maxQueryNodeCU", params.getMaxQueryNodeCU());
+        }
+        if (params.getMaxQueryNodeReplicas() != null) {
+            body.put("maxQueryNodeReplicas", params.getMaxQueryNodeReplicas());
+        }
+        String resp = HttpClientUtils.doPostJson(url, buildOpenApiHeader(), body.toJSONString());
+        log.info("[open-api][create query cluster] body={}, resp={}", body.toJSONString(), resp);
+        return resp;
+    }
+
+    public static String getQueryClusterByOpenApi(String clusterId) {
+        String url = resolveOpenApiBaseUrl() + "/v2/clusters/onDemandClusters/" + clusterId;
+        String resp = HttpClientUtils.doGet(url, buildOpenApiHeader(), null);
+        log.info("[open-api][get query cluster] clusterId={}, resp={}", clusterId, resp);
+        return resp;
+    }
+
+    public static String listQueryClustersByOpenApi(String projectId, String regionId) {
+        String url = resolveOpenApiBaseUrl() + "/v2/clusters/onDemandClusters?projectId=" + projectId;
+        if (regionId != null && !regionId.isEmpty()) {
+            url += "&regionId=" + regionId;
+        }
+        String resp = HttpClientUtils.doGet(url, buildOpenApiHeader(), null);
+        log.info("[open-api][list query cluster] projectId={}, regionId={}, resp={}", projectId, regionId, resp);
+        return resp;
+    }
+
+    /**
+     * OpenAPI 查 VectorLake（按需计算）状态；响应 data.status: disabled/enabling/enabled/abnormal。
+     */
+    public static String describeOnDemandComputeByOpenApi(String projectId, String regionId) {
+        String url = resolveOpenApiBaseUrl() + "/v2/on-demand-compute?projectId=" + projectId
+                + "&regionId=" + regionId;
+        String resp = HttpClientUtils.doGet(url, buildOpenApiHeader(), null);
+        log.info("[open-api][describe on-demand compute] projectId={}, regionId={}, resp={}",
+                projectId, regionId, resp);
+        return resp;
+    }
+
+    /**
+     * OpenAPI 开启按需计算（隐式创建 VectorLake）。响应不含 VL instanceId，需要时用 RM list 反查。
+     */
+    public static String enableOnDemandComputeByOpenApi(String projectId, String regionId) {
+        String url = resolveOpenApiBaseUrl() + "/v2/on-demand-compute/enable";
+        JSONObject body = new JSONObject();
+        body.put("projectId", projectId);
+        body.put("regionId", regionId);
+        String resp = HttpClientUtils.doPostJson(url, buildOpenApiHeader(), body.toJSONString());
+        log.info("[open-api][enable on-demand compute] body={}, resp={}", body.toJSONString(), resp);
         return resp;
     }
 

@@ -60,7 +60,9 @@ public class CreateQueryClusterComp {
             return fail("VectorLake is required before creating QueryCluster.", startTime, null);
         }
 
-        String createResp = CloudServiceUtils.createQueryCluster(params, projectId, regionId);
+        String createResp = useOpenApiChannel()
+                ? CloudServiceUtils.createQueryClusterByOpenApi(params, projectId, regionId)
+                : CloudServiceUtils.createQueryCluster(params, projectId, regionId);
         JSONObject createJO = JSONObject.parseObject(createResp);
         if (!isApiSuccess(createJO)) {
             return fail("create query cluster failed: " + getMessage(createJO, createResp), startTime, null);
@@ -132,8 +134,22 @@ public class CreateQueryClusterComp {
         cloudServiceUserInfo = CloudServiceUtils.queryUserIdOfCloudService(null, null);
     }
 
+    /**
+     * 无 session token（无密码账号）但有注入 apiKey 时，走 cloud-control-api 的 OpenAPI 通道；
+     * 有 token 时维持 cloud-service 原路径不变。
+     */
+    private static boolean useOpenApiChannel() {
+        boolean noToken = cloudServiceUserInfo.getToken() == null || cloudServiceUserInfo.getToken().isEmpty();
+        boolean openApi = noToken && CloudServiceUtils.openApiChannelAvailable();
+        log.info("[CreateQueryCluster] channel={}", openApi ? "open-api(apiKey)" : "cloud-service(token)");
+        return openApi;
+    }
+
     private static String prepareVectorLake(CreateQueryClusterParams params, String projectId, String regionId,
             LocalDateTime startTime) {
+        if (useOpenApiChannel()) {
+            return prepareVectorLakeByOpenApi(params, projectId, regionId, startTime);
+        }
         JSONObject vectorLakeStatus = describeVectorLake(projectId, regionId);
         JSONObject vectorLakeData = getData(vectorLakeStatus);
         boolean exists = vectorLakeData != null && Boolean.TRUE.equals(getBoolean(vectorLakeData, "exists", "Exists"));
@@ -177,6 +193,65 @@ public class CreateQueryClusterComp {
         return vectorLakeId;
     }
 
+    /**
+     * OpenAPI(apiKey) 通道的 VectorLake 准备：describeOnDemandCompute 的 status
+     * （disabled/enabling/enabled/abnormal）替代 cloud-service 的 exists 语义；
+     * enable 响应不含 VL id，用 RM 免密 list 按 in06- 前缀反查。
+     */
+    private static String prepareVectorLakeByOpenApi(CreateQueryClusterParams params, String projectId,
+            String regionId, LocalDateTime startTime) {
+        String resp = CloudServiceUtils.describeOnDemandComputeByOpenApi(projectId, regionId);
+        JSONObject jo = JSONObject.parseObject(resp);
+        if (!isApiSuccess(jo)) {
+            throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
+                    "describe on-demand compute failed: " + getMessage(jo, resp));
+        }
+        String status = getString(getData(jo), "status", "Status");
+        boolean exists = status != null && !"disabled".equalsIgnoreCase(status);
+        if (!exists) {
+            if (!hasText(params.getVectorLakeDbVersion())) {
+                // 未指定 coordinator 版本：由 QC 创建 workflow 透明顺带建 VL，无需提前准备
+                return IMPLICIT_VECTOR_LAKE_CREATE;
+            }
+            String enableResp = CloudServiceUtils.enableOnDemandComputeByOpenApi(projectId, regionId);
+            JSONObject enableJO = JSONObject.parseObject(enableResp);
+            if (!isApiSuccess(enableJO)) {
+                throw new CustomException(CustomExceptionCode.REMOTE_API_ERROR,
+                        "enable on-demand compute failed: " + getMessage(enableJO, enableResp));
+            }
+        }
+        String vectorLakeId = waitVectorLakeIdAppear();
+        if (!hasText(vectorLakeId)) {
+            throw new CustomException(CustomExceptionCode.INVALID_RESPONSE,
+                    "VectorLake instanceId not found via RM list after enable.");
+        }
+        if (!"enabled".equalsIgnoreCase(status)) {
+            ComponentSchedule.initInstanceStatus(vectorLakeId, "", params.getVectorLakeDbVersion(),
+                    InstanceStatusEnum.CREATING.code);
+            if (!waitInstanceRunning(vectorLakeId)) {
+                ComponentSchedule.updateInstanceStatus(vectorLakeId, "--", params.getVectorLakeDbVersion(),
+                        InstanceStatusEnum.CREATE_FAILED.code);
+                throw new CustomException(CustomExceptionCode.TIMEOUT, "VectorLake is not RUNNING, status: " + status);
+            }
+        }
+        if (hasText(params.getVectorLakeDbVersion())) {
+            ensureVectorLakeVersion(vectorLakeId, params.getVectorLakeDbVersion(), startTime);
+        }
+        return vectorLakeId;
+    }
+
+    private static String waitVectorLakeIdAppear() {
+        LocalDateTime endTime = LocalDateTime.now().plusMinutes(5);
+        while (LocalDateTime.now().isBefore(endTime)) {
+            String vectorLakeId = ResourceManagerServiceUtils.findVectorLakeInstanceId();
+            if (hasText(vectorLakeId)) {
+                return vectorLakeId;
+            }
+            sleepSeconds(10);
+        }
+        return null;
+    }
+
     private static void ensureVectorLakeVersion(String vectorLakeId, String expectedVersion, LocalDateTime startTime) {
         String targetVersion = resolveVectorLakeDbVersion(expectedVersion);
         if (!hasText(targetVersion)) {
@@ -212,14 +287,27 @@ public class CreateQueryClusterComp {
     }
 
     private static boolean queryClusterNameExists(String projectId, String regionId, String clusterName) {
-        String resp = CloudServiceUtils.listQueryClusters(projectId, regionId);
+        String resp = useOpenApiChannel()
+                ? CloudServiceUtils.listQueryClustersByOpenApi(projectId, regionId)
+                : CloudServiceUtils.listQueryClusters(projectId, regionId);
         JSONObject jo = JSONObject.parseObject(resp);
         if (!isApiSuccess(jo)) {
             return false;
         }
-        JSONArray clusters = jo.getJSONArray("Data");
-        if (clusters == null) {
-            clusters = jo.getJSONArray("data");
+        JSONArray clusters = null;
+        // cloud-service 通道 Data 是数组；OpenAPI 通道 data 是对象（列表在 onDemandClusters）。
+        // 不能用 getJSONArray 盲取：fastjson 对 JSONObject 会直接 ClassCastException。
+        Object dataRaw = jo.get("Data");
+        if (dataRaw == null) {
+            dataRaw = jo.get("data");
+        }
+        if (dataRaw instanceof JSONArray) {
+            clusters = (JSONArray) dataRaw;
+        } else if (dataRaw instanceof JSONObject) {
+            clusters = ((JSONObject) dataRaw).getJSONArray("onDemandClusters");
+            if (clusters == null) {
+                clusters = ((JSONObject) dataRaw).getJSONArray("OnDemandClusters");
+            }
         }
         if (clusters == null) {
             return false;
@@ -235,9 +323,12 @@ public class CreateQueryClusterComp {
     }
 
     private static JSONObject waitQueryClusterRunning(String projectId, String regionId, String instanceId) {
+        boolean openApi = useOpenApiChannel();
         LocalDateTime endTime = LocalDateTime.now().plusMinutes(DEFAULT_WAIT_MINUTES);
         while (LocalDateTime.now().isBefore(endTime)) {
-            String resp = CloudServiceUtils.getQueryCluster(projectId, regionId, instanceId);
+            String resp = openApi
+                    ? CloudServiceUtils.getQueryClusterByOpenApi(instanceId)
+                    : CloudServiceUtils.getQueryCluster(projectId, regionId, instanceId);
             JSONObject jo = JSONObject.parseObject(resp);
             if (isApiSuccess(jo)) {
                 JSONObject data = getData(jo);
@@ -305,6 +396,14 @@ public class CreateQueryClusterComp {
     }
 
     private static String resolveToken() {
+        // 优先用 QTP 注入的 personal apiKey（无密码账号的唯一可用 token）
+        if (hasText(cloudServiceUserInfo.getApiKey())) {
+            return cloudServiceUserInfo.getApiKey();
+        }
+        // listManagedApiKeys 依赖 session token，无密码账号直接跳过
+        if (!hasText(cloudServiceUserInfo.getToken())) {
+            return "";
+        }
         String resp = CloudServiceUtils.listManagedApiKeys();
         JSONObject data = getData(JSONObject.parseObject(resp));
         JSONArray keys = data == null ? null : data.getJSONArray("keys");

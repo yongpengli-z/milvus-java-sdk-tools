@@ -121,6 +121,37 @@ public class ResourceManagerServiceUtils {
         return instanceInfoList;
     }
 
+    /**
+     * RM 免密反查当前 (region) 下的 VectorLake(in06) instanceId。
+     * 用于 OpenAPI(apiKey) 通道：POST /v2/on-demand-compute/enable 响应不含 VL id，
+     * 而 (project, region) 至多一个 VL 且 instanceId 固定 in06- 前缀，按前缀过滤即可。
+     * fail-open：找不到/异常返回 null。
+     */
+    public static String findVectorLakeInstanceId() {
+        String url = envConfig.getRmHost() + "/resource/v1/instance/milvus/list?regionId="
+                + envConfig.getRegionId() + "&perPageNum=200";
+        try {
+            String s = HttpClientUtils.doGet(url, buildRmProxyUserHeader("find vectorlake"), null);
+            JSONObject resp = JSONObject.parseObject(s);
+            JSONObject data = resp == null ? null : resp.getJSONObject("Data");
+            JSONArray instances = data == null ? null : data.getJSONArray("Instances");
+            if (instances == null) {
+                return null;
+            }
+            for (int i = 0; i < instances.size(); i++) {
+                JSONObject item = instances.getJSONObject(i);
+                String instanceId = item == null ? null : item.getString("InstanceId");
+                if (instanceId != null && instanceId.startsWith("in06-")) {
+                    log.info("[rm-service][find vectorlake] instanceId={}", instanceId);
+                    return instanceId;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[rm-service][find vectorlake] 查询失败: {}", e.getMessage());
+        }
+        return null;
+    }
+
     public static String rollingUpgrade(RollingUpgradeParams rollingUpgradeParams) {
         String url = envConfig.getRmHost() + "/resource/v1/instance/rolling/upgrade/add/task";
         String body = "{\n" +

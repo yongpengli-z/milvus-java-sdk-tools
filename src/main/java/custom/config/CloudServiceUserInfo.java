@@ -12,4 +12,5 @@ public class CloudServiceUserInfo {
     List<String> orgIdList;
     String defaultProjectId;
     String proxyUserId;
+    String apiKey;
 }
