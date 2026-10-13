@@ -38,7 +38,9 @@ Creates a VectorLake QueryCluster (`in07`). This component uses cloud-service
 - `in07` uses `cuSize`, not `class-1-enterprise` / `classId`.
 - QC 创建成功的稳态是 **SUSPENDED**（QN Deployment `replicas=0`，scale-to-zero），
   不是 RUNNING；首次带 `cluster_id` 的查询打到 kite-coordinator 才会冷启动拉起 QN。
-  组件等待 RUNNING 或 SUSPENDED 均视为创建完成。
+  注意 cloud-service 通道会把 SUSPENDED 翻译成 **STOPPED** 返回
+  （QueryClusterStatusDisplayMapper），OpenAPI 通道保留 SUSPENDED。
+  组件等待 RUNNING / SUSPENDED / STOPPED 均视为创建完成。
 - `vectorLakeDbVersion` and `queryClusterDbVersion` are different image
   streams. `vectorLakeDbVersion` is resolved with `ins_type=6`; 
   `queryClusterDbVersion` is resolved with `ins_type=7`.

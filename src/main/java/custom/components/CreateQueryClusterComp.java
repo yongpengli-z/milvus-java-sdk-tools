@@ -339,8 +339,10 @@ public class CreateQueryClusterComp {
                 String status = getString(data, "status", "Status");
                 log.info("[CreateQueryCluster] current status: {}", status);
                 // SUSPENDED 是 QC 创建成功的正常态：QN Deployment replicas=0（scale-to-zero），
-                // 首次查询才冷启动。RUNNING/SUSPENDED 都算创建完成。
-                if ("RUNNING".equalsIgnoreCase(status) || "SUSPENDED".equalsIgnoreCase(status)) {
+                // 首次查询才冷启动。cloud-service 通道会把 SUSPENDED 翻译成 STOPPED
+                // （QueryClusterStatusDisplayMapper），OpenAPI 通道保留 SUSPENDED，两者都算创建完成。
+                if ("RUNNING".equalsIgnoreCase(status) || "SUSPENDED".equalsIgnoreCase(status)
+                        || "STOPPED".equalsIgnoreCase(status)) {
                     return data;
                 }
                 if ("ABNORMAL".equalsIgnoreCase(status) || "DELETED".equalsIgnoreCase(status)) {
