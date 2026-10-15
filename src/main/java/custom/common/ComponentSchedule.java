@@ -1062,8 +1062,14 @@ public class ComponentSchedule {
         }
         String uri = "http://qtp-server.zilliz.cc/jenkins-info/vdc/milvus/build/release";
         String s = HttpClientUtils.doGet(uri);
-        // 所得结果为倒序
-        JSONArray respJO = JSON.parseObject(s).getJSONArray("data");
+        // QTP server 502/超时等异常时 doGet 返回空串，parseObject 得 null；fail-open 返回兜底镜像，
+        // 不能裸 NPE 中断主流程（2026-10-15 QTP server 滚动发布期间 502 导致 CreateInstance NPE）
+        JSONObject respObj = (s == null || s.isEmpty()) ? null : JSON.parseObject(s);
+        JSONArray respJO = respObj == null ? null : respObj.getJSONArray("data");
+        if (respJO == null) {
+            log.warn("queryReleaseImage: QTP server 响应为空/不可解析，回退兜底镜像, raw={}", s);
+            return Lists.newArrayList("v2.6.7-hotfix3-8d95e4417-2971(2.6.7-hotfix3-20251211-8d95e4417-78bee5c)");
+        }
         List<String> dbVersion = new ArrayList<>();
         for (int i = 0; i < respJO.size(); i++) {
             JSONObject jsonObject = respJO.getJSONObject(i);
