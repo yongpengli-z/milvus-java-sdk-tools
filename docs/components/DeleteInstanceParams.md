@@ -28,6 +28,11 @@
 - 普通实例 ID：调用 cloud-test `/cloud/v1/test/deleteInstance`。
 - secondary ID：调用 cloud-test `/cloud/v1/test/deleteInstance`，由 Cloud-Test 从 meta 判断 role 并删除 secondary。
 - Global Cluster ID / primary ID：secondary 和 primary 删除走 cloud-test；disband 暂未找到 cloud-test 对应接口，仍调用 RM `/resource/v1/global_cluster/milvus/disband`。
+- **cloud-test 回退**：cloud-test 响应为空/非 JSON（如 HTTP 500）时自动回退 RM `/resource/v1/instance/milvus/delete`（cloud-test 对提交人个人 project 下的实例会 500，2026-10 起实例创建在提交人专属 project）。
+
+删除后确认（waitForInstancesGone）走 RM `describeInstance`（身份无关），不再用 cloud-service
+`listInstance`（按 project 过滤，个人 project 场景会漏判）。删除响应为失败时会先确认实例
+是否已实际消失，已消失按成功处理。
 
 ## JSON 示例
 

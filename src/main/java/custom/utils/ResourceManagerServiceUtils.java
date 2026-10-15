@@ -904,7 +904,12 @@ public class ResourceManagerServiceUtils {
      */
     public static String getGlobalClusterId(String instanceId) {
         String resp = describeInstance(instanceId);
-        JSONObject jo = JSONObject.parseObject(resp);
+        JSONObject jo = (resp == null || resp.isEmpty()) ? null : JSONObject.parseObject(resp);
+        if (jo == null) {
+            // HTTP 失败时 doGet 返回空串，parseObject 得 null；按无 Global Cluster 处理，避免裸 NPE
+            log.warn("describeInstance 反查 GlobalClusterId: 响应为空/不可解析, instanceId={}", instanceId);
+            return null;
+        }
         Integer code = getResponseCode(jo);
         JSONObject data = getResponseData(jo);
         if (isSuccessCode(code) && data != null) {

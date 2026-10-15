@@ -129,6 +129,13 @@ public class DeleteInstanceComp {
 
         if (deleteInstanceParams.isUseCloudTestApi()) {
             String s = CloudServiceTestUtils.deleteInstanceById(targetInstanceId);
+            JSONObject respJo = s == null || s.isEmpty() ? null : JSON.parseObject(s);
+            if (respJo == null || (!respJo.containsKey("Code") && !respJo.containsKey("code"))) {
+                // cloud-test 对个人 project 的实例会 500（响应为空/非 JSON），回退 rm 通道
+                log.warn("cloud-test delete instance 响应异常，回退 rm-service 删除: instanceId={}, resp={}", targetInstanceId, s);
+                s = ResourceManagerServiceUtils.deleteInstanceById(targetInstanceId);
+                return handleDeleteResponse(s, List.of(targetInstanceId), "Delete instance (fallback rm-service)");
+            }
             return handleDeleteResponse(s, List.of(targetInstanceId), "Delete instance");
         }
 
@@ -225,10 +232,20 @@ public class DeleteInstanceComp {
     }
 
     private static DeleteInstanceResult handleDeleteResponse(String resp, List<String> instanceIds, String actionName) {
-        JSONObject jsonObject = JSON.parseObject(resp);
+        JSONObject jsonObject = resp == null || resp.isEmpty() ? null : JSON.parseObject(resp);
         if (!isSuccess(jsonObject)) {
+            // 响应为空（HTTP 非 200/网络失败）或业务失败时，删除请求可能已生效，先确认实例是否已消失
+            if (!hasAnyInstance(instanceIds)) {
+                log.info("{} response indicates failure but instances {} already gone, treat as success", actionName, instanceIds);
+                return DeleteInstanceResult.builder()
+                        .commonResult(CommonResult.builder()
+                                .result(ResultEnum.SUCCESS.result).build()).build();
+            }
+            String message = jsonObject == null
+                    ? "delete request got empty/invalid response (HTTP error or network failure), raw: " + resp
+                    : getMessage(jsonObject);
             return DeleteInstanceResult.builder()
-                    .commonResult(CommonResult.builder().message(getMessage(jsonObject))
+                    .commonResult(CommonResult.builder().message(message)
                             .result(ResultEnum.WARNING.result).build()).build();
         }
         long startLoadTime = System.currentTimeMillis();
@@ -436,15 +453,37 @@ public class DeleteInstanceComp {
     }
 
     private static boolean hasAnyInstance(List<String> instanceIds) {
-        List<InstanceInfo> instanceInfoList = CloudServiceUtils.listInstance();
-        for (InstanceInfo instanceInfo : instanceInfoList) {
-            for (String instanceId : instanceIds) {
-                if (instanceId != null && instanceId.equalsIgnoreCase(instanceInfo.getInstanceId())) {
-                    return true;
-                }
+        for (String instanceId : instanceIds) {
+            if (instanceId != null && !instanceId.isEmpty() && instanceStillExists(instanceId)) {
+                return true;
             }
         }
         return false;
+    }
+
+    // 用 rm describe 判定实例是否存在：身份无关（innerCall），不受实例归属 project 影响。
+    // 查询失败按"仍存在"处理，避免误报删除成功；DELETING/DELETED 或 not-exist 类错误码视为已删。
+    private static boolean instanceStillExists(String instanceId) {
+        String resp = ResourceManagerServiceUtils.describeInstance(instanceId);
+        JSONObject jo = resp == null || resp.isEmpty() ? null : JSON.parseObject(resp);
+        if (jo == null) {
+            log.warn("describe instance 响应为空/不可解析，按仍存在处理: instanceId={}", instanceId);
+            return true;
+        }
+        Integer code = jo.getInteger("Code") != null ? jo.getInteger("Code") : jo.getInteger("code");
+        if (code != null && code == 0) {
+            JSONObject data = getObjectIgnoreCase(jo, "Data", "data");
+            Integer status = data == null ? null : data.getInteger("Status");
+            return status == null
+                    || (status != InstanceStatusEnum.DELETING.code && status != InstanceStatusEnum.DELETED.code);
+        }
+        String message = getMessage(jo);
+        if (message != null && (message.toLowerCase().contains("not exist")
+                || message.toLowerCase().contains("not found") || message.contains("is null"))) {
+            return false;
+        }
+        log.warn("describe instance 失败，按仍存在处理: instanceId={}, code={}, message={}", instanceId, code, message);
+        return true;
     }
 
     private static boolean waitForInstanceStatus(String instanceId, int targetStatus) {
@@ -472,6 +511,9 @@ public class DeleteInstanceComp {
     }
 
     private static boolean isSuccess(JSONObject jsonObject) {
+        if (jsonObject == null) {
+            return false;
+        }
         Integer code = jsonObject.getInteger("Code");
         if (code == null) {
             code = jsonObject.getInteger("code");
@@ -491,6 +533,9 @@ public class DeleteInstanceComp {
     }
 
     private static String getMessage(JSONObject jsonObject) {
+        if (jsonObject == null) {
+            return null;
+        }
         JSONObject innerResponse = getInnerResponse(jsonObject);
         if (innerResponse != null) {
             String innerMessage = getMessage(innerResponse);

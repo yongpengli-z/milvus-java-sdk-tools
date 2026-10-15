@@ -188,7 +188,14 @@ public class CloudServiceUtils {
         String s = HttpClientUtils.doGet(url, header, null);
         log.info("[cloudService][listInstance]:" + s);
         List<InstanceInfo> instanceInfoList = new ArrayList<>();
-        JSONArray jsonArray = JSON.parseObject(s).getJSONObject("Data").getJSONArray("List");
+        // HTTP 失败时 doGet 返回空串；响应无 Data.List 时按空列表返回并告警，不抛 NPE
+        JSONObject listResp = (s == null || s.isEmpty()) ? null : JSON.parseObject(s);
+        JSONObject listData = listResp == null ? null : listResp.getJSONObject("Data");
+        JSONArray jsonArray = listData == null ? null : listData.getJSONArray("List");
+        if (jsonArray == null) {
+            log.warn("[cloudService][listInstance] 响应无 Data.List，按空列表返回: {}", s);
+            return instanceInfoList;
+        }
         for (int i = 0; i < jsonArray.size(); i++) {
             InstanceInfo instanceInfo = new InstanceInfo();
             instanceInfo.setInstanceId(jsonArray.getJSONObject(i).getString("InstanceId"));
