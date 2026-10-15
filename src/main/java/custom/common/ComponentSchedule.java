@@ -263,9 +263,17 @@ public class ComponentSchedule {
         }
         if (object instanceof DeleteInstanceParams) {
             log.info("*********** < delete instance > ***********");
-            DeleteInstanceResult deleteInstanceResult = DeleteInstanceComp.deleteInstance((DeleteInstanceParams) object);
+            DeleteInstanceParams deleteInstanceParams = (DeleteInstanceParams) object;
+            DeleteInstanceResult deleteInstanceResult = DeleteInstanceComp.deleteInstance(deleteInstanceParams);
             jsonObject.put("DeleteInstance_" + index, deleteInstanceResult);
             reportStepResult(DeleteInstanceParams.class.getSimpleName() + "_" + index, JSON.toJSONString(deleteInstanceResult));
+            // 删除成功后回传 QTP 实例状态为 DELETED，否则任务页面 InstanceInfo 一直显示 Running
+            if (deleteInstanceResult.getCommonResult() != null
+                    && ResultEnum.SUCCESS.result.equals(deleteInstanceResult.getCommonResult().getResult())) {
+                String deletedInstanceId = deleteInstanceParams.getInstanceId() == null || deleteInstanceParams.getInstanceId().isEmpty()
+                        ? newInstanceInfo.getInstanceId() : deleteInstanceParams.getInstanceId();
+                updateInstanceStatus(deletedInstanceId, "", "", InstanceStatusEnum.DELETED.code);
+            }
         }
         if (object instanceof StopInstanceParams) {
             log.info("*********** < stop instance > ***********");
