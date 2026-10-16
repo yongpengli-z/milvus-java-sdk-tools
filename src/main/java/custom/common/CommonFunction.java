@@ -35,6 +35,7 @@ import org.locationtech.jts.geom.Polygon;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -470,6 +471,12 @@ public class CommonFunction {
         // 分别获取普通字段和 Struct 字段
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = collectionSchema.getFieldSchemaList();
         List<CreateCollectionReq.StructFieldSchema> structFieldSchemaList = collectionSchema.getStructFields();
+        Map<String, DataType> fieldTypes = new HashMap<>();
+        for (CreateCollectionReq.FieldSchema field : fieldSchemaList) {
+            fieldTypes.put(field.getName(), field.getDataType());
+        }
+        List<GeneralDataRole> deterministicRules = validateDeterministicInsertRules(
+                generalDataRoleList, describeCollectionResp, fieldDatasetInfoMap == null ? Collections.emptySet() : fieldDatasetInfoMap.keySet());
 
         List<JsonObject> jsonList = new ArrayList<>();
 
@@ -720,9 +727,160 @@ public class CommonFunction {
                     // 情况4：直接不传 dynamic field
                 }
             }
+            for (GeneralDataRole rule : deterministicRules) {
+                if (row.has(rule.getFieldName())) {
+                    applyDeterministicInsertRule(row, rule, i, fieldTypes.get(rule.getFieldName()));
+                }
+            }
             jsonList.add(row);
         }
         return jsonList;
+    }
+
+    public static List<GeneralDataRole> validateDeterministicInsertRules(List<GeneralDataRole> roles,
+            DescribeCollectionResp collection, Set<String> sourceFields) {
+        List<GeneralDataRole> rules = new ArrayList<>();
+        if (roles == null) {
+            return rules;
+        }
+        Map<String, CreateCollectionReq.FieldSchema> schema = new HashMap<>();
+        for (CreateCollectionReq.FieldSchema field : collection.getCollectionSchema().getFieldSchemaList()) {
+            schema.put(field.getName(), field);
+        }
+        for (GeneralDataRole rule : roles) {
+            if (rule == null || rule.getGenerationMode() == null || rule.getGenerationMode().trim().isEmpty()) {
+                continue;
+            }
+            String name = rule.getFieldName();
+            if (name == null || !schema.containsKey(name)) {
+                throw new IllegalArgumentException("deterministic insert rule fieldName must name a schema field: " + name);
+            }
+            if (sourceFields.contains(name)) {
+                throw new IllegalArgumentException("deterministic insert rule conflicts with fieldDataSourceList: " + name);
+            }
+            String mode = rule.getGenerationMode().trim().toLowerCase(Locale.ROOT);
+            if (!mode.equals("cyclic") && !mode.equals("hash")) {
+                throw new IllegalArgumentException("generationMode must be cyclic or hash: " + name);
+            }
+            if (rule.getCardinality() == null || rule.getCardinality() <= 0
+                    || (rule.getDivisor() != null && rule.getDivisor() <= 0)) {
+                throw new IllegalArgumentException("cardinality and divisor must be positive: " + name);
+            }
+            List<String> keys = rule.getJsonKeys();
+            boolean jsonLeaf = keys != null && !keys.isEmpty();
+            CreateCollectionReq.FieldSchema field = schema.get(name);
+            if (jsonLeaf) {
+                if (field.getDataType() != DataType.JSON || keys.stream().anyMatch(k -> k == null || k.isEmpty())) {
+                    throw new IllegalArgumentException("jsonKeys require a JSON schema field and nonempty object keys: " + name);
+                }
+                if (!Arrays.asList("INT64", "DOUBLE", "STRING").contains(rule.getValueType())) {
+                    throw new IllegalArgumentException("JSON leaf valueType must be INT64, DOUBLE, or STRING: " + name);
+                }
+            } else if (!isTextDataType(field.getDataType())
+                    && field.getDataType() != DataType.Int8 && field.getDataType() != DataType.Int16
+                    && field.getDataType() != DataType.Int32 && field.getDataType() != DataType.Int64
+                    && field.getDataType() != DataType.Float && field.getDataType() != DataType.Double) {
+                throw new IllegalArgumentException("unsupported deterministic scalar type: " + name);
+            }
+            if (!jsonLeaf && field.getIsPrimaryKey() && field.getAutoID()) {
+                throw new IllegalArgumentException("deterministic rule cannot target an autoID primary key: " + name);
+            }
+            if (!jsonLeaf && (field.getDataType() == DataType.Int8 || field.getDataType() == DataType.Int16
+                    || field.getDataType() == DataType.Int32) && rule.getCardinality() - 1 >
+                    (field.getDataType() == DataType.Int8 ? Byte.MAX_VALUE :
+                            field.getDataType() == DataType.Int16 ? Short.MAX_VALUE : Integer.MAX_VALUE)) {
+                throw new IllegalArgumentException("cardinality exceeds scalar field range: " + name);
+            }
+            if (!jsonLeaf && isTextDataType(field.getDataType()) && field.getMaxLength() != null
+                    && ((rule.getPrefix() == null ? 0 : rule.getPrefix().getBytes(StandardCharsets.UTF_8).length)
+                    + Long.toString(rule.getCardinality() - 1).length()) > field.getMaxLength()) {
+                throw new IllegalArgumentException("generated string exceeds field maxLength: " + name);
+            }
+            for (GeneralDataRole earlier : rules) {
+                if (earlier.getFieldName().equals(name) && pathsOverlap(earlier.getJsonKeys(), keys)) {
+                    throw new IllegalArgumentException("deterministic insert rules overlap: " + name);
+                }
+            }
+            for (GeneralDataRole earlier : roles) {
+                if (earlier != null && earlier != rule && name.equals(earlier.getFieldName())
+                        && (earlier.getGenerationMode() == null || earlier.getGenerationMode().trim().isEmpty())
+                        && earlier.getSequenceOrRandom() != null && !earlier.getSequenceOrRandom().isEmpty()) {
+                    throw new IllegalArgumentException("deterministic and legacy insert rules overlap: " + name);
+                }
+            }
+            rules.add(rule);
+        }
+        return rules;
+    }
+
+    private static boolean pathsOverlap(List<String> first, List<String> second) {
+        List<String> a = first == null ? Collections.emptyList() : first;
+        List<String> b = second == null ? Collections.emptyList() : second;
+        int length = Math.min(a.size(), b.size());
+        for (int i = 0; i < length; i++) {
+            if (!a.get(i).equals(b.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void applyDeterministicInsertRule(JsonObject row, GeneralDataRole rule, long rowIndex, DataType fieldType) {
+        long divisor = rule.getDivisor() == null ? 1 : rule.getDivisor();
+        long bucket;
+        if ("hash".equalsIgnoreCase(rule.getGenerationMode().trim())) {
+            long value = rowIndex ^ (rule.getSeed() == null ? 0 : rule.getSeed());
+            value ^= value >>> 33;
+            value *= 0xff51afd7ed558ccdL;
+            value ^= value >>> 33;
+            value *= 0xc4ceb9fe1a85ec53L;
+            value ^= value >>> 33;
+            bucket = Math.floorMod(value, rule.getCardinality());
+        } else {
+            bucket = Math.floorMod(Math.floorDiv(rowIndex, divisor), rule.getCardinality());
+        }
+        List<String> keys = rule.getJsonKeys();
+        if (keys == null || keys.isEmpty()) {
+            String field = rule.getFieldName();
+            if (isTextDataType(fieldType)) {
+                row.addProperty(field, (rule.getPrefix() == null ? "" : rule.getPrefix()) + bucket);
+            } else if (fieldType == DataType.Float) {
+                row.addProperty(field, (float) bucket);
+            } else if (fieldType == DataType.Double) {
+                row.addProperty(field, (double) bucket);
+            } else if (fieldType == DataType.Int8) {
+                row.addProperty(field, (byte) bucket);
+            } else if (fieldType == DataType.Int16) {
+                row.addProperty(field, (short) bucket);
+            } else if (fieldType == DataType.Int32) {
+                row.addProperty(field, (int) bucket);
+            } else if (fieldType == DataType.Int64) {
+                row.addProperty(field, bucket);
+            } else {
+                throw new IllegalArgumentException("deterministic rule requires numeric or string scalar: " + field);
+            }
+            return;
+        }
+        JsonObject object = row.get(rule.getFieldName()).isJsonObject()
+                ? row.getAsJsonObject(rule.getFieldName()) : new JsonObject();
+        row.add(rule.getFieldName(), object);
+        for (int i = 0; i < keys.size() - 1; i++) {
+            String key = keys.get(i);
+            if (object.has(key) && !object.get(key).isJsonObject()) {
+                throw new IllegalArgumentException("JSON rule parent is not an object: " + key);
+            }
+            if (!object.has(key)) {
+                object.add(key, new JsonObject());
+            }
+            object = object.getAsJsonObject(key);
+        }
+        String leaf = keys.get(keys.size() - 1);
+        switch (rule.getValueType()) {
+            case "INT64": object.addProperty(leaf, bucket); break;
+            case "DOUBLE": object.addProperty(leaf, (double) bucket); break;
+            case "STRING": object.addProperty(leaf, (rule.getPrefix() == null ? "" : rule.getPrefix()) + bucket); break;
+            default: throw new IllegalArgumentException("unsupported JSON leaf valueType: " + rule.getValueType());
+        }
     }
 
     /**
@@ -741,7 +899,10 @@ public class CommonFunction {
         // 判断是否有设定生成数据的规则
         GeneralDataRole generalDataRole = null;
         if (generalDataRoleList != null) {
-            generalDataRole = generalDataRoleList.stream().filter(x -> x.getFieldName().equalsIgnoreCase(fieldName)).findFirst().orElse(null);
+            generalDataRole = generalDataRoleList.stream()
+                    .filter(x -> x != null && x.getFieldName() != null
+                            && (x.getGenerationMode() == null || x.getGenerationMode().trim().isEmpty())
+                            && x.getFieldName().equalsIgnoreCase(fieldName)).findFirst().orElse(null);
         }
         if (dataType == DataType.Int64) {
             if (generalDataRole != null) {

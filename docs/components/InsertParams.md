@@ -75,6 +75,22 @@
 
 示例：`[{"fieldName": "vec", "dataset": "sift"}, {"fieldName": "text_col", "dataset": "msmarco-text"}]`
 
+## 确定性字段生成规则
+
+在 `generalDataRoleList` 中新增 `generationMode` 非空的规则即可启用；未设置该字段的原 `sequenceOrRandom` 规则保持不变。
+每条规则使用 `fieldName` 指向 schema 标量列或 JSON 列；JSON 叶子通过对象键列表 `jsonKeys` 指定，且必须设置 `valueType` 为 `INT64`、`DOUBLE` 或 `STRING`。
+`generationMode=cyclic` 计算 `floor(rowIndex/divisor) % cardinality`，默认 `divisor=1`；`generationMode=hash` 用固定 64-bit 混合算法计算 `hash(rowIndex XOR seed) % cardinality`，默认 `seed=0`；`rowIndex` 是 Insert 的绝对起始行号加偏移，与 batch/并发切分无关。
+`prefix` 只用于字符串输出，标量值类型由 schema 决定；同一字段的数据源、重复目标及父子 JSON 路径冲突都会在写入前报错。
+
+```json
+"generalDataRoleList": [
+  {"fieldName":"g100","generationMode":"cyclic","cardinality":100},
+  {"fieldName":"g_str100","generationMode":"cyclic","cardinality":100,"prefix":"g_"},
+  {"fieldName":"meta","jsonKeys":["g100"],"valueType":"INT64","generationMode":"cyclic","cardinality":100},
+  {"fieldName":"filter_bucket","generationMode":"hash","cardinality":100,"seed":42}
+]
+```
+
 ## 注意事项
 
 - **整型 Array 元素为确定性小范围值**：Int8/Int16/Int32/Int64 元素的 Array 字段，行 i 的元素为 `(i+k)%100`（k=元素下标），保证 array_contains 类断言有数据可命中；其他元素类型（VarChar/Float 等）仍为随机生成。

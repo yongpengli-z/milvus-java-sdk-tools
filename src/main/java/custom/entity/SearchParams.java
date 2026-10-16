@@ -87,6 +87,19 @@ public class SearchParams {
      */
     private String groupByField;
 
+    /** Plural group-by fields; JSON path is supported only when this list has one entry. */
+    private List<String> groupByFields;
+
+    /** Optional JSON GroupBy cast type: Bool, Int8, Int16, Int32, Int64, or VarChar. */
+    private String groupByJsonType;
+    private Boolean groupByStrictCast;
+
+    /** Explicit reusable FloatVector query corpus; mutually exclusive with queryDataset. */
+    private List<List<Float>> queryVectors;
+
+    /** Return full results for one-request correctness preflight, not performance runs. */
+    private boolean captureSearchResults;
+
     /**
      * 每组返回条数（group_size），仅 {@link #groupByField} 非空时生效。
      * <p>

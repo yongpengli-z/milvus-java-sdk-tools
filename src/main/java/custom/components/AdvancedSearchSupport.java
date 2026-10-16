@@ -7,6 +7,7 @@ import io.milvus.v2.service.collection.request.DescribeCollectionReq;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.vector.request.SearchReq;
 import io.milvus.v2.service.vector.request.data.BaseVector;
+import io.milvus.v2.service.vector.request.data.FloatVec;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,11 @@ final class AdvancedSearchSupport {
     }
 
     static PreparedSearch prepare(MilvusClientV2 client, String collectionName, String annsField, int nq) {
+        return prepare(client, collectionName, annsField, nq, null);
+    }
+
+    static PreparedSearch prepare(MilvusClientV2 client, String collectionName, String annsField, int nq,
+                                  List<List<Float>> queryVectors) {
         if (annsField == null || annsField.trim().isEmpty()) {
             throw new IllegalArgumentException("annsField must not be empty");
         }
@@ -33,6 +39,10 @@ final class AdvancedSearchSupport {
                 throw new IllegalStateException("collectionName is required when no collection has been created in this task");
             }
             collection = globalCollectionNames.get(globalCollectionNames.size() - 1);
+        }
+
+        if (queryVectors != null) {
+            return new PreparedSearch(collection, explicitFloatVectors(queryVectors, nq));
         }
 
         DescribeCollectionResp describeResponse = client.describeCollection(
@@ -59,6 +69,32 @@ final class AdvancedSearchSupport {
             throw new IllegalStateException("no query vectors are available for collection " + collection);
         }
         return new PreparedSearch(collection, vectors);
+    }
+
+    static List<BaseVector> explicitFloatVectors(List<List<Float>> queryVectors, int nq) {
+        if (queryVectors == null || queryVectors.isEmpty() || nq <= 0 || queryVectors.size() < nq) {
+            throw new IllegalArgumentException("queryVectors must contain at least nq nonempty vectors");
+        }
+        int dimension = queryVectors.get(0) == null ? 0 : queryVectors.get(0).size();
+        if (dimension == 0) {
+            throw new IllegalArgumentException("queryVectors must contain nonempty vectors");
+        }
+        List<BaseVector> result = new ArrayList<>();
+        for (List<Float> vector : queryVectors) {
+            if (vector == null || vector.size() != dimension || vector.stream().anyMatch(v -> v == null || !Float.isFinite(v))) {
+                throw new IllegalArgumentException("queryVectors must have one dimension and finite values");
+            }
+            result.add(new FloatVec(vector));
+        }
+        return result;
+    }
+
+    static List<BaseVector> queryBatch(List<BaseVector> vectors, int nq, long offset) {
+        List<BaseVector> batch = new ArrayList<>(nq);
+        for (int i = 0; i < nq; i++) {
+            batch.add(vectors.get((int) Math.floorMod(offset + i, vectors.size())));
+        }
+        return batch;
     }
 
     static SearchReq.SearchReqBuilder baseRequest(String collection, String annsField, int topK,

@@ -18,6 +18,13 @@
 | `aggregation` | Object | **是** | 聚合定义 |
 | `timeout` | long | 否 | 单次 SDK 请求超时（ms）；未传或 `0` 为 800ms |
 | `targetEndpoint` | String | 否 | `primary` / `global` / `secondary` / `secondary_0` 或直接 URI |
+| `queryVectors` | List<List<Float>> | 否 | 显式 FloatVector query corpus，至少 `nq` 条同维有限值向量；可与 Search 共用 |
+| `numConcurrency` | int | 否 | 性能模式闭环 worker 数，0 表示 1；未设置持续时间/次数时仍只发一次请求 |
+| `runningMinutes` | long | 否 | 大于 0 时持续发压指定分钟数 |
+| `runningCount` | long | 否 | 大于 0 时每 worker 发指定次数，优先于 `runningMinutes` |
+
+不设置 `runningMinutes`/`runningCount` 时保留原单次请求和完整 `searchResults`/`aggregationBuckets` 响应；设置任一为正值时进入闭环性能模式，`numConcurrency` 个 worker 各自同步请求并循环使用 query corpus，不保存全部响应。
+性能结果包含 `requestNum`、`rpcSuccessNum`、`rpcFailureNum`、`rps`（成功 RPC/s）、`requestRps`（全部 RPC/s）、`avg`、`tp50`、`tp90`、`tp99`（成功 RPC 的秒级延迟）和 `costTime`（秒）；部分 RPC 失败时 `commonResult=warning`，全部失败时为 `exception`；预热和多轮测量由独立 QTP 步骤配置，不在组件内配置。
 
 ## aggregation 定义
 
